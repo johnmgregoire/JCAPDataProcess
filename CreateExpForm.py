@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\QtDesign\CreateExpForm.ui'
+# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Wed May 20 12:33:27 2015
+# Created: Wed May 20 15:42:01 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -100,10 +100,10 @@ class Ui_CreateExpDialog(object):
         self.ImportExpPushButton.setGeometry(QtCore.QRect(180, 410, 81, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
         self.FileSearchLineEdit = QtGui.QLineEdit(CreateExpDialog)
-        self.FileSearchLineEdit.setGeometry(QtCore.QRect(860, 200, 171, 20))
+        self.FileSearchLineEdit.setGeometry(QtCore.QRect(860, 220, 171, 20))
         self.FileSearchLineEdit.setObjectName(_fromUtf8("FileSearchLineEdit"))
         self.label_8 = QtGui.QLabel(CreateExpDialog)
-        self.label_8.setGeometry(QtCore.QRect(860, 180, 171, 16))
+        self.label_8.setGeometry(QtCore.QRect(860, 200, 171, 16))
         self.label_8.setObjectName(_fromUtf8("label_8"))
         self.SampleListLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.SampleListLineEdit.setGeometry(QtCore.QRect(860, 140, 171, 20))
@@ -119,10 +119,10 @@ class Ui_CreateExpDialog(object):
         self.label_11.setGeometry(QtCore.QRect(550, 400, 91, 16))
         self.label_11.setObjectName(_fromUtf8("label_11"))
         self.RunPriorityLineEdit = QtGui.QLineEdit(CreateExpDialog)
-        self.RunPriorityLineEdit.setGeometry(QtCore.QRect(860, 250, 171, 20))
+        self.RunPriorityLineEdit.setGeometry(QtCore.QRect(860, 260, 171, 20))
         self.RunPriorityLineEdit.setObjectName(_fromUtf8("RunPriorityLineEdit"))
         self.label_12 = QtGui.QLabel(CreateExpDialog)
-        self.label_12.setGeometry(QtCore.QRect(860, 230, 171, 16))
+        self.label_12.setGeometry(QtCore.QRect(860, 240, 171, 16))
         self.label_12.setObjectName(_fromUtf8("label_12"))
         self.RunTypeLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.RunTypeLineEdit.setGeometry(QtCore.QRect(750, 10, 91, 20))
@@ -288,6 +288,12 @@ class Ui_CreateExpDialog(object):
         self.ExpTreeWidget.header().setVisible(False)
         self.ExpTreeWidget.header().setCascadingSectionResizes(False)
         self.ExpTreeWidget.header().setStretchLastSection(True)
+        self.label_20 = QtGui.QLabel(CreateExpDialog)
+        self.label_20.setGeometry(QtCore.QRect(860, 160, 171, 16))
+        self.label_20.setObjectName(_fromUtf8("label_20"))
+        self.FileStartLineEdit = QtGui.QLineEdit(CreateExpDialog)
+        self.FileStartLineEdit.setGeometry(QtCore.QRect(860, 180, 171, 20))
+        self.FileStartLineEdit.setObjectName(_fromUtf8("FileStartLineEdit"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -353,6 +359,9 @@ class Ui_CreateExpDialog(object):
         self.ImportExpParamsPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import EXP Params", None, QtGui.QApplication.UnicodeUTF8))
         self.SearchRunsPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import multiple folders and/or .zip, each representing a RUN with a .rcp file", None, QtGui.QApplication.UnicodeUTF8))
         self.SearchRunsPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Search for RUNs", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_20.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename start with:", None, QtGui.QApplication.UnicodeUTF8))
+        self.FileStartLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "All raw data filenames regardless of type will be searched for this string.\n"
+" comma-deliminated strings will be searched separately with OR logic", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

@@ -195,17 +195,16 @@ def saveexp_txt_dat(expfilestr, expfiledict, erroruifcn=None, saverawdat=True):
     #TODO: write routine to auto generate user path
     #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
     savep=None
-    try:
-        f=open(savep, mode='w')
-    except:
+    
+    if savep is None or not os.path.isdir(os.path.split(savep)[0]):
         if erroruifcn is None:
             return
         savep=erroruifcn('bad autosave path')
         if len(savep)==0:
             return
-        f=open(savep, mode='w')
-    f.write(expfilestr)
-    f.close()
+    
+    folder=os.path.split(savep)[0]
+
     #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
     saveexpfiledict=copy.deepcopy(expfiledict)
     if saverawdat:
@@ -220,8 +219,11 @@ def saveexp_txt_dat(expfilestr, expfiledict, erroruifcn=None, saverawdat=True):
     else:
         convertstrvalstonum_nesteddict(saveexpfiledict)
     convertfilekeystolist(saveexpfiledict)
-    dsavep=os.path.splitext(savep)+'.pck'
-
+    
+    with open(savep, mode='w') as f:
+        f.write(expfilestr)
+        
+    dsavep=savep.replace('.exp', '.pck')
     with open(dsavep,'wb') as f:
         pickle.dump(saveexpfiledict, f)
         

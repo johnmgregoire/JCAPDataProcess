@@ -105,14 +105,14 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         cb.setCurrentIndex(0)
         
         self.RunTypeLineEdit.setText('ref_dark')
-        self.FileSearchLineEdit.setText('0_-1_')
+        self.FileStartLineEdit.setText('0_-1_')
         self.editexp_addmeasurement()
         
         self.RunTypeLineEdit.setText('ref_light')
-        self.FileSearchLineEdit.setText('0_1_')
+        self.FileStartLineEdit.setText('0_1_')
         self.editexp_addmeasurement()
         
-        self.FileSearchLineEdit.setText('')
+        self.FileStartLineEdit.setText('')
         
     
     def clearexp(self):
@@ -388,10 +388,11 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         return lambda fd:fd['smp'] in smplist
     def createFileSearchfilterfcn(self):
         s=str(self.FileSearchLineEdit.text()).strip()
-        if len(s)==0:
+        ss=str(self.FileStartLineEdit.text()).strip()
+        if len(s)==0 and len(ss)==0:
             return lambda fd:True
         else:
-            return lambda fd:s in fd['fn']
+            return lambda fd:s in fd['fn'] and fd['fn'].startswith(ss)
     
     def editexpparams(self, item, column):
         self.editparams(self.ExpTreeWidget, item=item, column=column)

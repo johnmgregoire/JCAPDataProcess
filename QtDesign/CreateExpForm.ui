@@ -318,7 +318,7 @@ EXP</string>
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>200</y>
+     <y>220</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -332,7 +332,7 @@ EXP</string>
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>180</y>
+     <y>200</y>
      <width>171</width>
      <height>16</height>
     </rect>
@@ -400,7 +400,7 @@ EXP</string>
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>250</y>
+     <y>260</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -414,7 +414,7 @@ If the same filename appears in multiple runs, this sets the priorty for which i
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>230</y>
+     <y>240</y>
      <width>171</width>
      <height>16</height>
     </rect>
@@ -935,6 +935,33 @@ If the same filename appears in multiple runs, this sets the priorty for which i
      <string notr="true">1</string>
     </property>
    </column>
+  </widget>
+  <widget class="QLabel" name="label_20">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>160</y>
+     <width>171</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Require filename start with:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="FileStartLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>180</y>
+     <width>171</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>All raw data filenames regardless of type will be searched for this string.
+ comma-deliminated strings will be searched separately with OR logic</string>
+   </property>
   </widget>
  </widget>
  <resources/>

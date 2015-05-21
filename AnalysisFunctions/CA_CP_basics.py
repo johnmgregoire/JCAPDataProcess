@@ -1,30 +1,34 @@
 import numpy, copy
+if __name__ == "__main__":
+    import os, sys
+    sys.path.append(os.path.split(os.getcwd())[0])
+
 from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
 
-class Analysis__CA_Ifin(Analysis_Master_nointer):
+class Analysis__Ifin(Analysis_Master_nointer):
     def __init__(self):
         self.analysis_version=1
         self.dfltparams={}
         self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__CA_Ifin'
+        self.analysis_name='Analysis__Ifin'
         self.requiredkeys=['I(A)']
-        self.iterkeys=[]
+        self.optionalkeys=[]
         self.fomnames=['I(A)_fin']
     
     def fomtuplist_dataarr(self, dataarr):
         return [('I(A)_fin', dataarr[0][-1])]
         
-class Analysis__CA_Iave(Analysis_Master_nointer):
+class Analysis__Iave(Analysis_Master_nointer):
     def __init__(self):
         self.analysis_version='1'
         self.dfltparams=dict([('duration_s', 2.), ('num_std_dev_outlier', 2.), ('num_pts_outlier_window', 999999), ('from_end', True)])
         self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__CA_Iave'
+        self.analysis_name='Analysis__Iave'
         self.requiredkeys=['I(A)', 't(s)']
-        self.iterkeys=[]
+        self.optionalkeys=[]
         self.fomnames=['I(A)_ave']
 
     def fomtuplist_dataarr(self, dataarr):
@@ -36,7 +40,7 @@ class Analysis__CA_Iave(Analysis_Master_nointer):
         x=removeoutliers_meanstd(x, self.params['num_pts_outlier_window']//2, self.params['num_std_dev_outlier'])
         return [('I(A)_ave', x.mean())]
 
-class Analysis__CA_Iphoto(Analysis_Master_inter):
+class Analysis__Iphoto(Analysis_Master_inter):
     def __init__(self):
         self.analysis_version='1'
         self.dfltparams=dict([\
@@ -46,14 +50,14 @@ class Analysis__CA_Iphoto(Analysis_Master_inter):
   ('illum_invert', 0), ('num_illum_cycles', 2), ('from_end', True)\
                                        ])
         self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__CA_Iphoto'
+        self.analysis_name='Analysis__Iphoto'
         self.requiredkeys=['I(A)', 'Ewe(V)', 't(s)', 'Toggle']#0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
-
+        self.optionalkeys=[]
         self.fomnames=['I(A)_photo']
     #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
         self.requiredkeys[-1]=self.params['illum_key']
-        self.fn_nkeys_reqkeyinds, self.filenames=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
+        self.num_files_considered, self.filenames, self.fn_nkeys_keyinds=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filenames
     def fomtuplist_rawlend_interlend(self, dataarr):

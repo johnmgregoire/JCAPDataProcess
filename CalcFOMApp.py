@@ -25,7 +25,7 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 os.chdir('AnalysisFunctions')
 from CA_CP_basics import *
 
-AnalysisClasses=[Analysis__CA_Ifin(), Analysis__CA_Iave(), Analysis__CA_Iphoto()]
+AnalysisClasses=[Analysis__Ifin(), Analysis__Iave(), Analysis__Iphoto()]
 
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def __init__(self, parent=None, title='', folderpath=None):
@@ -262,7 +262,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         expdatfolder=self.expfolder
         
         kfcn=lambda i:'ana__%d' %i
-        i=0
+        i=1
         while kfcn(i) in self.anadict.keys():
             i+=1
         anak=kfcn(i)
@@ -286,7 +286,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             le.setText(newdflt)
         self.paramsdict_le_dflt['description'][1]=newdflt
         
-        self.activeana['parameters']={}
+        if len(self.analysisclass.params)>0:
+            self.activeana['parameters']={}
         for k, v in self.analysisclass.params.iteritems():
             self.activeana['parameters'][k]=str(v)
         if len(self.analysisclass.interfiledict.keys())>0:
