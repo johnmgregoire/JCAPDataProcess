@@ -96,6 +96,7 @@ class Analysis_T_UVVIS():
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
         interd_rawlen=copy.copy(refd)
+        interd_rawlen['wl']=Tdataarr[0]
         interd_rawlen['T']=Tdataarr[1:].mean(axis=0)
         interd_rawlen['R']=Rdataarr[1:].mean(axis=0)
         interd_rawlen['Tfrac']=(interd_rawlen['T']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
@@ -123,3 +124,14 @@ for k, v in c.interfiledict.items():
     print k, v
 print 'THESE FOMs CALCULATED'
 print c.fomdlist
+
+for k, v in c.interfiledict.items():
+    if '_996_' in k and 'wl' in v:
+        break
+keys=v.partition(';')[2].split(',')
+xi=keys.index('wl')
+yi=keys.index('Tover1minusR')
+x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
+import pylab
+pylab.plot(x, y)
+pylab.show()
