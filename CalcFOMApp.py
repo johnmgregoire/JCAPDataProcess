@@ -119,16 +119,26 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 return
         item.setText(column,''.join([k, ans]))
         
-    def importexp(self):
-        #TODO: define default path
-        #p='exp/sampleexp_uvis.dat'
-        p=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
-        temp=readexpasdict(p, includerawdata=False)
-        if temp is None:
-            print 'Problem opening EXP'
-            return
-        self.expfiledict=temp
-        self.expfolder=os.path.split(p)[0]
+    def importexp(self, expfiledict=None, exppath=None):
+        if expfiledict is None:
+            #TODO: define default path
+            #exppath='exp/sampleexp_uvis.dat'
+            exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
+            expfiledict=readexpasdict(exppath, includerawdata=False)
+            if expfiledict is None:
+                print 'Problem opening EXP'
+                return 
+        self.expfolder=os.path.split(exppath)[0]
+        self.expfiledict=expfiledict
+        if self.getplatemapCheckBox.isChecked():
+           for runk, rund in self.expfiledict.iteritems():
+                if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
+                         and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
+                         and 'plate_id' in rund['parameters'].keys():
+                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(rund['parameters']['plate_id']), \
+                        erroruifcn=\
+                    lambda s:mygetopenfile(parent=self, xpath="%s" % os.getcwd(), markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+
         
         self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['exp_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['exp_type']
@@ -232,7 +242,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 cb.setText('')
                 cb.setToolTip('')
                 cb.setChecked(False)
-
+        self.plotd={}
     def runbatchprocess(self):
         return
 
@@ -241,14 +251,26 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def editanalysisparams(self):
         if self.analysisclass is None:
             return
-        inputs=[(k, type(v), (isinstance(v, str) and (v,) or (`v`,))[0]) for k, v in self.analysisclass.params.iteritems()]
+        keys_paramsd=[k for k in self.analysisclass.params.keys() if isinstance(v, dict)]
+        if len(keys_paramsd)==0:
+            self.editanalysisparams_paramsd(self.analysisclass.params)
+        else:
+            keys_paramsd=['<non-nested params>']+keys_paramsd
+        i=userselectcaller(self, options=keys_paramsd, title='Select type of parameter to edit')
+        if i==0:
+            self.editanalysisparams_paramsd(self.analysisclass.params)
+        else:
+            self.editanalysisparams_paramsd(self.analysisclass.params[keys_paramsd[i]])
+
+    def editanalysisparams_paramsd(self, paramsd):
+        inputs=[(k, type(v), (isinstance(v, str) and (v,) or (str(v),))[0]) for k, v in paramsd.iteritems() if not isinstance(v, dict)]
         if len(inputs)==0:
             return
         ans, changedbool=userinputcaller(self, inputs=inputs, title='Enter Calculation Parameters', returnchangedbool=True)
         somethingchanged=False
         for (k, tp, v), newv, chb in zip(inputs, ans, changedbool):
             if chb:
-                self.analysisclass.params[k]=newv
+                paramsd[k]=newv
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
             selind=int(self.AnalysisNamesComboBox.currentIndex())
@@ -289,15 +311,22 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if len(self.analysisclass.params)>0:
             self.activeana['parameters']={}
         for k, v in self.analysisclass.params.iteritems():
-            self.activeana['parameters'][k]=str(v)
+            if isinstance(v, dict):
+                self.activeana['parameters'][k]={}
+                for k2, v2 in v.iteritems():
+                    self.activeana['parameters'][k][v2]=str(v2)
+            else:
+                self.activeana['parameters'][k]=str(v)
         if len(self.analysisclass.interfiledict.keys())>0:
             self.activeana['files_technique__'+self.techk]=copy.copy(self.analysisclass.interfiledict)
         if len(self.analysisclass.fomfiledict.keys())>0:
             self.activeana['files_fom_technique__'+self.techk]=copy.copy(self.analysisclass.fomfiledict)
         
         self.fomdlist=self.analysisclass.fomdlist
+        self.expkeys_files=self.analysisclass.expkeys_files
         self.updateana()
-        #self.plot()
+        self.plot_generatedata()
+        self.plot()
         
         
     def updateana(self):
@@ -340,325 +369,389 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
         self.clearanalysis()
 
-      
-#    def plot(self):
-#        self.statusLineEdit.setText('plotting')
-#        s=25
-#
-#        self.plotw_comp.axes.cla()
-#        self.plotw_quat.axes.cla()
-#        self.plotw_plate.axes.cla()
-#        self.plotw_aux.axes.cla()
-#        self.cbax_quat.cla()
-#        self.cbax_tern.cla()
-#        self.cbax_plate.cla()
-#
-#        if len(self.techniquedictlist)==0:
-#            self.statusLineEdit.setText('idle')
-#            return
-##        m=self.plotw_comp.axes.scatter(self.detx, self.detz, c=self.dsp, s=s, edgecolors='none')
-##        cb=self.plotw_comp.fig.colorbar(m, cax=self.cbax_tern)
-##        cb.set_label('d-spacing (nm)')
-#
-#        getarr=lambda k:getarrfromkey(self.techniquedictlist, k)
-#        fom=getarr('FOM')
-#        print fom[:10]
-#        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
-#        if len(inds)==0:
-#            print 'ABORTING PLOTTING BECAUSE ALL FOMs ARE NaN'
-#            return
-#        fom=fom[inds]
-#        print fom[:10]
-#        sample=getarr('Sample')[inds]
-#        comps=getarr('compositions')[inds]
-#        x=getarr('x')[inds]
-#        y=getarr('y')[inds]
-#
-#        if self.revcmapCheckBox.isChecked():
-#            cmap=cm.jet_r
-#        else:
-#            cmap=cm.jet
-#
-#        clip=True
-#        skipoutofrange=[False, False]
-#        self.vmin=fom.min()
-#        self.vmax=fom.max()
-#        vstr=str(self.vminmaxLineEdit.text()).strip()
-#        if ',' in vstr:
-#            a, b, c=vstr.partition(',')
-#            try:
-#                a=myeval(a.strip())
-#                c=myeval(c.strip())
-#                self.vmin=a
-#                self.vmax=c
-#                for count, (fcn, le) in enumerate(zip([cmap.set_under, cmap.set_over], [self.belowrangecolLineEdit, self.aboverangecolLineEdit])):
-#                    vstr=str(le.text()).strip()
-#                    vstr=vstr.replace('"', '').replace("'", "")
-#                    print '^^^', vstr, 'none' in vstr or 'None' in vstr
-#                    if 'none' in vstr or 'None' in vstr:
-#                        skipoutofrange[count]=True
-#                        continue
-#                    if len(vstr)==0:
-#                        continue
-#                    c=col_string(vstr)
-#                    try:
-#                        fcn(c)
-#                        clip=False
-#                    except:
-#                        print 'color entry not understood:', vstr
-#
-#            except:
-#                pass
-#
-#        norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
-#        print 'fom min, max, mean, std:', fom.min(), fom.max(), fom.mean(), fom.std()
-#
-#        print 'skipoutofrange', skipoutofrange
-#        print len(fom)
-#        if skipoutofrange[0]:
-#            inds=numpy.where(fom>=self.vmin)
-#            fom=fom[inds]
-#            comps=comps[inds]
-#            x=x[inds]
-#            y=y[inds]
-#        print len(fom)
-#        if skipoutofrange[1]:
-#            inds=numpy.where(fom<=self.vmax)
-#            fom=fom[inds]
-#            comps=comps[inds]
-#            x=x[inds]
-#            y=y[inds]
-#        print len(fom)
-#
-#
-#        if numpy.any(fom>self.vmax):
-#            if numpy.any(fom<self.vmin):
-#                extend='both'
-#            else:
-#                extend='max'
-#        elif numpy.any(fom<self.vmin):
-#            extend='min'
-#        else:
-#            extend='neither'
-#        print 'extend ', extend
-#        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=s, marker='s', cmap=cmap, norm=norm)
-#        if x.max()-x.min()<2. or y.max()-y.min()<2.:
-#            self.plotw_plate.axes.set_xlim(x.min()-1, x.max()+1)
-#            self.plotw_plate.axes.set_ylim(y.min()-1, y.max()+1)
-#        else:
-#            self.plotw_plate.axes.set_aspect(1.)
-#
-#        cb=self.plotw_plate.fig.colorbar(m, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-#        #cb.set_label('|Q| (1/nm)')
-#
-#
-#        comps=numpy.array([c[:4]/c[:4].sum() for c in comps])
-#        i=self.ternskipComboBox.currentIndex()
-#        inds=[j for j in range(4) if j!=i][:3]
-#        terncomps=numpy.array([c[inds]/c[inds].sum() for c in comps])
-#        reordercomps=comps[:, inds+[i]]
-#        self.ellabels=self.techniquedictlist[0]['elements']
-#        reorderlabels=[self.ellabels[j] for j in inds+[i]]
-#
-#
-#        quat=QuaternaryPlot(self.plotw_quat.axes, ellabels=self.ellabels, offset=0)
-#        quat.label()
-#        quat.scatter(comps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
-#        cb=self.plotw_quat.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-#
-#        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
-#        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
-#
-#        tern=TernaryPlot(self.plotw_comp.axes, ellabels=reorderlabels[:3], offset=0)
-#        tern.label()
-#        tern.scatter(terncomps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
-#        cb=self.plotw_comp.fig.colorbar(tern.mappable, cax=self.cbax_tern, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-#
-#        self.plotw_aux.axes.plot(fom, 'g.-')
-#        self.plotw_aux.axes.set_xlabel('sorted by experiment time')
-#        self.plotw_aux.axes.set_ylabel('FOM')
-#        autotickformat(self.plotw_aux.axes, x=0, y=1)
-#
-#        self.plotw_quat.axes.mouse_init()
-#        self.plotw_quat.axes.set_axis_off()
-#        self.plotw_comp.fig.canvas.draw()
-#        self.plotw_quat.fig.canvas.draw()
-#        self.plotw_plate.fig.canvas.draw()
-#        self.plotw_aux.fig.canvas.draw()
-#
-#        self.selectind=-1
-#        self.plotselect()
-#        self.statusLineEdit.setText('idle')
-#
-#    def stackedtern10window(self):
-#        d=self.stackedternplotdict
-#        self.echem10=echem10axesWidget(parent=self.parent, ellabels=d['ellabels'])
-#        self.echem10.plot(d, cb=True)
-#
-#        #scatter_10axes(d['comps'], d['fom'], self.echem10.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-#        self.echem10.exec_()
-#
-#    def stackedtern100window(self):
-#        d=self.stackedternplotdict
-#        self.echem100=echem100axesWidget(parent=None, ellabels=d['ellabels'])
-#        self.echem100.plot(d, cb=True)
-#
-#        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-#        #self.echem30.show()
-#        self.echem100.exec_()
-#
-#    def stackedtern30window(self):
-#        d=self.stackedternplotdict
-#        self.echem30=echem30axesWidget(parent=None, ellabels=d['ellabels'])
-#        self.echem30.plot(d, cb=True)
-#
-#        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-#        #self.echem30.show()
-#        self.echem30.exec_()
-#
-#    def stackedtern20window(self):
-#        d=self.stackedternplotdict
-#        self.echem20=echem20axesWidget(parent=None, ellabels=d['ellabels'])
-#        self.echem20.plot(d, cb=True)
-#        self.echem20.exec_()
-#
-#    def tern4window(self):
-#        d=self.stackedternplotdict
-#        self.echem4=echem4axesWidget(parent=None, ellabels=d['ellabels'])
-#        self.echem4.plot(d, cb=True)
-#        self.echem4.exec_()
-#
-#    def binlineswindow(self):
-#        d=self.stackedternplotdict
-#        self.echembin=echembinWidget(parent=None, ellabels=d['ellabels'])
-#        self.echembin.plot(d, cb=True)
-#        self.echembin.exec_()
-#
-#    def plotselect(self):
-#        overlaybool=self.overlayselectCheckBox.isChecked()
-#        if not overlaybool:
-#            self.plotw_select.axes.cla()
-#        d=self.techniquedictlist[self.selectind]
-#
-#        xk=str(self.xplotchoiceComboBox.currentText())
-#        yk=str(self.yplotchoiceComboBox.currentText())
-#
-#        xshift=0.
-#        xmult=1.
-#        yshift=0.
-#        ymult=1.
-#        if '-E0' in xk:
-#            xshift=-1.*self.E0SpinBox.value()
-#            xk=xk.replace('-E0', '')
-#        if '*Is' in xk:
-#            xmult=self.IsSpinBox.value()
-#            xk=xk.replace('*Is', '')
-#        if '-E0' in yk:
-#            yshift=-1.*self.E0SpinBox.value()
-#            yk=yk.replace('-E0', '')
-#        if '*Is' in yk:
-#            ymult=self.IsSpinBox.value()
-#            yk=yk.replace('*Is', '')
-#
-#        if not xk in d.keys():
-#            print 'cannot plot the selected x-y graph because %s not found' %xk
-#            return
-#        if not yk in d.keys():
-#            print 'cannot plot the selected x-y graph because %s not found' %yk
-#            return
-#        x=d[xk]*xmult+xshift
-#        y=d[yk]*ymult+yshift
-#        lab=''.join(['%s%d' %(el, c*100.) for el, c in zip(d['elements'], d['compositions'])])+'\n'
-#        if 'FOM' in d.keys():
-#            lab+='%d,%.2e' %(d['Sample'], d['FOM'])
-#        else:
-#            lab+='%d' %d['Sample']
-#        self.plotw_select.axes.plot(x, y, '.-', label=lab)
-#
-#        autotickformat(self.plotw_select.axes, x=0, y=1)
-#
-#        if (not self.plotillumkey is None) and self.plotillumkey in d.keys() and not overlaybool:
-#            illuminds=numpy.where(d[self.plotillumkey])[0]
-#            self.plotw_select.axes.plot(x[illuminds], y[illuminds], 'y.')
-#        self.plotw_select.axes.set_xlabel(xk)
-#        self.plotw_select.axes.set_ylabel(yk)
-#        legtext=unicode(self.legendselectLineEdit.text())
-#        if len(legtext)>0:
-#            legloc=myeval(legtext)
-#            if isinstance(legloc, int) and legloc>=0:
-#                self.plotw_select.axes.legend(loc=legloc).draggable()
-#        self.plotw_select.fig.canvas.draw()
-#        t=d['mtime']-2082844800.
-#        print '^^^^^^^^', t
-#        if not isinstance(t, str):
-#            try:
-#                t=time.ctime(t)
-#            except:
-#                t='error'
-#        print t
-#        self.daqtimeLineEdit.setText(t)
-#
-#    def plateclickprocess(self, coords_button):
-#        if len(self.techniquedictlist)==0:
-#            return
-#        critdist=3.
-#        xc, yc, button=coords_button
-#        x=getarrfromkey(self.techniquedictlist, 'x')
-#        y=getarrfromkey(self.techniquedictlist, 'y')
-#        dist=((x-xc)**2+(y-yc)**2)**.5
-#        if min(dist)<critdist:
-#            self.selectind=numpy.argmin(dist)
-#            self.plotselect()
-#        if button==3:
-#            self.addtoselectsamples([self.techniquedictlist[self.selectind]['Sample']])
-#    def selectbelow(self):
-#        try:
-#            vmin, vmax=(self.vmin, self.vmax)
-#        except:
-#            print 'NEED TO PERFORM A PLOT TO DEFINE THE MIN,MAX RANGE BEFORE SELECTING SAMPLES'
-#        idlist=[]
-#        for d in self.techniquedictlist:
-#            if d['FOM']<vmin:
-#                idlist+=[d['Sample']]
-#        if len(idlist)>0:
-#            self.addtoselectsamples(idlist)
-#
-    def plotwsetup(self):
-        self.plotw_select=plotwidget(self)
-        self.plotw_select.setGeometry(QRect(670, 10, 461, 271))
-        self.plotw_select.axes.set_xlabel('')
-        self.plotw_select.axes.set_ylabel('')
+    def plot_generatedata(self):
+        fom=numpy.array([d[self.fomnames[0]] for d in self.fomdlist])
+        runkarr=numpy.array([kl[0] for kl in self.expkeys_files])
+        
+        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
+        if len(inds)==0:
+            print 'ABORTING PLOTTING BECAUSE ALL FOMs ARE NaN'
+            return
+        fom=fom[inds]
+        runkarr=runkarr[inds]
+        sample=numpy.array([self.fomdlist[i]['sample_no'] for i in inds])
+        
+        inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
+        daqtimebool=usedaqtimeCheckBox.isChecked()
 
+        t=[]
+#        else:
+#            hx=numpy.arange(len(fom))
+
+        for runk in sorted(inds_runk.keys()):
+            if daqtimebool:
+                fns=[self.expkeys_files[inds[i]][-1] for i in inds_runk[runk]]
+                t+=[applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)]
+
+           # hy+=[fom[inds_runk[runk]]]
+        if daqtimebool:
+            t=numpy.array(t)
+            t-=t.min()
+#        else:
+#            hx=numpy.array(sample)
+        
+        compplottype=str(self.CompPlotTypeComboBox.currentText())
+        
+        nanxy=[numpy.nan]*2
+        nancomp=[numpy.nan]*4
+        xy=[]
+        comps=[]
+        for runk in sorted(inds_runk.keys()):
+            if not 'platemapdlist' in self.expfiledict[runk].keys() or len(self.expfiledict[runk]['platemapdlist'])==0:
+                if not compplottype=='none':
+                    comps+=[nancomp]*len(inds_runk[runk])
+                xy+=[nanxy]*len(inds_runk[runk])
+                continue
+            pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
+            xy+=[(smp in pmsmps and \
+                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']],) \
+                         or (nanxy, ))[0] for smp in sample[inds_runk[runk]]]
+                         
+            if not compplottype=='none':
+                pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
+                comps+=[(smp in pmsmps and \
+                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']],) \
+                         or (nancomp, ))[0] for smp in sample[inds_runk[runk]]]
+        xy=numpy.float64(xy)
+        comps=numpy.float64(comps)
+        self.plotd={}
+        self.plotd['comps']=comps
+        self.plotd['xy']=xy
+        self.plotd['fom']=fom
+        self.plotd['inds_runk']=inds_runk
+        self.plotd['t']=t
+        
+    def plot(self):
+        
+        s=25
+
+        self.plotw_comp.axes.cla()
+        self.plotw_quat.axes.cla()
+        self.plotw_plate.axes.cla()
+        self.plotw_h.axes.cla()
+        self.cbax_quat.cla()
+        self.cbax_comp.cla()
+        self.cbax_plate.cla()
+
+        if len(self.fomdlist)==0:
+            return
+#        m=self.plotw_comp.axes.scatter(self.detx, self.detz, c=self.dsp, s=s, edgecolors='none')
+#        cb=self.plotw_comp.fig.colorbar(m, cax=self.cbax_comp)
+#        cb.set_label('d-spacing (nm)')
+
+
+        x, y=self.plotd['xy'].T
+        daqtimebool=usedaqtimeCheckBox.isChecked()
+        if daqtimebool:
+            hxarr=self.plotd['t']
+        else:
+            hxarr=numpy.arange(len(fom))
+        for runk in sorted(inds_runk.keys()):
+            hx=hxarr[inds_runk[runk]]
+            hy=fom[inds_runk[runk]]
+            #plot
+        if self.revcmapCheckBox.isChecked():
+            cmap=cm.jet_r
+        else:
+            cmap=cm.jet
+
+        clip=True
+        skipoutofrange=[False, False]
+        self.vmin=fom.min()
+        self.vmax=fom.max()
+        vstr=str(self.vminmaxLineEdit.text()).strip()
+        if ',' in vstr:
+            a, b, c=vstr.partition(',')
+            try:
+                a=myeval(a.strip())
+                c=myeval(c.strip())
+                self.vmin=a
+                self.vmax=c
+                for count, (fcn, le) in enumerate(zip([cmap.set_under, cmap.set_over], [self.belowrangecolLineEdit, self.aboverangecolLineEdit])):
+                    vstr=str(le.text()).strip()
+                    vstr=vstr.replace('"', '').replace("'", "")
+                    print '^^^', vstr, 'none' in vstr or 'None' in vstr
+                    if 'none' in vstr or 'None' in vstr:
+                        skipoutofrange[count]=True
+                        continue
+                    if len(vstr)==0:
+                        continue
+                    c=col_string(vstr)
+                    try:
+                        fcn(c)
+                        clip=False
+                    except:
+                        print 'color entry not understood:', vstr
+
+            except:
+                pass
+
+        norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
+        print 'fom min, max, mean, std:', fom.min(), fom.max(), fom.mean(), fom.std()
+
+        print 'skipoutofrange', skipoutofrange
+        print len(fom)
+        if skipoutofrange[0]:
+            inds=numpy.where(fom>=self.vmin)
+            fom=fom[inds]
+            comps=comps[inds]
+            x=x[inds]
+            y=y[inds]
+        print len(fom)
+        if skipoutofrange[1]:
+            inds=numpy.where(fom<=self.vmax)
+            fom=fom[inds]
+            comps=comps[inds]
+            x=x[inds]
+            y=y[inds]
+        print len(fom)
+
+
+        if numpy.any(fom>self.vmax):
+            if numpy.any(fom<self.vmin):
+                extend='both'
+            else:
+                extend='max'
+        elif numpy.any(fom<self.vmin):
+            extend='min'
+        else:
+            extend='neither'
+        print 'extend ', extend
+        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=s, marker='s', cmap=cmap, norm=norm)
+        if x.max()-x.min()<2. or y.max()-y.min()<2.:
+            self.plotw_plate.axes.set_xlim(x.min()-1, x.max()+1)
+            self.plotw_plate.axes.set_ylim(y.min()-1, y.max()+1)
+        else:
+            self.plotw_plate.axes.set_aspect(1.)
+
+        cb=self.plotw_plate.fig.colorbar(m, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+        #cb.set_label('|Q| (1/nm)')
+
+
+        comps=numpy.array([c[:4]/c[:4].sum() for c in comps])
+        i=self.ternskipComboBox.currentIndex()
+        inds=[j for j in range(4) if j!=i][:3]
+        terncomps=numpy.array([c[inds]/c[inds].sum() for c in comps])
+        reordercomps=comps[:, inds+[i]]
+        self.ellabels=self.techniquedictlist[0]['elements']
+        reorderlabels=[self.ellabels[j] for j in inds+[i]]
+
+
+        quat=QuaternaryPlot(self.plotw_quat.axes, ellabels=self.ellabels, offset=0)
+        quat.label()
+        quat.scatter(comps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
+        cb=self.plotw_quat.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+
+        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
+        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
+
+        tern=TernaryPlot(self.plotw_comp.axes, ellabels=reorderlabels[:3], offset=0)
+        tern.label()
+        tern.scatter(terncomps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
+        cb=self.plotw_comp.fig.colorbar(tern.mappable, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+
+        self.plotw_h.axes.plot(fom, 'g.-')
+        self.plotw_h.axes.set_xlabel('sorted by experiment time')
+        self.plotw_h.axes.set_ylabel('FOM')
+        autotickformat(self.plotw_h.axes, x=0, y=1)
+
+        self.plotw_quat.axes.mouse_init()
+        self.plotw_quat.axes.set_axis_off()
+        self.plotw_comp.fig.canvas.draw()
+        self.plotw_quat.fig.canvas.draw()
+        self.plotw_plate.fig.canvas.draw()
+        self.plotw_h.fig.canvas.draw()
+
+        self.selectind=-1
+        self.plotselect()
+        self.statusLineEdit.setText('idle')
+
+    def stackedtern10window(self):
+        d=self.stackedternplotdict
+        self.echem10=echem10axesWidget(parent=self.parent, ellabels=d['ellabels'])
+        self.echem10.plot(d, cb=True)
+
+        #scatter_10axes(d['comps'], d['fom'], self.echem10.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
+        self.echem10.exec_()
+
+    def stackedtern100window(self):
+        d=self.stackedternplotdict
+        self.echem100=echem100axesWidget(parent=None, ellabels=d['ellabels'])
+        self.echem100.plot(d, cb=True)
+
+        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
+        #self.echem30.show()
+        self.echem100.exec_()
+
+    def stackedtern30window(self):
+        d=self.stackedternplotdict
+        self.echem30=echem30axesWidget(parent=None, ellabels=d['ellabels'])
+        self.echem30.plot(d, cb=True)
+
+        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
+        #self.echem30.show()
+        self.echem30.exec_()
+
+    def stackedtern20window(self):
+        d=self.stackedternplotdict
+        self.echem20=echem20axesWidget(parent=None, ellabels=d['ellabels'])
+        self.echem20.plot(d, cb=True)
+        self.echem20.exec_()
+
+    def tern4window(self):
+        d=self.stackedternplotdict
+        self.echem4=echem4axesWidget(parent=None, ellabels=d['ellabels'])
+        self.echem4.plot(d, cb=True)
+        self.echem4.exec_()
+
+    def binlineswindow(self):
+        d=self.stackedternplotdict
+        self.echembin=echembinWidget(parent=None, ellabels=d['ellabels'])
+        self.echembin.plot(d, cb=True)
+        self.echembin.exec_()
+
+    def plotselect(self):
+        overlaybool=self.overlayselectCheckBox.isChecked()
+        if not overlaybool:
+            self.plotw_select.axes.cla()
+        d=self.techniquedictlist[self.selectind]
+
+        xk=str(self.xplotchoiceComboBox.currentText())
+        yk=str(self.yplotchoiceComboBox.currentText())
+
+        xshift=0.
+        xmult=1.
+        yshift=0.
+        ymult=1.
+        if '-E0' in xk:
+            xshift=-1.*self.E0SpinBox.value()
+            xk=xk.replace('-E0', '')
+        if '*Is' in xk:
+            xmult=self.IsSpinBox.value()
+            xk=xk.replace('*Is', '')
+        if '-E0' in yk:
+            yshift=-1.*self.E0SpinBox.value()
+            yk=yk.replace('-E0', '')
+        if '*Is' in yk:
+            ymult=self.IsSpinBox.value()
+            yk=yk.replace('*Is', '')
+
+        if not xk in d.keys():
+            print 'cannot plot the selected x-y graph because %s not found' %xk
+            return
+        if not yk in d.keys():
+            print 'cannot plot the selected x-y graph because %s not found' %yk
+            return
+        x=d[xk]*xmult+xshift
+        y=d[yk]*ymult+yshift
+        lab=''.join(['%s%d' %(el, c*100.) for el, c in zip(d['elements'], d['compositions'])])+'\n'
+        if 'FOM' in d.keys():
+            lab+='%d,%.2e' %(d['Sample'], d['FOM'])
+        else:
+            lab+='%d' %d['Sample']
+        self.plotw_select.axes.plot(x, y, '.-', label=lab)
+
+        autotickformat(self.plotw_select.axes, x=0, y=1)
+
+        if (not self.plotillumkey is None) and self.plotillumkey in d.keys() and not overlaybool:
+            illuminds=numpy.where(d[self.plotillumkey])[0]
+            self.plotw_select.axes.plot(x[illuminds], y[illuminds], 'y.')
+        self.plotw_select.axes.set_xlabel(xk)
+        self.plotw_select.axes.set_ylabel(yk)
+        legtext=unicode(self.legendselectLineEdit.text())
+        if len(legtext)>0:
+            legloc=myeval(legtext)
+            if isinstance(legloc, int) and legloc>=0:
+                self.plotw_select.axes.legend(loc=legloc).draggable()
+        self.plotw_select.fig.canvas.draw()
+        t=d['mtime']-2082844800.
+        print '^^^^^^^^', t
+        if not isinstance(t, str):
+            try:
+                t=time.ctime(t)
+            except:
+                t='error'
+        print t
+        self.daqtimeLineEdit.setText(t)
+
+    def plateclickprocess(self, coords_button):
+        if len(self.techniquedictlist)==0:
+            return
+        critdist=3.
+        xc, yc, button=coords_button
+        x=getarrfromkey(self.techniquedictlist, 'x')
+        y=getarrfromkey(self.techniquedictlist, 'y')
+        dist=((x-xc)**2+(y-yc)**2)**.5
+        if min(dist)<critdist:
+            self.selectind=numpy.argmin(dist)
+            self.plotselect()
+        if button==3:
+            self.addtoselectsamples([self.techniquedictlist[self.selectind]['Sample']])
+    def selectbelow(self):
+        try:
+            vmin, vmax=(self.vmin, self.vmax)
+        except:
+            print 'NEED TO PERFORM A PLOT TO DEFINE THE MIN,MAX RANGE BEFORE SELECTING SAMPLES'
+        idlist=[]
+        for d in self.techniquedictlist:
+            if d['FOM']<vmin:
+                idlist+=[d['Sample']]
+        if len(idlist)>0:
+            self.addtoselectsamples(idlist)
+
+    def plotwsetup(self):
+        
+        self.plotw_comp=plotwidget(self)
+        self.plotw_quat=plotwidget(self, projection3d=True)
+        self.plotw_h=plotwidget(self)
         self.plotw_plate=plotwidget(self)
-        self.plotw_plate.setGeometry(QRect(570, 530, 561, 341))
+        
+
+        for b, w in [\
+            (self.textBrowser_plate, self.plotw_plate), \
+            (self.textBrowser_h, self.plotw_h), \
+            (self.textBrowser_comp, self.plotw_comp), \
+            (self.textBrowser_comp, self.plotw_quat), \
+            ]:
+            w.setGeometry(b.geometry())
+            b.hide()
+        self.plotw_quat.hide()
+        
+#        self.textBrowser_h = QtGui.QTextBrowser(CalcFOMDialog)
+#        self.textBrowser_h.setGeometry(QtCore.QRect(670, 10, 461, 241))
+#        .setObjectName(_fromUtf8("textBrowser_h"))
+#        self.textBrowser_comp = QtGui.QTextBrowser(CalcFOMDialog)
+#        .setGeometry(QtCore.QRect(670, 250, 461, 281)
+#self.plotw_select.setGeometry(QRect(670, 10, 461, 271))
+#        self.plotw_plate.setGeometry(QRect(570, 530, 561, 341))
+#   self.plotw_h.setGeometry(QRect(670, 280, 461, 251))    
+  
+
+        
         self.plotw_plate.axes.set_aspect(1)
 
-#        self.plotw_comp=plotwidget(self)
-#        self.plotw_comp.setGeometry(QRect(570, 530, 561, 291))
-#
-#
-#        self.plotw_quat=plotwidget(self, projection3d=True)
-#        self.plotw_quat.setGeometry(QRect(570, 530, 561, 291))
-#        self.plotw_quat.hide()
-
-
-        self.plotw_aux=plotwidget(self)
-        self.plotw_aux.setGeometry(QRect(670, 280, 461, 251))
-
-
-        axrect=[0.82, 0.1, 0.04, 0.8]
+        axrect=[0.88, 0.1, 0.04, 0.8]
 
         self.plotw_plate.fig.subplots_adjust(left=0, right=axrect[0]-.01)
         self.cbax_plate=self.plotw_plate.fig.add_axes(axrect)
 
-#        self.plotw_comp.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-#        self.cbax_tern=self.plotw_comp.fig.add_axes(axrect)
-#
-#        self.plotw_quat.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-#        self.cbax_quat=self.plotw_quat.fig.add_axes(axrect)
+        self.plotw_comp.fig.subplots_adjust(left=0, right=axrect[0]-.01)
+        self.cbax_comp=self.plotw_comp.fig.add_axes(axrect)
 
-        self.plotw_select.fig.subplots_adjust(left=.2)
-        self.plotw_aux.fig.subplots_adjust(left=.2)
+        self.plotw_quat.fig.subplots_adjust(left=0, right=axrect[0]-.01)
+        self.cbax_quat=self.plotw_quat.fig.add_axes(axrect)
+
+        self.plotw_h.fig.subplots_adjust(left=.2)
 
 
 class treeclass_anadict():

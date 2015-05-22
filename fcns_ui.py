@@ -212,3 +212,52 @@ class userinputDialog(QDialog):
         if self.problem:
             idialog=messageDialog(self, 'problem with conversion of ' + tup[0])
             idialog.exec_()
+
+def userselectcaller(parent, options=['none'], title='Select values',  cancelallowed=True):
+    problem=True
+    while problem:
+        idialog=userselectDialog(parent, options, title)
+        idialog.exec_()
+        problem=idialog.problem
+        if not idialog.ok and cancelallowed:
+            return None
+
+    return idialog.ans
+
+class userselectDialog(QDialog):
+    def __init__(self, parent, options=['none'], title='Select values'):
+        super(userselectDialog, self).__init__(parent)
+        self.setWindowTitle(title)
+        mainlayout=QGridLayout()
+        self.parent=parent
+        self.options=options
+        self.ComboBox=QComboBox()
+        for i, s in enumerate(self.options):
+            self.ComboBox.insertItem(i, s)
+        self.ComboBox.setCurrentIndex(0)
+        mainlayout.addWidget(self.ComboBox, 0, 0, 1, 1)
+
+        self.buttonBox = QDialogButtonBox(self)
+        self.buttonBox.setGeometry(QRect(520, 195, 160, 26))
+        self.buttonBox.setOrientation(Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok)
+        QObject.connect(self.buttonBox, SIGNAL("accepted()"), self.accept)
+        mainlayout.addWidget(self.buttonBox, 2, 0, 1, 1)
+
+        QObject.connect(self.buttonBox,SIGNAL("accepted()"),self.ExitRoutine)
+
+        self.setLayout(mainlayout)
+
+
+        QMetaObject.connectSlotsByName(self)
+
+        self.problem=False
+        self.ok=False
+
+    def ExitRoutine(self):
+        self.ok=True
+        self.problem=False
+        self.ans=self.ComboBox.currentIndex()
+        if self.problem:#in initial version there is never a problem
+            idialog=messageDialog(self, 'problem with selection')
+            idialog.exec_()

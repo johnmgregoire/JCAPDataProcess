@@ -226,6 +226,7 @@ def saveexp_txt_dat(expfilestr, expfiledict, erroruifcn=None, saverawdat=True):
     dsavep=savep.replace('.exp', '.pck')
     with open(dsavep,'wb') as f:
         pickle.dump(saveexpfiledict, f)
+    return saveexpfiledict, dsavep
         
 def getarrfromkey(dlist, key):
     return numpy.array([d[key] for d in dlist])
@@ -517,7 +518,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
             except:
                 smp=None
         if smp is None:
-            smp=getsamplefromheader(path)
+            smp=getsamplefromheader(path=path)
     #    if smp is None:
     #        return None, {}
     if lines is None:
@@ -590,24 +591,56 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
     else:
         return d
 
+def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
+    zipbool=runp.endswith('.zip')
+    if zipbool:
+        archive=zipfile.ZipFile(runp, 'r')
+        zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
+    returnlist=[]
+    for fn in fns:
+        if zipbool:
+            with zipopenfcn(fn) as f:
+                filestr=f.read(readbytes)
+        else:
+            p=os.path.join(runp, fn)
+            with open(p,'r') as f:
+                filestr=f.read(readbytes)
+        returnlist+=[fcn(filestr=filestr)]
+    if zipbool:
+        archive.close()
+    return returnlist
     
-def getsamplefromheader(path):
-    trylist=getheadattrs(path, searchstrs=['Sample', 'Sample No', 'sample_no'])
+def gettimefromheader(**kwargs):#use either path or filestr as kwargument path=None, filestr=''
+    trylist=getheadattrs(searchstrs=['Epoch', 'Date and Time'], **kwargs)
+    if not trylist[0] is None:
+        if isinstance(trylist[0], float):
+            return trylist[0]
+        else:
+            return None
+    if not trylist[1] is None:
+        try:
+            t=time.strptime(trylist[1],'%Y-%m-%d %H-%M-%S')
+            return time.mktime(t)
+        except:
+            return None
+    
+def getsamplefromheader(**kwargs):#use either path or filestr as kwargument path=None, filestr=''
+    trylist=getheadattrs(searchstrs=['Sample', 'Sample No', 'sample_no'], **kwargs)
     for v in trylist:
         if not v is None:
             return v
     return None
     
-def getheadattrs(path, searchstrs=['Sample', 'Sample No', 'sample_no'], readbytes=1000):
-    f=open(path, mode='r')
-    s=f.read(readbytes)
-    f.close()
+def getheadattrs(path=None, filestr='', searchstrs=['Sample', 'Sample No', 'sample_no'], readbytes=1000):
+    if filestr is None:
+        with open(path, mode='r') as f:
+            filestr=f.read(readbytes)
     ret=[]
     for ss in searchstrs:
-        if not ss in s:
+        if not ss in filestr:
             ret+=[None]
             continue
-        vs=s.partition(ss)[2].partition('\n')[0].strip().strip(':').strip('=').strip()
+        vs=filestr.partition(ss)[2].partition('\n')[0].strip().strip(':').strip('=').strip()
         try:
             ret+=[eval(vs)]
         except:

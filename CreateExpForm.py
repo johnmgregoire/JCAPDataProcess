@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Wed May 20 15:42:01 2015
+# Created: Fri May 22 10:56:19 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_CreateExpDialog(object):
     def setupUi(self, CreateExpDialog):
         CreateExpDialog.setObjectName(_fromUtf8("CreateExpDialog"))
-        CreateExpDialog.resize(1054, 810)
+        CreateExpDialog.resize(1054, 818)
         self.AddMeasPushButton = QtGui.QPushButton(CreateExpDialog)
         self.AddMeasPushButton.setGeometry(QtCore.QRect(510, 10, 161, 21))
         self.AddMeasPushButton.setObjectName(_fromUtf8("AddMeasPushButton"))
@@ -88,16 +88,16 @@ class Ui_CreateExpDialog(object):
         self.label_7.setGeometry(QtCore.QRect(520, 70, 141, 16))
         self.label_7.setObjectName(_fromUtf8("label_7"))
         self.ExpTextBrowser = QtGui.QTextBrowser(CreateExpDialog)
-        self.ExpTextBrowser.setGeometry(QtCore.QRect(510, 470, 531, 321))
+        self.ExpTextBrowser.setGeometry(QtCore.QRect(510, 430, 531, 381))
         self.ExpTextBrowser.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.ExpTextBrowser.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.ExpTextBrowser.setLineWrapMode(QtGui.QTextEdit.NoWrap)
         self.ExpTextBrowser.setObjectName(_fromUtf8("ExpTextBrowser"))
         self.SaveExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.SaveExpPushButton.setGeometry(QtCore.QRect(10, 410, 61, 41))
+        self.SaveExpPushButton.setGeometry(QtCore.QRect(10, 430, 71, 21))
         self.SaveExpPushButton.setObjectName(_fromUtf8("SaveExpPushButton"))
         self.ImportExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpPushButton.setGeometry(QtCore.QRect(180, 410, 81, 21))
+        self.ImportExpPushButton.setGeometry(QtCore.QRect(290, 430, 81, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
         self.FileSearchLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.FileSearchLineEdit.setGeometry(QtCore.QRect(860, 220, 171, 20))
@@ -245,7 +245,7 @@ class Ui_CreateExpDialog(object):
         self.label_19.setGeometry(QtCore.QRect(760, 370, 91, 16))
         self.label_19.setObjectName(_fromUtf8("label_19"))
         self.ClearExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ClearExpPushButton.setGeometry(QtCore.QRect(80, 410, 71, 21))
+        self.ClearExpPushButton.setGeometry(QtCore.QRect(210, 430, 71, 21))
         self.ClearExpPushButton.setObjectName(_fromUtf8("ClearExpPushButton"))
         self.BatchComboBox = QtGui.QComboBox(CreateExpDialog)
         self.BatchComboBox.setGeometry(QtCore.QRect(650, 300, 391, 22))
@@ -261,13 +261,13 @@ class Ui_CreateExpDialog(object):
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName(_fromUtf8("line_2"))
         self.ImportExpParamsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(270, 410, 121, 21))
+        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(380, 430, 121, 21))
         self.ImportExpParamsPushButton.setObjectName(_fromUtf8("ImportExpParamsPushButton"))
         self.SearchRunsPushButton = QtGui.QPushButton(CreateExpDialog)
         self.SearchRunsPushButton.setGeometry(QtCore.QRect(120, 40, 111, 21))
         self.SearchRunsPushButton.setObjectName(_fromUtf8("SearchRunsPushButton"))
         self.RunTreeWidget = QtGui.QTreeWidget(CreateExpDialog)
-        self.RunTreeWidget.setGeometry(QtCore.QRect(10, 60, 491, 341))
+        self.RunTreeWidget.setGeometry(QtCore.QRect(10, 70, 491, 351))
         self.RunTreeWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.RunTreeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.RunTreeWidget.setHeaderHidden(True)
@@ -278,7 +278,7 @@ class Ui_CreateExpDialog(object):
         self.RunTreeWidget.header().setCascadingSectionResizes(False)
         self.RunTreeWidget.header().setStretchLastSection(True)
         self.ExpTreeWidget = QtGui.QTreeWidget(CreateExpDialog)
-        self.ExpTreeWidget.setGeometry(QtCore.QRect(10, 460, 491, 341))
+        self.ExpTreeWidget.setGeometry(QtCore.QRect(10, 460, 491, 351))
         self.ExpTreeWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.ExpTreeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.ExpTreeWidget.setHeaderHidden(True)
@@ -294,6 +294,12 @@ class Ui_CreateExpDialog(object):
         self.FileStartLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.FileStartLineEdit.setGeometry(QtCore.QRect(860, 180, 171, 20))
         self.FileStartLineEdit.setObjectName(_fromUtf8("FileStartLineEdit"))
+        self.SaveExpGoAnaPushButton = QtGui.QPushButton(CreateExpDialog)
+        self.SaveExpGoAnaPushButton.setGeometry(QtCore.QRect(90, 430, 101, 21))
+        self.SaveExpGoAnaPushButton.setObjectName(_fromUtf8("SaveExpGoAnaPushButton"))
+        self.getplatemapCheckBox = QtGui.QCheckBox(CreateExpDialog)
+        self.getplatemapCheckBox.setGeometry(QtCore.QRect(360, 40, 119, 31))
+        self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -314,8 +320,7 @@ class Ui_CreateExpDialog(object):
         self.label_6.setText(QtGui.QApplication.translate("CreateExpDialog", "Require the Sample properties:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_7.setText(QtGui.QApplication.translate("CreateExpDialog", "Only consider this RUN", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveExpPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "save .exp text file", None, QtGui.QApplication.UnicodeUTF8))
-        self.SaveExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Save\n"
-"EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Save EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import a .exp file, which will clear any existing EXP and RUNs and create new RUNs from the EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.FileSearchLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "All raw data filenames regardless of type will be searched for this string.\n"
@@ -362,6 +367,10 @@ class Ui_CreateExpDialog(object):
         self.label_20.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename start with:", None, QtGui.QApplication.UnicodeUTF8))
         self.FileStartLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "All raw data filenames regardless of type will be searched for this string.\n"
 " comma-deliminated strings will be searched separately with OR logic", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveExpGoAnaPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "save .exp text file", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveExpGoAnaPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Save+GoToAna", None, QtGui.QApplication.UnicodeUTF8))
+        self.getplatemapCheckBox.setText(QtGui.QApplication.translate("CreateExpDialog", "Get platemaps\n"
+"on RUN import", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

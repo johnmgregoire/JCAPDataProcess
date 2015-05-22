@@ -659,23 +659,23 @@ legend</string>
     </rect>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="textBrowser_xy">
+  <widget class="QTextBrowser" name="textBrowser_h">
    <property name="geometry">
     <rect>
      <x>670</x>
      <y>10</y>
      <width>461</width>
-     <height>271</height>
+     <height>241</height>
     </rect>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="textBrowser_h">
+  <widget class="QTextBrowser" name="textBrowser_comp">
    <property name="geometry">
     <rect>
      <x>670</x>
-     <y>280</y>
+     <y>250</y>
      <width>461</width>
-     <height>251</height>
+     <height>281</height>
     </rect>
    </property>
   </widget>
@@ -821,6 +821,20 @@ to generate Intermediate and FOM results</string>
      <string notr="true">1</string>
     </property>
    </column>
+  </widget>
+  <widget class="QCheckBox" name="getplatemapCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>470</y>
+     <width>119</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Get platemaps
+on EXP import</string>
+   </property>
   </widget>
  </widget>
  <resources/>

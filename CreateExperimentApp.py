@@ -52,6 +52,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         (self.ImportExpPushButton, self.importexpfile), \
         (self.ClearExpPushButton, self.clearexp), \
         (self.SaveExpPushButton, self.saveexp), \
+        (self.SaveExpGoAnaPushButton, self.saveexpgoana), \
         (self.BatchPushButton, self.runbatchprocess), \
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -205,13 +206,15 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             temp=self.typelist.pop(self.typelist.index('pstat_files'))
             self.typelist=[temp]+self.typelist
         
-        sorttups=sorted([(d['rcp_file'], d) for d in self.rcpdlist], reverse=True) #rcpfn is a time stamp so this will be reverse chron order
+        sorttups=sorted([(d['rcp_file']+str(count), d) for count, d in enumerate(self.rcpdlist)], reverse=True) #rcpfn is a time stamp so this will be reverse chron order
         self.rcpdlist=map(operator.itemgetter(1), sorttups)
         for d in self.rcpdlist:
-            d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
-                erroruifcn=\
-            lambda s:mygetopenfile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
-
+            if self.getplatemapCheckBox.isChecked():
+                d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
+                    erroruifcn=\
+                lambda s:mygetopenfile(parent=self, xpath="%s" % os.getcwd(), markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
+            else:
+                d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
             self.exp_type='uvis'
         else:
@@ -483,12 +486,17 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.expfiledict=self.ExpTreeWidgetFcns.createdict()
         self.expfilestr=self.ExpTreeWidgetFcns.createtxt()
         self.ExpTextBrowser.setText(self.expfilestr)
-        
+    
+    def saveexpgoana(self):
+        saveexpfiledict, exppath=self.saveexp()
+        self.parent.calcui.importexp(expfiledict=copy.deepcopy(saveexpfiledict), exppath=exppath)
+        self.parent.calcui_exec()
+        self.hide()
     def saveexp(self):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
         if len(self.expfilestr)==0 or not 'exp_version' in self.expfilestr:
             return
-        saveexp_txt_dat(self.expfilestr, self.expfiledict, erroruifcn=\
+        return saveexp_txt_dat(self.expfilestr, self.expfiledict, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
 
 class treeclass_dlist():

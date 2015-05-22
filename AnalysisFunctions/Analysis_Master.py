@@ -1,4 +1,4 @@
-import numpy, copy
+import numpy, copy, operator
 if __name__ == "__main__":
     import os, sys
     sys.path.append(os.path.split(os.getcwd())[0])
@@ -20,14 +20,17 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
-    fn_nkeys_keyinds=[(fnk, len(keys), [keys.index(reqk) for reqk in requiredkeys+optionalkeys if reqk in keys])\
+    tup0_tup1=[((runk, 'files_technique__'+techk, typek, fnk), (fnk, len(keys), [keys.index(reqk) for reqk in requiredkeys+optionalkeys if reqk in keys]))\
             for runk in runklist \
             for fnk, keys in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
             if not (False in [reqk in keys for reqk in requiredkeys])\
             ]
-    filenames=[fn for fn, nkeys, reqkeyinds in fn_nkeys_keyinds]
-    #fn_nkeys_keyinds is length of all files considered, filenames are the ones that meet requirements, which in this e case having all of the requiredkeys
-    return num_files_considered, filenames, fn_nkeys_keyinds
+    expkeys_files=map(operator.itemgetter(0), tup0_tup1)
+    run_fn_nkeys_keyinds=map(operator.itemgetter(1), tup0_tup1)
+    
+    #filenames=[fn for runk, fn, nkeys, reqkeyinds in run_fn_nkeys_keyinds]
+    #run_fn_nkeys_keyinds is length of all files considered, filenames are the ones that meet requirements, which in this e case having all of the requiredkeys
+    return num_files_considered, expkeys_files, run_fn_nkeys_keyinds
 
     
 def stdcheckoutput(fomdlist, fomnames):
@@ -46,14 +49,14 @@ class Analysis_Master_nointer():
         
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
-        self.num_files_considered, self.filenames, self.fn_nkeys_keyinds=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
+        self.num_files_considered, self.expkeys_files, self.run_fn_nkeys_keyinds=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
-        return self.filenames
+        return self.expkeys_files
     
     def check_input(self, critfracapplicable=0.9):
-        fracapplicable=1.*len(self.filenames)/self.num_files_considered
+        fracapplicable=1.*len(self.expkeys_files)/self.num_files_considered
         return fracapplicable>critfracapplicable, \
-        '%d files, %.2f of those available, do not meet requirements' %(self.num_files_considered-len(self.filenames), 1.-fracapplicable)
+        '%d files, %.2f of those available, do not meet requirements' %(self.num_files_considered-len(self.expkeys_files), 1.-fracapplicable)
     def check_output(self, critfracnan=0.9):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomnames)
         return fracnan>critfracnan, \
@@ -62,7 +65,7 @@ class Analysis_Master_nointer():
         self.fomfiledict={}
         self.interfiledict={}
         self.fomdlist=[]
-        for fn, nkeys, reqkeyinds in self.fn_nkeys_keyinds:
+        for runk, fn, nkeys, reqkeyinds in self.run_fn_nkeys_keyinds:
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), nkeys, keyinds=reqkeyinds)
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+self.fomtuplist_dataarr(dataarr))]
             #writeinterdat
@@ -77,7 +80,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
         self.fomfiledict={}
         self.interfiledict={}
         self.fomdlist=[]
-        for fn, nkeys, reqkeyinds in self.fn_nkeys_keyinds:
+        for runk, fn, nkeys, reqkeyinds in self.run_fn_nkeys_keyinds:
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), nkeys, keyinds=reqkeyinds)
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]

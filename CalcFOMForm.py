@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\QtDesign\CalcFOMForm.ui'
+# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Wed May 20 12:33:23 2015
+# Created: Fri May 22 10:56:18 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -278,12 +278,12 @@ class Ui_CalcFOMDialog(object):
         self.textBrowser_plate = QtGui.QTextBrowser(CalcFOMDialog)
         self.textBrowser_plate.setGeometry(QtCore.QRect(570, 530, 561, 341))
         self.textBrowser_plate.setObjectName(_fromUtf8("textBrowser_plate"))
-        self.textBrowser_xy = QtGui.QTextBrowser(CalcFOMDialog)
-        self.textBrowser_xy.setGeometry(QtCore.QRect(670, 10, 461, 271))
-        self.textBrowser_xy.setObjectName(_fromUtf8("textBrowser_xy"))
         self.textBrowser_h = QtGui.QTextBrowser(CalcFOMDialog)
-        self.textBrowser_h.setGeometry(QtCore.QRect(670, 280, 461, 251))
+        self.textBrowser_h.setGeometry(QtCore.QRect(670, 10, 461, 241))
         self.textBrowser_h.setObjectName(_fromUtf8("textBrowser_h"))
+        self.textBrowser_comp = QtGui.QTextBrowser(CalcFOMDialog)
+        self.textBrowser_comp.setGeometry(QtCore.QRect(670, 250, 461, 281))
+        self.textBrowser_comp.setObjectName(_fromUtf8("textBrowser_comp"))
         self.line = QtGui.QFrame(CalcFOMDialog)
         self.line.setGeometry(QtCore.QRect(276, 70, 20, 451))
         self.line.setLineWidth(2)
@@ -328,6 +328,9 @@ class Ui_CalcFOMDialog(object):
         self.AnaTreeWidget.header().setVisible(False)
         self.AnaTreeWidget.header().setCascadingSectionResizes(False)
         self.AnaTreeWidget.header().setStretchLastSection(True)
+        self.getplatemapCheckBox = QtGui.QCheckBox(CalcFOMDialog)
+        self.getplatemapCheckBox.setGeometry(QtCore.QRect(530, 470, 119, 31))
+        self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
 
         self.retranslateUi(CalcFOMDialog)
         QtCore.QMetaObject.connectSlotsByName(CalcFOMDialog)
@@ -402,6 +405,8 @@ class Ui_CalcFOMDialog(object):
         self.AnalysisNamesComboBox.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "The name of the functions that will be applied to data\n"
 "to generate Intermediate and FOM results", None, QtGui.QApplication.UnicodeUTF8))
         self.label_20.setText(QtGui.QApplication.translate("CalcFOMDialog", "Choose analysis function:", None, QtGui.QApplication.UnicodeUTF8))
+        self.getplatemapCheckBox.setText(QtGui.QApplication.translate("CalcFOMDialog", "Get platemaps\n"
+"on EXP import", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":
