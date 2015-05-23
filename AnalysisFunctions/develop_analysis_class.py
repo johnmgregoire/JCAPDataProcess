@@ -7,6 +7,25 @@ from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
+
+def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_technique__' in ftk]) for anak, anav in anadict.iteritems() if anak.startswith('ana__') and True in ['files_technique__' in ftk for ftk in anav.keys()]]
+
+    Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, \
+                                 nkeys=len(tagandkeys.partition(';')[2].split(',')), \
+                                 Akeyind=tagandkeys.partition(';')[2].split(',').index('absorption')) \
+        for anak, ftkl in anak_ftklist \
+        for ftk in ftkl \
+        for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
+        if 'absorption' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys\
+        ]
+    if len(absfiledlist)==0:
+        return 0, []
+    num_files_considered, filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
+    
+    Asmp=[Ad['fn'].partition(Ad['ana']+'__')[2].partition('_')[0] for Ad in Afiledlist]
+    filedlist=[dict(d, Afiled=Afiledlist[Asmp.index(d['fn'].partition('_')[0])]) for d in filedlist if d['fn'].partition('_')[0] in Asmp]
+    return num_files_considered, filedlist#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
     
 def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[]):
     if techk!='T_UVVIS':
@@ -61,7 +80,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.fom_chkqualitynames=['maxabsorp',]
         self.quality_foms=['abs_max2ndderiv','minslope',self.params['mthd']+'-min_rescaled',self.params['mthd']+'-max_rescaled','0<T<1','0<R<1','1-T-R>0']
     
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
               TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
@@ -122,15 +141,15 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(Tdataarr, Rdataarr, refd_Tfn(fn))
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.dat' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
-                kl=saveinterdata(p, rawlend)
-                self.interfiledict[fnr]='%s;%s' %('eche_inter_rawlen_file', ','.join(kl))
+                kl=saveinterdata(p, rawlend, savetxt=True)
+                self.interfiledict[fnr]='%s;%s' %('uvis_inter_rawlen_file', ','.join(kl))
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.dat' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
-                kl=saveinterdata(p, interlend)
-                self.interfiledict[fni]='%s;%s' %('eche_inter_interlen_file', ','.join(kl))
+                kl=saveinterdata(p, interlend, savetxt=True)
+                self.interfiledict[fni]='%s;%s' %('uvis_inter_interlen_file', ','.join(kl))
         for foml in [self.fomnames,self.quality_foms]:
             fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
             p=os.path.join(destfolder,fnf)

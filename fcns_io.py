@@ -184,9 +184,17 @@ def datastruct_expfiledict(expfiledict, savefolder=None):
 
     return expfiledict
 
-def saveinterdata(p, interd, keys=None):
+def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     if keys is None:
         keys=sorted(interd.keys())
+    if savetxt:
+        arr=numpy.array([[fmt %v for v in interd[kv]] for kv in keys]).T
+        s='\t'.join(keys)+'\n'
+        s+='\n'.join(['\t'.join(a) for a in arr])
+        with open(p, mode='w') as f:
+            f.write(s)
+    if savetxt or not p.endswith('.dat'):
+        p+='.dat'
     with open(p, mode='wb') as f:
         x=numpy.float32([interd[kv] for kv in keys])
         x.tofile(f)

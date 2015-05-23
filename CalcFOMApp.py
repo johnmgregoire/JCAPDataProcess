@@ -219,7 +219,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             button.setChecked(True)
         s=str(button.text())
         self.techk, garb, self.typek=s.partition(',')
-        nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist)) for i, c in enumerate(AnalysisClasses)]
+        nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict)) for i, c in enumerate(AnalysisClasses)]
         self.AnalysisClassInds=[i for i, nf in enumerate(nfiles_classes) if nf>0]
         self.AnalysisNamesComboBox.clear()
         self.AnalysisNamesComboBox.insertItem(0, '')
@@ -274,7 +274,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
             selind=int(self.AnalysisNamesComboBox.currentIndex())
-            nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist))
+            nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
     def analyzedata(self):
         if self.analysisclass is None:
@@ -430,6 +430,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotd['fom']=fom
         self.plotd['inds_runk']=inds_runk
         self.plotd['t']=t
+        self.plotd['sample']=sample
+        
         
     def plot(self):
         
@@ -443,23 +445,28 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.cbax_comp.cla()
         self.cbax_plate.cla()
 
-        if len(self.fomdlist)==0:
+        if len(self.plotd['fom'])==0:
             return
-#        m=self.plotw_comp.axes.scatter(self.detx, self.detz, c=self.dsp, s=s, edgecolors='none')
-#        cb=self.plotw_comp.fig.colorbar(m, cax=self.cbax_comp)
-#        cb.set_label('d-spacing (nm)')
-
 
         x, y=self.plotd['xy'].T
+        comps=self.plotd['comps']
+        fom=self.plotd['fom']
         daqtimebool=usedaqtimeCheckBox.isChecked()
         if daqtimebool:
             hxarr=self.plotd['t']
+            xl='time (s)'
         else:
-            hxarr=numpy.arange(len(fom))
+            hxarr=self.plotd['sample']
+            xl='sample_no'
         for runk in sorted(inds_runk.keys()):
             hx=hxarr[inds_runk[runk]]
             hy=fom[inds_runk[runk]]
-            #plot
+        
+            self.plotw_h.axes.plot(hx, hy, '.-')
+        self.plotw_h.axes.set_xlabel(xl)
+        self.plotw_h.axes.set_ylabel(self.fomnames[0])
+        autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
+        
         if self.revcmapCheckBox.isChecked():
             cmap=cm.jet_r
         else:
@@ -560,21 +567,18 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         tern.scatter(terncomps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
         cb=self.plotw_comp.fig.colorbar(tern.mappable, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
 
-        self.plotw_h.axes.plot(fom, 'g.-')
-        self.plotw_h.axes.set_xlabel('sorted by experiment time')
-        self.plotw_h.axes.set_ylabel('FOM')
-        autotickformat(self.plotw_h.axes, x=0, y=1)
 
-        self.plotw_quat.axes.mouse_init()
+
+        #self.plotw_quat.axes.mouse_init()
         self.plotw_quat.axes.set_axis_off()
         self.plotw_comp.fig.canvas.draw()
         self.plotw_quat.fig.canvas.draw()
         self.plotw_plate.fig.canvas.draw()
         self.plotw_h.fig.canvas.draw()
 
-        self.selectind=-1
-        self.plotselect()
-        self.statusLineEdit.setText('idle')
+        #self.selectind=-1
+        #self.plotselect()
+        
 
     def stackedtern10window(self):
         d=self.stackedternplotdict

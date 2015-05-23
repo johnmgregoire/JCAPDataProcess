@@ -47,7 +47,7 @@ class Analysis_Master_nointer():
         self.fomnames=[]
         
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
@@ -86,14 +86,14 @@ class Analysis_Master_inter(Analysis_Master_nointer):
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.dat' %(anak,fn[:-4])
+                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
-                kl=saveinterdata(p, rawlend)
+                kl=saveinterdata(p, rawlend, savetxt=True)
                 self.interfiledict[fnr]='%s;%s' %('eche_inter_rawlen_file', ','.join(kl))
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.dat' %(anak,fn[:-4])
+                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
-                kl=saveinterdata(p, interlend)
+                kl=saveinterdata(p, interlend, savetxt=True)
                 self.interfiledict[fni]='%s;%s' %('eche_inter_interlen_file', ','.join(kl))
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
         p=os.path.join(destfolder,fnf)
