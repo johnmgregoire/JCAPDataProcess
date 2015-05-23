@@ -57,9 +57,9 @@ class Analysis__Iphoto(Analysis_Master_inter):
     #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
         self.requiredkeys[-1]=self.params['illum_key']
-        self.num_files_considered, self.expkeys_files, self.run_fn_nkeys_keyinds=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
-        return self.expkeys_files
+        return self.filedlist
     def fomtuplist_rawlend_interlend(self, dataarr):
 
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])

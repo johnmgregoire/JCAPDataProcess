@@ -20,17 +20,16 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
-    tup0_tup1=[((runk, 'files_technique__'+techk, typek, fnk), (fnk, len(keys), [keys.index(reqk) for reqk in requiredkeys+optionalkeys if reqk in keys]))\
+    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, \
+                                     nkeys=len(keys), reqkeyinds=[keys.index(reqk) for reqk in requiredkeys if reqk in keys], \
+                                     optkeyinds=[(optk in keys and (keys.index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
             for fnk, keys in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
             if not (False in [reqk in keys for reqk in requiredkeys])\
             ]
-    expkeys_files=map(operator.itemgetter(0), tup0_tup1)
-    run_fn_nkeys_keyinds=map(operator.itemgetter(1), tup0_tup1)
-    
-    #filenames=[fn for runk, fn, nkeys, reqkeyinds in run_fn_nkeys_keyinds]
-    #run_fn_nkeys_keyinds is length of all files considered, filenames are the ones that meet requirements, which in this e case having all of the requiredkeys
-    return num_files_considered, expkeys_files, run_fn_nkeys_keyinds
+    filedlist=[dict(d, keyinds=d['reqkeyinds']+[k for k in d['optkeyinds'] if not k is None]) for d in filedlist]
+
+    return num_files_considered, filedlist
 
     
 def stdcheckoutput(fomdlist, fomnames):
@@ -49,14 +48,14 @@ class Analysis_Master_nointer():
         
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
-        self.num_files_considered, self.expkeys_files, self.run_fn_nkeys_keyinds=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
-        return self.expkeys_files
+        return self.filedlist
     
     def check_input(self, critfracapplicable=0.9):
-        fracapplicable=1.*len(self.expkeys_files)/self.num_files_considered
+        fracapplicable=1.*len(self.filedlist)/self.num_files_considered
         return fracapplicable>critfracapplicable, \
-        '%d files, %.2f of those available, do not meet requirements' %(self.num_files_considered-len(self.expkeys_files), 1.-fracapplicable)
+        '%d files, %.2f of those available, do not meet requirements' %(self.num_files_considered-len(self.filedlist), 1.-fracapplicable)
     def check_output(self, critfracnan=0.9):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomnames)
         return fracnan>critfracnan, \
@@ -65,8 +64,9 @@ class Analysis_Master_nointer():
         self.fomfiledict={}
         self.interfiledict={}
         self.fomdlist=[]
-        for runk, fn, nkeys, reqkeyinds in self.run_fn_nkeys_keyinds:
-            dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), nkeys, keyinds=reqkeyinds)
+        for filed in self.filedlist:
+            fn=filedlist['fn']
+            dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+self.fomtuplist_dataarr(dataarr))]
             #writeinterdat
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
@@ -80,8 +80,9 @@ class Analysis_Master_inter(Analysis_Master_nointer):
         self.fomfiledict={}
         self.interfiledict={}
         self.fomdlist=[]
-        for runk, fn, nkeys, reqkeyinds in self.run_fn_nkeys_keyinds:
-            dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), nkeys, keyinds=reqkeyinds)
+        for filed in self.filedlist:
+            fn=filedlist['fn']
+            dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]
             if len(rawlend.keys())>0:
