@@ -18,7 +18,6 @@ class Analysis__Ifin(Analysis_Master_nointer):
         self.optionalkeys=[]
         self.fomnames=['I(A)_fin']
         self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']={}
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
@@ -36,7 +35,6 @@ class Analysis__Iave(Analysis_Master_nointer):
         self.optionalkeys=[]
         self.fomnames=['I(A)_ave']
         self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']={}
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
@@ -65,7 +63,6 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.optionalkeys=[]
         self.fomnames=['I(A)_photo', 'I(A)_photo_ill', 'I(A)_photo_dark']
         self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']={}
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
         self.plotparams['plot__1']['series__2']='IllumBool'

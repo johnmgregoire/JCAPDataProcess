@@ -38,16 +38,18 @@ def stdcheckoutput(fomdlist, fomnames):
 
 class Analysis_Master_nointer():
     def __init__(self):
-        self.analysis_version='1'
+        self.analysis_fcn_version='1'
         self.dfltparams=dict([])
         self.params=copy.copy(self.dfltparams)
-        self.analysis_fcn_version='Analysis_Master1'
+        self.analysis_name='Analysis_Master1'
         self.requiredkeys=[]
         self.optionalkeys=[]
         self.fomnames=[]
         self.plotparams={}
         self.csvheaderdict=dict({}, csv_version='1')
         
+    def processnewparams(self):
+        return
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
@@ -97,7 +99,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.interfiledict[fni]='%s;%s;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.interfiledict[fni]='%s;%s;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
         p=os.path.join(destfolder,fnf)
         self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames)#, fn=fnf)

@@ -291,6 +291,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 paramsd[k]=newv
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
+            self.analysisclass.processnewparams()
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))

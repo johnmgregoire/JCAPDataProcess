@@ -16,8 +16,8 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
     if anak.startswith('ana__') and True in ['files_technique__' in ftk for ftk in anav.keys()]]
 
     Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, \
-                                 nkeys=len(tagandkeys.partition(';')[2].split(',')), \
-                                 Akeyind=tagandkeys.partition(';')[2].split(',').index('abs_smth_scl')) \
+                                 nkeys=len(tagandkeys.split(';')[1].split(',')), \
+                                 Akeyind=tagandkeys.split(';')[1].split(',').index('abs_smth_scl')) \
         for anak, ftkl in anak_ftklist \
         for ftk in ftkl \
         for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
@@ -96,20 +96,34 @@ def savefomhist(p,fomdlist, histfom,nbins=50):
 
 class Analysis__TR_UVVIS(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_version='2.1'    
+        self.analysis_fcn_version='1'
+      #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4)])
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__TR_UVVIS'
+        #TODO: make intermediate column headings unique from raw
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
-        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) \
-                             for idx in xrange(len(self.params['abs_range']))]+['max_abs']
-                                 
+        self.processnewparams()
+        
+        #TODO: update plotting defaults on both classes
+        self.plotparams=dict({}, plot__1={})
+        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams['plot__1']['series__1']='abs_smth_scl,t_smth'#list of keys
+        #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
+        #self.plotparams['plot__1']['series__2'] for right hand axis
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_ave', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        # also colormap_min_value,colormap_max_value
+        
         self.fom_chkqualitynames=['max_abs',]
         self.quality_foms=['max_abs2ndderiv(nm^(-2))','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
         self.histfomnames=['max_abs2ndderiv(nm^(-2))']
     
+    def processnewparams(self):
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) \
+                             for idx in xrange(len(self.params['abs_range']))]+['max_abs']
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
               TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys)
@@ -173,21 +187,26 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfiledict[fnr]='%s;%s' %('uvis_inter_rawlen_file', ','.join(kl))
+                self.interfiledict[fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
 
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.interfiledict[fni]='%s;%s' %('uvis_inter_interlen_file', ','.join(kl))
+                self.interfiledict[fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
 
-        for foml in ['self.fomnames','self.quality_foms']:
-            fnf='%s__%s.csv' %(anak,foml.split('self.')[-1])
+        for foml, lab in [(self.fomnames,'fomnames'),(self.quality_foms, 'quality_foms')]:
+            fnf='%s__%s.csv' %(anak, lab)
             p=os.path.join(destfolder,fnf)
-            self.csvfilstr=createcsvfilstr(self.fomdlist, eval(foml))
-            writecsv_smpfomd(p, self.csvfilstr)
-            self.fomfiledict[fnf]='csv_fom_file;'+','.join(['sample_no.']+eval(foml))            
-           
+            self.csvfilstr=createcsvfilstr(self.fomdlist, foml)
+            if 'fomnames' in lab:
+                self.primarycsvpath=p
+                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
+            else:
+                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+            self.fomfiledict[fnf]=\
+                '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+foml), totnumheadlines, len(self.fomdlist))
+
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
             p=os.path.join(destfolder,fnhist)        
@@ -255,8 +274,10 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         return fomd,inter_rawlend,inter_selindd
         
 #    
-class Analysis__BG_DA():
+class Analysis__BG_DA(Analysis_Master_inter):
     def __init__(self):
+        self.analysis_fcn_version='1'
+        self.analysis_name='Analysis__BG_DA'
         self.dfltparams=dict([('max_num_knots',8),('lower_wl',385),('upper_wl',950),\
             ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),\
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
@@ -265,13 +286,17 @@ class Analysis__BG_DA():
             ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4),('analtypes',['DA'])])
         self.maxbgspersmp=4
         self.params=copy.copy(self.dfltparams)
-        self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
-                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if self.params[x]]\
-                             for item in sublist]
+        self.processnewparams()
         self.requiredkeys=['wl']
         self.optionalkeys=[]
         self.fom_chkqualitynames=['DA-bg_repr']
         self.histfomnames=['minslope']
+    
+    def processnewparams(self):
+        self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
+                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if self.params[x]]\
+                             for item in sublist]
+
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
               BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys,\
@@ -303,28 +328,37 @@ class Analysis__BG_DA():
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
             fomdict['sample_no']=getsamplenum_fn(fn)
             self.fomdlist+=[fomdict]
+            
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfiledict[fnr]='%s;%s' %('uvis_inter_rawlen_file', ','.join(kl))
+                self.interfiledict[fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+
             if 'rawselectinds' in selindd.keys():
-                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, selindd, savetxt=True)
-                self.interfiledict[fni]='%s;%s' %('uvis_inter_interlen_file', ','.join(kl))
+                self.interfiledict[fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]))
+
             if len(linfitd.keys())>0:
-                fnp='%s__%s_linfitparams.txt' %(anak, os.path.splitext(fn)[0])
+                fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnp)
-                kl=saveinterdata(p, linfitd, savetxt=True)
-                self.interfiledict[fnp]='%s;%s' %('uvis_inter_linfitparams_file', ','.join(kl))
-        
-        for foml in ['self.fomnames','self.quality_foms']:
-            fnf='%s__%s.csv' %(anak,foml.split('self.')[-1])
+                kl=saveinterdata(p, linfitd, savetxt=False)
+                self.interfiledict[fnp]='%s;%s;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]))
+
+        for foml, lab in [(self.fomnames,'fomnames'),(self.quality_foms, 'quality_foms')]:
+            fnf='%s__%s.csv' %(anak, lab)
             p=os.path.join(destfolder,fnf)
-            self.csvfilstr=createcsvfilstr(self.fomdlist, eval(foml))
-            writecsv_smpfomd(p, self.csvfilstr)
-            self.fomfiledict[fnf]='csv_fom_file;'+','.join(['sample_no.']+eval(foml))
+            self.csvfilstr=createcsvfilstr(self.fomdlist, foml)
+            if 'fomnames' in lab:
+                self.primarycsvpath=p
+                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
+            else:
+                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+            self.fomfiledict[fnf]=\
+                '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+foml), totnumheadlines, len(self.fomdlist))
+
            
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
@@ -369,7 +403,7 @@ for k, v in c.interfiledict.items():
     if '_996_' in k and 'wl' in v and '_interlen.txt.dat' in k:
         print k
         break
-keys=v.partition(';')[2].split(',')
+keys=v.split(';')[1].split(',')
 xi=keys.index('wl')
 yi=keys.index('abs_smth_scl')
 x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
