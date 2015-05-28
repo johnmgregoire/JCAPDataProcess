@@ -7,17 +7,21 @@ from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
+from scipy.signal import savgol_filter
+from bgmath_fcn import *
+import matplotlib.pyplot as plt
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
-    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_technique__' in ftk]) for anak, anav in anadict.iteritems() if anak.startswith('ana__') and True in ['files_technique__' in ftk for ftk in anav.keys()]]
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_technique__' in ftk]) for anak, anav in anadict.iteritems()\
+    if anak.startswith('ana__') and True in ['files_technique__' in ftk for ftk in anav.keys()]]
 
     Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, \
                                  nkeys=len(tagandkeys.partition(';')[2].split(',')), \
-                                 Akeyind=tagandkeys.partition(';')[2].split(',').index('absorption')) \
+                                 Akeyind=tagandkeys.partition(';')[2].split(',').index('abs_smth_scl')) \
         for anak, ftkl in anak_ftklist \
         for ftk in ftkl \
         for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
-        if 'absorption' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys\
+        if 'abs_smth_scl' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys\
         ]
     if len(absfiledlist)==0:
         return 0, []
@@ -52,33 +56,59 @@ def stdcheckoutput(fomdlist, fomnames):
 #?fomdlist
     nancount=[(not k in fomdlist) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
     return nancount, 1.*nancount/(len(fomdlist)*len(fomnames))
+    
+def refadjust(data,min_mthd_allowed,max_mthd_allowed,min_limit=0.,max_limit=1.):
+    min_rescaled=False;max_rescaled=False
+    mini=numpy.min(data)
+    if mini>=min_mthd_allowed and mini<=min_limit:
+        data=data-mini+min_limit+0.01
+        min_rescaled=True
+    maxi=numpy.max(data)
+    if maxi<=max_mthd_allowed and maxi>=max_limit:
+        data=data/(maxi+0.01)
+        max_rescaled=True
+    return min_rescaled,max_rescaled,data
+    
+def binarray(data,bin_width=1):
+#    Odd bin_width is expected for correct usage of median
+    reddata=numpy.array([numpy.mean(data[loc:min(loc+bin_width,numpy.size(data))]) for loc in numpy.arange(0,numpy.size(data),bin_width)])
+    reddata_idxs=[int(numpy.round(numpy.median(xrange(loc,min(loc+bin_width,numpy.size(data))))))\
+    for loc in numpy.arange(0,numpy.size(data),bin_width)]
+    return reddata_idxs,reddata
+    
+def check_inrange(data,min_limit=0.,max_limit=1.): return numpy.min(data)>=min_limit and numpy.max(data)<=max_limit
+    
+def check_wl(wl_2darray,axis=0):
+    if axis:
+        wl_2darray=wl_2darray.T
+    return len(numpy.where(numpy.array([numpy.abs(wl_2darray[i][k]-wl_2darray[j][k]) for i in xrange(wl_2darray.shape[0]) \
+    for j in xrange(0,i) for k in [0,-1]])>0.01)[0])==0
+        
+def savefomhist(p,fomdlist, histfom,nbins=50):
+    fig=plt.figure()
+    hist, bins = numpy.histogram(numpy.array([fomd[histfom] for fomd in fomdlist]), bins=nbins)
+    center=(bins[:-1]+bins[1:])/2
+    width=0.7*(bins[1]-bins[0])
+    plt.bar(center,hist,align='center',width=width)
+    plt.draw()
+    plt.savefig(p,dpi=300)
+    plt.close(fig)
 
 class Analysis__TR_UVVIS(Analysis_Master_inter):
     def __init__(self):
         self.analysis_version='2.1'    
-        self.dfltparams=dict([('lower_wavelength',385),('upper_wavelength',1050),('bin_width',3),('max_num_knots',8),\
-            ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),\
-            ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
-            ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
-            ('max_merge_differentialTP',0.02),('min_knotdist',0.05),('min_diff',0.1),('min_numpeaks',1),\
-            ('exclinitcols',0),('exclfincols',0),('mthd','TR'),('reffilesmode', 'static'),('max_mthd_allowed', 1.2),\
-            ('min_mthd_allowed', -0.2),('analtypes','DA,IA'),('redo', True),\
-            ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4)])
-        
-        self.params={}
-        for typ in self.dfltparams['analtypes']:
-            self.params[typ]=copy.copy(self.dfltparams)
-            
+        self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
+        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4)])
+        self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__TR_UVVIS'
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
-        self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
-                             for x in ['DA','IA','DF','IF'] for y in [str(idx) for idx in xrange(4)] if self.params[x]]\
-                             for item in sublist]+['abs_'+str(self.params['abs_range'][2*idx])+'-'+str(self.params['abs_range'][2*idx+1]) \
-                             for idx in xrange(len(self.params['abs_range'])/2.)]+['abs_max2ndderiv','maxabsorp']\
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) \
+                             for idx in xrange(len(self.params['abs_range']))]+['max_abs']
                                  
-        self.fom_chkqualitynames=['maxabsorp',]
-        self.quality_foms=['abs_max2ndderiv','minslope',self.params['mthd']+'-min_rescaled',self.params['mthd']+'-max_rescaled','0<T<1','0<R<1','1-T-R>0']
+        self.fom_chkqualitynames=['max_abs',]
+        self.quality_foms=['max_abs2ndderiv(nm^(-2))','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
+        self.histfomnames=['max_abs2ndderiv(nm^(-2))']
     
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
@@ -95,17 +125,10 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fom_chkqualitynames)
         return fracnan>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
-    
-
-    def check_wl(self,wl_array,axis=0):
-        if axis:
-            wl_array=wl_array.T
-        return len(numpy.where(numpy.array([numpy.abs(wl_array[i][k]-wl_array[j][k]) for i in xrange(wl_array.shape[0]) \
-        for j in xrange(0,i) for k in [0,-1]])>0.01)[0])==0
-
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.fomfiledict={}
+        self.histfiledict={}
         self.interfiledict={}
         self.fomdlist=[]
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
@@ -121,97 +144,212 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             raise ValueError('Incompatible wavelengths in reference files')
         
         if self.params['reffilesmode']=='static':
-            ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0))\
+            ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0)),\
             ('Rdark',lambda x:numpy.min(x,axis=0)),('Rlight',lambda x:numpy.max(x,axis=0))])
+            refd_all={}
             for rktup, rk in refkeymap:
-                refd[rk]=ref_fnd[rk](numpy.float32([\
-                    (readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])[1:]).mean(axis=0) \
-                    for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]]))
-            refd_Tfn=lambda Tfn:refd
+                refd_all[rk]=numpy.float32([\
+                    (readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'],\
+                    keyinds=filed['keyinds'])[1:]).mean(axis=0) \
+                    for filed in self.refdict__filedlist[rktup]])
+                refd[rk]=ref_fnd[rk](refd_all[rk])
+            refd_fn=lambda fn:refd
+            
             #this trivial function costs no time and for nontrivial on-the-fly ref calculations, define a fcn with the same name
         else:#no other ref calculations supported at this time
             return
         
         for filed in self.filedlist:
             fn=filed['fn']
+            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
             Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
-            fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(Tdataarr, Rdataarr, refd_Tfn(fn))
-            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]
+            fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
+            fomdict['sample_no']=getsamplenum_fn(fn)
+            self.fomdlist+=[fomdict]
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.interfiledict[fnr]='%s;%s' %('uvis_inter_rawlen_file', ','.join(kl))
+
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.interfiledict[fni]='%s;%s' %('uvis_inter_interlen_file', ','.join(kl))
-        for foml in [self.fomnames,self.quality_foms]:
-            fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
-            p=os.path.join(destfolder,fnf)
-            self.csvfilstr=createcsvfilstr(self.fomdlist, foml)
-            writecsv_smpfomd(p, self.csvfilstr)
-            
-        self.fomfiledict[fnf]='csv_fom_file;'+','.join(['sample_no']+self.fomnames)
-        
 
-    def fomtuplist_rawlend_interlend(self, Tdataarr, Rdataarr, refd):
+        for foml in ['self.fomnames','self.quality_foms']:
+            fnf='%s__%s.csv' %(anak,foml.split('self.')[-1])
+            p=os.path.join(destfolder,fnf)
+            self.csvfilstr=createcsvfilstr(self.fomdlist, eval(foml))
+            writecsv_smpfomd(p, self.csvfilstr)
+            self.fomfiledict[fnf]='csv_fom_file;'+','.join(['sample_no.']+eval(foml))            
+           
+        for histfom in self.histfomnames:   
+            fnhist='%s__%s.png' %(anak,histfom)
+            p=os.path.join(destfolder,fnhist)        
+            savefomhist(p,self.fomdlist, histfom)
+            self.interfiledict[fnhist]='hist_fom_file;'
+        
+        for rktup,rk in refkeymap:
+            fn_refimg='%s__%s.png' %(anak,rk)
+            fig=plt.figure()
+            for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
+                plt.plot(refd['wl'][0],sig,label=os.path.basename(fn))
+            plt.legend()
+            plt.draw()
+            p=os.path.join(destfolder,fn_refimg)
+            plt.savefig(p,dpi=300)
+            plt.close(fig)
+            self.interfiledict[fn_refimg]='img_ref_file;'
+#Is it fine to save img and hist file types in self.interfiledict or should a different dict be used
+
+    def fomd_rawlend_interlend(self, Tdataarr, Rdataarr, refd):
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
-        if not check_wl(np.array(Tdataarr[0],Rdataarr[0],refd['wl'])):
+        if not check_wl(numpy.array(numpy.s_[Tdataarr[0],Rdataarr[0],refd['wl'][0]])):
             raise ValueError('Wavelength incompatibility between Tdata, Rdata and ref')
         inter_rawlend=copy.copy(refd)
-        if self.params['exclinitcols']-(Tdataarr.shape[1]-self.params['exclfincols'])<=0:
-            raise ValueError('Insufficient signals to remove %d init signals and %d end signals'\
+        inter_rawlend['wl']=refd['wl'][0]
+        inter_selindd={}
+        fomd={}
+        anal_expr=self.params['mthd']
+        if self.params['exclinitcols']+self.params['exclfincols']>=Tdataarr.shape[1]:
+            raise ValueError('Insufficient signals to remove %d initial signals and %d end signals'\
             %(self.params['exclinitcols'],self.params['exclfincols']))
         else:
-            inter_rawlend['trans_signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['refl_signal']=Rdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['trans']=(interd_rawlen['trans_signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
-            inter_rawlend['refl']=(interd_rawlen['refl_signal']-refd['Rdark'])/(refd['Rlight']-refd['Rdark'])
-        fomtuplist,rawlend,interlend=runuvvis(inter_rawlend,self.params)
-
-        return fomtuplist, rawlend, interlend
+            inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
+            inter_rawlend['R_av-signal']=Rdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
+            inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
+            inter_rawlend['R_fullrng']=(inter_rawlend['R_av-signal']-refd['Rdark'])/(refd['Rlight']-refd['Rdark'])
+            inter_rawlend[anal_expr+'_fullrng']=inter_rawlend['T_fullrng']/(1.-inter_rawlend['R_fullrng'])
+            inds=numpy.where(numpy.logical_and(inter_rawlend['wl']>self.params['lower_wl'],inter_rawlend['wl']<self.params['upper_wl']))[0]
+            for key in ['T','R',anal_expr,'wl']:            
+                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],[''])[0]
+                bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
+            inter_selindd['rawselectinds']=inds[bin_idxs]
+            for sigtype in ['T','R']:
+                inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+            inter_selindd['1-T-R_unsmth']=1.-inter_selindd['T'+'_unsmth']-inter_selindd['R'+'_unsmth']
+            inter_selindd['1-T-R_smth']=1.-inter_selindd['T'+'_smth']-inter_selindd['R'+'_smth']
+            inter_selindd[anal_expr+'_smth']=inter_selindd['T_smth']/(1.-inter_selindd['R_smth'])            
+            fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd[anal_expr+'_smth']=refadjust(inter_selindd[anal_expr+'_smth'],\
+            self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
+            inter_selindd['abs_unsmth']=-numpy.log(inter_selindd[anal_expr+'_unsmth'])            
+            inter_selindd['abs_smth']=-numpy.log(inter_selindd[anal_expr+'_smth'])
+            inter_selindd['abs_smth_scl']=inter_selindd['abs_smth']/numpy.max(inter_selindd['abs_smth'])
+            fomd['max_abs']=numpy.max(inter_selindd['abs_smth_scl'])
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/self.params['abs_range'][idx][0],inter_selindd['wl']>1239.8/self.params['abs_range'][idx][1]))[0]
+                fomd[key]=numpy.sum(inter_selindd['abs_smth_scl'][inds])
+            for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
+                fomd['0<='+sig_str+'<=1']=check_inrange(inter_selindd[sigkey])
+        dx=[inter_selindd['wl'][1]-inter_selindd['wl'][0]]
+        dx+=[(inter_selindd['wl'][idx+1]-inter_selindd['wl'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+        dx+=[inter_selindd['wl'][-1]-inter_selindd['wl'][-2]]
+        dx=numpy.array(dx) 
+        fomd['max_abs2ndderiv(nm^(-2))']=numpy.max(savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2))
+        return fomd,inter_rawlend,inter_selindd
         
-        
-        
-        
-        
-        
-#class Analysis_T_UVVIS():
-#    def __init__(self):
-#        self.analysis_version='2.1'
-#        self.dfltparams=dict([('use_ave_ref', True)])
-#        self.params=copy.copy(self.dfltparams)
-#        self.analysis_name='Analysis_T_UVVIS'
-#        self.requiredkeys=['Wavelength (nm)', 'Signal_0']
-#        self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
-#        self.fomnames=['testfom']
-#        self.fomqualitynames=[]
-#    #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
-#    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None):
-#        self.num_files_considered, self.filenames, self.Tfn_Tnkeys_Tkeyinds_Rfn_Rnkeys_Rkeyinds, self.refdict__fn_nkeys_keyinds=\
-#              Tgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys)
-#        self.description='%s on %s' %(','.join(self.fomnames), techk)
-#        return self.filenames
 #    
-#    def check_input(self, critfracapplicable=0.9):
-#        fracapplicable=1.*len(self.filenames)/len(self.fn_nkeys_keyinds)
-#        return fracapplicable>critfracapplicable, \
-#        '%d files, %.2f of those available, do not meet requirements' %(len(self.fn_nkeys_keyinds)-len(self.filenames), 1.-fracapplicable)
-#    def check_output(self, critfracnan=0.9):
-#        numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomqualitynames)
-#        return fracnan>critfracnan, \
-#        '%d FOMs, %.2f of attempted calculations, are NaN' %(numnan, fracnan)
+class Analysis__BG_DA():
+    def __init__(self):
+        self.dfltparams=dict([('max_num_knots',8),('lower_wl',385),('upper_wl',950),\
+            ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),\
+            ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
+            ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
+            ('max_merge_differentialTP',0.02),('min_knotdist',0.05),('min_diff',0.1),('min_numpeaks',1),\
+            ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4),('analtypes',['DA'])])
+        self.maxbgspersmp=4
+        self.params=copy.copy(self.dfltparams)
+        self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
+                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if self.params[x]]\
+                             for item in sublist]
+        self.requiredkeys=['wl']
+        self.optionalkeys=[]
+        self.fom_chkqualitynames=['DA-bg_repr']
+        self.histfomnames=['minslope']
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+        self.num_files_considered, self.filedlist=\
+              BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys,\
+              optionalkeys=self.optionalkeys,anadict=anadict)
+        self.description='%s on %s' %(','.join(self.fomnames), techk)
+        return self.filedlist
+    def check_input(self, critfracapplicable=0.9):
+        fracapplicable=1.*len(self.filedlist)/self.num_files_considered
+        return fracapplicable>critfracapplicable, \
+        '%d files, %.2f of those available, do not meet requirements' %(len(self.filedlist)-self.num_files_considered, 1.-fracapplicable)
+
+    def check_output(self, critfracnan=0.5):
+        numnan, fracnan=stdcheckoutput(self.fomdlist, self.fom_chkqualitynames)
+        numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_smth_scl'])
+        return fracnan/fracnan_abs>critfracnan, \
+        '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
+
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+        self.fomfiledict={}
+        self.interfiledict={}
+        self.fomdlist=[]      
+        #inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis \
+#        folder is an intermediate data arr whose column 'Akeyind' is the absorption array
+        for Afiled in self.filedlist:
+            fn=filed['fn']
+            rawlend={}
+            rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
+            rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
+            fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
+            fomdict['sample_no']=getsamplenum_fn(fn)
+            self.fomdlist+=[fomdict]
+            if len(rawlend.keys())>0:
+                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fnr)
+                kl=saveinterdata(p, rawlend, savetxt=True)
+                self.interfiledict[fnr]='%s;%s' %('uvis_inter_rawlen_file', ','.join(kl))
+            if 'rawselectinds' in selindd.keys():
+                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fni)
+                kl=saveinterdata(p, selindd, savetxt=True)
+                self.interfiledict[fni]='%s;%s' %('uvis_inter_interlen_file', ','.join(kl))
+            if len(linfitd.keys())>0:
+                fnp='%s__%s_linfitparams.txt' %(anak, os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fnp)
+                kl=saveinterdata(p, linfitd, savetxt=True)
+                self.interfiledict[fnp]='%s;%s' %('uvis_inter_linfitparams_file', ','.join(kl))
+        
+        for foml in ['self.fomnames','self.quality_foms']:
+            fnf='%s__%s.csv' %(anak,foml.split('self.')[-1])
+            p=os.path.join(destfolder,fnf)
+            self.csvfilstr=createcsvfilstr(self.fomdlist, eval(foml))
+            writecsv_smpfomd(p, self.csvfilstr)
+            self.fomfiledict[fnf]='csv_fom_file;'+','.join(['sample_no.']+eval(foml))
+           
+        for histfom in self.histfomnames:   
+            fnhist='%s__%s.png' %(anak,histfom)
+            p=os.path.join(destfolder,fnhist)        
+            savefomhist(p,self.fomdlist, histfom)
+            self.interfiledict[fnhist]='hist_fom_file;'
+        
+    def fomd_rawlend_interlend(self, inter_rawlend):
+        inter_selindd={}
+        fomd={}
+        inter_selind['rawselectinds']=numpy.where(numpy.logical_and(inter_rawlend['wl']>self.params['lower_wl'],inter_rawlend['wl']<self.params['upper_wl']))[0]
+        for key in inter_rawlend.keys():
+            inter_selindd[key]=inter_rawlend[key][inter_selind['rawselectinds']]
+        inter_selindd['E']=1239.8/inter_selindd['wl']
+        fomd,inter_selind_linfit=runuvvis(inter_selindd,self.params)
+        return fomd,inter_linfit,inter_selindd
+
+        
+        
+        
 
         
 c=Analysis__TR_UVVIS()
-p_exp='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/4/eche.pck'
-p_ana='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/uvistemp'
+p_exp=r'\\htejcap.caltech.edu\share\home\users\hte\demo_proto\experiment\4\eche.pck'
+p_ana=r'\\htejcap.caltech.edu\share\home\users\hte\demo_proto\analysis\uvistemp'
 expd=readexpasdict(p_exp)
 usek='data'
 techk='T_UVVIS'
@@ -228,11 +366,12 @@ print 'THESE FOMs CALCULATED'
 print c.fomdlist
 
 for k, v in c.interfiledict.items():
-    if '_996_' in k and 'wl' in v:
+    if '_996_' in k and 'wl' in v and '_interlen.txt.dat' in k:
+        print k
         break
 keys=v.partition(';')[2].split(',')
 xi=keys.index('wl')
-yi=keys.index('Tover1minusR')
+yi=keys.index('abs_smth_scl')
 x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
 import pylab
 pylab.plot(x, y)
