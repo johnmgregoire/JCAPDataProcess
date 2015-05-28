@@ -20,6 +20,7 @@ from fcns_io import *
 from fcns_ui import *
 from CalcFOMForm import Ui_CalcFOMDialog
 from fcns_compplots import *
+from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 os.chdir('AnalysisFunctions')
@@ -45,13 +46,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         button_fcn=[\
         (self.BatchPushButton, self.runbatchprocess), \
         (self.ImportExpPushButton, self.importexp), \
-        (self.GrabExpPushButton, self.grabexp), \
+        (self.ImportAnaPushButton, self.importana), \
         (self.EditAnalysisParamsPushButton, self.editanalysisparams), \
         (self.AnalyzeDataPushButton, self.analyzedata), \
         (self.ViewResultPushButton, self.viewresult), \
         (self.EditDfltVisPushButton, self.editvisparams), \
         (self.SaveAnaPushButton, self.saveana), \
         (self.ClearAnalysisPushButton, self.clearanalysis), \
+        (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
         (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
 
         ]
@@ -72,6 +74,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
         
         QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
+        QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
+        QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
+        QObject.connect(self.usedaqtimeCheckBox,SIGNAL("stateChanged()"),self.plot_generatedata)
         
         QObject.connect(self.AnaTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
         
@@ -85,6 +91,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder'))
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
+        self.exppath='null'
         self.clearanalysis()
 
     def edittreeitem(self, item, column):
@@ -118,16 +125,26 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if not idialog.exec_():
                 return
         item.setText(column,''.join([k, ans]))
+        kl=[k.partition(':')[0].strip()]
+        while not item.parent() is None:
+            kl=[str(item.text(0)).partition(':')[0].strip()]+kl
+            item=item.parent()
+        d=self.anadict
+        while len(kl)>1:
+            d=d[kl.pop(0)]
+        d[kl[0]]=ans
         
     def importexp(self, expfiledict=None, exppath=None):
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
             exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
-            expfiledict=readexpasdict(exppath, includerawdata=False)
+            expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=\
+                lambda s:mygetopenfile(parent=self, xpath=exppath, markstr='%s' %(s)))
             if expfiledict is None:
                 print 'Problem opening EXP'
-                return 
+                return
+        self.exppath=exppath
         self.expfolder=os.path.split(exppath)[0]
         self.expfiledict=expfiledict
         if self.getplatemapCheckBox.isChecked():
@@ -146,7 +163,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
             if k in ['ana_type', 'created_by']:
                 le.setText(dfltstr)
-                
+        self.clearanalysis()
         self.fillexpoptions()
     
     def fillexpoptions(self):
@@ -234,6 +251,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.analysisclass=None
             return
         self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
+        self.activeana=None
     
     def clearexp(self):
         self.ExpRunUseComboBox.clear()
@@ -246,10 +264,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def runbatchprocess(self):
         return
 
-    def grabexp(self):
+    def importana(self):
         return
     def editanalysisparams(self):
-        if self.analysisclass is None:
+        if self.analysisclass is None or len(self.analysisclass.params)==0:
             return
         keys_paramsd=[k for k in self.analysisclass.params.keys() if isinstance(v, dict)]
         if len(keys_paramsd)==0:
@@ -295,9 +313,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.activeana=self.anadict[anak]
         
         self.activeana['name']=self.analysisclass.analysis_name
-        self.activeana['version']=self.analysisclass.analysis_version
+        self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
         self.activeana['description']=self.analysisclass.description
-        
+        self.activeana['plot_parameters']=self.analysisclass.plotparams
         le, dflt=self.paramsdict_le_dflt['description']
         s=str(le.text()).strip()
         if len(s)==0 or 'null' in s:
@@ -323,8 +341,29 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.activeana['files_fom_technique__'+self.techk]=copy.copy(self.analysisclass.fomfiledict)
         
         self.fomdlist=self.analysisclass.fomdlist
-        self.expkeys_files=self.analysisclass.expkeys_files
+        self.filedlist=self.analysisclass.filedlist
+        self.fomnames=self.analysisclass.fomnames
+        self.csvheaderdict=self.analysisclass.csvheaderdict
+        self.fomplotchoiceComboBox.clear()
+        for count, s in enumerate(self.fomnames):
+            self.fomplotchoiceComboBox.insertItem(count, s)
+        self.fomplotchoiceComboBox.setCurrentIndex(0)
+        
+        self.stdcsvplotchoiceComboBox.clear()
+        if 'plot_parameters' in self.csvheaderdict.keys() and 'plot__1' in self.csvheaderdict['plot_parameters'].keys():
+            keys=sorted([k for k in self.csvheaderdict['plot_parameters'].keys() if k.startswith('plot__')])
+            for count, s in enumerate(keys):
+                self.stdcsvplotchoiceComboBox.insertItem(count, s)
+            if len(keys)==0:
+                count=-1
+                newk='new plot__1'
+            else:
+                newk='new plot__%d' %(int(keys[-1].partition('__')[2])+1)
+            self.stdcsvplotchoiceComboBox.insertItem(count+1, newk)
+        self.stdcsvplotchoiceComboBox.setCurrentIndex(0)
+        
         self.updateana()
+        self.plot_preparestandardplot(plotbool=False)
         self.plot_generatedata()
         self.plot()
         
@@ -340,15 +379,27 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def viewresult(self):
         return
-    def editvisparams(self):
-        return
-    def savefom(self):
-        return
+   
+    
+    def clearsingleanalysis(self):
+        keys=sorted([k for k in self.anadict.keys() if k.startswith('ana__')])
+        if len(keys)==0:
+            return
+        i=userselectcaller(self, options=keys, title='select ana__ to delete')
+        if i is None:
+            return
+        if i<(len(keys)-1):
+            for ki, knext in zip(keys[i:-1], keys[i+1:]):
+                self.anadict[ki]=self.anadict[knext]
+        del self.anadict[keys[-1]]
+        self.activeana=None
+        self.updateana()
+        
     def clearanalysis(self):
         self.analysisclass=None
         self.anadict={}
         self.anadict['ana_version']='3'
-        
+        self.anadict['exp_path']=self.exppath.replace('.pck', '.exp')
         self.paramsdict_le_dflt['description'][1]='null'
         
         self.AnaTreeWidget.clear()
@@ -365,13 +416,68 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             return
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, erroruifcn=\
+        saveana_tempfolder(self.anafilestr, self.tempanafolder, anadict=self.anadict, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
         self.clearanalysis()
-
+        
+    def editvisparams(self):
+        if self.activeana is None:
+            print 'active ana__ has been lost so nothing done.'
+            return
+        k=str(self.stdcsvplotchoiceComboBox.currentText())
+        if not k in self.csvheaderdict['plot_parameters'].keys():
+           k=k.partition('new ')[2]
+           self.csvheaderdict['plot_parameters'][k]={}
+        d=self.csvheaderdict['plot_parameters'][k]
+        d['fom_name']=str(self.fomplotchoiceComboBox.currentText())
+        for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
+            if len(str(le.text()).strip())==0:
+                continue
+            v=str(le.text()).strip()
+            if '_color' in k and v in colors.ColorConverter.colors.keys():
+                v=str(colors.ColorConverter.colors[v])
+            elif '_color' in k and not '(' in v:#kinda require the color values to be (r,g,b)
+                continue
+            d[k]=v.replace(' ', '')
+        s=str(self.vminmaxLineEdit.text())
+        if ',' in s:
+            a, temp, b=s.partition(',')
+            if len(a.strip())>0:
+                d['colormap_min_value']=a.strip()
+            if len(b.strip())>0:
+                d['colormap_max_value']=b.strip()
+        totnumheadlines=writecsv_smpfomd(self.analysisclass.primarycsvpath, '', headerdict=self.csvheaderdict, replaceheader=True)
+        fnf=os.path.split(self.analysisclass.primarycsvpath)[1]
+        files_fomd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_fom_technique__')][0]]
+        s=files_fomd[fnf]
+        l=s.split(';')
+        l[2]='%d' %(totnumheadlines)
+        files_fomd[fnf]=';'.join(l)
+        
+    def plot_preparestandardplot(self, plotbool=True):
+        k=str(self.stdcsvplotchoiceComboBox.currentText())
+        if not k in self.csvheaderdict['plot_parameters'].keys():
+           return
+        d=self.csvheaderdict['plot_parameters'][k]
+        if not 'fom_name' in d.keys() or not d['fom_name'] in self.fomnames:
+            return
+        self.fomplotchoiceComboBox.setCurrentIndex(self.fomnames.index(d['fom_name']))
+        for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
+            if not k in d.keys():
+                continue
+            le.setText(d[k])
+        if 'colormap_min_value' in d.keys() and 'colormap_max_value' in d.keys():
+            self.vminmaxLineEdit.setText('%s,%s' %(d['colormap_min_value'], d['colormap_max_value']))
+        if plotbool:
+            self.plot_generatedata()
+            self.plot()
     def plot_generatedata(self):
-        fom=numpy.array([d[self.fomnames[0]] for d in self.fomdlist])
-        runkarr=numpy.array([kl[0] for kl in self.expkeys_files])
+        self.plotd={}
+        if len(self.fomdlist)==0:
+            return
+        fi=self.fomplotchoiceComboBox.currentIndex()
+        fom=numpy.array([d[self.fomnames[fi]] for d in self.fomdlist])
+        runkarr=numpy.array([d['expkeys'][0] for d in self.filedlist])
         
         inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
         if len(inds)==0:
@@ -382,7 +488,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         sample=numpy.array([self.fomdlist[i]['sample_no'] for i in inds])
         
         inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
-        daqtimebool=usedaqtimeCheckBox.isChecked()
+        daqtimebool=self.usedaqtimeCheckBox.isChecked()
 
         t=[]
 #        else:
@@ -390,7 +496,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         for runk in sorted(inds_runk.keys()):
             if daqtimebool:
-                fns=[self.expkeys_files[inds[i]][-1] for i in inds_runk[runk]]
+                fns=[self.filedlist[inds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
                 t+=[applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)]
 
            # hy+=[fom[inds_runk[runk]]]
@@ -424,18 +530,19 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                          or (nancomp, ))[0] for smp in sample[inds_runk[runk]]]
         xy=numpy.float64(xy)
         comps=numpy.float64(comps)
-        self.plotd={}
-        self.plotd['comps']=comps
+        
+        self.plotd['comps']=numpy.array([c/c.sum() for c in comps])
         self.plotd['xy']=xy
         self.plotd['fom']=fom
         self.plotd['inds_runk']=inds_runk
         self.plotd['t']=t
         self.plotd['sample']=sample
+        self.plotd['fomname']=self.fomnames[fi]
         
         
     def plot(self):
-        
-        s=25
+        if len(self.plotd)==0:
+            return
 
         self.plotw_comp.axes.cla()
         self.plotw_quat.axes.cla()
@@ -451,25 +558,30 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         x, y=self.plotd['xy'].T
         comps=self.plotd['comps']
         fom=self.plotd['fom']
-        daqtimebool=usedaqtimeCheckBox.isChecked()
+        
+        #h plot
+        daqtimebool=self.usedaqtimeCheckBox.isChecked()
         if daqtimebool:
             hxarr=self.plotd['t']
             xl='time (s)'
         else:
             hxarr=self.plotd['sample']
             xl='sample_no'
-        for runk in sorted(inds_runk.keys()):
-            hx=hxarr[inds_runk[runk]]
-            hy=fom[inds_runk[runk]]
+        for runk in sorted(self.plotd['inds_runk'].keys()):
+            hx=hxarr[self.plotd['inds_runk'][runk]]
+            hy=fom[self.plotd['inds_runk'][runk]]
         
-            self.plotw_h.axes.plot(hx, hy, '.-')
+            self.plotw_h.axes.plot(hx, hy, '.-', label=runk)
         self.plotw_h.axes.set_xlabel(xl)
-        self.plotw_h.axes.set_ylabel(self.fomnames[0])
+        self.plotw_h.axes.set_ylabel(self.plotd['fomname'])
         autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
+        self.plotw_h.fig.canvas.draw()
         
-        if self.revcmapCheckBox.isChecked():
-            cmap=cm.jet_r
-        else:
+        #plate plot
+        cmapstr=str(self.colormapLineEdit.text())
+        try:
+            cmap=eval('cm.'+cmapstr)
+        except:
             cmap=cm.jet
 
         clip=True
@@ -487,7 +599,6 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 for count, (fcn, le) in enumerate(zip([cmap.set_under, cmap.set_over], [self.belowrangecolLineEdit, self.aboverangecolLineEdit])):
                     vstr=str(le.text()).strip()
                     vstr=vstr.replace('"', '').replace("'", "")
-                    print '^^^', vstr, 'none' in vstr or 'None' in vstr
                     if 'none' in vstr or 'None' in vstr:
                         skipoutofrange[count]=True
                         continue
@@ -503,26 +614,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             except:
                 pass
 
+        
         norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
-        print 'fom min, max, mean, std:', fom.min(), fom.max(), fom.mean(), fom.std()
-
-        print 'skipoutofrange', skipoutofrange
-        print len(fom)
         if skipoutofrange[0]:
             inds=numpy.where(fom>=self.vmin)
             fom=fom[inds]
             comps=comps[inds]
             x=x[inds]
             y=y[inds]
-        print len(fom)
+
         if skipoutofrange[1]:
             inds=numpy.where(fom<=self.vmax)
             fom=fom[inds]
             comps=comps[inds]
             x=x[inds]
             y=y[inds]
-        print len(fom)
-
 
         if numpy.any(fom>self.vmax):
             if numpy.any(fom<self.vmin):
@@ -533,185 +639,103 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             extend='min'
         else:
             extend='neither'
-        print 'extend ', extend
-        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=s, marker='s', cmap=cmap, norm=norm)
+        
+        pointsizestr=str(self.compplotsizeLineEdit.text())
+        
+        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=70, marker='s', cmap=cmap, norm=norm)
         if x.max()-x.min()<2. or y.max()-y.min()<2.:
             self.plotw_plate.axes.set_xlim(x.min()-1, x.max()+1)
             self.plotw_plate.axes.set_ylim(y.min()-1, y.max()+1)
         else:
             self.plotw_plate.axes.set_aspect(1.)
 
-        cb=self.plotw_plate.fig.colorbar(m, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-        #cb.set_label('|Q| (1/nm)')
-
-
-        comps=numpy.array([c[:4]/c[:4].sum() for c in comps])
-        i=self.ternskipComboBox.currentIndex()
-        inds=[j for j in range(4) if j!=i][:3]
-        terncomps=numpy.array([c[inds]/c[inds].sum() for c in comps])
-        reordercomps=comps[:, inds+[i]]
-        self.ellabels=self.techniquedictlist[0]['elements']
-        reorderlabels=[self.ellabels[j] for j in inds+[i]]
-
-
-        quat=QuaternaryPlot(self.plotw_quat.axes, ellabels=self.ellabels, offset=0)
-        quat.label()
-        quat.scatter(comps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
-        cb=self.plotw_quat.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-
-        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
-        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
-
-        tern=TernaryPlot(self.plotw_comp.axes, ellabels=reorderlabels[:3], offset=0)
-        tern.label()
-        tern.scatter(terncomps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
-        cb=self.plotw_comp.fig.colorbar(tern.mappable, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
-
-
-
-        #self.plotw_quat.axes.mouse_init()
-        self.plotw_quat.axes.set_axis_off()
-        self.plotw_comp.fig.canvas.draw()
-        self.plotw_quat.fig.canvas.draw()
+        sm=cm.ScalarMappable(norm=norm, cmap=cmap)
+        sm.set_array(fom)
+        cols=map(sm.to_rgba, fom)
+        
+        cb=self.plotw_plate.fig.colorbar(sm, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
+        cb.set_label(self.plotd['fomname'])
         self.plotw_plate.fig.canvas.draw()
-        self.plotw_h.fig.canvas.draw()
+        
+        
+        #comp plot
+        compsinds=[i for i, (compv, colv) in enumerate(zip(comps, cols)) if not (numpy.any(numpy.isnan(compv)) or numpy.any(numpy.isnan(colv)))]
+        if len(compsinds)==0:
+            return
+        self.quatcompclass.loadplotdata(comps[compsinds], cols[compsinds])
+        plotw3dbool=self.quatcompclass.plot()
+        if not plotw3dbool is None:
+            if plotw3dbool:
+                self.plotw.hide()
+                self.plotw3d.show()
+                self.plotw_quat.axes.set_axis_off()
+                cb=self.plotw_quat.fig.colorbar(sm, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                self.plotw3d.fig.canvas.draw()
+            else:
+                self.plotw3d.hide()
+                self.plotw.show()
+                cb=self.plotw_comp.fig.colorbar(sm, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                self.plotw.fig.canvas.draw()
+            cb.set_label(self.plotd['fomname'])
+#        comps=numpy.array([c[:4]/c[:4].sum() for c in comps])
+#        i=self.ternskipComboBox.currentIndex()
+#        inds=[j for j in range(4) if j!=i][:3]
+#        terncomps=numpy.array([c[inds]/c[inds].sum() for c in comps])
+#        reordercomps=comps[:, inds+[i]]
+#        self.ellabels=self.techniquedictlist[0]['elements']
+#        reorderlabels=[self.ellabels[j] for j in inds+[i]]
+
+
+#        quat=QuaternaryPlot(self.plotw_quat.axes, ellabels=self.ellabels, offset=0)
+#        quat.label()
+#        quat.scatter(comps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
+#        cb=self.plotw_quat.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+
+#        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
+#        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
+#        
+#        pointsizestr=str(self.compplotsizeLineEdit.text())
+#        tern=TernaryPlot(self.plotw_comp.axes, ellabels=reorderlabels[:3], offset=0)
+#        tern.label()
+#        tern.scatter(terncomps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
+#        cb=self.plotw_comp.fig.colorbar(tern.mappable, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+#
+#
+#
+#        #self.plotw_quat.axes.mouse_init()
+#        self.plotw_quat.axes.set_axis_off()
+#        self.plotw_comp.fig.canvas.draw()
+#        self.plotw_quat.fig.canvas.draw()
 
         #self.selectind=-1
         #self.plotselect()
         
 
-    def stackedtern10window(self):
-        d=self.stackedternplotdict
-        self.echem10=echem10axesWidget(parent=self.parent, ellabels=d['ellabels'])
-        self.echem10.plot(d, cb=True)
-
-        #scatter_10axes(d['comps'], d['fom'], self.echem10.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-        self.echem10.exec_()
-
-    def stackedtern100window(self):
-        d=self.stackedternplotdict
-        self.echem100=echem100axesWidget(parent=None, ellabels=d['ellabels'])
-        self.echem100.plot(d, cb=True)
-
-        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-        #self.echem30.show()
-        self.echem100.exec_()
-
-    def stackedtern30window(self):
-        d=self.stackedternplotdict
-        self.echem30=echem30axesWidget(parent=None, ellabels=d['ellabels'])
-        self.echem30.plot(d, cb=True)
-
-        #scatter_30axes(d['comps'], d['fom'], self.echem30.stpl, s=18, edgecolors='none', cmap=d['cmap'], norm=d['norm'])
-        #self.echem30.show()
-        self.echem30.exec_()
-
-    def stackedtern20window(self):
-        d=self.stackedternplotdict
-        self.echem20=echem20axesWidget(parent=None, ellabels=d['ellabels'])
-        self.echem20.plot(d, cb=True)
-        self.echem20.exec_()
-
-    def tern4window(self):
-        d=self.stackedternplotdict
-        self.echem4=echem4axesWidget(parent=None, ellabels=d['ellabels'])
-        self.echem4.plot(d, cb=True)
-        self.echem4.exec_()
-
-    def binlineswindow(self):
-        d=self.stackedternplotdict
-        self.echembin=echembinWidget(parent=None, ellabels=d['ellabels'])
-        self.echembin.plot(d, cb=True)
-        self.echembin.exec_()
-
-    def plotselect(self):
-        overlaybool=self.overlayselectCheckBox.isChecked()
-        if not overlaybool:
-            self.plotw_select.axes.cla()
-        d=self.techniquedictlist[self.selectind]
-
-        xk=str(self.xplotchoiceComboBox.currentText())
-        yk=str(self.yplotchoiceComboBox.currentText())
-
-        xshift=0.
-        xmult=1.
-        yshift=0.
-        ymult=1.
-        if '-E0' in xk:
-            xshift=-1.*self.E0SpinBox.value()
-            xk=xk.replace('-E0', '')
-        if '*Is' in xk:
-            xmult=self.IsSpinBox.value()
-            xk=xk.replace('*Is', '')
-        if '-E0' in yk:
-            yshift=-1.*self.E0SpinBox.value()
-            yk=yk.replace('-E0', '')
-        if '*Is' in yk:
-            ymult=self.IsSpinBox.value()
-            yk=yk.replace('*Is', '')
-
-        if not xk in d.keys():
-            print 'cannot plot the selected x-y graph because %s not found' %xk
-            return
-        if not yk in d.keys():
-            print 'cannot plot the selected x-y graph because %s not found' %yk
-            return
-        x=d[xk]*xmult+xshift
-        y=d[yk]*ymult+yshift
-        lab=''.join(['%s%d' %(el, c*100.) for el, c in zip(d['elements'], d['compositions'])])+'\n'
-        if 'FOM' in d.keys():
-            lab+='%d,%.2e' %(d['Sample'], d['FOM'])
-        else:
-            lab+='%d' %d['Sample']
-        self.plotw_select.axes.plot(x, y, '.-', label=lab)
-
-        autotickformat(self.plotw_select.axes, x=0, y=1)
-
-        if (not self.plotillumkey is None) and self.plotillumkey in d.keys() and not overlaybool:
-            illuminds=numpy.where(d[self.plotillumkey])[0]
-            self.plotw_select.axes.plot(x[illuminds], y[illuminds], 'y.')
-        self.plotw_select.axes.set_xlabel(xk)
-        self.plotw_select.axes.set_ylabel(yk)
-        legtext=unicode(self.legendselectLineEdit.text())
-        if len(legtext)>0:
-            legloc=myeval(legtext)
-            if isinstance(legloc, int) and legloc>=0:
-                self.plotw_select.axes.legend(loc=legloc).draggable()
-        self.plotw_select.fig.canvas.draw()
-        t=d['mtime']-2082844800.
-        print '^^^^^^^^', t
-        if not isinstance(t, str):
-            try:
-                t=time.ctime(t)
-            except:
-                t='error'
-        print t
-        self.daqtimeLineEdit.setText(t)
 
     def plateclickprocess(self, coords_button):
         if len(self.techniquedictlist)==0:
             return
-        critdist=3.
-        xc, yc, button=coords_button
-        x=getarrfromkey(self.techniquedictlist, 'x')
-        y=getarrfromkey(self.techniquedictlist, 'y')
-        dist=((x-xc)**2+(y-yc)**2)**.5
-        if min(dist)<critdist:
-            self.selectind=numpy.argmin(dist)
-            self.plotselect()
-        if button==3:
-            self.addtoselectsamples([self.techniquedictlist[self.selectind]['Sample']])
-    def selectbelow(self):
-        try:
-            vmin, vmax=(self.vmin, self.vmax)
-        except:
-            print 'NEED TO PERFORM A PLOT TO DEFINE THE MIN,MAX RANGE BEFORE SELECTING SAMPLES'
-        idlist=[]
-        for d in self.techniquedictlist:
-            if d['FOM']<vmin:
-                idlist+=[d['Sample']]
-        if len(idlist)>0:
-            self.addtoselectsamples(idlist)
+#        critdist=3.
+#        xc, yc, button=coords_button
+#        x=getarrfromkey(self.techniquedictlist, 'x')
+#        y=getarrfromkey(self.techniquedictlist, 'y')
+#        dist=((x-xc)**2+(y-yc)**2)**.5
+#        if min(dist)<critdist:
+#            self.selectind=numpy.argmin(dist)
+#            self.plotselect()
+#        if button==3:
+#            self.addtoselectsamples([self.techniquedictlist[self.selectind]['Sample']])
+#    def selectbelow(self):
+#        try:
+#            vmin, vmax=(self.vmin, self.vmax)
+#        except:
+#            print 'NEED TO PERFORM A PLOT TO DEFINE THE MIN,MAX RANGE BEFORE SELECTING SAMPLES'
+#        idlist=[]
+#        for d in self.techniquedictlist:
+#            if d['FOM']<vmin:
+#                idlist+=[d['Sample']]
+#        if len(idlist)>0:
+#            self.addtoselectsamples(idlist)
 
     def plotwsetup(self):
         
@@ -730,18 +754,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             w.setGeometry(b.geometry())
             b.hide()
         self.plotw_quat.hide()
-        
-#        self.textBrowser_h = QtGui.QTextBrowser(CalcFOMDialog)
-#        self.textBrowser_h.setGeometry(QtCore.QRect(670, 10, 461, 241))
-#        .setObjectName(_fromUtf8("textBrowser_h"))
-#        self.textBrowser_comp = QtGui.QTextBrowser(CalcFOMDialog)
-#        .setGeometry(QtCore.QRect(670, 250, 461, 281)
-#self.plotw_select.setGeometry(QRect(670, 10, 461, 271))
-#        self.plotw_plate.setGeometry(QRect(570, 530, 561, 341))
-#   self.plotw_h.setGeometry(QRect(670, 280, 461, 251))    
-  
 
-        
         self.plotw_plate.axes.set_aspect(1)
 
         axrect=[0.88, 0.1, 0.04, 0.8]
@@ -755,9 +768,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_quat.fig.subplots_adjust(left=0, right=axrect[0]-.01)
         self.cbax_quat=self.plotw_quat.fig.add_axes(axrect)
 
-        self.plotw_h.fig.subplots_adjust(left=.2)
-
-
+        self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
+        
+        self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat)
+        
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

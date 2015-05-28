@@ -496,7 +496,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
         if len(self.expfilestr)==0 or not 'exp_version' in self.expfilestr:
             return
-        return saveexp_txt_dat(self.expfilestr, self.expfiledict, erroruifcn=\
+        return saveexp_txt_dat(self.expfiledict, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
 
 class treeclass_dlist():

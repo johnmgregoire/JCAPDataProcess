@@ -391,146 +391,6 @@ can be performed</string>
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_2">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>350</y>
-     <width>131</width>
-     <height>101</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Composition plot type:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="CompPlotTypeComboBox">
-      <property name="toolTip">
-       <string>Apply all other filteres in this section to only this run</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Element plot order:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="CompPlotOrderComboBox">
-      <property name="toolTip">
-       <string>Apply all other filteres in this section to only this run</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_4">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>10</y>
-     <width>121</width>
-     <height>330</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_4">
-    <item>
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>x-axis</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="xplotchoiceComboBox">
-      <property name="toolTip">
-       <string>Apply all other filteres in this section to only this run</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>y-axis</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="yplotchoiceComboBox">
-      <property name="toolTip">
-       <string>Apply all other filteres in this section to only this run</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>color by</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="xycolplotchoiceComboBox">
-      <property name="toolTip">
-       <string>Apply all other filteres in this section to only this run</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>x min,max</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="xminmaxLineEdit">
-      <property name="toolTip">
-       <string>Comment string to be included in EXP</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_8">
-      <property name="text">
-       <string>y min,max</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="yminmaxLineEdit">
-      <property name="toolTip">
-       <string>Comment string to be included in EXP</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="overlayselectCheckBox">
-      <property name="text">
-       <string>overlay</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="customxylegendPushButton">
-      <property name="toolTip">
-       <string>Import a .exp file, which will clear any existing EXP and RUNs and create new RUNs from the EXP</string>
-      </property>
-      <property name="text">
-       <string>Customize
-legend</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
@@ -560,7 +420,7 @@ legend</string>
        <string>Edit the FOM visualization parameters</string>
       </property>
       <property name="text">
-       <string>Edit Dflt Vis</string>
+       <string>Update Dflt Vis</string>
       </property>
      </widget>
     </item>
@@ -620,7 +480,7 @@ legend</string>
   <widget class="QPushButton" name="ImportExpPushButton">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>80</x>
      <y>70</y>
      <width>81</width>
      <height>21</height>
@@ -633,12 +493,12 @@ legend</string>
     <string>Import EXP</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="GrabExpPushButton">
+  <widget class="QPushButton" name="ImportAnaPushButton">
    <property name="geometry">
     <rect>
-     <x>100</x>
+     <x>0</x>
      <y>70</y>
-     <width>101</width>
+     <width>71</width>
      <height>21</height>
     </rect>
    </property>
@@ -646,7 +506,7 @@ legend</string>
     <string>Grab the EXP from the &quot;Create EXP&quot; window</string>
    </property>
    <property name="text">
-    <string>Grab active EXP</string>
+    <string>Open ANA</string>
    </property>
   </widget>
   <widget class="QTextBrowser" name="textBrowser_plate">
@@ -662,9 +522,9 @@ legend</string>
   <widget class="QTextBrowser" name="textBrowser_h">
    <property name="geometry">
     <rect>
-     <x>670</x>
+     <x>760</x>
      <y>10</y>
-     <width>461</width>
+     <width>371</width>
      <height>241</height>
     </rect>
    </property>
@@ -672,9 +532,9 @@ legend</string>
   <widget class="QTextBrowser" name="textBrowser_comp">
    <property name="geometry">
     <rect>
-     <x>670</x>
+     <x>510</x>
      <y>250</y>
-     <width>461</width>
+     <width>621</width>
      <height>281</height>
     </rect>
    </property>
@@ -698,7 +558,7 @@ legend</string>
   <widget class="Line" name="line_2">
    <property name="geometry">
     <rect>
-     <x>510</x>
+     <x>500</x>
      <y>0</y>
      <width>20</width>
      <height>521</height>
@@ -743,28 +603,12 @@ legend</string>
     <enum>Qt::Horizontal</enum>
    </property>
   </widget>
-  <widget class="QPushButton" name="ImportRunPushButton">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>70</y>
-     <width>71</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Import a .rcp file, from which an on-the-fly EXP will be made</string>
-   </property>
-   <property name="text">
-    <string>Import RUN</string>
-   </property>
-  </widget>
   <widget class="QComboBox" name="AnalysisNamesComboBox">
    <property name="geometry">
     <rect>
      <x>290</x>
      <y>490</y>
-     <width>221</width>
+     <width>211</width>
      <height>22</height>
     </rect>
    </property>
@@ -825,15 +669,267 @@ to generate Intermediate and FOM results</string>
   <widget class="QCheckBox" name="getplatemapCheckBox">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>470</y>
-     <width>119</width>
-     <height>31</height>
+     <x>170</x>
+     <y>70</y>
+     <width>111</width>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>Get platemaps
-on EXP import</string>
+    <string>Get platemaps</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="CompPlotOrderComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>220</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>200</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Element plot order:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>90</y>
+     <width>111</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Comp. plot type:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="CompPlotTypeComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>110</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>150</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Comp. point size:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="compplotsizeLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>170</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string>patch</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>40</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>fom to plot</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="fomplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>60</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="usedaqtimeCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>10</y>
+     <width>119</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Use DAQ time</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>40</y>
+     <width>119</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>above color</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="aboverangecolLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>60</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>90</y>
+     <width>119</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>below color</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="belowrangecolLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>110</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>140</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>fom range min,max</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="vminmaxLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>160</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="stdcsvplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>20</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>0</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>standard plot</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="colormapLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>220</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string>jet</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>200</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>colormap</string>
    </property>
   </widget>
  </widget>

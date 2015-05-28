@@ -43,13 +43,20 @@ def getsamplenum_fn(fn):
         print 'problem extracting sample number from ', fn
     return 0
 
-def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')])):
-    headerlines=['#%s = %s' %(k,v) for k,v in headerdict.iteritems()]
-    csvfilstr='\n'.join(headerlines+[csvfilstr])
-
+def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')]), replaceheader=False):#replaceheader is to the headerdict portino of the header and replace with headdict. csvfilestr is ignored in this case
+    if replaceheader:
+        with open(p, mode='r') as f:
+            lines=f.readlines()
+        numheaddictlines=int(lines[0].split('\t')[-1].strip())
+        csvfilstr=''.join(lines[numheaddictlines+1:])
+    headerstr=strrep_filedict(headerdict)
+    numheaddictlines=headerstr.count('\n')+1
+    numcols=csvfilstr.partition('\n')[0].count(',')+1
+    firstline='%d\t%d\t%d\t%d' %(1, numcols, csvfilstr.count('\n'), numheaddictlines)
+    csvfilstr='%s\n%s\n%s' %(firstline, headerstr, csvfilstr)
     with open(p, mode='w') as f:
         f.write(csvfilstr)
-    
+    return numheaddictlines+2
 def readechemtxt(path, mtime_path_fcn=None, lines=None):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
@@ -89,6 +96,7 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None):
             d[a]=val
         else:
             break
+    d['num_header_lines']=count
     if len(lines[count:])==0:
         return {}
     try:
@@ -101,6 +109,7 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None):
         raise
     for k, arr in zip(d['column_headings'], numpy.float32(z).T):
         d[k]=arr
+    d['num_data_rows']=len(arr)
     d['path']=path
     if not mtime_path_fcn is None:
         d['mtime']=mtime_path_fcn(path)
@@ -115,18 +124,24 @@ def convertstrvalstonum_nesteddict(expfiledict):
                 nestednumconvert(v)
     nestednumconvert(expfiledict)
 
-def convertfilekeystolist(expfiledict):
-    for k, rund in expfiledict.iteritems():
-        if not k.startswith('run__'):
+def convertfilekeystolist(exporanafiledict):
+    for k, rund in exporanafiledict.iteritems():
+        if not (k.startswith('run__') or k.startswith('ana__')):
             continue
         for k2, techd in rund.iteritems():
             if not k2.startswith('files_technique__'):
                 continue
             for k3, typed in techd.iteritems():
                 for fn, keystr in typed.iteritems():
-                    keys=keystr.partition(';')[2].split(',')
+                    type_keys_heads_rows=keystr.split(';')
+                    keys=type_keys_heads_rows[1].split(',')
                     keys=[kv.strip() for kv in keys]
-                    expfiledict[k][k2][k3][fn]=keys
+                    d={}
+                    d['file_type']=type_keys_heads_rows[0]
+                    d['keys']=keys
+                    d['num_header_lines']=type_keys_heads_rows[2]
+                    d['num_data_rows']=type_keys_heads_rows[3]
+                    exporanafiledict[k][k2][k3][fn]=d
         
 def readbinary_selinds(p, nkeys, keyinds=None):
     with open(p, mode='rb') as f:
@@ -140,8 +155,9 @@ def readbinary_selinds(p, nkeys, keyinds=None):
 
 def saverawdat_expfiledict(expfiledict, folder):
     datastruct_expfiledict(expfiledict, savefolder=folder)
-def datastruct_expfiledict(expfiledict, savefolder=None):
-    convertstrvalstonum_nesteddict(expfiledict)
+def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
+    if savefolder is None:
+        convertstrvalstonum_nesteddict(expfiledict)
     if not savefolder is None:
         openfnc=lambda fn:open(os.path.join(savefolder, fn+'.dat'), mode='wb')
         #savefcn=lambda d, keys:numpy.float64([d[k] for k in keys]).tofile(f)
@@ -171,14 +187,14 @@ def datastruct_expfiledict(expfiledict, savefolder=None):
                     if savefolder is None:
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        keys=keystr.partition(';')[2].split(',')
+                        keys=keystr.partition(';')[2].partition(';')[0].split(',')#the .partition(';')[0] should be superfluous unless the .rcp files start including multiple ;
                         keys=[kv.strip() for kv in keys]
                         filed=readfcn(os.path.splitext(fn), lines)
                         x=numpy.float32([filed[kv] for kv in keys])
                         with openfnc(fn) as f:
                             x.tofile(f)
                             #savefcn(filed, keys)
-                    
+                        expfiledict[k][k2][k3][fn]='%s;%d;%d' %(keystr.strip(), filed['num_header_lines'], filed['num_data_rows'])
         if zipbool:
             archive.close()
 
@@ -199,7 +215,7 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
         x=numpy.float32([interd[kv] for kv in keys])
         x.tofile(f)
     return keys
-def saveexp_txt_dat(expfilestr, expfiledict, erroruifcn=None, saverawdat=True):
+def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     #TODO: write routine to auto generate user path
     #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
     savep=None
@@ -223,19 +239,39 @@ def saveexp_txt_dat(expfilestr, expfiledict, erroruifcn=None, saverawdat=True):
                 os.remove(os.path.join(folder, fn))#cannot overwrite files because filename deduplication may be different from previous save
         else:
             os.mkdir(folder)
-        saverawdat_expfiledict(saveexpfiledict, folder)
-    else:
-        convertstrvalstonum_nesteddict(saveexpfiledict)
-    convertfilekeystolist(saveexpfiledict)
-    
+        saverawdat_expfiledict(saveexpfiledict, folder)#the filename attributes get update here
+    expfilestr=strrep_filedict(saveexpfiledict)
     with open(savep, mode='w') as f:
-        f.write(expfilestr)
-        
+        f.write(expfilestr)    
+    convertstrvalstonum_nesteddict(saveexpfiledict)
+    convertfilekeystolist(saveexpfiledict)
+
     dsavep=savep.replace('.exp', '.pck')
     with open(dsavep,'wb') as f:
         pickle.dump(saveexpfiledict, f)
     return saveexpfiledict, dsavep
+
+def strrep_filedict(filedict):
+    keys=[k for k in filedict.keys() if 'version' in k]#assume this is not a dictionary
+    keys+=sorted([k for k, v in filedict.iteritems() if not isinstance(v, dict) and not 'version' in k])
+    sl=[k+': '+str(filedict[k]) for k in keys]
+    dkeys=[k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k]
+    dkeys+=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
+    return '\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])
         
+def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
+    itemstr=indent*indentlevel+k
+    if not isinstance(v, dict):
+        return itemstr+': '+str(v)
+    sl=[itemstr+':']
+    keys=[nestk for nestk in v.keys() if 'version' in nestk]#assume this is not a dictionary
+    keys+=sorted([nestk for nestk, nestv in v.iteritems() if not isinstance(nestv, dict) and not 'version' in nestk])
+    sl+=[indent*(indentlevel+1)+nestk+': '+str(v[nestk]) for nestk in keys]
+    dkeys=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and not 'files_' in nestk])
+    dkeys+=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and 'files_' in nestk])
+    return '\n'.join(sl+[strrep_filed_nesting(nestk, v[nestk], indentlevel=indentlevel+1) for nestk in dkeys])
+
+    
 def getarrfromkey(dlist, key):
     return numpy.array([d[key] for d in dlist])
 
@@ -255,7 +291,7 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None):
     except:
         if erroruifcn is None:
             return []
-        p=erroruifcn('bad autosave path')
+        p=erroruifcn('bad platemap path')
         if len(p)==0:
             return []
         f=open(p, mode='r')
@@ -345,8 +381,8 @@ def rcplines_zip(zipp):
 indent='    '
 getnumspaces=lambda a:len(a) - len(a.lstrip(' '))
 def createnestparamtup(lines):
-    ln=str(lines.pop(0).rstrip()).replace(chr(181), 'micro')
-    
+    #ln=str(lines.pop(0).rstrip()).replace(chr(181), 'micro')
+    ln=str(lines.pop(0).rstrip())
     numspaces=getnumspaces(ln)
     subl=[]
 # this is supposed to fix the situation where an indented comment wasn't indetned but somehow duplicated the next line at 2 different indents
@@ -435,7 +471,14 @@ def createdict_tup(nam_listtup):
     d=dict([createdict_tup(v) for v in nam_listtup[1]])
     return (k_vtup[0], d)
         
-def readexpasdict(p, includerawdata=False):#create both a list of rcpd but also a corresponding 
+def readexpasdict(p, includerawdata=False, erroruifcn=None):#create both a list of rcpd but also a corresponding 
+    if not ((p.endswith('exp') or p.endswith('pck')) and os.path.exists(p)):
+        if erroruifcn is None:
+            return {}
+        p=erroruifcn('select exp file')
+        if len(p)==0:
+            return {}
+        
     if p.endswith('.pck'):
         with open(p, mode='r') as f:
             expfiledict=pickle.load(f)
@@ -584,6 +627,8 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         d[k]=arr
     
     if addparams:
+        d['num_header_lines']=firstdatalineind
+        d['num_data_rows']=len(arr)
         for l in lines[:firstdatalineind]:
             if '=' in l:
                 c='='
@@ -673,7 +718,7 @@ def getanadefaultfolder(erroruifcn=None):
             return ''
         return erroruifcn('')
             
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, plateidstr=''):
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None):
     #TODO: write routine to auto generate user path
     #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
     savefolder=None
@@ -698,9 +743,48 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, pla
         if skipana and fn.endswith('.ana'):
             continue
         shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-    savep=os.path.join(savefolder, '%s_%s.ana' %(time.strftime('%Y%m%d.%H%M%S'), plateidstr))
+    savep=os.path.join(savefolder, '%s.ana' %time.strftime('%Y%m%d.%H%M%S'))
     with open(savep, mode='w') as f:
         f.write(anafilestr)
+    if anadict is None:
+        return
+    saveanadict=copy.deepcopy(anadict)
+    convertstrvalstonum_nesteddict(saveanadict)
+    convertfilekeystolist(saveanadict)
+    with open(savep.replace('.ana', '.pck'), mode='w') as f:
+        pickle.dump(saveanadict, f)
+
+def openana(p, errorui=None, stringvalues=False):
+    if not ((p.endswith('ana') or p.endswith('pck')) and os.path.exists(p)):
+        if erroruifcn is None:
+            return {}
+        p=erroruifcn('select exp file')
+        if len(p)==0:
+            return {}
+    if stringvalues and p.endswith('pck'):
+        p=p.rpartition('pck')[0]+'ana'
+    if not os.path.exists(p):
+        if erroruifcn is None:
+            return {}
+        p=erroruifcn('for text-only must use .ana file')
+        if len(p)==0:
+            return {}
+    if p.endswith('pck'):
+        with open(p, mode='r') as f:
+            anadict=pickle.load(f)
+    else:
+        with open(p, mode='r') as f:
+            lines=f.readlines()
+        lines=[l for l in lines if len(l.strip())>0]
+        tuplist=[]
+        while len(lines)>0:
+            tuplist+=[createnestparamtup(lines)]
+        anadict=dict(\
+        [createdict_tup(tup) for tup in tuplist])
+        if not stringvalues:
+            convertfilekeystolist(anadict)
+            convertstrvalstonum_nesteddict(anadict)
+    return anadict
     
 #p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/eche.pck'
 #with open(p,mode='rb') as f:
