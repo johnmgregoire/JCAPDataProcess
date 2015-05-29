@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Wed May 27 11:36:11 2015
+# Created: Thu May 28 14:30:56 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -182,7 +182,7 @@ class Ui_CalcFOMDialog(object):
         self.AnaDescLineEdit.setObjectName(_fromUtf8("AnaDescLineEdit"))
         self.gridLayout_2.addWidget(self.AnaDescLineEdit, 5, 0, 1, 2)
         self.layoutWidget = QtGui.QWidget(CalcFOMDialog)
-        self.layoutWidget.setGeometry(QtCore.QRect(290, 70, 195, 135))
+        self.layoutWidget.setGeometry(QtCore.QRect(290, 70, 212, 135))
         self.layoutWidget.setObjectName(_fromUtf8("layoutWidget"))
         self.AnalysisGridLayout = QtGui.QGridLayout(self.layoutWidget)
         self.AnalysisGridLayout.setSizeConstraint(QtGui.QLayout.SetFixedSize)
@@ -197,9 +197,6 @@ class Ui_CalcFOMDialog(object):
         self.ClearAnalysisPushButton = QtGui.QPushButton(self.layoutWidget)
         self.ClearAnalysisPushButton.setObjectName(_fromUtf8("ClearAnalysisPushButton"))
         self.AnalysisGridLayout.addWidget(self.ClearAnalysisPushButton, 2, 1, 1, 1)
-        self.ViewResultPushButton = QtGui.QPushButton(self.layoutWidget)
-        self.ViewResultPushButton.setObjectName(_fromUtf8("ViewResultPushButton"))
-        self.AnalysisGridLayout.addWidget(self.ViewResultPushButton, 1, 0, 1, 1)
         self.EditAnalysisParamsPushButton = QtGui.QPushButton(self.layoutWidget)
         self.EditAnalysisParamsPushButton.setObjectName(_fromUtf8("EditAnalysisParamsPushButton"))
         self.AnalysisGridLayout.addWidget(self.EditAnalysisParamsPushButton, 0, 0, 1, 1)
@@ -208,7 +205,13 @@ class Ui_CalcFOMDialog(object):
         self.AnalysisGridLayout.addWidget(self.SaveAnaPushButton, 2, 0, 1, 1)
         self.ImportAnalysisParamsPushButton = QtGui.QPushButton(self.layoutWidget)
         self.ImportAnalysisParamsPushButton.setObjectName(_fromUtf8("ImportAnalysisParamsPushButton"))
-        self.AnalysisGridLayout.addWidget(self.ImportAnalysisParamsPushButton, 3, 0, 1, 2)
+        self.AnalysisGridLayout.addWidget(self.ImportAnalysisParamsPushButton, 1, 0, 1, 1)
+        self.ViewResultPushButton = QtGui.QPushButton(self.layoutWidget)
+        self.ViewResultPushButton.setObjectName(_fromUtf8("ViewResultPushButton"))
+        self.AnalysisGridLayout.addWidget(self.ViewResultPushButton, 3, 0, 1, 1)
+        self.ClearSingleAnalysisPushButton = QtGui.QPushButton(self.layoutWidget)
+        self.ClearSingleAnalysisPushButton.setObjectName(_fromUtf8("ClearSingleAnalysisPushButton"))
+        self.AnalysisGridLayout.addWidget(self.ClearSingleAnalysisPushButton, 3, 1, 1, 1)
         self.ImportExpPushButton = QtGui.QPushButton(CalcFOMDialog)
         self.ImportExpPushButton.setGeometry(QtCore.QRect(80, 70, 81, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
@@ -362,16 +365,18 @@ class Ui_CalcFOMDialog(object):
         self.EditDfltVisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Edit the FOM visualization parameters", None, QtGui.QApplication.UnicodeUTF8))
         self.EditDfltVisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Update Dflt Vis", None, QtGui.QApplication.UnicodeUTF8))
         self.ClearAnalysisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Clear the analysis, removing intermediate data and FOMs", None, QtGui.QApplication.UnicodeUTF8))
-        self.ClearAnalysisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Clear Anlysis", None, QtGui.QApplication.UnicodeUTF8))
-        self.ViewResultPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Send Raw, Intermediate and FOM data to the Visualize window", None, QtGui.QApplication.UnicodeUTF8))
-        self.ViewResultPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "View Result", None, QtGui.QApplication.UnicodeUTF8))
+        self.ClearAnalysisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Clear Analysis", None, QtGui.QApplication.UnicodeUTF8))
         self.EditAnalysisParamsPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Edit parameters involved inthe analysis", None, QtGui.QApplication.UnicodeUTF8))
         self.EditAnalysisParamsPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Edit Params", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveAnaPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Save .fom, FOR THE SELECTED ANALYSIS TYPE ONLY.\n"
 " Intermediate data will also be saved", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveAnaPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Save ANA", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportAnalysisParamsPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Import a .par file", None, QtGui.QApplication.UnicodeUTF8))
-        self.ImportAnalysisParamsPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Import Analysis Params", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportAnalysisParamsPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Import Params", None, QtGui.QApplication.UnicodeUTF8))
+        self.ViewResultPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Send Raw, Intermediate and FOM data to the Visualize window", None, QtGui.QApplication.UnicodeUTF8))
+        self.ViewResultPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "View Result", None, QtGui.QApplication.UnicodeUTF8))
+        self.ClearSingleAnalysisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Clear the analysis, removing intermediate data and FOMs", None, QtGui.QApplication.UnicodeUTF8))
+        self.ClearSingleAnalysisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Del 1 ana__x", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Import a .exp file, which will provide options for the data type, RUNs and analysis type", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Import EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportAnaPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Grab the EXP from the \"Create EXP\" window", None, QtGui.QApplication.UnicodeUTF8))

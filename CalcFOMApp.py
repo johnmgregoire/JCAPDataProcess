@@ -135,6 +135,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         d[kl[0]]=ans
         
     def importexp(self, expfiledict=None, exppath=None):
+        self.clearexp()
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
@@ -164,6 +165,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if k in ['ana_type', 'created_by']:
                 le.setText(dfltstr)
         self.clearanalysis()
+        
         self.fillexpoptions()
     
     def fillexpoptions(self):
@@ -365,8 +367,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.updateana()
         self.plot_preparestandardplot(plotbool=False)
-        self.plot_generatedata()
-        self.plot()
+        self.plot_generatedata(plotbool=True)
+
         
         
     def updateana(self):
@@ -397,12 +399,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.updateana()
         
     def clearanalysis(self):
+        
         self.analysisclass=None
         self.anadict={}
         self.anadict['ana_version']='3'
         self.anadict['exp_path']=self.exppath.replace('.pck', '.exp')
         self.paramsdict_le_dflt['description'][1]='null'
         
+        
+            
         self.AnaTreeWidget.clear()
         
         for fn in os.listdir(self.tempanafolder):
@@ -470,9 +475,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if 'colormap_min_value' in d.keys() and 'colormap_max_value' in d.keys():
             self.vminmaxLineEdit.setText('%s,%s' %(d['colormap_min_value'], d['colormap_max_value']))
         if plotbool:
-            self.plot_generatedata()
-            self.plot()
-    def plot_generatedata(self):
+            self.plot_generatedata(plotbool=True)
+
+    def plot_generatedata(self, plotbool=True):
         self.plotd={}
         if len(self.fomdlist)==0:
             return
@@ -539,18 +544,18 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotd['t']=t
         self.plotd['sample']=sample
         self.plotd['fomname']=self.fomnames[fi]
-        
+        if plotbool:
+            self.plot()
         
     def plot(self):
         if len(self.plotd)==0:
             return
 
         self.plotw_comp.axes.cla()
-        self.plotw_quat.axes.cla()
+        self.plotw_quat3d.axes.cla()
         self.plotw_plate.axes.cla()
         self.plotw_h.axes.cla()
         self.cbax_quat.cla()
-        self.cbax_comp.cla()
         self.cbax_plate.cla()
 
         if len(self.plotd['fom'])==0:
@@ -571,8 +576,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for runk in sorted(self.plotd['inds_runk'].keys()):
             hx=hxarr[self.plotd['inds_runk'][runk]]
             hy=fom[self.plotd['inds_runk'][runk]]
-        
-            self.plotw_h.axes.plot(hx, hy, '.-', label=runk)
+            sinds=numpy.argsort(hx)
+            self.plotw_h.axes.plot(hx[sinds], hy[sinds], '.-', label=runk)
+        leg=self.plotw_h.axes.legend(loc=0)
+        leg.draggable()
         self.plotw_h.axes.set_xlabel(xl)
         self.plotw_h.axes.set_ylabel(self.plotd['fomname'])
         autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
@@ -652,7 +659,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         sm=cm.ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array(fom)
-        cols=map(sm.to_rgba, fom)
+        cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]#ignore alpha
         
         cb=self.plotw_plate.fig.colorbar(sm, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
         cb.set_label(self.plotd['fomname'])
@@ -667,16 +674,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         plotw3dbool=self.quatcompclass.plot()
         if not plotw3dbool is None:
             if plotw3dbool:
-                self.plotw.hide()
-                self.plotw3d.show()
-                self.plotw_quat.axes.set_axis_off()
-                cb=self.plotw_quat.fig.colorbar(sm, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
-                self.plotw3d.fig.canvas.draw()
+                self.plotw_comp.hide()
+                self.plotw_quat3d.show()
+                self.plotw_quat3d.axes.set_axis_off()
+                cb=self.plotw_quat3d.fig.colorbar(sm, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                self.plotw_quat3d.fig.canvas.draw()
             else:
-                self.plotw3d.hide()
-                self.plotw.show()
-                cb=self.plotw_comp.fig.colorbar(sm, cax=self.cbax_comp, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
-                self.plotw.fig.canvas.draw()
+                self.plotw_quat3d.hide()
+                self.plotw_comp.show()
+                cb=self.plotw_comp.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                self.plotw_comp.fig.canvas.draw()
             cb.set_label(self.plotd['fomname'])
 #        comps=numpy.array([c[:4]/c[:4].sum() for c in comps])
 #        i=self.ternskipComboBox.currentIndex()
@@ -687,10 +694,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #        reorderlabels=[self.ellabels[j] for j in inds+[i]]
 
 
-#        quat=QuaternaryPlot(self.plotw_quat.axes, ellabels=self.ellabels, offset=0)
+#        quat=QuaternaryPlot(self.plotw_quat3d.axes, ellabels=self.ellabels, offset=0)
 #        quat.label()
 #        quat.scatter(comps, c=fom, s=s, cmap=cmap, vmin=self.vmin, vmax=self.vmax)
-#        cb=self.plotw_quat.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
+#        cb=self.plotw_quat3d.fig.colorbar(quat.mappable, cax=self.cbax_quat, extend=extend, format=autocolorbarformat((fom.min(), fom.max())))
 
 #        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
 #        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
@@ -703,10 +710,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #
 #
 #
-#        #self.plotw_quat.axes.mouse_init()
-#        self.plotw_quat.axes.set_axis_off()
+#        #self.plotw_quat3d.axes.mouse_init()
+#        self.plotw_quat3d.axes.set_axis_off()
 #        self.plotw_comp.fig.canvas.draw()
-#        self.plotw_quat.fig.canvas.draw()
+#        self.plotw_quat3d.fig.canvas.draw()
 
         #self.selectind=-1
         #self.plotselect()
@@ -741,7 +748,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def plotwsetup(self):
         
         self.plotw_comp=plotwidget(self)
-        self.plotw_quat=plotwidget(self, projection3d=True)
+        self.plotw_quat3d=plotwidget(self, projection3d=True)
         self.plotw_h=plotwidget(self)
         self.plotw_plate=plotwidget(self)
         
@@ -750,11 +757,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             (self.textBrowser_plate, self.plotw_plate), \
             (self.textBrowser_h, self.plotw_h), \
             (self.textBrowser_comp, self.plotw_comp), \
-            (self.textBrowser_comp, self.plotw_quat), \
+            (self.textBrowser_comp, self.plotw_quat3d), \
             ]:
             w.setGeometry(b.geometry())
             b.hide()
-        self.plotw_quat.hide()
+        self.plotw_quat3d.hide()
 
         self.plotw_plate.axes.set_aspect(1)
 
@@ -763,15 +770,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_plate.fig.subplots_adjust(left=0, right=axrect[0]-.01)
         self.cbax_plate=self.plotw_plate.fig.add_axes(axrect)
 
-        self.plotw_comp.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-        self.cbax_comp=self.plotw_comp.fig.add_axes(axrect)
-
-        self.plotw_quat.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-        self.cbax_quat=self.plotw_quat.fig.add_axes(axrect)
+        self.plotw_quat3d.fig.subplots_adjust(left=0, right=axrect[0]-.01)
+        self.cbax_quat=self.plotw_quat3d.fig.add_axes(axrect)
 
         self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
         
-        self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat)
+        self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
         
 class treeclass_anadict():
     def __init__(self, tree):

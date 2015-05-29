@@ -707,7 +707,7 @@ readdatafiledict=dict([\
 
 def getanadefaultfolder(erroruifcn=None):
     #TODO: createdefault path
-    folder='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/eche/temp'
+    folder='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/temp'
     try:
         if not os.path.isdir(folder):
             os.mkdir(folder)

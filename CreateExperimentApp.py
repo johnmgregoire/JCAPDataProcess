@@ -490,6 +490,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
     def saveexpgoana(self):
         saveexpfiledict, exppath=self.saveexp()
         self.parent.calcui.importexp(expfiledict=copy.deepcopy(saveexpfiledict), exppath=exppath)
+        for runk, rund in self.parent.calcui.expfiledict.iteritems():#copy over any platemap info
+            if not runk.startswith('run__'):
+                continue
+            rcpfile=rund['rcp_file']
+            rcpdl=[rcpd for rcpd in self.rcpdlist if rcpd['rcp_file']==rcpfile and len(rcpd['platemapdlist'])>0]
+            if len(rcpdl)>0:
+                rund['platemapdlist']=copy.copy(rcpdl[0]['platemapdlist'])
         self.parent.calcui_exec()
         self.hide()
     def saveexp(self):

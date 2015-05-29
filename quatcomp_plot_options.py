@@ -42,13 +42,13 @@ from quaternary_folded_ternaries import *
 
         
 class quatcompplotoptions():
-    def __init__(self, plotw, combobox, plotw3d=None, ellabels=['A', 'B', 'C', 'D']):
+    def __init__(self, plotw, combobox, plotw3d=None, ellabels=['A', 'B', 'C', 'D'], plotwcbaxrect=None):
 
         self.ellabels=ellabels
         self.plotw=plotw
-        self.plotw.fig.clf()
-        self.plotw3d=plotw3d
 
+        self.plotw3d=plotw3d
+        self.plotwcbaxrect=plotwcbaxrect
         self.plottypeComboBox = combobox
 
 
@@ -69,13 +69,14 @@ class quatcompplotoptions():
         self.stackedtern_uiinds=[4, 5, 6, 7, 8]
         
         if self.plotw3d is None:
+            self.quat3doptions=[]
+            self.quat3d_uiinds=[]
+        else:
             self.quat3doptions=[\
                 ('3-D Quaternary', QuaternaryPlot), \
                 ]
             self.quat3d_uiinds=[9]
-        else:
-            self.quat3doptions=[]
-            self.quat3d_uiinds=[]
+
         self.fillplotoptions()
     
     def fillplotoptions(self):
@@ -93,8 +94,9 @@ class quatcompplotoptions():
         self.cols=cols
         self.quatcomps=quatcomps
         if nintervals is None and len(self.quatcomps)>0:
-            pairwisediffs=(((quatcomps[1:]-quatcomps[:-1])**2).sum(axis=1))**.5/2.**.5
-            mindiff=(pairwisediffs[pairwisediffs>0.005]).min()
+#            pairwisediffs=(((quatcomps[1:]-quatcomps[:-1])**2).sum(axis=1))**.5/2.**.5
+#            mindiff=(pairwisediffs[pairwisediffs>0.005]).min()
+            mindiff=min([x-y for i in range(quatcomps.shape[1]) for x in quatcomps[:, i] for y in quatcomps[:, i] if x>y+.01])
             self.nintervals=round(1./mindiff)
         else:
             self.nintervals=nintervals
@@ -111,6 +113,12 @@ class quatcompplotoptions():
             
 
         self.plotw.fig.clf()
+        if not self.plotwcbaxrect is None:
+            self.plotw.axes=self.plotw.fig.add_axes((0, 0, self.plotwcbaxrect[0]-.01, 1))
+            self.cbax=self.plotw.fig.add_axes(self.plotwcbaxrect)
+        else:
+            self.plotw.axes=self.plotw.fig.add_axes((0, 0, 1, 1))
+            
         if i in self.ternaryface_uiinds:
             selclass=self.ternaryfaceoptions[self.ternaryface_uiinds.index(i)][1]
             self.ternaryfaceplot(selclass, **kwargs)
@@ -121,12 +129,12 @@ class quatcompplotoptions():
         return False
     
     def quat3dplot(self, plotclass, **kwargs):
-        tf=plotclass(self.plotw.axes)#, nintervals=self.nintervals)
+        tf=plotclass(self.plotw3d.axes)#, nintervals=self.nintervals)
         tf.label()
         tf.scatter(self.quatcomps, c=self.cols, **kwargs)
 
     def ternaryfaceplot(self, plotclass, **kwargs):
-        ax=self.plotw.fig.add_axes((0, 0, 1, 1))
+        ax=self.plotw.axes
         tf=plotclass(ax, nintervals=self.nintervals)
         tf.label()
         tf.scatter(self.quatcomps, self.cols, **kwargs)
@@ -148,6 +156,7 @@ class plotwidget(FigureCanvas):
             self.axes=self.fig.add_subplot(111, navigate=True, projection='3d')
         else:
             self.axes=self.fig.add_subplot(111, navigate=True)
+            self.mpl_connect('button_press_event', self.myclick)
 
         self.axes.hold(True)
         FigureCanvas.__init__(self, self.fig)
@@ -156,9 +165,9 @@ class plotwidget(FigureCanvas):
         FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         #NavigationToolbar(self, parent)
-        NavigationToolbar(self, self)
+        self.toolbar=NavigationToolbar(self, self)
 
-        self.mpl_connect('button_press_event', self.myclick)
+        
         self.clicklist=[]
 
     def myclick(self, event):
@@ -167,28 +176,4 @@ class plotwidget(FigureCanvas):
             print 'clicked on image: array indeces ', arrayxy, ' using button', event.button
             self.clicklist+=[arrayxy]
             self.emit(SIGNAL("genericclickonplot"), [event.xdata, event.ydata, event.button])
-
-if __name__ == "__main__":
-    class MainMenu(QMainWindow):
-        def __init__(self, previousmm, execute=True, **kwargs):
-            super(MainMenu, self).__init__(None)
-            self.ui=plottypeDialog(self, **kwargs)
-            
-            intervs=10
-            compsint=[[b, c, (intervs-a-b-c), a] for a in numpy.arange(0,intervs+1)[::-1] for b in numpy.arange(0,intervs+1-a) for c in numpy.arange(0,intervs+1-a-b)][::-1]
-            print len(compsint)
-            comps=numpy.float32(compsint)/intervs
-            pylab.figure()
-            stpquat=QuaternaryPlot(111)
-            cols=stpquat.rgb_comp(comps)
-
-            self.ui.loadplotdata(comps, cols)
-            
-            if execute:
-                self.ui.exec_()
-    mainapp=QApplication(sys.argv)
-    form=MainMenu(None)
-    form.show()
-    form.setFocus()
-    mainapp.exec_()
 
