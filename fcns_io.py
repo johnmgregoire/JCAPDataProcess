@@ -34,6 +34,9 @@ def attemptnumericconversion_tryintfloat(s):
 #            pass
 #    return s
 
+def removefiles(folder, fns):
+    for fn in fns:
+        os.remove(os.path.join(folder, fn))
 def getsamplenum_fn(fn):
     if fn.startswith('Sample'):
         return int(fn.partition('Sample')[2].partition('_')[0])

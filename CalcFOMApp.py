@@ -300,6 +300,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def analyzedata(self):
         if self.analysisclass is None:
             return
+        
+        checkbool, checkmsg=self.analysisclass.check_input()
+        if not checkbool:
+            idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
+            if not idialog.exec_():
+                return
         #rawd=readbinaryarrasdict(keys)
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
         expdatfolder=self.expfolder
@@ -309,9 +315,20 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         while kfcn(i) in self.anadict.keys():
             i+=1
         anak=kfcn(i)
-        #try:
-        self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak)
-        #except: return
+        try:
+            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak)
+        except:
+            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
+            if not idialog.exec_():
+                removefiles(self.tempanafolder, [k for d in [self.analysisclass.interfiledict, self.analysisclass.fomfiledict] for k in d.keys()])
+                return
+        checkbool, checkmsg=self.analysisclass.check_output()
+        if not checkbool:
+            idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
+            if not idialog.exec_():
+                removefiles(self.tempanafolder, [k for d in [self.analysisclass.interfiledict, self.analysisclass.fomfiledict] for k in d.keys()])
+                return
+                
         self.anadict[anak]={}
         self.activeana=self.anadict[anak]
         
@@ -391,6 +408,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         i=userselectcaller(self, options=keys, title='select ana__ to delete')
         if i is None:
             return
+        if len(keys)==1:
+            self.clearanalysis()
+            return
+        anad=self.anadict[keys[i]]
+        fdlist=[v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)]
+        removefiles(self.tempanafolder, [k for d in fdlist for k in d.keys()])
+        
         if i<(len(keys)-1):
             for ki, knext in zip(keys[i:-1], keys[i+1:]):
                 self.anadict[ki]=self.anadict[knext]
@@ -785,43 +809,37 @@ class treeclass_anadict():
         
     def filltree(self, d, startkey='ana_version', laststartswith='ana__'):
         self.treeWidget.clear()
-        
+        #assume startkey is not for dict and laststatswith is dict
         
         mainitem=QTreeWidgetItem([': '.join([startkey, d[startkey]])], 0)
         self.treeWidget.addTopLevelItem(mainitem)
         self.treeWidget.setCurrentItem(mainitem)
         
-        for k, v in d.iteritems():
-            if k==startkey or k.startswith(laststartswith):
-                continue
-            if isinstance(v, dict):
-                mainitem=QTreeWidgetItem([k+':'], 0)
-                self.nestedfill(v, mainitem)
-            else:
-                mainitem=QTreeWidgetItem([': '.join([k, str(v)])], 0)
+        for k in sorted([k for k, v in d.iteritems() if k!=startkey and not isinstance(v, dict)]):
+            mainitem=QTreeWidgetItem([': '.join([k, str(v)])], 0)
             self.treeWidget.addTopLevelItem(mainitem)
             
+        for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
+            mainitem=QTreeWidgetItem([k+':'], 0)
+            self.nestedfill(v, mainitem)
+            self.treeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(False)
+            
         anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem)
             self.treeWidget.addTopLevelItem(mainitem)
+            mainitem.setExpanded(False)
     def nestedfill(self, d, parentitem, laststartswith='files_'):
-        for k, v in d.iteritems():
-            if isinstance(v, dict):
-                continue
+        for k in sorted([k for k, v in d.iteritems() if not isinstance(v, dict)]):
             item=QTreeWidgetItem([': '.join([k, str(v)])], 0)
             parentitem.addChild(item)
-        for k, v in d.iteritems():
-            if k.startswith(laststartswith) or not isinstance(v, dict):
-                continue
+        for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
             item=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(v, item)
             parentitem.addChild(item)
-        for k, v in d.iteritems():
-            if not k.startswith(laststartswith) or not isinstance(v, dict):
-                continue
+        for k in sorted([k for k in d.keys() if k.startswith(laststartswith)]):
             item=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(v, item)
             parentitem.addChild(item)

@@ -62,7 +62,7 @@ class Analysis_Master_nointer():
         '%d files, %.2f of those available, do not meet requirements' %(self.num_files_considered-len(self.filedlist), 1.-fracapplicable)
     def check_output(self, critfracnan=0.9):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomnames)
-        return fracnan>critfracnan, \
+        return fracnan<=critfracnan, \
         '%d FOMs, %.2f of attempted calculations, are NaN' %(numnan, fracnan)
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.fomfiledict={}
