@@ -33,7 +33,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
 
     
 def stdcheckoutput(fomdlist, fomnames):
-    nancount=[(not k in fomdlist) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
+    nancount=[(not k in d) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
     return nancount, 1.*nancount/(len(fomdlist)*len(fomnames))
 
 class Analysis_Master_nointer():
@@ -67,6 +67,8 @@ class Analysis_Master_nointer():
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.fomfiledict={}
         self.interfiledict={}
+        self.interfilerawlendict={}
+        self.miscfiledict={}
         self.fomdlist=[]
         for filed in self.filedlist:
             fn=filed['fn']
@@ -84,6 +86,8 @@ class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.fomfiledict={}
         self.interfiledict={}
+        self.interfilerawlendict={}
+        self.miscfiledict={}
         self.fomdlist=[]
         for filed in self.filedlist:
             fn=filed['fn']
@@ -94,7 +98,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfiledict[fnr]='%s;%s;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.interfilerawlendict[fnr]='%s;%s;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)

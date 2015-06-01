@@ -1,5 +1,5 @@
 import time
-import os, os.path
+import os, os.path, shutil
 import sys
 import numpy
 from PyQt4.QtCore import *
@@ -135,16 +135,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         d[kl[0]]=ans
         
     def importexp(self, expfiledict=None, exppath=None):
-        self.clearexp()
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
             exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
-            expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=\
-                lambda s:mygetopenfile(parent=self, xpath=exppath, markstr='%s' %(s)))
+            if len(exppath)==0:
+                return
+            expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
             if expfiledict is None:
                 print 'Problem opening EXP'
                 return
+        self.clearexp()
         self.exppath=exppath
         self.expfolder=os.path.split(exppath)[0]
         self.expfiledict=expfiledict
@@ -165,6 +166,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if k in ['ana_type', 'created_by']:
                 le.setText(dfltstr)
         self.clearanalysis()
+        
+        self.anadict['exp_path']=self.exppath.replace('.pck', '.exp')
         
         self.fillexpoptions()
     
@@ -267,7 +270,31 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
     def importana(self):
-        return
+        p=mygetopenfile(parent=self, xpath="%s" % os.getcwd(),markstr='Select .ana/.pck to import')
+        if len(p)==0:
+            return
+        anadict=openana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
+        if not 'exp_path' in anadict.keys():
+            return
+        if anadict['ana_version']!='3':
+            idialog=messageDialog(self, '.ana version %s is different from present. continue?' %anadict['ana_version'])
+            if not idialog.exec_():
+                return
+        exppath=anadict['exp_path']
+        expfiledict=readexpasdict(exppath, includerawdata=False)
+        if len(expfiledict)==0:
+            idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
+            idialog.exec_()
+            return
+        self.importexp(expfiledict=expfiledict, exppath=exppath)#clearanalysis happens here
+        self.anadict=anadict
+        anafolder=os.path.split(p)[0]
+        for fn in os.listdir(anafolder):
+            if fn.endswith('ana') or fn.endswith('pck'):
+                continue
+            shutil.copy(os.path.join(anafolder, fn), os.path.join(self.tempanafolder, fn))
+        self.updateana()
+
     def editanalysisparams(self):
         if self.analysisclass is None or len(self.analysisclass.params)==0:
             return
@@ -320,13 +347,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         except:
             idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
             if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for d in [self.analysisclass.interfiledict, self.analysisclass.fomfiledict] for k in d.keys()])
+                removefiles(self.tempanafolder, [k for d in \
+                   [self.analysisclass.fomfiledict, self.analysisclass.interfilerawlendict, self.analysisclass.interfiledict, self.analysisclass.miscfiledict] for k in d.keys()])
                 return
         checkbool, checkmsg=self.analysisclass.check_output()
         if not checkbool:
             idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
             if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for d in [self.analysisclass.interfiledict, self.analysisclass.fomfiledict] for k in d.keys()])
+                removefiles(self.tempanafolder, [k for d in \
+                   [self.analysisclass.fomfiledict, self.analysisclass.interfilerawlendict, self.analysisclass.interfiledict, self.analysisclass.miscfiledict] for k in d.keys()])
                 return
                 
         self.anadict[anak]={}
@@ -355,11 +384,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     self.activeana['parameters'][k][v2]=str(v2)
             else:
                 self.activeana['parameters'][k]=str(v)
-        if len(self.analysisclass.interfiledict.keys())>0:
-            self.activeana['files_technique__'+self.techk]=copy.copy(self.analysisclass.interfiledict)
-        if len(self.analysisclass.fomfiledict.keys())>0:
-            self.activeana['files_fom_technique__'+self.techk]=copy.copy(self.analysisclass.fomfiledict)
         
+        for acd, lab in [(self.analysisclass.fomfiledict,  'fom_files'), (self.analysisclass.interfilerawlendict, 'inter_rawlen_files'), (self.analysisclass.interfiledict, 'inter_files'), (self.analysisclass.miscfiledict, 'misc_files')]:
+            if len(acd.keys())>0:
+                if not ('files_technique__'+self.techk) in self.activeana.keys():
+                    self.activeana['files_technique__'+self.techk]={}
+                self.activeana['files_technique__'+self.techk][lab]=copy.copy(acd)
+
         self.fomdlist=self.analysisclass.fomdlist
         self.filedlist=self.analysisclass.filedlist
         self.fomnames=self.analysisclass.fomnames
@@ -386,7 +417,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plot_preparestandardplot(plotbool=False)
         self.plot_generatedata(plotbool=True)
 
-        
+
         
     def updateana(self):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
@@ -399,8 +430,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def viewresult(self):
         return
-   
-    
+
     def clearsingleanalysis(self):
         keys=sorted([k for k in self.anadict.keys() if k.startswith('ana__')])
         if len(keys)==0:
@@ -423,15 +453,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.updateana()
         
     def clearanalysis(self):
-        
         self.analysisclass=None
         self.anadict={}
         self.anadict['ana_version']='3'
-        self.anadict['exp_path']=self.exppath.replace('.pck', '.exp')
+        
         self.paramsdict_le_dflt['description'][1]='null'
-        
-        
-            
+
         self.AnaTreeWidget.clear()
         
         for fn in os.listdir(self.tempanafolder):
@@ -478,11 +505,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 d['colormap_max_value']=b.strip()
         totnumheadlines=writecsv_smpfomd(self.analysisclass.primarycsvpath, '', headerdict=self.csvheaderdict, replaceheader=True)
         fnf=os.path.split(self.analysisclass.primarycsvpath)[1]
-        files_fomd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_fom_technique__')][0]]
+        files_techd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_technique__')][0]]
+        files_fomd=files_techd['fom_files']
         s=files_fomd[fnf]
         l=s.split(';')
         l[2]='%d' %(totnumheadlines)
         files_fomd[fnf]=';'.join(l)
+        self.updateana()
         
     def plot_preparestandardplot(self, plotbool=True):
         k=str(self.stdcsvplotchoiceComboBox.currentText())
@@ -816,12 +845,12 @@ class treeclass_anadict():
         self.treeWidget.setCurrentItem(mainitem)
         
         for k in sorted([k for k, v in d.iteritems() if k!=startkey and not isinstance(v, dict)]):
-            mainitem=QTreeWidgetItem([': '.join([k, str(v)])], 0)
+            mainitem=QTreeWidgetItem([': '.join([k, str(d[k])])], 0)
             self.treeWidget.addTopLevelItem(mainitem)
             
         for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([k+':'], 0)
-            self.nestedfill(v, mainitem)
+            self.nestedfill(d[k], mainitem)
             self.treeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(False)
             
@@ -832,16 +861,19 @@ class treeclass_anadict():
             self.treeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(False)
     def nestedfill(self, d, parentitem, laststartswith='files_'):
-        for k in sorted([k for k, v in d.iteritems() if not isinstance(v, dict)]):
-            item=QTreeWidgetItem([': '.join([k, str(v)])], 0)
+        nondictkeys=sorted([k for k, v in d.iteritems() if not isinstance(v, dict)])
+        for k in nondictkeys:
+            item=QTreeWidgetItem([': '.join([k, str(d[k])])], 0)
             parentitem.addChild(item)
-        for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
+        dictkeys1=sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)])
+        for k in dictkeys1:
             item=QTreeWidgetItem([k+':'], 0)
-            self.nestedfill(v, item)
+            self.nestedfill(d[k], item)
             parentitem.addChild(item)
-        for k in sorted([k for k in d.keys() if k.startswith(laststartswith)]):
+        dictkeys2=sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        for k in dictkeys2:
             item=QTreeWidgetItem([k+':'], 0)
-            self.nestedfill(v, item)
+            self.nestedfill(d[k], item)
             parentitem.addChild(item)
     def createtxt(self, indent='    '):
         self.indent=indent

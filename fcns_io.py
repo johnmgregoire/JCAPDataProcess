@@ -757,11 +757,11 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
     with open(savep.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
 
-def openana(p, errorui=None, stringvalues=False):
+def openana(p, erroruifcn=None, stringvalues=False):
     if not ((p.endswith('ana') or p.endswith('pck')) and os.path.exists(p)):
         if erroruifcn is None:
             return {}
-        p=erroruifcn('select exp file')
+        p=erroruifcn('select ana/pck file to open')
         if len(p)==0:
             return {}
     if stringvalues and p.endswith('pck'):
