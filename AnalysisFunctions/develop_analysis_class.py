@@ -141,9 +141,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
-        self.fomfiledict={}
-        self.histfiledict={}
-        self.interfiledict={}
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
+        self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
         refd={}#refd will be a dictionary with 4 keys that makes a good started for the intermediate dictionary with raw-data-length arrays
@@ -181,37 +180,34 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
-            fomdict['sample_no']=getsamplenum_fn(fn)
+            fomdict=dict(fomdict, sample_no=getsamplenum_fn(fn), plate_id=filed['plateid'], run=filed['run'])
             self.fomdlist+=[fomdict]
+            
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfiledict[fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
 
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.interfiledict[fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
-
-        for foml, lab in [(self.fomnames,'fomnames'),(self.quality_foms, 'quality_foms')]:
-            fnf='%s__%s.csv' %(anak, lab)
-            p=os.path.join(destfolder,fnf)
-            self.csvfilstr=createcsvfilstr(self.fomdlist, foml)
-            if 'fomnames' in lab:
-                self.primarycsvpath=p
-                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
-            else:
-                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
-            self.fomfiledict[fnf]=\
-                '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+foml), totnumheadlines, len(self.fomdlist))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
+                
+        self.writefom(destfolder, anak)
+        fnf='%s__%s.csv' %(anak,'qualityfoms')
+        p=os.path.join(destfolder,fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.quality_foms)#, fn=fnf)
+        totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+        self.multirunfiledict['misc_files'][fnf]=\
+            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.quality_foms), totnumheadlines, len(self.fomdlist))
 
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
             p=os.path.join(destfolder,fnhist)        
             savefomhist(p,self.fomdlist, histfom)
-            self.interfiledict[fnhist]='hist_fom_file;'
+            self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
         
         for rktup,rk in refkeymap:
             fn_refimg='%s__%s.png' %(anak,rk)
@@ -223,8 +219,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             p=os.path.join(destfolder,fn_refimg)
             plt.savefig(p,dpi=300)
             plt.close(fig)
-            self.interfiledict[fn_refimg]='img_ref_file;'
-#Is it fine to save img and hist file types in self.interfiledict or should a different dict be used
+            self.multirunfiledict['misc_files'][fn_refimg]='img_ref_file;'
 
     def fomd_rawlend_interlend(self, Tdataarr, Rdataarr, refd):
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
@@ -315,8 +310,8 @@ class Analysis__BG_DA(Analysis_Master_inter):
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
-        self.fomfiledict={}
-        self.interfiledict={}
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
+        self.multirunfiledict['misc_files']={}
         self.fomdlist=[]      
         #inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis \
 #        folder is an intermediate data arr whose column 'Akeyind' is the absorption array
@@ -326,45 +321,41 @@ class Analysis__BG_DA(Analysis_Master_inter):
             rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
-            fomdict['sample_no']=getsamplenum_fn(fn)
+            fomdict=dict(fomdict, sample_no=getsamplenum_fn(fn), plate_id=filed['plateid'], run=filed['run'])
             self.fomdlist+=[fomdict]
             
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfiledict[fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
 
             if 'rawselectinds' in selindd.keys():
                 fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, selindd, savetxt=True)
-                self.interfiledict[fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]))
 
             if len(linfitd.keys())>0:
                 fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnp)
                 kl=saveinterdata(p, linfitd, savetxt=False)
-                self.interfiledict[fnp]='%s;%s;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]))
+                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]))
 
-        for foml, lab in [(self.fomnames,'fomnames'),(self.quality_foms, 'quality_foms')]:
-            fnf='%s__%s.csv' %(anak, lab)
-            p=os.path.join(destfolder,fnf)
-            self.csvfilstr=createcsvfilstr(self.fomdlist, foml)
-            if 'fomnames' in lab:
-                self.primarycsvpath=p
-                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
-            else:
-                totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
-            self.fomfiledict[fnf]=\
-                '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+foml), totnumheadlines, len(self.fomdlist))
-
+        self.writefom(destfolder, anak)
+        fnf='%s__%s.csv' %(anak,'qualityfoms')
+        p=os.path.join(destfolder,fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.quality_foms)#, fn=fnf)
+        totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+        self.multirunfiledict['misc_files'][fnf]=\
+            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.quality_foms), totnumheadlines, len(self.fomdlist))
+            
            
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
             p=os.path.join(destfolder,fnhist)        
             savefomhist(p,self.fomdlist, histfom)
-            self.interfiledict[fnhist]='hist_fom_file;'
+            self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
         
     def fomd_rawlend_interlend(self, inter_rawlend):
         inter_selindd={}
@@ -391,7 +382,7 @@ typek='spectrum_files'
 filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=None)
 c.perform(p_ana, expdatfolder=os.path.split(p_exp)[0], writeinterdat=True, anak='ana__0')
 print 'THESE FOM FILES WRITTEN'
-for k, v in c.fomfiledict.items():
+for k, v in c.multirunfiledict.items():
     print k, v
 print 'THESE INTERMEDIATE DATA FILES WRITTEN'
 for k, v in c.interfiledict.items():

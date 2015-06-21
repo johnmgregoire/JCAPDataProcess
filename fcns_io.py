@@ -144,6 +144,7 @@ def convertfilekeystolist(exporanafiledict):
                     d['keys']=keys
                     d['num_header_lines']=type_keys_heads_rows[2]
                     d['num_data_rows']=type_keys_heads_rows[3]
+                    d['sample_no']=getsamplenum_fn(fn)
                     exporanafiledict[k][k2][k3][fn]=d
         
 def readbinary_selinds(p, nkeys, keyinds=None):

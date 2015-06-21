@@ -347,15 +347,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         except:
             idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
             if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for d in \
-                   [self.analysisclass.fomfiledict, self.analysisclass.interfilerawlendict, self.analysisclass.interfiledict, self.analysisclass.miscfiledict] for k in d.keys()])
+                removefiles(self.tempanafolder, [k for rund in \
+                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
                 return
         checkbool, checkmsg=self.analysisclass.check_output()
         if not checkbool:
             idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
             if not idialog.exec_():
                 removefiles(self.tempanafolder, [k for d in \
-                   [self.analysisclass.fomfiledict, self.analysisclass.interfilerawlendict, self.analysisclass.interfiledict, self.analysisclass.miscfiledict] for k in d.keys()])
+                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
                 return
                 
         self.anadict[anak]={}
@@ -384,12 +384,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     self.activeana['parameters'][k][v2]=str(v2)
             else:
                 self.activeana['parameters'][k]=str(v)
-        
-        for acd, lab in [(self.analysisclass.fomfiledict,  'fom_files'), (self.analysisclass.interfilerawlendict, 'inter_rawlen_files'), (self.analysisclass.interfiledict, 'inter_files'), (self.analysisclass.miscfiledict, 'misc_files')]:
-            if len(acd.keys())>0:
-                if not ('files_technique__'+self.techk) in self.activeana.keys():
-                    self.activeana['files_technique__'+self.techk]={}
-                self.activeana['files_technique__'+self.techk][lab]=copy.copy(acd)
+        self.activeana['technique']=self.techk
+        runk_typek_b=sorted([('multi_run', typek, True) for typek in self.analysisclass.multirunfiledict.keys() if len(self.analysisclass.multirunfiledict[typek])>0])
+        runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.analysisclass.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
+        for runk, typek, b in runk_typek_b:
+            frunk='file_'+runk
+            if not frunk in self.activeana.keys():
+                self.activeana[frunk]={}
+            if b:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
+            else:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
 
         self.fomdlist=self.analysisclass.fomdlist
         self.filedlist=self.analysisclass.filedlist
@@ -429,6 +434,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.AnaTreeWidgetFcns.filltree(self.anadict)
         
     def viewresult(self):
+        d=copy.deepcopy(self.anadict)
+        convertfilekeystolist(d)
+        
+        self.parent.visdataui.importana(anafiledict=copy.deepcopy(d), anafolder=self.tempanafolder)
+        
+        for runk, rund in self.parent.calcui.expfiledict.iteritems():#copy over any platemap info
+            if not runk.startswith('run__'):
+                continue
+            rcpfile=rund['rcp_file']
+            rcpdl=[rcpd for rcpd in self.rcpdlist if rcpd['rcp_file']==rcpfile and len(rcpd['platemapdlist'])>0]
+            if len(rcpdl)>0:
+                rund['platemapdlist']=copy.copy(rcpdl[0]['platemapdlist'])
+        self.parent.calcui_exec()
+        self.hide()
+        
         return
 
     def clearsingleanalysis(self):

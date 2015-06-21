@@ -20,7 +20,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
-    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, \
+    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, plateid=expfiledict[runk]['parameters']['plate_id'], \
                                      nkeys=len(v['keys']), reqkeyinds=[v['keys'].index(reqk) for reqk in requiredkeys if reqk in v['keys']], \
                                      optkeyinds=[(optk in v['keys'] and (v['keys'].index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
@@ -64,49 +64,47 @@ class Analysis_Master_nointer():
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomnames)
         return fracnan<=critfracnan, \
         '%d FOMs, %.2f of attempted calculations, are NaN' %(numnan, fracnan)
+    def initfiledicts(self, runfilekeys=[]):
+        self.multirunfiledict=dict({}, fom_files={})
+        if len(runfilekeys)>0:
+            runklist=sorted(list(set([filed['run'] for filed in self.filedlist])))
+            self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
+        else:
+            self.runfiledict={}
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
-        self.fomfiledict={}
-        self.interfiledict={}
-        self.interfilerawlendict={}
-        self.miscfiledict={}
+        self.initfiledicts()
         self.fomdlist=[]
         for filed in self.filedlist:
             fn=filed['fn']
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+self.fomtuplist_dataarr(dataarr))]
+            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn)), ('plate_id', filed['plateid']), ('run', filed['run'])]+self.fomtuplist_dataarr(dataarr))]
             #writeinterdat
-        fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
+        self.writefom(destfolder, anak)
+    def writefom(self, destfolder, anak):
+        fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
         p=os.path.join(destfolder,fnf)
-        self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames)#, fn=fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.fomnames)#, fn=fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
-        self.fomfiledict[fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+self.fomnames), totnumheadlines, len(self.fomdlist))
+        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.fomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
-        self.fomfiledict={}
-        self.interfiledict={}
-        self.interfilerawlendict={}
-        self.miscfiledict={}
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.fomdlist=[]
         for filed in self.filedlist:
             fn=filed['fn']
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
-            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn))]+fomtuplist)]
+            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn)), ('plate_id', filed['plateid']), ('run', filed['run'])]+fomtuplist)]
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.interfilerawlendict[fnr]='%s;%s;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.interfiledict[fni]='%s;%s;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
-        fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames))
-        p=os.path.join(destfolder,fnf)
-        self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames)#, fn=fnf)
-        totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
-        self.primarycsvpath=p
-        self.fomfiledict[fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no']+self.fomnames), totnumheadlines, len(self.fomdlist))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
+        self.writefom(destfolder, anak)
