@@ -181,7 +181,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'])
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             
             if len(rawlend.keys())>0:
@@ -199,10 +199,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.writefom(destfolder, anak)
         fnf='%s__%s.csv' %(anak,'qualityfoms')
         p=os.path.join(destfolder,fnf)
-        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.quality_foms)#, fn=fnf)
+        #TODO: if quality foms are integers, append them to the intfomkeys and pass [] as 2nd argument
+        self.csvfilstr=createcsvfilstr(self.fomdlist, self.quality_foms, intfomkeys=['runint','plate_id'])#, fn=fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
         self.multirunfiledict['misc_files'][fnf]=\
-            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.quality_foms), totnumheadlines, len(self.fomdlist))
+            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.quality_foms), totnumheadlines, len(self.fomdlist))
 
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
@@ -323,7 +324,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
             rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'])
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             
             if len(rawlend.keys())>0:
@@ -347,10 +348,10 @@ class Analysis__BG_DA(Analysis_Master_inter):
         self.writefom(destfolder, anak)
         fnf='%s__%s.csv' %(anak,'qualityfoms')
         p=os.path.join(destfolder,fnf)
-        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.quality_foms)#, fn=fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, self.quality_foms, intfomkeys=['runint','plate_id'])#, fn=fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
         self.multirunfiledict['misc_files'][fnf]=\
-            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.quality_foms), totnumheadlines, len(self.fomdlist))
+            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.quality_foms), totnumheadlines, len(self.fomdlist))
             
            
         for histfom in self.histfomnames:   

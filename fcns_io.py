@@ -4,7 +4,7 @@ import matplotlib.colors as colors
 from fcns_math import *
 import time
 import zipfile
-
+from operator import itemgetter
 def myexpformat(x, pos):
     for ndigs in range(5):
         lab=(('%.'+'%d' %ndigs+'e') %x).replace('e+0','e').replace('e+','e').replace('e0','').replace('e-0','e-')
@@ -66,6 +66,26 @@ def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')]), repla
     with open(p, mode='w') as f:
         f.write(csvfilstr)
     return numheaddictlines+2
+
+def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float):
+    with open(p, mode='r') as f:
+        lines=f.readlines()[num_header_lines:]
+    if selcolinds is None:
+        selcolinds=range(lines[0].count(delim)+1)
+    fcn=itemgetter(*selcolinds)
+    z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
+    return numpy.array(z).T
+
+def readcsvdict(p, fileattrd):
+    d={}
+    arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str)
+    for k, a in zip(fileattrd['keys'], arr):
+        if '.' in a[0]:
+            d[k]=numpy.float32(a)
+        else:
+            d[k]=numpy.int32(a)
+    return d
+    
 def readechemtxt(path, mtime_path_fcn=None, lines=None):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
@@ -155,7 +175,14 @@ def convertfilekeystolist(exporanafiledict):
                     else:
                         d['sample_no']=numpy.nan
                     exporanafiledict[k][k2][k3][fn]=d
-        
+def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystolist already run on anafiledict
+    for anak, anad in anafiledict.iteritems():
+        if (not anak.startswith('ana__')) or not 'files_multi_run' in anad.keys():
+            continue
+        for typek, typed in anad['files_multi_run'].keys():
+            for fn, fileattrd in typed.iteritems():
+                anafiledict[anak]['files_multi_run'][typek][fn]=readcsvdict(os.path.join(anafolder, fn), fileattrd)
+
 def readbinary_selinds(p, nkeys, keyinds=None):
     with open(p, mode='rb') as f:
         b=numpy.fromfile(f,dtype='float32')

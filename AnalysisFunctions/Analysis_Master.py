@@ -79,16 +79,16 @@ class Analysis_Master_nointer():
                 continue
             fn=filed['fn']
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            self.fomdlist+=[dict([('sample_no', filed['sample_no']), ('plate_id', filed['plateid']), ('run', filed['run'])]+self.fomtuplist_dataarr(dataarr))]
+            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr), sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak)
     def writefom(self, destfolder, anak):
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
         p=os.path.join(destfolder,fnf)
-        self.csvfilstr=createcsvfilstr(self.fomdlist, ['plate_id', 'run']+self.fomnames)#, fn=fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames, intfomkeys=['runint','plate_id'])#, fn=fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
-        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'plate_id', 'run']+self.fomnames), totnumheadlines, len(self.fomdlist))
+        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.fomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
@@ -99,7 +99,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                self.fomdlist+=[dict([('sample_no', filed['sample_no']), ('plate_id', filed['plateid']), ('run', filed['run'])]+fomtuplist)]
+                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)

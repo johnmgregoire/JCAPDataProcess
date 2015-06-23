@@ -1,4 +1,4 @@
-from readtxt import smp_dict_generaltxt
+from fcns_io import smp_dict_generaltxt
 from csvfilewriter import createcsvfilstr, selectexportfom
 from fcns_ui import *
 import copy

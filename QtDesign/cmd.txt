@@ -1,0 +1,2 @@
+C:\Python27\Lib\site-packages\PyQt4>
+pyuic4 -x C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\QtDesign\CalcFOMForm.ui -o C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\CalcFOMForm.py

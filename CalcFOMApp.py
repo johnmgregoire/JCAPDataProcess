@@ -436,20 +436,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def viewresult(self):
         d=copy.deepcopy(self.anadict)
         convertfilekeystolist(d)
-        
+        importfomintoanadict(d)
         self.parent.visdataui.importana(anafiledict=copy.deepcopy(d), anafolder=self.tempanafolder)
         
-        for runk, rund in self.parent.calcui.expfiledict.iteritems():#copy over any platemap info
-            if not runk.startswith('run__'):
-                continue
-            rcpfile=rund['rcp_file']
-            rcpdl=[rcpd for rcpd in self.rcpdlist if rcpd['rcp_file']==rcpfile and len(rcpd['platemapdlist'])>0]
-            if len(rcpdl)>0:
-                rund['platemapdlist']=copy.copy(rcpdl[0]['platemapdlist'])
-        self.parent.calcui_exec()
+        self.parent.visdataui_exec()
         self.hide()
-        
-        return
 
     def clearsingleanalysis(self):
         keys=sorted([k for k in self.anadict.keys() if k.startswith('ana__')])
