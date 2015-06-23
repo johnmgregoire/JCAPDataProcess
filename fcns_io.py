@@ -37,6 +37,12 @@ def attemptnumericconversion_tryintfloat(s):
 def removefiles(folder, fns):
     for fn in fns:
         os.remove(os.path.join(folder, fn))
+
+def getsamplenum_fnline(fnline):
+    if fnline.count(';')==2:#the optional sample_no is after the 2nd ;
+        return int(fnline.rpartition(';')[2].strip())
+    else:
+        return getsamplenum_fn(fnline)
 def getsamplenum_fn(fn):
     if fn.startswith('Sample'):
         return int(fn.partition('Sample')[2].partition('_')[0])
@@ -144,7 +150,10 @@ def convertfilekeystolist(exporanafiledict):
                     d['keys']=keys
                     d['num_header_lines']=type_keys_heads_rows[2]
                     d['num_data_rows']=type_keys_heads_rows[3]
-                    d['sample_no']=getsamplenum_fn(fn)
+                    if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
+                        d['sample_no']=int(type_keys_heads_rows[4].strip())
+                    else:
+                        d['sample_no']=numpy.nan
                     exporanafiledict[k][k2][k3][fn]=d
         
 def readbinary_selinds(p, nkeys, keyinds=None):
@@ -180,7 +189,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
             if not k2.startswith('files_technique__'):
                 continue
             for k3, typed in techd.iteritems():
-                for fn, keystr in typed.iteritems():
+                for fn, fileattrstr in typed.iteritems():
                     if zipbool:
                         with zipopenfcn(fn) as f:
                             lines=f.readlines()
@@ -191,14 +200,19 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
                     if savefolder is None:
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        keys=keystr.partition(';')[2].partition(';')[0].split(',')#the .partition(';')[0] should be superfluous unless the .rcp files start including multiple ;
+                        keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
                         keys=[kv.strip() for kv in keys]
                         filed=readfcn(os.path.splitext(fn), lines)
                         x=numpy.float32([filed[kv] for kv in keys])
                         with openfnc(fn) as f:
                             x.tofile(f)
-                            #savefcn(filed, keys)
-                        expfiledict[k][k2][k3][fn]='%s;%d;%d' %(keystr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                            #savefcn(filed, keys)***
+                        if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
+                            first2attrs, garb, samplestr=fileattrstr.rpartition(';')
+                            s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
+                        else:
+                            s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                        expfiledict[k][k2][k3][fn]=s
         if zipbool:
             archive.close()
 
@@ -385,21 +399,9 @@ def rcplines_zip(zipp):
 indent='    '
 getnumspaces=lambda a:len(a) - len(a.lstrip(' '))
 def createnestparamtup(lines):
-    #ln=str(lines.pop(0).rstrip()).replace(chr(181), 'micro')
     ln=str(lines.pop(0).rstrip())
     numspaces=getnumspaces(ln)
     subl=[]
-# this is supposed to fix the situation where an indented comment wasn't indetned but somehow duplicated the next line at 2 different indents
-#    if ln.count(':')==2 and not 'path' in ln:
-#        print getnumspaces(lines[0])>numspaces
-#        ln, cln, newline=ln.partition(':')
-#        ln+=cln
-#        newline=' '*numspaces+indent+newline
-#        print ln
-#        print newline
-#        print lines[0]
-#        lines=[newline]+lines
-
     while len(lines)>0 and getnumspaces(lines[0])>numspaces:
         tu=createnestparamtup(lines)
         subl+=[tu]
@@ -418,9 +420,15 @@ def readrcplines(lines):
     return interpretrcptuplist(rcptuplist)
     
 def interpretrcptuplist(rcptuplist):
+#    def fixfiletuplist(filetuplist):
+#        
+#    for i0, tup in enumerate(rcptuplist):
+#        if tup[0].startswith('files_technique__'):
+#            rcptuplist[i0]=(tup[0], [(tup2[0], fixfiletuplist(tup2[1])) for tup2 in tup[1]])
+            
     rcptuplist_fns=[(i0, tup) for i0, tup in enumerate(rcptuplist) if tup[0].startswith('files_technique__')]
-    
 
+    
     plateidstrtemp=[tup[0].partition(':')[2].strip() for tup in rcptuplist if tup[0].startswith('plate_id')]
     if len(plateidstrtemp)!=1:
         print 'ERROR FINDING PLATE ID IN .rcp FILE. ', plateidstrtemp
@@ -442,16 +450,19 @@ def interpretrcptuplist(rcptuplist):
 #                for fn, garb in tuplist:
 #                    if fn.partition('Sample')[2].partition('_')[0].isdigit():
 #                        filenametuplist+=[(tech, tp, int(fn.partition('Sample')[2].partition('_')[0]), fn)]
-    makefndict=lambda pl, te, ty, sm, fn, i0, i1, i2:dict([('plate', pl), ('tech', te), ('type', ty), ('smp', sm), ('fn', fn), \
+    
+    appendsampleifmissing=lambda sm, fnline: ((fnline.count(';')==1 and sm>0) and ('%s;%d' %(fnline, sm),) or (fnline,))[0]#append sample number if it is valid and was missing
+    #!!!!! sample_no could be appended here using "appendsampleifmissing(sm, fnline)" but this filedictionary isn't used in creating the .exp. rcptuplist is used so the sample_no will only be in the .exp if it is in the .rcp.   getsamplenum_fnline will get the invalid sample numbers to but those shouldn't be used anywhere.
+    makefndict=lambda pl, te, ty, sm, fnline, i0, i1, i2:dict([('plate', pl), ('tech', te), ('type', ty), ('smp', sm), ('fn', fnline), \
             ('tuplistinds', (i0, i1, i2)), \
             ('inexp', set([])), ('previnexp', set([]))])#inexp is set of data uses ("run_type" ) in which this file is used
     filenamedlist=[\
-        makefndict(plateidstr, techstr.partition('files_technique__')[2].partition(':')[0], typestr.partition(':')[0], getsamplenum_fn(fn), fn, i0, i1, i2)\
+        makefndict(plateidstr, techstr.partition('files_technique__')[2].partition(':')[0], typestr.partition(':')[0], getsamplenum_fnline(fnline), fnline, i0, i1, i2)\
         for i0, (techstr, typfnslist) in rcptuplist_fns\
         for i1, (typestr, tuplist) in enumerate(typfnslist)\
-        for i2, (fn, garb) in enumerate(tuplist)\
-        if ':' in typestr and (fn.startswith('Sample') or fn[0].isdigit())\
-        ]
+        for i2, (fnline, garb) in enumerate(tuplist)\
+        if ':' in typestr and (fnline.startswith('Sample') or fnline[0].isdigit())\
+        ] # the " and (fnline.startswith('Sample') or fnline[0].isdigit()" is to validate expected eche and uvis files but should not be necessary moving forward.
 
 
     typelist=[d['type'] for d in filenamedlist]

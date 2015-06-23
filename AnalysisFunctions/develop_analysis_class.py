@@ -180,8 +180,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
-            fomdict=dict(fomdict, sample_no=getsamplenum_fn(fn), plate_id=filed['plateid'], run=filed['run'])
-            self.fomdlist+=[fomdict]
+            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'])
+                self.fomdlist+=[fomdict]
             
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
@@ -321,8 +322,9 @@ class Analysis__BG_DA(Analysis_Master_inter):
             rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
-            fomdict=dict(fomdict, sample_no=getsamplenum_fn(fn), plate_id=filed['plateid'], run=filed['run'])
-            self.fomdlist+=[fomdict]
+            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'])
+                self.fomdlist+=[fomdict]
             
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])

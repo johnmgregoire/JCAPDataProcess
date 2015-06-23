@@ -20,7 +20,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
-    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, plateid=expfiledict[runk]['parameters']['plate_id'], \
+    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, plateid=expfiledict[runk]['parameters']['plate_id'], sample_no=v['sample_no'], \
                                      nkeys=len(v['keys']), reqkeyinds=[v['keys'].index(reqk) for reqk in requiredkeys if reqk in v['keys']], \
                                      optkeyinds=[(optk in v['keys'] and (v['keys'].index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
@@ -75,9 +75,11 @@ class Analysis_Master_nointer():
         self.initfiledicts()
         self.fomdlist=[]
         for filed in self.filedlist:
+            if numpy.isnan(filed['sample_no']):
+                continue
             fn=filed['fn']
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn)), ('plate_id', filed['plateid']), ('run', filed['run'])]+self.fomtuplist_dataarr(dataarr))]
+            self.fomdlist+=[dict([('sample_no', filed['sample_no']), ('plate_id', filed['plateid']), ('run', filed['run'])]+self.fomtuplist_dataarr(dataarr))]
             #writeinterdat
         self.writefom(destfolder, anak)
     def writefom(self, destfolder, anak):
@@ -96,7 +98,8 @@ class Analysis_Master_inter(Analysis_Master_nointer):
             fn=filed['fn']
             dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
-            self.fomdlist+=[dict([('sample_no', getsamplenum_fn(fn)), ('plate_id', filed['plateid']), ('run', filed['run'])]+fomtuplist)]
+            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
+                self.fomdlist+=[dict([('sample_no', filed['sample_no']), ('plate_id', filed['plateid']), ('run', filed['run'])]+fomtuplist)]
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
