@@ -63,8 +63,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         
         
-        self.batchprocesses=[self.batchuvissingleplate]
-        batchdesc=['Filter uvis into data, ref_light, ref_dark']
+        self.batchprocesses=[self.batchuvissingleplate, self.batchechedark]
+        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
         #These are the filter criteria controls
@@ -80,7 +80,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         self.expparamsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
-         ('name', [self.ExpNameLineEdit, 'none']), \
+         ('name', [self.ExpNameLineEdit, 'temp_eche_name']), \
          ('exp_type', [self.ExpTypeLineEdit, 'eche']), \
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.ExpDescLineEdit, 'null']), \
@@ -114,7 +114,20 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.editexp_addmeasurement()
         
         self.FileStartLineEdit.setText('')
+    def batchechedark(self):
+        chbl=self.FiletypeCheckBoxList
         
+        for chb in chbl:
+            chb.setChecked(str(chb.text()).startswith('spectrum'))
+            
+        self.RunTypeLineEdit.setText('ref_dark')
+        self.FileSearchLineEdit.setText('_DARK')
+        self.editexp_addmeasurement()
+        
+        self.RunTypeLineEdit.setText('data')
+        self.FileSearchLineEdit.setText('')
+        for chb in chbl:
+            chb.setChecked(len(str(chb.text()))>0)
     
     def clearexp(self):
         for rcpd in self.rcpdlist:

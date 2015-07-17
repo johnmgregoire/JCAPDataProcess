@@ -28,6 +28,11 @@ from CA_CP_basics import *
 
 AnalysisClasses=[Analysis__Ifin(), Analysis__Iave(), Analysis__Iphoto()]
 
+DEBUGMODE=True
+
+for ac in AnalysisClasses:
+    ac.debugmode=DEBUGMODE
+
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def __init__(self, parent=None, title='', folderpath=None):
         super(calcfomDialog, self).__init__(parent)
@@ -83,7 +88,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
-         ('name', [self.AnaNameLineEdit, 'none']), \
+         ('name', [self.AnaNameLineEdit, 'temp_eche_name']), \
          ('ana_type', [self.AnaTypeLineEdit, 'eche']), \
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.AnaDescLineEdit, 'null']), \
@@ -342,20 +347,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         while kfcn(i) in self.anadict.keys():
             i+=1
         anak=kfcn(i)
-        try:
+        #try:
+        if 1:
             self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak)
-        except:
-            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
-            if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for rund in \
-                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
-                return
+#        except:
+#            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
+#            if not idialog.exec_():
+#                removefiles(self.tempanafolder, [k for rund in \
+#                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
+#                return
         checkbool, checkmsg=self.analysisclass.check_output()
         if not checkbool:
             idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
             if not idialog.exec_():
                 removefiles(self.tempanafolder, [k for d in \
-                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
+                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
                 return
                 
         self.anadict[anak]={}
@@ -484,9 +490,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             return
+         
         saveana_tempfolder(self.anafilestr, self.tempanafolder, anadict=self.anadict, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
-        self.clearanalysis()
+            
+        self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
+        #self.clearanalysis()
         
     def editvisparams(self):
         if self.activeana is None:

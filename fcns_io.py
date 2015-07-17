@@ -237,7 +237,9 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
                         if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
                             first2attrs, garb, samplestr=fileattrstr.rpartition(';')
                             s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
-                        else:
+                        elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
+                            s=fileattrstr
+                        else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
                             s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
                         expfiledict[k][k2][k3][fn]=s
         if zipbool:
@@ -302,7 +304,7 @@ def strrep_filedict(filedict):
     sl=[k+': '+str(filedict[k]) for k in keys]
     dkeys=[k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k]
     dkeys+=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
-    return '\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])
+    return ('\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])).strip()
         
 def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     itemstr=indent*indentlevel+k

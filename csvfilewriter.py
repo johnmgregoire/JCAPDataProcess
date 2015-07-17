@@ -5,9 +5,9 @@ from PyQt4.QtGui import *
 def createcsvfilstr(fomdlist, fomkeys, intfomkeys=[], fmt='%.5e'):#for each sample, if fom not available inserts NaN. Use to be datadlist with fomd as a key but now assume list of fomd
     smparr=[d['sample_no'] for d in fomdlist]
     fomarr_smps=numpy.array([[(k in d.keys() and (d[k],) or (numpy.nan,))[0] for k in fomkeys] for d in fomdlist]) 
-    lines=[','.join(['sample_no']+fomkeys)]
+    lines=[','.join(['sample_no']+intfomkeys+fomkeys)]
     for smp, fomarr in zip(smparr, fomarr_smps):
-        lines+=[','.join(['%d' %smp]+['%d' %n for n in intfomkeys]+[fmt %n for n in fomarr])]
+        lines+=[','.join(['%d' %smp]+['%d' %d[nk] for nk in intfomkeys]+[fmt %n for n in fomarr])]
     s='\n'.join(lines).replace('nan', 'NaN')
     return s
 
