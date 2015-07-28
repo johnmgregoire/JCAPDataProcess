@@ -602,7 +602,7 @@ def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcp
 
 
 
-def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines=None): # can have raw data files with UV-vis or ECHE styles or a fom file with column headings as first line, in which case smp=None
+def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines=None, returnonlyattrdict=False): # can have raw data files with UV-vis or ECHE styles or a fom file with column headings as first line, in which case smp=None
     if returnsmp:
         smp=None
         fn=os.path.split(path)[1]
@@ -620,20 +620,32 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         f=open(path, mode='r')
         lines=f.readlines()
         f.close()
+    lines=[l for l in lines if len(l)>0]
+    if len(delim)==0:
+        if lines[-1].count(',')>lines[-1].count('\t'):
+            delim=','
+        else:
+            delim='\t'
     if len(lines)==0:
-        return None, {}
+        if returnsmp:
+            return None, {}
+        else:
+            return {}
     if lines[0].startswith('%'):#for echem data files
         for count, l in enumerate(lines):
             if l.startswith('%column_headings='):
                 chs=l.partition('%column_headings=')[2]
                 firstdatalineind=count+1
                 break
-    elif lines[0][0].isdigit():#for uv-vis data files
-        numheadlines=lines[0].rpartition(delim)[2].strip()
+    elif lines[0][0].isdigit():#for uv-vis data files (and for csv also so use \t
+        numheadlines=lines[0].rpartition('\t')[2].strip()
         try:
             numheadlines=eval(numheadlines)
         except:
-            return None, {}
+            if returnsmp:
+                return None, {}
+            else:
+                return {}
         chs=lines[numheadlines+1].strip()
         firstdatalineind=numheadlines+2
     elif lines[1][0].isdigit():#fom files or any file with first line headings and second line starts values
@@ -648,7 +660,10 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
             firstdatalineind=count
         else:#if column headings line doesn't start with #
             if not lines[count+1][0].isdigit():#but if the next line isn't data then abort
-                return None, {}
+                if returnsmp:
+                    return None, {}
+                else:
+                    return {}
             firstdatalineind=count+1
             chs=lines[count].strip()
     else:
@@ -657,11 +672,22 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         else:
             return {}
     
-    
-    d={}
-    z=[]
     column_headings=chs.split(delim)
     column_headings=[s.strip() for s in column_headings]
+    
+    if returnonlyattrdict:
+        d={}
+        d['keys']=column_headings
+        d['num_header_lines']=firstdatalineind
+        d['num_data_rows']=len(lines)-firstdatalineind
+        if smp is None:
+            d['sample_no']=numpy.nan
+        else:
+            d['sample_no']=smp
+        return smp, d
+    d={}
+    z=[]
+    
     skipcols=['Date', 'Time']
     skipinds=[i for i, col in enumerate(column_headings) if col in skipcols]
     column_headings=[x for i, x in enumerate(column_headings) if i not in skipinds]

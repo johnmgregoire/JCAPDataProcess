@@ -94,8 +94,11 @@ class Analysis_Master_nointer():
         self.writefom(destfolder, anak)
     def writefom(self, destfolder, anak):
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
-        p=os.path.join(destfolder,fnf)
         self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames, intfomkeys=['runint','plate_id'])#, fn=fnf)
+        if destfolder is None:
+            return
+
+        p=os.path.join(destfolder,fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
         self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.fomnames), totnumheadlines, len(self.fomdlist))
@@ -119,6 +122,8 @@ class Analysis_Master_inter(Analysis_Master_nointer):
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            if destfolder is None:
+                continue
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)

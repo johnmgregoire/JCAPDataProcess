@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>VisDataDialog</class>
+ <widget class="QDialog" name="VisDataDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>868</width>
-    <height>724</height>
+    <width>1426</width>
+    <height>1186</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QTabWidget" name="tabWidget">
+  <widget class="QTabWidget" name="plateTabWidget">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>120</y>
-     <width>591</width>
-     <height>411</height>
+     <x>690</x>
+     <y>750</y>
+     <width>741</width>
+     <height>431</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -33,18 +33,765 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>20</y>
-       <width>561</width>
-       <height>341</height>
+       <y>0</y>
+       <width>731</width>
+       <height>401</height>
       </rect>
      </property>
     </widget>
    </widget>
+  </widget>
+  <widget class="QTreeWidget" name="AnaTreeWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>810</y>
+     <width>681</width>
+     <height>371</height>
+    </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAsNeeded</enum>
+   </property>
+   <property name="headerHidden">
+    <bool>true</bool>
+   </property>
+   <property name="expandsOnDoubleClick">
+    <bool>false</bool>
+   </property>
+   <attribute name="headerVisible">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerCascadingSectionResizes">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerStretchLastSection">
+    <bool>true</bool>
+   </attribute>
+   <column>
+    <property name="text">
+     <string notr="true">1</string>
+    </property>
+   </column>
+  </widget>
+  <widget class="QTextBrowser" name="textBrowser_xy">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>0</y>
+     <width>631</width>
+     <height>321</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QTabWidget" name="compTabWidget">
+   <property name="geometry">
+    <rect>
+     <x>690</x>
+     <y>320</y>
+     <width>741</width>
+     <height>431</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
-     <string>Tab 2</string>
+     <string>Tab 1</string>
     </attribute>
+    <widget class="QTextBrowser" name="textBrowser_comp">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>731</width>
+       <height>401</height>
+      </rect>
+     </property>
+    </widget>
    </widget>
+  </widget>
+  <widget class="QTextBrowser" name="browser">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>320</y>
+     <width>681</width>
+     <height>211</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="FolderPushButton">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>10</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Data Folder</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="AnaPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>91</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open ANA</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ExpPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>91</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open EXP</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="UpdateFolderPushButton">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>40</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>^  update  ^</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="OnFlyAnaClassComboBox">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>10</y>
+     <width>131</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="OnFlyStoreInterCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>10</y>
+     <width>141</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>store intermediate data</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="compLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>220</y>
+     <width>111</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>210</y>
+     <width>46</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>a,b,c,d
+Comp:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>240</y>
+     <width>46</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>x,y
+Posn:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="xyLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>250</y>
+     <width>111</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>270</y>
+     <width>46</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Sample
+No(s):</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="sampleLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>280</y>
+     <width>111</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addComp">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>220</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>+</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="remComp">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>220</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>-</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="remxy">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>250</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>-</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addxy">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>250</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>+</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="remSample">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>280</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>-</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addSample">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>280</y>
+     <width>21</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>+</string>
+   </property>
+  </widget>
+  <widget class="Line" name="line">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>200</y>
+     <width>211</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="Line" name="line_2">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>210</y>
+     <width>20</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>270</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Element plot order:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>110</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>fom to plot</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="fomplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>130</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>160</y>
+     <width>111</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Comp. plot type:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="CompPlotTypeComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>180</y>
+     <width>111</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>230</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>fom range min,max</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>270</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>colormap</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="stdcsvplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>90</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>180</y>
+     <width>119</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>below color</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="compplotsizeLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>240</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string>patch</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="belowrangecolLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>200</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>70</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>standard plot</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>220</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Comp. point size:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="colormapLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>290</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string>jet</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="vminmaxLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>250</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="CompPlotOrderComboBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>290</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_12">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>130</y>
+     <width>119</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>above color</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="aboverangecolLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>150</y>
+     <width>119</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="rightyplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>100</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_13">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>80</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>right y-axis</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="yplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>60</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_14">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>40</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>y-axis</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="xplotchoiceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>20</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply all other filteres in this section to only this run</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_15">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>0</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>x-axis</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="customxylegendPushButton">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>32</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>customize
+x-y legend</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="overlayselectCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>520</x>
+     <y>10</y>
+     <width>81</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>x-y overlay</string>
+   </property>
+  </widget>
+  <widget class="QTreeWidget" name="SelectTreeWidget">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>40</y>
+     <width>291</width>
+     <height>271</height>
+    </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAsNeeded</enum>
+   </property>
+   <property name="headerHidden">
+    <bool>true</bool>
+   </property>
+   <property name="expandsOnDoubleClick">
+    <bool>false</bool>
+   </property>
+   <attribute name="headerVisible">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerCascadingSectionResizes">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerStretchLastSection">
+    <bool>true</bool>
+   </attribute>
+   <column>
+    <property name="text">
+     <string notr="true">1</string>
+    </property>
+   </column>
+  </widget>
+  <widget class="QTextBrowser" name="fomstatsTextBrowser">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>540</y>
+     <width>191</width>
+     <height>261</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QTextBrowser" name="textBrowser_fomhist">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>540</y>
+     <width>481</width>
+     <height>261</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="FilenameFilterPushButton">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>70</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Create file filter</string>
+   </property>
   </widget>
  </widget>
  <resources/>
