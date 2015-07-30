@@ -1,12 +1,14 @@
-import numpy, copy
+import numpy, copy,sys,os
 if __name__ == "__main__":
-    import os, sys
     sys.path.append(os.path.split(os.getcwd())[0])
+
+sys.path.append(os.path.split(os.path.realpath(__file__))[0])
 
 from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
+
 
 class Analysis__Ifin(Analysis_Master_nointer):
     def __init__(self):

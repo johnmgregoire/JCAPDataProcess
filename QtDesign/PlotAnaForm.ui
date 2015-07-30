@@ -41,7 +41,7 @@
     </widget>
    </widget>
   </widget>
-  <widget class="QTreeWidget" name="AnaTreeWidget">
+  <widget class="QTreeWidget" name="AnaExpFomTreeWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -730,7 +730,7 @@ x-y legend</string>
      <x>220</x>
      <y>40</y>
      <width>291</width>
-     <height>271</height>
+     <height>241</height>
     </rect>
    </property>
    <property name="verticalScrollBarPolicy">
@@ -791,6 +791,55 @@ x-y legend</string>
    </property>
    <property name="text">
     <string>Create file filter</string>
+   </property>
+  </widget>
+  <widget class="QTreeWidget" name="nosampleTreeWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>100</y>
+     <width>211</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAsNeeded</enum>
+   </property>
+   <property name="headerHidden">
+    <bool>true</bool>
+   </property>
+   <property name="expandsOnDoubleClick">
+    <bool>false</bool>
+   </property>
+   <attribute name="headerVisible">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerCascadingSectionResizes">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerStretchLastSection">
+    <bool>true</bool>
+   </attribute>
+   <column>
+    <property name="text">
+     <string notr="true">1</string>
+    </property>
+   </column>
+  </widget>
+  <widget class="QPushButton" name="UpdateFiltersPushButton">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>290</y>
+     <width>121</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>update plots w/ filters</string>
    </property>
   </widget>
  </widget>

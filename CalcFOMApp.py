@@ -23,7 +23,8 @@ from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
-os.chdir('AnalysisFunctions')
+
+sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 
 AnalysisClasses=[Analysis__Ifin(), Analysis__Iave(), Analysis__Iphoto()]
@@ -394,7 +395,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         runk_typek_b=sorted([('multi_run', typek, True) for typek in self.analysisclass.multirunfiledict.keys() if len(self.analysisclass.multirunfiledict[typek])>0])
         runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.analysisclass.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
         for runk, typek, b in runk_typek_b:
-            frunk='file_'+runk
+            frunk='files_'+runk
             if not frunk in self.activeana.keys():
                 self.activeana[frunk]={}
             if b:
@@ -615,7 +616,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotd['fom']=fom
         self.plotd['inds_runk']=inds_runk
         self.plotd['t']=t
-        self.plotd['sample']=sample
+        self.plotd['sample_no']=sample
         self.plotd['fomname']=self.fomnames[fi]
         if plotbool:
             self.plot()
@@ -644,7 +645,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             hxarr=self.plotd['t']
             xl='time (s)'
         else:
-            hxarr=self.plotd['sample']
+            hxarr=self.plotd['sample_no']
             xl='sample_no'
         for runk in sorted(self.plotd['inds_runk'].keys()):
             hx=hxarr[self.plotd['inds_runk'][runk]]
@@ -849,7 +850,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
         
         self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
-        
+
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

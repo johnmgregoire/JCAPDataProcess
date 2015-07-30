@@ -158,7 +158,7 @@ def convertfilekeystolist(exporanafiledict):
         if not (k.startswith('run__') or k.startswith('ana__')):
             continue
         for k2, techd in rund.iteritems():
-            if not k2.startswith('files_technique__'):
+            if not k2.startswith('files_'):
                 continue
             for k3, typed in techd.iteritems():
                 for fn, keystr in typed.iteritems():
@@ -173,7 +173,7 @@ def convertfilekeystolist(exporanafiledict):
                     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
                         d['sample_no']=int(type_keys_heads_rows[4].strip())
                     else:
-                        d['sample_no']=numpy.nan
+                        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
                     exporanafiledict[k][k2][k3][fn]=d
 def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystolist already run on anafiledict
     for anak, anad in anafiledict.iteritems():

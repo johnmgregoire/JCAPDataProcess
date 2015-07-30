@@ -7,7 +7,7 @@ from PyQt4.QtGui import *
 
 from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
-from VisualizeDataApp import visdataDialog
+#from VisualizeDataApp import visdataDialog
 from CombineFomApp import combinefomDialog
 
 
@@ -18,7 +18,7 @@ class MainMenu(QMainWindow):
         self.setWindowTitle('HTE Experiment and FOM Data Processing')
         self.expui=expDialog(self, title='Create/Edit an Experiment')
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
-        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+        #self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
         self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
         
         expuiButton=QPushButton()
@@ -56,7 +56,8 @@ class MainMenu(QMainWindow):
     def calcui_exec(self):
         self.calcui.show()
     def visui_exec(self):
-        self.visdataui.show()
+        return
+        #self.visdataui.show()
     def combinefomui_exec(self):
         self.combinefomui.show()
         
