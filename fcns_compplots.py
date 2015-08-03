@@ -270,7 +270,7 @@ class plotwidget(FigureCanvas):
     def __init__(self, parent, width=12, height=6, dpi=72, projection3d=False):
 
         #plotdata can be 2d array for image plot or list of 2 1d arrays for x-y plot or 2d array for image plot or list of lists of 2 1D arrays
-
+        self.projection3d=projection3d
         self.fig=Figure(figsize=(width, height), dpi=dpi)
         if projection3d:
             self.axes=self.fig.add_subplot(111, navigate=True, projection='3d')
@@ -288,7 +288,28 @@ class plotwidget(FigureCanvas):
 
         self.mpl_connect('button_press_event', self.myclick)
         self.clicklist=[]
+        self.cbax=None
+    
+    def redoaxes(self, projection3d=False, onlyifprojectionchanges=True, cbaxkwargs={}):
+        if onlyifprojectionchanges and (projection3d==self.projection3d):
+            return
+        self.fig.clf()
+        if projection3d:
+            self.axes=self.fig.add_subplot(111, navigate=True, projection='3d')
+            self.axes.set_axis_off()
+        else:
+            self.axes=self.fig.add_subplot(111, navigate=True)
+        if not self.cbax is None or len(cbaxkwargs)>0:
+            self.createcbax(**cbaxkwargs)
 
+        self.axes.hold(True)
+    
+    def createcbax(self, axrect=[0.88, 0.1, 0.04, 0.8], left=0, rshift=.01):
+
+        self.fig.subplots_adjust(left=left, right=axrect[0]-rshift)
+        self.cbax=self.fig.add_axes(axrect)
+
+        
     def myclick(self, event):
         if not (event.xdata is None or event.ydata is None):
             arrayxy=[event.xdata, event.ydata]

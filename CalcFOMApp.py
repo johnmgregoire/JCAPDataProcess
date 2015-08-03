@@ -526,7 +526,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 d['colormap_max_value']=b.strip()
         totnumheadlines=writecsv_smpfomd(self.analysisclass.primarycsvpath, '', headerdict=self.csvheaderdict, replaceheader=True)
         fnf=os.path.split(self.analysisclass.primarycsvpath)[1]
-        files_techd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_technique__')][0]]
+        files_techd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_')][0]]
         files_fomd=files_techd['fom_files']
         s=files_fomd[fnf]
         l=s.split(';')

@@ -42,7 +42,7 @@ from quaternary_folded_ternaries import *
 
         
 class quatcompplotoptions():
-    def __init__(self, plotw, combobox, plotw3d=None, ellabels=['A', 'B', 'C', 'D'], plotwcbaxrect=None):
+    def __init__(self, plotw, combobox, plotw3d=None, ellabels=['A', 'B', 'C', 'D'], plotwcbaxrect=None, include3doption=False):
 
         self.ellabels=ellabels
         self.plotw=plotw
@@ -68,14 +68,14 @@ class quatcompplotoptions():
         ]
         self.stackedtern_uiinds=[4, 5, 6, 7, 8]
         
-        if self.plotw3d is None:
-            self.quat3doptions=[]
-            self.quat3d_uiinds=[]
-        else:
+        if self.plotw3d or include3doption:
             self.quat3doptions=[\
                 ('3-D Quaternary', QuaternaryPlot), \
                 ]
             self.quat3d_uiinds=[9]
+        else:
+            self.quat3doptions=[]
+            self.quat3d_uiinds=[]
 
         self.fillplotoptions()
     
@@ -96,51 +96,67 @@ class quatcompplotoptions():
         if nintervals is None and len(self.quatcomps)>0:
 #            pairwisediffs=(((quatcomps[1:]-quatcomps[:-1])**2).sum(axis=1))**.5/2.**.5
 #            mindiff=(pairwisediffs[pairwisediffs>0.005]).min()
-            mindiff=min([x-y for i in range(quatcomps.shape[1]) for x in quatcomps[:, i] for y in quatcomps[:, i] if x>y+.01])
-            self.nintervals=round(1./mindiff)
+            difflist=[x-y for i in range(quatcomps.shape[1]) for x in quatcomps[:, i] for y in quatcomps[:, i] if x>y+.01]
+            if len(difflist)==0:
+                self.nintervals=5#count this as the ~minumum number of intervals
+            else:
+                mindiff=min(difflist)
+                self.nintervals=round(1./mindiff)
         else:
             self.nintervals=nintervals
             
-    def plot(self, **kwargs):
+    def plot(self, plotw=None, plotw3d=None, **kwargs):
+        if plotw is None:
+            plotw=self.plotw
+        if plotw3d is None:
+            plotw3d=self.plotw3d
+       
+            
         i=self.plottypeComboBox.currentIndex()
+
         if i==0:
             return None
         if i in self.quat3d_uiinds:
-            self.plotw3d.axes.cla()
+            if plotw3d is None:
+                plotw.redoaxes(projection3d=True, cbaxkwargs=dict({}, axrect=self.plotwcbaxrect))
+                plotw3d=plotw
+                self.cbax=plotw.cbax
+            else:
+                plotw3d.axes.cla()
             selclass=self.quat3doptions[self.quat3d_uiinds.index(i)][1]
-            self.quat3dplot(selclass, **kwargs)
+            self.quat3dplot(plotw3d, selclass, **kwargs)
             return True
             
-
-        self.plotw.fig.clf()
+        
+        plotw.fig.clf()
         if not self.plotwcbaxrect is None:
-            self.plotw.axes=self.plotw.fig.add_axes((0, 0, self.plotwcbaxrect[0]-.01, 1))
-            self.cbax=self.plotw.fig.add_axes(self.plotwcbaxrect)
+            plotw.axes=plotw.fig.add_axes((0, 0, self.plotwcbaxrect[0]-.01, 1))
+            self.cbax=plotw.fig.add_axes(self.plotwcbaxrect)
         else:
-            self.plotw.axes=self.plotw.fig.add_axes((0, 0, 1, 1))
+            plotw.axes=plotw.fig.add_axes((0, 0, 1, 1))
             
         if i in self.ternaryface_uiinds:
             selclass=self.ternaryfaceoptions[self.ternaryface_uiinds.index(i)][1]
-            self.ternaryfaceplot(selclass, **kwargs)
+            self.ternaryfaceplot(plotw, selclass, **kwargs)
         if i in self.stackedtern_uiinds:
             makefcn, scatterfcn=self.stackedternoptions[self.stackedtern_uiinds.index(i)][1]
-            self.stackedternplot(makefcn, scatterfcn, **kwargs)
+            self.stackedternplot(plotw, makefcn, scatterfcn, **kwargs)
         
         return False
     
-    def quat3dplot(self, plotclass, **kwargs):
-        tf=plotclass(self.plotw3d.axes)#, nintervals=self.nintervals)
+    def quat3dplot(self, plotw3d, plotclass, **kwargs):
+        tf=plotclass(plotw3d.axes)#, nintervals=self.nintervals)
         tf.label()
         tf.scatter(self.quatcomps, c=self.cols, **kwargs)
 
-    def ternaryfaceplot(self, plotclass, **kwargs):
-        ax=self.plotw.axes
+    def ternaryfaceplot(self, plotw, plotclass, **kwargs):
+        ax=plotw.axes
         tf=plotclass(ax, nintervals=self.nintervals)
         tf.label()
         tf.scatter(self.quatcomps, self.cols, **kwargs)
         
-    def stackedternplot(self, makefcn, scatterfcn, **kwargs):
-        self.axl, self.stpl=makefcn(fig=self.plotw.fig, ellabels=self.ellabels)
+    def stackedternplot(self, plotw, makefcn, scatterfcn, **kwargs):
+        self.axl, self.stpl=makefcn(fig=plotw.fig, ellabels=self.ellabels)
         scatterfcn(self.quatcomps, self.cols, self.stpl, edgecolor='none', **kwargs)
         
 

@@ -5,6 +5,7 @@ from fcns_math import *
 import time
 import zipfile
 from operator import itemgetter
+from DBPaths import *
 def myexpformat(x, pos):
     for ndigs in range(5):
         lab=(('%.'+'%d' %ndigs+'e') %x).replace('e+0','e').replace('e+','e').replace('e0','').replace('e-0','e-')
@@ -76,7 +77,7 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
     z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
     return numpy.array(z).T
 
-def readcsvdict(p, fileattrd):
+def readcsvdict(p, fileattrd, returnheaderdict=False):
     d={}
     arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str)
     for k, a in zip(fileattrd['keys'], arr):
@@ -84,7 +85,17 @@ def readcsvdict(p, fileattrd):
             d[k]=numpy.float32(a)
         else:
             d[k]=numpy.int32(a)
-    return d
+    if not returnheaderdict:
+        return d
+    with open(p, mode='r') as f:
+        lines=[f.readline() for count in range(fileattrd['num_header_lines'])]
+        lines=lines[1:-1]
+        tuplist=[]
+        while len(lines)>0:
+            tuplist+=[createnestparamtup(lines)]
+            headerdict=dict(\
+            [createdict_tup(tup) for tup in tuplist])
+    return d, headerdict
     
 def readechemtxt(path, mtime_path_fcn=None, lines=None):
     if lines is None:
@@ -364,16 +375,20 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None):
         sl=l.split(',')
         d=dict([(k, myeval(s.strip())) for k, s in zip(keys, sl)])
         dlist+=[d]
+    if not 'sample_no' in keys:
+        dlist=[dict(d, sample_no=d['Sample']) for d in dlist]
     if returnfiducials:
         return dlist, fid
     return dlist
 
 def getplatemappath_plateid(plateidstr, erroruifcn=None):
-    #TODO write p in terms of plateidstr
-    #p=os.path.join(os.getcwd(), '0037-04-0730-mp.txt')
-    p='sdf'
+    p=''
+    fld=os.path.join(PLATEFOLDER, plateidstr)
+    if os.path.isdir(fld):
+        l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
+        p=os.pth.join(fld, l[0])
     if (not os.path.isfile(p)) and not erroruifcn is None:
-        p=erroruifcn('')
+        p=erroruifcn('', PLATEMAPBACKUP)
     return p
 
 def readrcpfrommultipleruns(pathlist):

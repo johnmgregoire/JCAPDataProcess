@@ -12,8 +12,8 @@ from bgmath_fcn import *
 import matplotlib.pyplot as plt
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
-    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_technique__' in ftk]) for anak, anav in anadict.iteritems()\
-    if anak.startswith('ana__') and True in ['files_technique__' in ftk for ftk in anav.keys()]]
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_' in ftk]) for anak, anav in anadict.iteritems()\
+    if anak.startswith('ana__') and True in ['files_' in ftk for ftk in anav.keys()]]
 
     Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, \
                                  nkeys=len(tagandkeys.split(';')[1].split(',')), \
