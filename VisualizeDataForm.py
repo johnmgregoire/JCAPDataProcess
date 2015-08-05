@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Thu Jul 30 20:31:04 2015
+# Created: Tue Aug 04 21:21:17 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -56,7 +56,10 @@ class Ui_VisDataDialog(object):
         self.textBrowser_comp.setObjectName(_fromUtf8("textBrowser_comp"))
         self.compTabWidget.addTab(self.tab_2, _fromUtf8(""))
         self.browser = QtGui.QTextBrowser(VisDataDialog)
-        self.browser.setGeometry(QtCore.QRect(0, 290, 681, 161))
+        self.browser.setGeometry(QtCore.QRect(0, 300, 681, 161))
+        self.browser.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.browser.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.browser.setLineWrapMode(QtGui.QTextEdit.NoWrap)
         self.browser.setObjectName(_fromUtf8("browser"))
         self.FolderPushButton = QtGui.QPushButton(VisDataDialog)
         self.FolderPushButton.setGeometry(QtCore.QRect(110, 10, 101, 23))
@@ -78,6 +81,7 @@ class Ui_VisDataDialog(object):
         self.OnFlyStoreInterCheckBox.setObjectName(_fromUtf8("OnFlyStoreInterCheckBox"))
         self.compLineEdit = QtGui.QLineEdit(VisDataDialog)
         self.compLineEdit.setGeometry(QtCore.QRect(50, 190, 111, 20))
+        self.compLineEdit.setToolTip(_fromUtf8(""))
         self.compLineEdit.setText(_fromUtf8(""))
         self.compLineEdit.setObjectName(_fromUtf8("compLineEdit"))
         self.label = QtGui.QLabel(VisDataDialog)
@@ -88,12 +92,14 @@ class Ui_VisDataDialog(object):
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.xyLineEdit = QtGui.QLineEdit(VisDataDialog)
         self.xyLineEdit.setGeometry(QtCore.QRect(50, 220, 111, 20))
+        self.xyLineEdit.setToolTip(_fromUtf8(""))
         self.xyLineEdit.setObjectName(_fromUtf8("xyLineEdit"))
         self.label_3 = QtGui.QLabel(VisDataDialog)
         self.label_3.setGeometry(QtCore.QRect(10, 240, 46, 31))
         self.label_3.setObjectName(_fromUtf8("label_3"))
         self.sampleLineEdit = QtGui.QLineEdit(VisDataDialog)
         self.sampleLineEdit.setGeometry(QtCore.QRect(50, 250, 111, 20))
+        self.sampleLineEdit.setToolTip(_fromUtf8(""))
         self.sampleLineEdit.setObjectName(_fromUtf8("sampleLineEdit"))
         self.addComp = QtGui.QPushButton(VisDataDialog)
         self.addComp.setGeometry(QtCore.QRect(160, 190, 21, 23))
@@ -224,6 +230,12 @@ class Ui_VisDataDialog(object):
         self.UpdateFiltersPushButton = QtGui.QPushButton(VisDataDialog)
         self.UpdateFiltersPushButton.setGeometry(QtCore.QRect(220, 260, 121, 23))
         self.UpdateFiltersPushButton.setObjectName(_fromUtf8("UpdateFiltersPushButton"))
+        self.compPlotMarkSelectionsCheckBox = QtGui.QCheckBox(VisDataDialog)
+        self.compPlotMarkSelectionsCheckBox.setGeometry(QtCore.QRect(20, 280, 171, 17))
+        self.compPlotMarkSelectionsCheckBox.setObjectName(_fromUtf8("compPlotMarkSelectionsCheckBox"))
+        self.UpdatePlotPushButton = QtGui.QPushButton(VisDataDialog)
+        self.UpdatePlotPushButton.setGeometry(QtCore.QRect(340, 260, 151, 23))
+        self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -282,6 +294,8 @@ class Ui_VisDataDialog(object):
         self.overlayselectCheckBox.setText(QtGui.QApplication.translate("VisDataDialog", "x-y overlay", None, QtGui.QApplication.UnicodeUTF8))
         self.FilenameFilterPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Create file filter", None, QtGui.QApplication.UnicodeUTF8))
         self.UpdateFiltersPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "update plots w/ filters", None, QtGui.QApplication.UnicodeUTF8))
+        self.compPlotMarkSelectionsCheckBox.setText(QtGui.QApplication.translate("VisDataDialog", "Mark selections on Comp.plots", None, QtGui.QApplication.UnicodeUTF8))
+        self.UpdatePlotPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "update plots w/ same data", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

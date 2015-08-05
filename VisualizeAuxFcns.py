@@ -38,22 +38,24 @@ def d_nestedkeys(d, keylist):
 
 
 #plateid,code,sample,fom,xy,comp
-def extractplotdinfo(fomd, fomname, expfiledict):
+def extractplotdinfo(fomd, fomname, expfiledict, fomdlist_index0, fomdlist_index1, ellabels=['A', 'B', 'C', 'D']):
     d=fomd
-    returnlist=[d[k] for k in ['plate_id','code','sample_no', fomname]]
+    returnlist=[fomdlist_index0, fomdlist_index1]
+    returnlist+=[d[k] for k in ['plate_id','code','sample_no', fomname]]
     if d['sample_no']==0:
         returnlist+=[[numpy.nan]*2, [numpy.nan]*4]
     else:
         rund=expfiledict['run__%d' %d['runint']]
         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
         returnlist+=[[pmd[k] for k in ['x', 'y']]]
-        returnlist+=[[pmd[k] for k in ['A', 'B', 'C', 'D']]]
+        returnlist+=[[pmd[k] for k in ellabels]]
     return returnlist
 
 def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, treefcns):
     for anak, anad in anafiledict.iteritems():
         if not anak.startswith('ana__'):
             continue
+        anaint=int(anak.partition('ana__')[2])
         for anarunk, anarund in anad.iteritems():
             if not anarunk.startswith('files_'):
                 continue
@@ -63,9 +65,9 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                         continue
                     p=os.path.join(anafolder, filek)
                     fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True)
-                    fomdlist=[dict([(k, fomd[k][count]) for k in filed['keys']]) for count in range(len(fomd[filed['keys'][0]]))]
+                    fomdlist=[dict([(k, fomd[k][count]) for k in filed['keys']]+[('anaint', anaint)]) for count in range(len(fomd[filed['keys'][0]]))]
                     l_fomdlist+=[fomdlist]
-                    l_fomnames+=[filed['keys']]
+                    l_fomnames+=[filed['keys']+['anaint']]
                     l_csvheaderdict+=[csvheaderdict]
                     treefcns.appendFom(filed['keys'], csvheaderdict)
 
@@ -138,12 +140,12 @@ class treeclass_anaexpfom():
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
             
-    def nestedfill(self, d, parentitem, laststartswith='files_', prependstr=''):
-        nondictkeys=sorted([k for k, v in d.iteritems() if not isinstance(v, dict)])
+    def nestedfill(self, d, parentitem, laststartswith='files_', prependstr='', skipkeys=['platemapdlist', 'platemapsamples']):
+        nondictkeys=sorted([k for k, v in d.iteritems() if not isinstance(v, dict) and not k in skipkeys])
         for k in nondictkeys:
             item=QTreeWidgetItem([': '.join([prependstr+k, str(d[k])])], 0)
             parentitem.addChild(item)
-        dictkeys1=sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)])
+        dictkeys1=sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict) and not k in skipkeys])
         for k in dictkeys1:
             item=QTreeWidgetItem([prependstr+k+':'], 0)
             if k.endswith('_files'):#find the last _files where filename keys are being added and if this is in .exp make this the place where filenames are appened. the intention is that for on-the-fly this will be the only run__ in exp
@@ -156,7 +158,7 @@ class treeclass_anaexpfom():
             else:
                 self.nestedfill(d[k], item)
             parentitem.addChild(item)
-        dictkeys2=sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        dictkeys2=sorted([k for k in d.keys() if k.startswith(laststartswith) and not k in skipkeys])
         for k in dictkeys2:
             item=QTreeWidgetItem([prependstr+k+':'], 0)
             self.nestedfill(d[k], item)

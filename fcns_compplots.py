@@ -35,6 +35,9 @@ from quaternary_ternary_faces import ternaryfaces
 from quaternary_binary_lines import binarylines
 
 
+QuaternaryPlotInstance=QuaternaryPlot(None)
+TernaryPlotInstance=TernaryPlot(None)
+
 class ternaryfacesWidget(QDialog):
     def __init__(self, parent, comp, cols, cbaxrect=[.88, .2, .04, .6], ellabels=['A', 'B', 'C', 'D'], **kwargs):
         super(ternaryfacesWidget, self).__init__(parent)
@@ -315,4 +318,4 @@ class plotwidget(FigureCanvas):
             arrayxy=[event.xdata, event.ydata]
             print 'clicked on image: array indeces ', arrayxy, ' using button', event.button
             self.clicklist+=[arrayxy]
-            self.emit(SIGNAL("genericclickonplot"), [event.xdata, event.ydata, event.button])
+            self.emit(SIGNAL("genericclickonplot"), [event.xdata, event.ydata, event.button, event.inaxes])

@@ -1,4 +1,4 @@
-import time
+import time, itertools
 import os, os.path, shutil
 import sys
 import numpy
@@ -37,7 +37,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         #self.SelectTreeView.setModel(CheckableDirModel(self))
         self.AnaExpFomTreeWidgetFcns=treeclass_anaexpfom(self.AnaExpFomTreeWidget)
-        
+        self.OnFlyStoreInterCheckBox.setEnabled(False)
         button_fcn=[\
         (self.AnaPushButton, self.importana), \
         (self.ExpPushButton, self.importexp), \
@@ -45,7 +45,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.UpdateFolderPushButton, self.updateontheflydata), \
         (self.FilenameFilterPushButton, self.createfilenamefilter), \
         (self.UpdateFiltersPushButton, self.updatefiltereddata), \
-
+        (self.UpdatePlotPushButton, self.plotfom), \
+        (self.addComp, self.addValuesComp), \
+        (self.remComp, self.remValuesComp), \
+        (self.addxy, self.addValuesXY), \
+        (self.remxy, self.remValuesXY), \
+        (self.addSample, self.addValuesSample), \
+        (self.remSample, self.remValuesSample), \
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
         for button, fcn in button_fcn:
@@ -61,8 +67,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #QObject.connect(self.SelectTreeWidget, SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.processclick_selecttreeitem)
         QObject.connect(self.AnaExpFomTreeWidget, SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.processclick_selecttreeitem)
         
-        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.filterandplotfomdata)
+        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"), self.updatefomchoiceandplot)
 
+        QObject.connect(self.compPlotMarkSelectionsCheckBox,SIGNAL("released()"), self.plotfom)
         
         for count, c in enumerate(AnalysisClasses):
             self.OnFlyAnaClassComboBox.insertItem(count, c.analysis_name)
@@ -76,8 +83,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.anafiledict={}
         self.expfiledict={}
         
-        self.fomplotd=dict({},plate_id=[],code=[],sample_no=[], fom=[], xy=[], comp=[], fomname='')
-            
+        
+        
+        self.ellabels=['A', 'B', 'C', 'D']
+        
+        
+        self.clearfomplotd()
+    def clearfomplotd(self):
+        self.fomplotd=dict({},fomdlist_index0=[], fomdlist_index1=[], plate_id=[], code=[],sample_no=[], fom=[], xy=[], comp=[], fomname='')
+        self.select_idtups=[]
+        self.select_circs_plotws=[]
+        self.browser.setText('')
     def createfilenamefilter(self):
         
         ans=userinputcaller(self, inputs=[('filename search string', str, '')], title='Enter search string',  cancelallowed=True)
@@ -110,6 +126,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
+
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
         readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.AnaExpFomTreeWidgetFcns)
         
@@ -133,19 +150,55 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.exppath=exppath
         self.expfolder=os.path.split(exppath)[0]
         self.expfiledict=expfiledict
+        masterels=None
         for runk, rund in self.expfiledict.iteritems():
-            if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
+            if not (runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                      and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
-                     and 'plate_id' in rund['parameters'].keys():
-                rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
-                    erroruifcn=\
-                lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
-                rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
+                     and 'plate_id' in rund['parameters'].keys()):
+                masterels=['A', 'B', 'C', 'D']
+                continue
+            rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
+                erroruifcn=\
+            lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
+            rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
+            els=getelements_plateidstr(str(rund['parameters']['plate_id']))
+            if els is None:
+                continue
+            if len(els)>4:
+                els=els[:4]
+            if masterels is None:
+                masterels=els
+            elif masterels==els:
+                continue
+            elif set(masterels)==set(els):
+                idialog=messageDialog(self, 'Modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
+                if idialog.exec_():
+                    rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D']) for d in rund['platemapdlist']]
+                    lets=['A', 'B', 'C', 'D']
+                    for d in rund['platemapdlist']:
+                        for let, el in zip(lets, masterels):
+                            d[let]=d['orig'+lets[els.index(el)]]
+                else:
+                    masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels
+            else:
+                idialog=messageDialog(self, 'WARNING: plate_ids with incommensurate elements have been added')
+                idialog.exec_()
+                masterels=['A', 'B', 'C', 'D']
+        if masterels is None or masterels==['A', 'B', 'C', 'D']:
+            self.ellabels=['A', 'B', 'C', 'D']
+        else:#to get here evrythign has a platemap
+            self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]
+            for runk, rund in self.expfiledict.iteritems():
+                for d in rund['platemapdlist']:
+                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
+                        d[el]=d[oldlet]
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
+        self.fillcomppermutations()
         if not fromana:
             self.setupfilterchoices()
             self.updatefomplotchoices()
+        self.clearfomplotd()
         
     def openontheflyfolder(self):
         t=mygetdir(self, markstr='folder for on-the-fly analysis')
@@ -174,7 +227,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updateontheflydata()
         self.anafiledict={}
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
-    
+        
+        self.ellabels=['A', 'B', 'C', 'D']
+        self.fillcomppermutations()
+        self.clearfomplotd()
+        
     def updateontheflydata(self):
         #this treates all files in the folder the same and by doing so assumes each file is a measurement on s asample. this could read a .csv fom file but it would be sample_no=nan and would not be ported to self.fomdlist. that is tricky and could be done but not necessary if "on-the-fly" is used for a raw data stream.
         self.lastmodtime, d_appended=createontheflyrundict(self.expfiledict, self.expfolder, lastmodtime=self.lastmodtime)
@@ -195,20 +252,27 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for ind in inds:
             fomdlist=self.l_fomdlist[ind]
             fomnames=self.l_fomnames[ind]
-            for k in ['plate_id', 'runint', 'code']:
-                if not k in fomnames:
-                    fomnames+=[k]
+
             for d in fomdlist:
                 if not 'plate_id' in d.keys():
                     d['plate_id']=0
+                    fomnames+=['plate_id']
                 if not 'runint' in d.keys():
                     d['runint']=0
-                if not 'code' in d.keys():
-                    if d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0:
-                        d['code']=-1
-                    else:
-                        rund=self.expfiledict['run__%d' %d['runint']]
-                        d['code']=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]['code']
+                    fomnames+=['runint']
+                if not 'anaint' in d.keys():
+                    d['anaint']=0
+                    fomnames+=['anaint']
+                if not 'code' in d.keys() and (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
+                    d['code']=-1
+                    fomnames+=['code']
+                if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
+                    rund=self.expfiledict['run__%d' %d['runint']]
+                    pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
+                    for k in self.ellabels+['code', 'x', 'y']:
+                        if not k in d.keys():
+                            d[k]=pmd[k]
+                            fomnames+=[k]
         
     def setupfilterchoices(self):
         #for foms in ana only need the sets of run,plate,code so set that up here and iadd it in below
@@ -273,9 +337,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         anaorexp=str(item.text(0))
         if anaorexp=='ana':
             d=self.anafiledict
+            p=os.path.join(self.anafolder, keylist[-1])
         else:
             d=self.expfiledict
+            p=os.path.join(self.expfolder, keylist[-1])
         filed=d_nestedkeys(d, keylist)
+        filed['path']=p
+        self.plotxy(filed=filed)
         #TODO: how does x-y plotting work? use this filed to do it
             
     def updatefiltereddata(self):
@@ -320,7 +388,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist+=[self.analysisclass.fomdlist]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[self.analysisclass.fomnames]
         self.l_csvheaderdict+=[self.analysisclass.csvheaderdict]#this contains default plot info
-        
+        #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         #self.l_usefombool+=[True]
         self.updatefomdlist_plateruncode(inds=[-1])
         self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
@@ -328,6 +396,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomplotchoices()
     
     def filterandplotfomdata(self, plotbool=True):
+        self.clearfomplotd()
+        
         mainitem=self.widgetItems_pl_ru_te_ty_co[0]
         plateidallowedvals=[int(str(mainitem.child(i).text(0)).strip()) for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         
@@ -337,23 +407,41 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         mainitem=self.widgetItems_pl_ru_te_ty_co[-1]
         codeallowedvals=[int(str(mainitem.child(i).text(0)).strip()) for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         
+        
         fomname=str(self.fomplotchoiceComboBox.currentText())
-
+        compcolorbool=(fomname=='comp. color')
+        if compcolorbool:
+            fomname='sample_no'
         l_usefombool=self.AnaExpFomTreeWidgetFcns.getusefombools()
         
         plotdinfo=[]
-        for usebool, fomdlist, fomnames in zip(l_usefombool, self.l_fomdlist, self.l_fomnames):
+        for fomdlist_index0, (usebool, fomdlist, fomnames) in enumerate(zip(l_usefombool, self.l_fomdlist, self.l_fomnames)):
             if not usebool or not fomname in fomnames:
                 continue
-            plotdinfo+=[extractplotdinfo(d, fomname, self.expfiledict) for d in fomdlist if fomname in d.keys() and not numpy.isnan(d[fomname]) and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]
-        for count, k in enumerate(['plate_id','code','sample_no', 'fom', 'xy', 'comps']):
+            plotdinfo+=[extractplotdinfo(d, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1) for fomdlist_index1, d in enumerate(fomdlist) if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
+        for count, k in enumerate(['fomdlist_index0','fomdlist_index1','plate_id','code','sample_no', 'fom', 'xy', 'comps']):
             self.fomplotd[k]=numpy.array(map(operator.itemgetter(count), plotdinfo))
         self.fomplotd['comps']=numpy.array([c/c.sum() for c in self.fomplotd['comps']])
-        self.fomplotd['fomname']=fomname
-        
+        if compcolorbool:
+            self.fomplotd['fomname']='comp. color'
+        else:
+            self.fomplotd['fomname']=fomname
+        #if fomname is in multiple l_fomdlist a given sample can be included in fomplotd numerous times. this create ambiguity for selecting samples and the plotted fom colored symbols will overlay each other and only the top one will be visible
         if plotbool:
             self.fomstats()
             self.plotfom()
+    
+    def updatefomchoiceandplot(self):
+        fomname=str(self.fomplotchoiceComboBox.currentText())
+        compcolorbool=(fomname=='comp. color')
+        if compcolorbool:
+            self.fomplotd['fomname']='comp. color'
+            self.fomplotd['fom']=self.fomplotd['sample_no']
+            return
+        self.fomplotd['fomname']=fomname
+        self.fomdlist['fom']=numpy.array([self.l_fomdlist[i0][i1][fomname] for i0,i1 in zip(self.fomdlist['fomdlist_index0'], self.fomdlist['fomdlist_index1'])])
+        
+        self.plotfom()
         
     def updatefomplotchoices(self):
         self.fomplotchoiceComboBox.clear()
@@ -361,8 +449,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.fomselectnames=sorted(list(set([nam for fomnames in self.l_fomnames for nam in fomnames])))
         if len(self.fomselectnames)==0:
             return
+        self.fomplotchoiceComboBox.insertItem(0,'comp. color')
         for count, s in enumerate(self.fomselectnames):
-            self.fomplotchoiceComboBox.insertItem(count, s)#fom choices are not associated with particular indeces of the l_ structures
+            self.fomplotchoiceComboBox.insertItem(count+1, s)#fom choices are not associated with particular indeces of the l_ structures
         self.fomplotchoiceComboBox.setCurrentIndex(0)
 
         
@@ -390,7 +479,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         ind=int(ind)
         d=self.l_csvheaderdict[ind]['plot_parameters'][plotk]
 
-        self.fomplotchoiceComboBox.setCurrentIndex(self.fomnames.index(d['fom_name']))
+        self.fomplotchoiceComboBox.setCurrentIndex(self.fomnames.index(d['fom_name'])+1)
         for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
             if not k in d.keys():
                 continue
@@ -420,7 +509,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #self.plotw_fomhist.fig.setp(patches)
         self.plotw_fomhist.fig.canvas.draw()
     
-    def plotxy(self):
+    def plotxy(self, plotd=None, fomplotdind=None):
         return
                 #h plot
 #        daqtimebool=self.usedaqtimeCheckBox.isChecked()
@@ -441,6 +530,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #        self.plotw_h.axes.set_ylabel(self.fomplotd['fomname'])
 #        autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
 #        self.plotw_h.fig.canvas.draw()
+    
+    def fillcomppermutations(self):
+        if self.ellabels==['A', 'B', 'C', 'D']:
+            ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
+            if not ans is None:
+                self.ellabels=[v.strip() for v in ans]
+        self.CompPlotOrderComboBox.clear()
+        for count, l in enumerate(itertools.permutations(self.ellabels, 4)):
+            self.CompPlotOrderComboBox.insertItem(count, ','.join(l))
+        self.CompPlotOrderComboBox.setCurrentIndex(0)
         
     def plotfom(self):
         
@@ -460,141 +559,172 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         x, y=self.fomplotd['xy'].T
         comps=self.fomplotd['comps']
         fom=self.fomplotd['fom']
-        
+        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'],self.fomplotd['fomdlist_index1']]).T
 
-        
-        #plate plot
-        cmapstr=str(self.colormapLineEdit.text())
-        try:
-            self.cmap=eval('cm.'+cmapstr)
-        except:
-            self.cmap=cm.jet
-
-        clip=True
-        skipoutofrange=[False, False]
-        self.vmin=fom.min()
-        self.vmax=fom.max()
-        vstr=str(self.vminmaxLineEdit.text()).strip()
-        if ',' in vstr:
-            a, b, c=vstr.partition(',')
-            try:
-                a=myeval(a.strip())
-                c=myeval(c.strip())
-                self.vmin=a
-                self.vmax=c
-                for count, (fcn, le) in enumerate(zip([self.cmap.set_under, self.cmap.set_over], [self.belowrangecolLineEdit, self.aboverangecolLineEdit])):
-                    vstr=str(le.text()).strip()
-                    vstr=vstr.replace('"', '').replace("'", "")
-                    if 'none' in vstr or 'None' in vstr:
-                        skipoutofrange[count]=True
-                        continue
-                    if len(vstr)==0:
-                        continue
-                    c=col_string(vstr)
-                    try:
-                        fcn(c)
-                        clip=False
-                    except:
-                        print 'color entry not understood:', vstr
-
-            except:
-                pass
-
-        
-        self.norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
-        if skipoutofrange[0]:
-            inds=numpy.where(fom>=self.vmin)
-            plate=plate[inds]
-            code=code[inds]
-            fom=fom[inds]
-            comps=comps[inds]
-            x=x[inds]
-            y=y[inds]
-
-        if skipoutofrange[1]:
-            inds=numpy.where(fom<=self.vmax)
-            plate=plate[inds]
-            code=code[inds]
-            fom=fom[inds]
-            comps=comps[inds]
-            x=x[inds]
-            y=y[inds]
-
-        if numpy.any(fom>self.vmax):
-            if numpy.any(fom<self.vmin):
-                self.extend='both'
-            else:
-                self.extend='max'
-        elif numpy.any(fom<self.vmin):
-            self.extend='min'
+        if self.fomplotd['fomname']=='comp. color':
+            cols=QuaternaryPlotInstance.rgb_comp(comps)
+            sm=None
         else:
-            self.extend='neither'
+            #plate plot
+            cmapstr=str(self.colormapLineEdit.text())
+            try:
+                self.cmap=eval('cm.'+cmapstr)
+            except:
+                self.cmap=cm.jet
+
+            clip=True
+            skipoutofrange=[False, False]
+            self.vmin=fom.min()
+            self.vmax=fom.max()
+            vstr=str(self.vminmaxLineEdit.text()).strip()
+            if ',' in vstr:
+                a, b, c=vstr.partition(',')
+                try:
+                    a=myeval(a.strip())
+                    c=myeval(c.strip())
+                    self.vmin=a
+                    self.vmax=c
+                    for count, (fcn, le) in enumerate(zip([self.cmap.set_under, self.cmap.set_over], [self.belowrangecolLineEdit, self.aboverangecolLineEdit])):
+                        vstr=str(le.text()).strip()
+                        vstr=vstr.replace('"', '').replace("'", "")
+                        if 'none' in vstr or 'None' in vstr:
+                            skipoutofrange[count]=True
+                            continue
+                        if len(vstr)==0:
+                            continue
+                        c=col_string(vstr)
+                        try:
+                            fcn(c)
+                            clip=False
+                        except:
+                            print 'color entry not understood:', vstr
+
+                except:
+                    pass
+
+            
+            self.norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
+            if skipoutofrange[0]:
+                inds=numpy.where(fom>=self.vmin)
+                plate=plate[inds]
+                code=code[inds]
+                fom=fom[inds]
+                comps=comps[inds]
+                x=x[inds]
+                y=y[inds]
+                idtupsarr=idtupsarr[inds]
+            if skipoutofrange[1]:
+                inds=numpy.where(fom<=self.vmax)
+                plate=plate[inds]
+                code=code[inds]
+                fom=fom[inds]
+                comps=comps[inds]
+                x=x[inds]
+                y=y[inds]
+                idtupsarr=idtupsarr[inds]
+            if numpy.any(fom>self.vmax):
+                if numpy.any(fom<self.vmin):
+                    self.extend='both'
+                else:
+                    self.extend='max'
+            elif numpy.any(fom<self.vmin):
+                self.extend='min'
+            else:
+                self.extend='neither'
+            
+            sm=cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
+            sm.set_array(fom)
+            cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]
+  
+        self.comppermuteinds=list([l for l in itertools.permutations([0, 1, 2, 3], 4)][self.CompPlotOrderComboBox.currentIndex()])
+        self.quatcompclass.ellabels=[self.ellabels[i] for i in self.comppermuteinds]
         
+        self.select_circs_plotws=[(None, None)]*len(self.select_idtups)
         for val, plotw in zip(self.tabs__plateids, self.tabs__plotw_plate):
             inds=numpy.where(plate==val)[0]
-            self.plateplot(plotw, x[inds], y[inds], fom[inds])
+            self.plateplot(plotw, x[inds], y[inds], cols[inds], sm)
+            for xvyv, tupind in [((xv, yv), self.select_idtups.index(tuple(tupa))) for xv, yv, tupa in zip(x[inds], y[inds], idtupsarr[inds]) if tuple(tupa) in self.select_idtups]:
+                circ = pylab.Circle(xvyv, radius=1, edgecolor='r', facecolor='none')
+                self.select_circs_plotws[tupind]=(circ, plotw)
+                plotw.axes.add_patch(circ)
+        
+#        if self.compPlotMarkSelectionsCheckBox.isChecked():
+#            
+#            #cols=numpy.float64([[1, 0, 0] if tuple(tupa) in self.select_idtups else [0, 0, 0] for tupa in idtupsarr])
+#            compstocolor=numpy.float64([comps for tupa, comps in idtupsarr if tuple(tupa) in self.select_idtups])
+
+        
         
         for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp):
             inds=numpy.where(code==val)[0]
-
-            self.compplot(plotw, comps[inds], fom[inds])
-            
-    def plateplot(self, plotw, x, y, fom):
+            if self.compPlotMarkSelectionsCheckBox.isChecked():
+                c=numpy.float64([[1, 0, 0] if tuple(tupa) in self.select_idtups else [0, 0, 0] for tupa in idtupsarr[inds]])
+                sortinds_inds=numpy.argsort(c.sum(axis=1))#this sorting puts the "brightest" colors on top so any duplicate black compositions are plotted underneath
+                inds=inds[sortinds_inds]
+                c=c[sortinds_inds]
+                #compstocolor=numpy.float64([comps for tupa, comps in idtupsarr[inds] if tuple(tupa) in self.select_idtups])
+            else:
+                c=cols[inds]
+            plotw.toComp=self.compplot(plotw, comps[inds], c, sm)
+        
+    def plateplot(self, plotw, x, y, cols, sm):
         plotw.axes.cla()
         plotw.cbax.cla()
-        if len(fom)==0:
+        if len(cols)==0:
             return
-        m=plotw.axes.scatter(x, y, c=fom, s=70, marker='s', cmap=self.cmap, norm=self.norm)
+        m=plotw.axes.scatter(x, y, c=cols, s=70, marker='s')#, cmap=self.cmap, norm=self.norm)
         if x.max()-x.min()<2. or y.max()-y.min()<2.:
             plotw.axes.set_xlim(x.min()-1, x.max()+1)
             plotw.axes.set_ylim(y.min()-1, y.max()+1)
         else:
             plotw.axes.set_aspect(1.)
-
-        sm=cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
-        sm.set_array(fom)
-        cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]#ignore alpha
-        
-        cb=plotw.fig.colorbar(sm, cax=plotw.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
-        cb.set_label(self.fomplotd['fomname'])
+        if sm is None:
+            plotw.cbax.cla()
+        else:
+            cb=plotw.fig.colorbar(sm, cax=plotw.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
+            cb.set_label(self.fomplotd['fomname'])
         plotw.fig.canvas.draw()
         
-    def compplot(self, plotw, comps, fom):
+    def compplot(self, plotw, comps, cols, sm):
 #        plotw.axes.cla()
 #        plotw.cbax.cla()
-        if len(fom)==0:
-            return
-        pointsizestr=str(self.compplotsizeLineEdit.text())#TODO
-        sm=cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
-        sm.set_array(fom)
-        cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]#ignore alpha
-
+        if len(cols)==0:
+            return lambda x, y, ax: None
+        s=str(self.compplotsizeLineEdit.text()).strip()
+        if len(s)==0:
+            s='patch'
+        elif s[0].isdigit():
+            s=int(s)
         
         compsinds=[i for i, (compv, colv) in enumerate(zip(comps, cols)) if not (numpy.any(numpy.isnan(compv)) or numpy.any(numpy.isnan(colv)))]
         if len(compsinds)==0:
-            return
-        self.quatcompclass.loadplotdata(comps[compsinds], cols[compsinds])
-        plotw3dbool=self.quatcompclass.plot(plotw=plotw)
+            return lambda x, y, ax: None
+        self.quatcompclass.loadplotdata(comps[compsinds][:, self.comppermuteinds], cols[compsinds])
+        plotw3dbool=self.quatcompclass.plot(plotw=plotw, s=s)
         #plotw.redoaxes(projection3d=)
-        if not plotw3dbool is None:
-            if plotw3dbool:
-                cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
-                plotw.fig.canvas.draw()
-            else:
-                cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
-                plotw.fig.canvas.draw()
-            cb.set_label(self.fomplotd['fomname'])
+        if sm is None:
+            self.quatcompclass.cbax.cla()
+        else:
+            if not plotw3dbool is None:
+                if plotw3dbool:
+                    cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                else:
+                    cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                cb.set_label(self.fomplotd['fomname'])
+        plotw.fig.canvas.draw()
+        return self.quatcompclass.toComp
     
     def setup_TabWidget(self, oldopts, newopts, compbool=False):
         if compbool:
             geom=self.plottabgeom_comp
             tabw=self.compTabWidget
             l=self.tabs__plotw_comp
+            fcn=self.compclickprocess
         else:
             geom=self.plottabgeom_plate
             tabw=self.plateTabWidget
             l=self.tabs__plotw_plate
-        
+            fcn=self.plateclickprocess
         if len(newopts)<len(oldopts):
             for i in range(len(newopts), len(oldopts)):
                 tabw.setTabText(i, '')
@@ -607,12 +737,89 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     plotw.createcbax()
                 l+=[plotw]
                 tabw.addTab(plotw, '')
+                QObject.connect(plotw, SIGNAL("genericclickonplot"), fcn)
         for i, val in enumerate(newopts):
             tabw.setTabText(i, str(val))
             tabw.setTabEnabled(i, True)
         self.textBrowser_plate.hide()
         return newopts
+    
+    def plateclickprocess(self, coords_button_ax):
+        if len(self.fomplotd['fom'])==0:
+            return
         
+        plate=self.fomplotd['plate_id']
+        
+        tabi=self.plateTabWidget.currentIndex()
+        val=self.tabs__plateids[tabi]
+        plotw=self.tabs__plotw_plate[tabi]
+        inds=numpy.where((plate==val)&numpy.logical_not(numpy.isnan(self.fomplotd['fom'])))[0]
+        
+        x, y=self.fomplotd['xy'][inds].T
+        
+        
+        if len(x)==0:
+            return
+        
+        critdist=2.
+        xc, yc, button, ax=coords_button_ax
+        
+        dist=((x-xc)**2+(y-yc)**2)**.5
+
+        if min(dist)>critdist:
+            return
+        self.selectind=inds[numpy.argmin(dist)]#index of the fomplotd arrays
+
+        self.updateinfo()
+
+        if button==3:#right click
+            self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=False)
+        elif button==2:#center click
+            self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=True)
+        self.plotxy(fomplotdind=self.selectind)
+
+    def compclickprocess(self, coords_button_ax):
+        
+        if len(self.fomplotd['fom'])==0:
+            return
+        
+        code=self.fomplotd['code']
+        
+        
+        tabi=self.compTabWidget.currentIndex()
+        val=self.tabs__codes[tabi]
+        plotw=self.tabs__plotw_comp[tabi]
+        inds=numpy.where((code==val)&numpy.logical_not(numpy.isnan(self.fomplotd['fom'])))[0]
+        
+        x, y=self.fomplotd['xy'][inds].T
+        comps=self.fomplotd['comps'][inds]
+        
+        if len(x)==0:
+            return
+
+        critdist=.1
+        xc, yc, button, ax=coords_button_ax
+        
+        compclick=plotw.toComp(xc, yc, ax)
+        if compclick is None:
+            return
+        
+        permcomp=comps[:, self.comppermuteinds]
+        
+        dist=numpy.array([(((c-compclick)**2).sum())**.5 for c in permcomp])
+
+        if min(dist)>critdist:
+            return
+        self.selectind=inds[numpy.argmin(dist)]
+
+        self.updateinfo()
+
+        if button==3:#right click
+            self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=False)
+        elif button==2:#center click
+            self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=True)
+        self.plotxy(fomplotdind=self.selectind)
+            
     def plotwsetup(self):
         
         self.plottabgeom_comp=self.textBrowser_comp.geometry()
@@ -661,7 +868,128 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #        
         self.quatcompclass=quatcompplotoptions(None, self.CompPlotTypeComboBox, plotw3d=None, include3doption=True, plotwcbaxrect=[0.88, 0.1, 0.04, 0.8])
         
+    def updateinfo(self):
+        self.compLineEdit.setText(','.join(['%.2f' %n for n in self.fomplotd['comps'][self.selectind]]))
 
+        self.xyLineEdit.setText(','.join(['%.2f' %n for n in self.fomplotd['xy'][self.selectind]]))
+
+        self.sampleLineEdit.setText('%d' %self.fomplotd['sample_no'][self.selectind])
+    
+    #***selectind is of the fomplotd arrays. add or remove is only if found in fomplotd, when adding to spreadsheet use (plate,sample,run,ana) as index
+    def addrem_select_fomplotdinds(self, remove=False, fomplotdind=None, smplist=None, xy=None, comp=None):#only 1 of index, smplist, xy, comp should be not None
+        selectinds=[]
+        if not fomplotdind is None:
+            selectinds=[fomplotdind]
+        elif not smplist is None:
+            selectinds=[count for count, smp in enumerate(self.fomplotd['sample_no']) if smp in smplist]
+        elif not xy is None or not comp is None:
+            if not xy is None:
+                k='xy'
+                arr=numpy.array(xy)
+            else:
+                k='comps'
+                arr=numpy.array(comp)
+            xy=numpy.array(xy)
+            dist=numpy.array([((numpy.array(v)-arr)**2).sum() for xyv in self.fomplotd[k]])
+            selectinds=list(numpy.where(dist==dist.min())[0])
+        if len(selectinds)==0:
+            return
+        self.selectind=selectinds[-1]
+        #make id tup as the pair fo indeces that points to a particular fomd in l_fomdlist
+        idtupset=set([tuple([self.fomplotd[k][i] for k in ['fomdlist_index0','fomdlist_index1']]) for i in selectinds])
+        if remove:
+            tupstoremove=list(set(self.select_idtups).intersection(idtupset))
+            indstoremove=sorted([self.select_idtups.index(tup) for tup in tupstoremove])[::-1]
+            if len(indstoremove)==0:
+                return
+            for i in indstoremove:
+                self.select_idtups.pop(i)
+                circ, plotw=self.select_circs_plotws.pop(i)
+                if not circ is None:
+                    circ.remove()
+                    plotw.fig.canvas.draw()
+        else:
+            tupstoadd=sorted(list(idtupset.difference(set(self.select_idtups))))
+            if len(tupstoadd)==0:
+                return
+            for tup in tupstoadd:
+                self.select_idtups+=[tup]
+                self.select_circs_plotws+=[self.drawcirc_idtup(tup)]
+        self.writeselectbrowsertext()
+        
+    
+    def drawcirc_idtup(self, idtup):
+        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'],self.fomplotd['fomdlist_index1']]).T
+        idtuplist=[tuple(a) for a in idtupsarr]
+        if not idtup in idtuplist:#not sure why this would be but just in case
+            return None, None
+        
+        i_fomplotd=idtuplist.index(idtup)
+        i_tabs=self.tabs__plateids.index(self.fomplotd['plate_id'][i_fomplotd])
+        plotw=self.tabs__plotw_plate[i_tabs]
+        circ = pylab.Circle(self.fomplotd['xy'][i_fomplotd], radius=1, edgecolor='r', facecolor='none')
+        plotw.axes.add_patch(circ)
+        plotw.fig.canvas.draw()
+        return (circ, plotw)
+                
+    def writeselectbrowsertext(self):
+        sorthelp=['plate_id', 'sample_no', 'runint', 'anaint', 'code']+self.ellabels+['x', 'y']
+        gensortind=lambda k: sorthelp.index(k) if k in sorthelp else len(sorthelp)
+        sortind_k=sorted(list(set([(gensortind(k), k) for i0, i1 in self.select_idtups for k in self.l_fomnames[i0]])))
+        keys=map(operator.itemgetter(1), sortind_k)
+        
+        strfmt=lambda x: ('%d' if isinstance(x, int) else ('%.3f' if (x==0. or (x<1000. and x>.04)) else '%.4e')) %x
+        genstrlist_inds=lambda i0, i1: [strfmt(self.l_fomdlist[i0][i1][k]) if k in self.l_fomdlist[i0][i1].keys() else 'NaN' for k in keys]
+            
+        lines=['\t'.join(keys)]
+        lines+=['\t'.join(genstrlist_inds(i0, i1)) for i0, i1 in self.select_idtups]
+        selectsamplesstr='\n'.join(lines)
+        
+        self.browser.setText(selectsamplesstr)
+        
+    def addValuesSample(self, remove=False):
+        sampleNostr = str(self.sampleLineEdit.text())
+
+        try:
+            if ',' in sampleNostr:
+                smplist=eval('['+sampleNostr+']')
+            else:
+                smplist=[int(eval(sampleNostr.strip()))]
+        except:
+            print 'error adding samples'
+            return
+        self.addrem_select_fomplotdinds(smplist=smplist, remove=remove)
+    
+    def remValuesSample(self):
+        self.addValuesSample(remove=True)
+        
+    def addValuesComp(self, remove=False):
+        compstr = str(self.compLineEdit.text())
+        try:
+            abcd=numpy.array(eval('['+compstr.strip()+']'))
+            if abcd.sum()<=0.:
+                raise
+            abcd/=abcd.sum()
+        except:
+            print 'error adding composition'
+            return
+        self.addrem_select_fomplotdinds(comp=abcd, remove=remove)
+        
+    def remValuesComp(self):
+        self.addValuesComp(remove=True)
+
+    def addValuesXY(self, remove=False):
+        xystr = str(self.xyLineEdit.text())
+        try:
+            xy=numpy.array(eval('['+xystr.strip()+']'))
+        except:
+            print 'error adding x,y'
+            return
+        self.addrem_select_fomplotdinds(xy=xy, remove=remove)
+
+    def remValuesXY(self):
+        self.addValuesXY(remove=True)
+    
 
 if __name__ == "__main__":
     class MainMenu(QMainWindow):

@@ -125,10 +125,19 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>290</y>
+     <y>300</y>
      <width>681</width>
      <height>161</height>
     </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="lineWrapMode">
+    <enum>QTextEdit::NoWrap</enum>
    </property>
   </widget>
   <widget class="QPushButton" name="FolderPushButton">
@@ -215,6 +224,9 @@
      <height>20</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string extracomment="add or remove from active platemap code tab"/>
+   </property>
    <property name="text">
     <string/>
    </property>
@@ -256,6 +268,9 @@ Posn:</string>
      <height>20</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string extracomment="add or remove from active plate_id tab"/>
+   </property>
   </widget>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
@@ -279,6 +294,9 @@ No(s):</string>
      <width>111</width>
      <height>20</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string extracomment="add or remove from active plate_id tab"/>
    </property>
   </widget>
   <widget class="QPushButton" name="addComp">
@@ -810,6 +828,32 @@ x-y legend</string>
    </property>
    <property name="text">
     <string>update plots w/ filters</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="compPlotMarkSelectionsCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>280</y>
+     <width>171</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Mark selections on Comp.plots</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="UpdatePlotPushButton">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>260</y>
+     <width>151</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>update plots w/ same data</string>
    </property>
   </widget>
  </widget>

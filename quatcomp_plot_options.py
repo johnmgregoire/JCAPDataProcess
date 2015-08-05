@@ -1,7 +1,7 @@
 import time
 import os, os.path
 import sys
-import numpy
+import numpy, copy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import operator
@@ -60,11 +60,11 @@ class quatcompplotoptions():
         self.ternaryface_uiinds=[1, 2, 3]
 
         self.stackedternoptions=[\
-        ('20% interv\nternaries', (make5ternaxes, scatter_5axes)), \
-        ('10% interv\nternaries', (make10ternaxes, scatter_10axes)), \
-        ('5% interv\nternaries', (make20ternaxes, scatter_20axes)), \
-        ('3.3% interv\nternaries', (make30ternaxes, scatter_30axes)), \
-        ('9 plots at\n1% interv', (make9of100ternaxes, scatter_9of100axes)), \
+        ('20% interv\nternaries', (make5ternaxes, scatter_5axes), .2), \
+        ('10% interv\nternaries', (make10ternaxes, scatter_10axes), .1), \
+        ('5% interv\nternaries', (make20ternaxes, scatter_20axes), .05), \
+        ('3.3% interv\nternaries', (make30ternaxes, scatter_30axes), .0333), \
+        ('9 plots at\n1% interv', (make9of100ternaxes, scatter_9of100axes), .01), \
         ]
         self.stackedtern_uiinds=[4, 5, 6, 7, 8]
         
@@ -124,7 +124,7 @@ class quatcompplotoptions():
             else:
                 plotw3d.axes.cla()
             selclass=self.quat3doptions[self.quat3d_uiinds.index(i)][1]
-            self.quat3dplot(plotw3d, selclass, **kwargs)
+            self.toComp=self.quat3dplot(plotw3d, selclass, **kwargs)
             return True
             
         
@@ -137,59 +137,83 @@ class quatcompplotoptions():
             
         if i in self.ternaryface_uiinds:
             selclass=self.ternaryfaceoptions[self.ternaryface_uiinds.index(i)][1]
-            self.ternaryfaceplot(plotw, selclass, **kwargs)
+            self.toComp=self.ternaryfaceplot(plotw, selclass, **kwargs)
         if i in self.stackedtern_uiinds:
             makefcn, scatterfcn=self.stackedternoptions[self.stackedtern_uiinds.index(i)][1]
-            self.stackedternplot(plotw, makefcn, scatterfcn, **kwargs)
+            delta=self.stackedternoptions[self.stackedtern_uiinds.index(i)][2]
+            self.toComp=self.stackedternplot(plotw, makefcn, scatterfcn, delta, **kwargs)
         
         return False
     
     def quat3dplot(self, plotw3d, plotclass, **kwargs):
-        tf=plotclass(plotw3d.axes)#, nintervals=self.nintervals)
+        if 's' in kwargs.keys() and not isinstance(kwargs['s'], int):
+            kwargs['s']=18
+        tf=plotclass(plotw3d.axes, ellabels=self.ellabels)#, nintervals=self.nintervals)
         tf.label()
         tf.scatter(self.quatcomps, c=self.cols, **kwargs)
+        return lambda x, y, ax:None
 
     def ternaryfaceplot(self, plotw, plotclass, **kwargs):
+        print '^^^^^^^^^', self.cols
         ax=plotw.axes
-        tf=plotclass(ax, nintervals=self.nintervals)
+        tf=plotclass(ax, nintervals=self.nintervals, ellabels=self.ellabels)
         tf.label()
         tf.scatter(self.quatcomps, self.cols, **kwargs)
-        
-    def stackedternplot(self, plotw, makefcn, scatterfcn, **kwargs):
+        return lambda x, y, ax: tf.toComp(x, y)
+    def stackedternplot(self, plotw, makefcn, scatterfcn, delta, **kwargs):
+        if 's' in kwargs.keys() and not isinstance(kwargs['s'], int):
+            kwargs['s']=18
+        plotw.fig.clf()
+        if not self.plotwcbaxrect is None:
+            kwargs['cbrect']=self.plotwcbaxrect
         self.axl, self.stpl=makefcn(fig=plotw.fig, ellabels=self.ellabels)
         scatterfcn(self.quatcomps, self.cols, self.stpl, edgecolor='none', **kwargs)
         
+        def toComp(x, y, ax, delta=delta, axl=copy.copy(self.axl)):
+            if not ax in axl:
+                return None
+            i=axl.index(ax)
+            dclick=delta*i
+            bclick=y*2./numpy.sqrt(3.)
+            aclick=1.-x-bclick/2.
+            cclick=1.-aclick-bclick
+            compclick=numpy.float64([aclick, bclick, cclick, dclick])
+            compclick[:3]*=1.-dclick
+            if numpy.all((compclick>=0.)&(compclick<=1.)):
+                return compclick
+            else:
+                return None
+        return toComp
 
 
-
-class plotwidget(FigureCanvas):
-    def __init__(self, parent, width=12, height=6, dpi=72, projection3d=False):
-
-        #plotdata can be 2d array for image plot or list of 2 1d arrays for x-y plot or 2d array for image plot or list of lists of 2 1D arrays
-
-        self.fig=Figure(figsize=(width, height), dpi=dpi)
-        if projection3d:
-            self.axes=self.fig.add_subplot(111, navigate=True, projection='3d')
-        else:
-            self.axes=self.fig.add_subplot(111, navigate=True)
-            self.mpl_connect('button_press_event', self.myclick)
-
-        self.axes.hold(True)
-        FigureCanvas.__init__(self, self.fig)
-        self.setParent(parent)
-        #self.parent=parent
-        FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
-        #NavigationToolbar(self, parent)
-        self.toolbar=NavigationToolbar(self, self)
-
-        
-        self.clicklist=[]
-
-    def myclick(self, event):
-        if not (event.xdata is None or event.ydata is None):
-            arrayxy=[event.xdata, event.ydata]
-            print 'clicked on image: array indeces ', arrayxy, ' using button', event.button
-            self.clicklist+=[arrayxy]
-            self.emit(SIGNAL("genericclickonplot"), [event.xdata, event.ydata, event.button])
-
+#class plotwidget(FigureCanvas):
+#    def __init__(self, parent, width=12, height=6, dpi=72, projection3d=False):
+#
+#        #plotdata can be 2d array for image plot or list of 2 1d arrays for x-y plot or 2d array for image plot or list of lists of 2 1D arrays
+#
+#        self.fig=Figure(figsize=(width, height), dpi=dpi)
+#        if projection3d:
+#            self.axes=self.fig.add_subplot(111, navigate=True, projection='3d')
+#        else:
+#            self.axes=self.fig.add_subplot(111, navigate=True)
+#            self.mpl_connect('button_press_event', self.myclick)
+#
+#        self.axes.hold(True)
+#        FigureCanvas.__init__(self, self.fig)
+#        self.setParent(parent)
+#        #self.parent=parent
+#        FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
+#        FigureCanvas.updateGeometry(self)
+#        #NavigationToolbar(self, parent)
+#        self.toolbar=NavigationToolbar(self, self)
+#
+#        
+#        self.clicklist=[]
+#
+#    def myclick(self, event):
+#        if not (event.xdata is None or event.ydata is None):
+#            arrayxy=[event.xdata, event.ydata]
+#            print 'clicked on image: array indeces ', arrayxy, ' using button', event.button
+#            self.clicklist+=[arrayxy]
+#            self.emit(SIGNAL("genericclickonplot"), [event.xdata, event.ydata, event.button])
+#

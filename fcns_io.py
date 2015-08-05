@@ -390,7 +390,31 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None):
     if (not os.path.isfile(p)) and not erroruifcn is None:
         p=erroruifcn('', PLATEMAPBACKUP)
     return p
-
+    
+def getinfopath_plateid(plateidstr, erroruifcn=None):
+    p=''
+    fld=os.path.join(PLATEFOLDER, plateidstr)
+    if os.path.isdir(fld):
+        l=[fn for fn in os.listdir(fld) if fn.endswith('info')]+['None']
+        p=os.path.join(fld, l[0])
+    if (not os.path.isfile(p)) and not erroruifcn is None:
+        p=erroruifcn('', PLATEMAPBACKUP)
+    if (not os.path.isfile(p)):
+        return None
+    return p
+    
+def getelements_plateidstr(plateidstr):
+    p=getinfopath_plateid(plateidstr)
+    if p is None:
+        return None
+    with open(p, mode='r') as f:
+        filestr=f.read(1000)
+    searchstr='        elements: '
+    if not searchstr in filestr:
+        return None
+    s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+    return s.split(',')
+    
 def readrcpfrommultipleruns(pathlist):
     techset=set([])
     typeset=set([])
