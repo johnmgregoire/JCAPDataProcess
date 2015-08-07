@@ -68,9 +68,43 @@ def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')]), repla
         f.write(csvfilstr)
     return numheaddictlines+2
 
+
+#p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/Sample236_x-24_y-70_Ni0Fe10Co0Ce90_CA2.txt'
+#filed={}
+#filed['file_type']= 'eche_gamry_txt_file'
+#filed['keys']= ['t(s)', 'Ewe(V)', 'Ach(V)', 'I(A)', 'Toggle']
+#filed['num_data_rows']= '250'
+#filed['num_header_lines']= '15'
+#filed['sample_no']=236
+#selcolinds=[4]
+
+def getarrs_filed(p, filed, selcolinds=None, trydat=True):
+    if trydat:
+        pdat=p+'.dat'
+        if os.path.isfile(pdat):
+            return readbinary_selinds(pdat, len(filed['keys']), keyinds=selcolinds)
+    if not os.path.isfile(p):
+        return None
+    return readtxt_selectcolumns(p, selcolinds=selcolinds, delim=None, num_header_lines=filed['num_header_lines'])
+
+def readbinary_selinds(p, nkeys, keyinds=None):
+    with open(p, mode='rb') as f:
+        b=numpy.fromfile(f,dtype='float32')
+    b=b.reshape((nkeys,len(b)//nkeys))
+
+    if keyinds is None:
+        return b
+    else:
+        return b[keyinds]
+        
 def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float):
     with open(p, mode='r') as f:
         lines=f.readlines()[num_header_lines:]
+    if delim is None:
+        if lines[0].count(',')>lines[0].count('\t'):
+            delim=','
+        else:
+            delim='\t'
     if selcolinds is None:
         selcolinds=range(lines[0].count(delim)+1)
     fcn=itemgetter(*selcolinds)
@@ -179,8 +213,8 @@ def convertfilekeystolist(exporanafiledict):
                     d={}
                     d['file_type']=type_keys_heads_rows[0]
                     d['keys']=keys
-                    d['num_header_lines']=type_keys_heads_rows[2]
-                    d['num_data_rows']=type_keys_heads_rows[3]
+                    d['num_header_lines']=int(type_keys_heads_rows[2].strip())
+                    d['num_data_rows']=int(type_keys_heads_rows[3].strip())
                     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
                         d['sample_no']=int(type_keys_heads_rows[4].strip())
                     else:
@@ -194,15 +228,6 @@ def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystolist 
             for fn, fileattrd in typed.iteritems():
                 anafiledict[anak]['files_multi_run'][typek][fn]=readcsvdict(os.path.join(anafolder, fn), fileattrd)
 
-def readbinary_selinds(p, nkeys, keyinds=None):
-    with open(p, mode='rb') as f:
-        b=numpy.fromfile(f,dtype='float32')
-    b=b.reshape((nkeys,len(b)//nkeys))
-
-    if keyinds is None:
-        return b
-    else:
-        return b[keyinds]
 
 def saverawdat_expfiledict(expfiledict, folder):
     datastruct_expfiledict(expfiledict, savefolder=folder)

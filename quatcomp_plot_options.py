@@ -154,7 +154,6 @@ class quatcompplotoptions():
         return lambda x, y, ax:None
 
     def ternaryfaceplot(self, plotw, plotclass, **kwargs):
-        print '^^^^^^^^^', self.cols
         ax=plotw.axes
         tf=plotclass(ax, nintervals=self.nintervals, ellabels=self.ellabels)
         tf.label()

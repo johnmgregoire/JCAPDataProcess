@@ -46,6 +46,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.FilenameFilterPushButton, self.createfilenamefilter), \
         (self.UpdateFiltersPushButton, self.updatefiltereddata), \
         (self.UpdatePlotPushButton, self.plotfom), \
+        (self.ontheflyPushButton, self.performontheflyfom), \
+        (self.customxystylePushButton, self.getxystyle_user), \
+        (self.customxylegendPushButton, self.getcustomlegendfcn), \
         (self.addComp, self.addValuesComp), \
         (self.remComp, self.remValuesComp), \
         (self.addxy, self.addValuesXY), \
@@ -53,12 +56,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.addSample, self.addValuesSample), \
         (self.remSample, self.remValuesSample), \
         ]
+
         #(self.UndoExpPushButton, self.undoexpfile), \
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
         
         self.widgetItems_pl_ru_te_ty_co=[]
-        for k in ['plate_id', 'run', 'technique', 'type']:
+        for k in ['plate_id', 'run', 'technique', 'type','code']:
             mainitem=QTreeWidgetItem([k], 0)
             self.SelectTreeWidget.addTopLevelItem(mainitem)
             self.widgetItems_pl_ru_te_ty_co+=[mainitem]
@@ -83,7 +87,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.anafiledict={}
         self.expfiledict={}
         
-        
+        self.customlegendfcn=lambda sample, els, comp, code, fom: `sample`
         
         self.ellabels=['A', 'B', 'C', 'D']
         
@@ -134,9 +138,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         self.setupfilterchoices()
         self.updatefomplotchoices()
+        self.fillxyoptions(clear=True)
 
-        
-        
     def importexp(self, exppath=None, fromana=False):
         if exppath is None:
             exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
@@ -187,7 +190,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
             self.ellabels=['A', 'B', 'C', 'D']
         else:#to get here evrythign has a platemap
-            self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]
+            self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
             for runk, rund in self.expfiledict.iteritems():
                 for d in rund['platemapdlist']:
                     for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
@@ -198,6 +201,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if not fromana:
             self.setupfilterchoices()
             self.updatefomplotchoices()
+            self.fillxyoptions(clear=True)
         self.clearfomplotd()
         
     def openontheflyfolder(self):
@@ -227,7 +231,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updateontheflydata()
         self.anafiledict={}
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
-        
+        self.fillxyoptions(clear=True)
         self.ellabels=['A', 'B', 'C', 'D']
         self.fillcomppermutations()
         self.clearfomplotd()
@@ -237,7 +241,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.lastmodtime, d_appended=createontheflyrundict(self.expfiledict, self.expfolder, lastmodtime=self.lastmodtime)
         self.setupfilterchoices()
         self.AnaExpFomTreeWidgetFcns.appendexpfiles(d_appended)
-        
+        self.fillxyoptions()
 
     #filters for exp file:
     #  run defines a run__ within exp and this is by defintion for only 1 plate_id so filtering by code happens subsequently
@@ -273,6 +277,34 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         if not k in d.keys():
                             d[k]=pmd[k]
                             fomnames+=[k]
+    
+    def fillxyoptions(self, clear=False):
+        
+        cbl=[\
+        self.xplotchoiceComboBox, \
+        self.yplotchoiceComboBox, \
+        self.rightyplotchoiceComboBox, \
+        ]
+        
+        
+        fomopts=set([n for fomnames in self.l_fomnames for n in fomnames])
+        arropts=self.AnaExpFomTreeWidgetFcns.set_allfilekeys.difference(fomopts)
+        cb=self.yplotchoiceComboBox
+        if not clear:#arr options and then fom options except if appending then don't change existing indeces and add the new stuff, which presumably will be iether fom or arr opts
+            existset=set([str(cb.itemText(i)) for i in range(cb.count())])
+            opts=sorted(list((fomopts.union(arropts)).difference(existset)))
+            if len(opts)==0:
+                return
+            shiftinds=len(existset)+1
+        else:
+            opts=sorted(list(arropts))+sorted(list(fomopts))
+            shiftinds=1
+        for cb in cbl:
+            if clear:
+                cb.clear()
+                cb.insertItem(0, 'None')
+            for count, s in enumerate(opts):
+                cb.insertItem(count+shiftinds, s)
         
     def setupfilterchoices(self):
         #for foms in ana only need the sets of run,plate,code so set that up here and iadd it in below
@@ -329,10 +361,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         s=str(item.text(column))
         if not s.startswith('*'):
             return
-        keylist=[s.strip('*')]
+        keylist=[s.strip('*').strip(':')]
         item=item.parent()
         while not item.parent() is None:
-            keylist=[str(item.text(0))]+keylist
+            keylist=[str(item.text(0)).strip(':')]+keylist
             item=item.parent()
         anaorexp=str(item.text(0))
         if anaorexp=='ana':
@@ -344,7 +376,6 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         filed=d_nestedkeys(d, keylist)
         filed['path']=p
         self.plotxy(filed=filed)
-        #TODO: how does x-y plotting work? use this filed to do it
             
     def updatefiltereddata(self):
         #filter exp data by parsing the list of exp_keys_codearr_dict keys by plate,run,tech,type filters then filtering by code
@@ -376,7 +407,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #do the fitlering by search string after gettapplicablefilenames so the "critfracapplicable" might be really low
         analysisclass.filedlist=[d for d in analysisclass.filedlist if not (False in [s in d['fn'] for s in searchstrs])]
         
-        checkbool, checkmsg=self.analysisclass.check_input(critfracapplicable=.001)
+        checkbool, checkmsg=analysisclass.check_input(critfracapplicable=.001)
         if not checkbool:
             idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
             if not idialog.exec_():
@@ -394,7 +425,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
         self.setupfilterchoices()
         self.updatefomplotchoices()
-    
+        self.fillxyoptions()
     def filterandplotfomdata(self, plotbool=True):
         self.clearfomplotd()
         
@@ -509,28 +540,214 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #self.plotw_fomhist.fig.setp(patches)
         self.plotw_fomhist.fig.canvas.draw()
     
-    def plotxy(self, plotd=None, fomplotdind=None):
-        return
-                #h plot
-#        daqtimebool=self.usedaqtimeCheckBox.isChecked()
-#        if daqtimebool:
-#            hxarr=self.fomplotd['t']
-#            xl='time (s)'
-#        else:
-#            hxarr=self.fomplotd['sample_no']
-#            xl='sample_no'
-#        for runk in sorted(self.fomplotd['inds_runk'].keys()):
-#            hx=hxarr[self.fomplotd['inds_runk'][runk]]
-#            hy=fom[self.fomplotd['inds_runk'][runk]]
-#            sinds=numpy.argsort(hx)
-#            self.plotw_h.axes.plot(hx[sinds], hy[sinds], '.-', label=runk)
-#        leg=self.plotw_h.axes.legend(loc=0)
-#        leg.draggable()
-#        self.plotw_h.axes.set_xlabel(xl)
-#        self.plotw_h.axes.set_ylabel(self.fomplotd['fomname'])
-#        autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
-#        self.plotw_h.fig.canvas.draw()
+    def extractxy_fomnames(self, arrkeys):
+        #get the fomdlist that have the requested fomname and make sure it is represented in the fomplotd,  which is post-filters
+        fominds_xyy=[[i0 for i0, fomnames in enumerate(self.l_fomnames) if k in fomnames and i0 in self.fomplotd['fomdlist_index0']] for k in arrkeys]
+        if len(fominds_xyy[0])+len(fominds_xyy[1])+len(fominds_xyy[2])==0:#if none of x,y,yl in fomnames quit but otherwise only use x,y,yl that are in fomnames
+            return None
+        x_inds_fom=[]
+        plotdata=[[[], []], [[], []]]
+        selectpointdata=[[[], []], [[], []]]
+        for count, (k, i0list) in enumerate(zip(arrkeys, fominds_xyy)):
+            inds_fom=[[(i0, i1), self.l_fomdlist[i0][i1][k]] for i0 in i0list for i1 in self.fomplotd['fomdlist_index1'][self.fomplotd['fomdlist_index0']==i0]]
+            if len(inds_fom)==0:
+                continue
+            if count==0:
+                x_inds_fom=inds_fom
+            else:
+                if arrkeys[0]=='None':#for x use indexes
+                    ytemp=map(operator.itemgetter(1), inds_fom)
+                    ytemp=numpy.array(ytemp)
+                    ytemp=ytemp[numpy.logical_not(numpy.isnan(ytemp))]
+                    xtemp=numpy.arange(len(ytemp))
+                    plotdata[count-1]=[xtemp, ytemp]
+                    if not self.selectind is None:
+                        i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
+                        if (i0, i1) in map(operator.itemgetter(0), inds_fom):
+                            i=map(operator.itemgetter(0), inds_fom).index((i0, i1))
+                            selectpointdata[count-1]=[[i], [inds_fom[i][1]]]
+                else:
+                    #pair up fom data points between x and y
+                    indsset=sorted(list(set(map(operator.itemgetter(0), inds_fom)).intersection(map(operator.itemgetter(0), x_inds_fom))))
+                    if len(indsset)==0:
+                        continue
+                    if not self.selectind is None:
+                        i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
+                        if (i0, i1) in indsset:
+                            selectpointdata[count-1]=[[self.l_fomdlist[i0][i1][arrkeys[0]]], [self.l_fomdlist[i0][i1][k]]]#signle data point corresponding to select sample
+                    xtemp=numpy.array([fom for inds, fom in x_inds_fom if inds in indsset])
+                    ytemp=numpy.array([fom for inds, fom in inds_fom if inds in indsset])
+                    notnaninds=numpy.where(numpy.logical_not(numpy.isnan(xtemp))&numpy.logical_not(numpy.isnan(ytemp)))[0]
+                    xtemp=xtemp[notnaninds]
+                    sortinds=numpy.argsort(xtemp)
+                    xtemp=xtemp[sortinds]
+                    ytemp=ytemp[notnaninds][sortinds]
+                    plotdata[count-1]=[xtemp, ytemp]
+        return plotdata, selectpointdata
+    def extractxy_ana(self, arrkeys, anaint, runint, smp):
+        xyy=[None, None, None]
+        anak='ana__%d' %anaint
+        anarunk='files_run__%d' %runint
+        if not anarunk in self.anafiledict[anak].keys():
+            return xyy
+        anarund=self.anafiledict[anak][anarunk]
+        mainitem=self.widgetItems_pl_ru_te_ty_co[2]
+        allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        fn_filed_tosearch=[(fn, filed) for techk, techd in anarund.iteritems() for fn, filed in techd.iteritems() if techk in allowedvals and filed['sample_no']==smp]
+        
+        for count, k in enumerate(arrkeys):
+            if k=='None':
+                continue
+            fn_filed_keyind_rawselind=[(fn, filed, filed['keys'].index(k), None if not 'rawselectinds' in filed['keys'] else filed['keys'].index('rawselectinds')) for fn, filed in fn_filed_tosearch if k in filed['keys']]
+            if len(fn_filed_keyind_rawselind)>0:#ideally this is length 1 because if onlger that means foudn the same array multiple places and choosing the 1 found first
+                fn, filed, keyind, rawselind=fn_filed_keyind_rawselind[0]
+                selcolinds=[keyind]
+                rawselbool=not rawselind is None
+                if rawselbool:
+                    selcolinds+=[rawselind]
+                arr2d=getarrs_filed(os.path.join(self.anafolder, fn), filed, selcolinds=selcolinds)
+                if not arr2d is None:
+                    xyy[count]={}
+                    xyy[count]['arr']=arr2d[0]
+                    if rawselbool:
+                        xyy[count]['rawselectinds']=numpy.int32(arr2d[1])
+        return xyy
     
+    def extractxy_exp(self, arrkeys, runint, smp):
+        xyysubset=[None]*len(arrkeys)#this is a subset of x, y and yr if any of those found in ana
+        runk='run__%d' %runint
+        rund=self.expfiledict[runk]
+        mainitem=self.widgetItems_pl_ru_te_ty_co[2]
+        techallowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        mainitem=self.widgetItems_pl_ru_te_ty_co[3]
+        typeallowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        techitems=[(techk, techd) for techk, techd in rund.iteritems() if techk in techallowedvals and isinstance(techd, dict)]
+        fn_filed_tosearch=[(fn, filed) for techk, techd in techitems for typek, typed in techd.iteritems() for fn, filed in typed.iteritems() if typek in typeallowedvals and filed['sample_no']==smp]
+        
+        for count, k in enumerate(arrkeys):
+            if k=='None':
+                continue
+            fn_filed_keyind=[(fn, filed, filed['keys'].index(k)) for fn, filed in fn_filed_tosearch if k in filed['keys']]
+            if len(fn_filed_keyind)>0:#ideally this is length 1 because if onlger that means foudn the same array multiple places and choosing the 1 found first
+                fn, filed, keyind=fn_filed_keyind[0]
+                selcolinds=[keyind]
+                arr2d=getarrs_filed(os.path.join(self.expfolder, fn), filed, selcolinds=selcolinds)
+                if not arr2d is None:
+                    xyysubset[count]={}
+                    xyysubset[count]['arr']=arr2d[0]
+        return xyysubset
+        
+    def extractxydata(self, arrkeys, filed=None):
+        #plottign from single file so x is required to be in there and then if either of the y are in, filter by nan and sort. No label for legend because not necessarily a sample_no, i.e. could be a fom file selected
+        if not filed is None:
+            keyinds=[filed['keys'].index(arrk) if arrk in filed['keys'] else None for arrk in arrkeys]
+            if keyinds[0] is None or (keyinds[1] is None and keyinds[2] is None):#no pari of x,y to plot
+                return None
+            selcolinds=[keyind for keyind in keyinds if not keyind is None]
+            arr2d=getarrs_filed(filed['path'], filed, selcolinds=selcolinds)
+            plotdata=[[[], []], [[], []]]
+            for count, (keyind, yind_arr2d) in enumerate(zip(keyinds[1:], [1, -1])):
+                if keyind is None:
+                    continue
+                xtemp=arr2d[0]
+                ytemp=arr2d[yind_arr2d]
+                notnaninds=numpy.where(numpy.logical_not(numpy.isnan(xtemp))&numpy.logical_not(numpy.isnan(ytemp)))[0]
+                xtemp=xtemp[notnaninds]
+                sortinds=numpy.argsort(xtemp)
+                xtemp=xtemp[sortinds]
+                ytemp=ytemp[notnaninds][sortinds]
+                plotdata[count]=[xtemp, ytemp]
+            return plotdata, [[[], []], [[], []]], {}
+        #try to find any of the keys in foms and if so all plot data comes from there. In this case selectind is used to highlight a point int he x-y plot but not used to find data. all data in fomplotd will be considered
+        if len(self.l_fomnames)>0:
+            tempplotdatatup=self.extractxy_fomnames(arrkeys)
+            if not tempplotdatatup is None:
+                return tempplotdatatup[0], tempplotdatatup[1], {}
+        #from here on not fom so find the data arrays,  and since "select" referse to an index of fomplotd, there is no special "selectpointdata"
+        if self.selectind is None:
+            return None
+        selectpointdata=None
+        i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
+        anaint, runint, smp=[self.l_fomdlist[i0][i1][k] for k in ['anaint', 'runint', 'sample_no']]
+        if anaint==0 and runint==0:
+            return None
+        if anaint>0:
+            xyydlist=self.extractxy_ana(arrkeys, anaint, runint, smp)
+        if runint>0:
+            lefttogetinds=[count for count, (d, arrk) in enumerate(zip(xyydlist, arrkeys)) if d is None and not arrk=='None']
+            if len(lefttogetinds)>0:
+                xyysubset=self.extractxy_exp([arrkeys[i] for i in lefttogetinds], runint, smp)
+                for i, d in zip(lefttogetinds, xyysubset):#d might stil be None at this points
+                    xyydlist[i]=d
+        plotdata=[[[], []], [[], []]]
+        for count, (xd, yd) in enumerate([(xyydlist[0], xyydlist[1]), (xyydlist[0], xyydlist[2])]):
+            if xd is None or yd is None:
+                continue
+            if len(xd['arr'])==len(yd['arr']):
+                plotdata[count]=[xd['arr'], yd['arr']]
+                continue
+            for draw, dint in [(xd, yd), (yd, xd)]:
+                if 'rawselectinds' in dint.keys() and len(draw['arr'])>(dint['rawselectinds'].max()):
+                    draw['arr']=draw['arr']['rawselectinds']
+                    break
+            if len(xd['arr'])==len(yd['arr']):
+                plotdata[count]=[xd['arr'], yd['arr']]
+                continue
+        getval=lambda k:self.fomplotd[k][self.selectind]
+        lab=self.customlegendfcn(getval('sample_no'), self.ellabels, getval('comps'), getval('code'), getval('fom'))
+        return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
+        
+    #getarrs_filed(p,filed,selcolinds=
+    def plotxy(self, filed=None):#filed to plot from a  single file and must have key 'path' in addition to standard filed
+        cbl=[\
+        self.xplotchoiceComboBox, \
+        self.yplotchoiceComboBox, \
+        self.rightyplotchoiceComboBox, \
+        ]
+        arrkeys=[str(cb.currentText()) for cb in cbl]
+        if arrkeys==(['None']*3):
+            return
+        tempplotdatatup=self.extractxydata(arrkeys, filed=filed)
+        if tempplotdatatup is None:
+            return 
+        plotdata, selectpointdata, plotattrd=tempplotdatatup
+        
+        
+        if not self.overlayselectCheckBox.isChecked():
+            self.plotw_xy.axes.cla()
+            self.plotw_xy.twaxes.cla()
+        
+        for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], plotdata, selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
+            if len(xarr)==0:
+                continue
+            if count==0:
+                styled=dict([(k, v) for k, v in self.xyplotstyled.iteritems() if not 'sel' in k and not 'right_' in k and v!=''])
+            else:
+                styled=dict([(k.partition('right_')[2], v) for k, v in self.xyplotstyled.iteritems() if 'right_' in k and v!=''])
+            if count==0 and 'xylab' in plotattrd.keys():
+                styled['label']=plotattrd['xylab']
+            ax.plot(xarr, yarr, **styled)
+            ax.set_xlabel(xl)
+            ax.set_ylabel(yl)
+            if len(sxarr)==0:
+                continue
+            selstyled=dict([(k.partition('select_')[2], v) for k, v in self.xyplotstyled.iteritems() if 'select_' in k and v!=''])
+            selstyled['marker']=self.xyplotstyled['marker']
+            ax.plot(sxarr, syarr, **selstyled)
+            
+        leg=self.plotw_xy.axes.legend(loc=0)
+        #leg.draggable()
+
+        
+        autotickformat(self.plotw_xy.axes, x=1, y=1)
+        self.plotw_xy.fig.canvas.draw()
+    
+    def getcustomlegendfcn(self):
+        widg=legendformatwidget(self.parent, arr=self.fom)
+        widg.exec_()
+        self.customlegendfcn=widg.genlegfcn
+        
+        
     def fillcomppermutations(self):
         if self.ellabels==['A', 'B', 'C', 'D']:
             ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
@@ -735,6 +952,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 plotw.setGeometry(geom)
                 if not compbool:
                     plotw.createcbax()
+                plotw.axes.set_aspect(1)
                 l+=[plotw]
                 tabw.addTab(plotw, '')
                 QObject.connect(plotw, SIGNAL("genericclickonplot"), fcn)
@@ -776,7 +994,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=False)
         elif button==2:#center click
             self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=True)
-        self.plotxy(fomplotdind=self.selectind)
+        self.plotxy()
 
     def compclickprocess(self, coords_button_ax):
         
@@ -818,10 +1036,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=False)
         elif button==2:#center click
             self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=True)
-        self.plotxy(fomplotdind=self.selectind)
+        self.plotxy()
             
     def plotwsetup(self):
-        
+        self.xyplotstyled=dict({}, marker='o', ms=5, c='b', ls='-', lw=0.7, right_marker='None', right_ms=3, right_ls=':', right_lw=0.7, select_ms=6, select_c='r')
+        self.selectind=None
         self.plottabgeom_comp=self.textBrowser_comp.geometry()
         self.textBrowser_comp.hide()
         
@@ -835,37 +1054,23 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.tabs__plateids=self.setup_TabWidget([], [-1], compbool=False)
         self.tabs__codes=self.setup_TabWidget([], [-1], compbool=True)
         
-#        self.plotw_comp=plotwidget(self)
-#        self.plotw_quat3d=plotwidget(self, projection3d=True)
-#        self.plotw_h=plotwidget(self)
-#        self.plotw_plate=plotwidget(self)
+
+        self.plotw_xy=plotwidget(self)
+        self.plotw_xy.twaxes=self.plotw_xy.axes.twinx()
+
         self.plotw_fomhist=plotwidget(self)
         
         
         
         for b, w in [\
-#            (self.textBrowser_plate, self.plotw_plate), \
-#            (self.textBrowser_h, self.plotw_h), \
-#            (self.textBrowser_comp, self.plotw_comp), \
-#            (self.textBrowser_comp, self.plotw_quat3d), \
+            (self.textBrowser_xy, self.plotw_xy), \
             (self.textBrowser_fomhist, self.plotw_fomhist), \
             ]:
             w.setGeometry(b.geometry())
             b.hide()
-#        self.plotw_quat3d.hide()
-#
-#        self.plotw_plate.axes.set_aspect(1)
-#
-#        axrect=[0.88, 0.1, 0.04, 0.8]
-#
-#        self.plotw_plate.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-#        self.cbax_plate=self.plotw_plate.fig.add_axes(axrect)
-#
-#        self.plotw_quat3d.fig.subplots_adjust(left=0, right=axrect[0]-.01)
-#        self.cbax_quat=self.plotw_quat3d.fig.add_axes(axrect)
-#
-#        self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
-#        
+
+        self.plotw_xy.fig.subplots_adjust(left=.22, bottom=.17)
+        
         self.quatcompclass=quatcompplotoptions(None, self.CompPlotTypeComboBox, plotw3d=None, include3doption=True, plotwcbaxrect=[0.88, 0.1, 0.04, 0.8])
         
     def updateinfo(self):
@@ -990,7 +1195,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def remValuesXY(self):
         self.addValuesXY(remove=True)
     
-
+    def getxystyle_user(self):
+        inputs=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems()]
+        ans=userinputcaller(self, inputs=inputs, title='Enter x-y plot parameters',  cancelallowed=True)
+        if ans is None:
+            return
+        self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
+        
+        
 if __name__ == "__main__":
     class MainMenu(QMainWindow):
         def __init__(self, previousmm, execute=True, **kwargs):

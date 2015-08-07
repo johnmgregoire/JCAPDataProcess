@@ -71,6 +71,76 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     l_csvheaderdict+=[csvheaderdict]
                     treefcns.appendFom(filed['keys'], csvheaderdict)
 
+class legendformatwidget(QDialog):
+    def __init__(self, parent=None, title='', arr=None):
+        super(legendformatwidget, self).__init__(parent)
+        self.parent=parent
+
+        templab=QLabel()
+        templab.setText('fom fmt')
+        self.fomfmtLineEdit=QLineEdit()
+        self.fomfmtLineEdit.setText('%.2e')
+        
+        templab2=QLabel()
+        templab2.setText('comp fmt')
+        self.compfmtLineEdit=QLineEdit()
+        self.compfmtLineEdit.setText('%d')
+        
+        templab3=QLabel()
+        templab3.setText('legend contents, for example\n<sample>, <A><a><B><b><C><c><D><d>, <code>, <fom>')
+        self.legendLineEdit=QLineEdit()
+        self.legendLineEdit.setText('<sample>')
+        
+        mainlayout=QGridLayout()
+        mainlayout.addWidget(templab, 0, 0)
+        mainlayout.addWidget(self.fomfmtLineEdit, 1, 0)
+        mainlayout.addWidget(templab2, 0, 1)
+        mainlayout.addWidget(self.compfmtLineEdit, 1, 1)
+        mainlayout.addWidget(templab3, 2, 0, 1, 2)
+        mainlayout.addWidget(self.legendLineEdit, 3, 0, 1, 2)
+        
+        self.buttonBox = QDialogButtonBox(self)
+        self.buttonBox.setGeometry(QRect(520, 195, 160, 26))
+        self.buttonBox.setOrientation(Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok)
+        QObject.connect(self.buttonBox, SIGNAL("accepted()"), self.accept)
+        mainlayout.addWidget(self.buttonBox, 4, 0, 1, 2)
+    
+        QObject.connect(self.buttonBox,SIGNAL("accepted()"),self.ExitRoutine)
+        #QObject.connect(self.buttonBox,SIGNAL("rejected()"),self.ExitRoutineCancel)
+        
+        self.setLayout(mainlayout)
+
+        self.resize(300, 250)
+        self.selectinds=[]
+    
+    def ExitRoutine(self):
+        fomfmt=str(self.fomfmtLineEdit.text())
+        compfmt=str(self.compfmtLineEdit.text())
+        legendcmd=str(self.legendLineEdit.text())
+        
+        def genlegtext(sample, els, comp, code, fom, fomfmt=fomfmt, compfmt=compfmt, legendcmd=legendcmd):
+            legstr=legendcmd[:]
+            for count, (n, ss) in enumerate(zip((fom, sample, code), ('<fom>', '<sample>', '<code>'))):
+                if n is None:
+                    legstr=legstr.replace(ss, '')
+                    continue
+                if count==0:
+                    s=fomfmt %n
+                else:
+                    s='%d' %n
+                legstr=legstr.replace(ss, s)
+            if 'd' in compfmt:
+                compstr=[compfmt %int(round(c*100.)) for c in comp]
+            else:
+                compstr=[compfmt %c for c in comp]
+            for l, ssl in zip([els, compstr], [['<A>', '<B>', '<C>', '<D>'], ['<a>', '<b>', '<c>', '<d>']]):
+                for s, ss in zip(l, ssl):
+                    legstr=legstr.replace(ss, s)
+            return legstr
+        self.genlegfcn=genlegtext
+        
+        
 class treeclass_anaexpfom():
     def __init__(self, tree):
         self.treeWidget=tree
@@ -78,6 +148,8 @@ class treeclass_anaexpfom():
     def initfilltree(self, expfiledict, anafiledict):
         self.treeWidget.clear()
         self.expwidgetItem=QTreeWidgetItem(['exp'], 0)
+        
+        self.set_allfilekeys=set([])
         
         self.filltree(expfiledict, self.expwidgetItem, startkey='exp_version', laststartswith='run__')
         self.expwidgetItem.setExpanded(False)
@@ -93,7 +165,7 @@ class treeclass_anaexpfom():
 
 
     def appendexpfiles(self, d_appended):
-        self.nestedfill(d_appended, self.expfileitem_forappend, laststartswith='xxxx')
+        self.nestedfill(d_appended, self.expfileitem_forappend)
         
     def getusefombools(self):
         mainitem=self.fomwidgetItem
@@ -126,7 +198,7 @@ class treeclass_anaexpfom():
         for k in sorted([k for k, v in d.iteritems() if k!=startkey and not isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([': '.join([k, str(d[k])])], 0)
             toplevelitem.addChild(mainitem)
-            
+        
         for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem)
@@ -149,6 +221,7 @@ class treeclass_anaexpfom():
         for k in dictkeys1:
             item=QTreeWidgetItem([prependstr+k+':'], 0)
             if k.endswith('_files'):#find the last _files where filename keys are being added and if this is in .exp make this the place where filenames are appened. the intention is that for on-the-fly this will be the only run__ in exp
+                self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d[k].itervalues() for fk in filed['keys']]))
                 #prepend this * to fielnames so they can be clicked and plotted. this inlcudes fom_files
                 self.nestedfill(d[k], item, prependstr='*')
                 while not parentitem.parent() is None:
