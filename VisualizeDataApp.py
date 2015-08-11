@@ -71,7 +71,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #QObject.connect(self.SelectTreeWidget, SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.processclick_selecttreeitem)
         QObject.connect(self.AnaExpFomTreeWidget, SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.processclick_selecttreeitem)
         
-        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"), self.updatefomchoiceandplot)
+        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"), self.filterandplotfomdata)
 
         QObject.connect(self.compPlotMarkSelectionsCheckBox,SIGNAL("released()"), self.plotfom)
         
@@ -130,7 +130,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
-
+        
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
         readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.AnaExpFomTreeWidgetFcns)
         
@@ -198,42 +198,58 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
+        
         if not fromana:
+            self.updatefomdlist_plateruncode(createnewfromexp=True)
+            self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
             self.setupfilterchoices()
             self.updatefomplotchoices()
             self.fillxyoptions(clear=True)
         self.clearfomplotd()
         
-    def openontheflyfolder(self):
-        t=mygetdir(self, markstr='folder for on-the-fly analysis')
-        if t is None or len(t)==0:
+    def openontheflyfolder(self, folderpath=None, platemappath=None):
+        if folderpath is None:
+            folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
+        if folderpath is None or len(folderpath)==0:
+            return
+        
+        if platemappath is None:
+            platemappath=mygetopenfile(parent=self, markstr='select platemap .txt')
+        if platemappath is None or platemappath=='':
             return
             
-        p=mygetopenfile(parent=self, markstr='select platemap .txt')
-        if p is None or p=='':
-            return
-            
-        self.expfolder=t
-        self.platemappath=p#this is self. but probably not necessary because not used elsehwere after being read below
+        self.expfolder=folderpath
+        self.platemappath=platemappath#this is self. but probably not necessary because not used elsehwere after being read below
         
         self.lastmodtime=0
-        self.expfolder=''
+        
         self.expfiledict={}
+        self.expfiledict['exp_version']=0
         self.expfiledict['run__1']={}
         self.expfiledict['run__1']['run_path']=self.expfolder
+        self.expfiledict['run__1']['run_use']='onthefly'
         self.expfiledict['run__1']['platemapdlist']=readsingleplatemaptxt(self.platemappath)
-        self.expfiledict['run__1']['platemapsamples']=[d['sample'] for d in self.expfiledict['run__1']['platemapdlist']]
+        self.expfiledict['run__1']['platemapsamples']=[d['sample_no'] for d in self.expfiledict['run__1']['platemapdlist']]
         self.expfiledict['run__1']['files_technique__onthefly']={}
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
         self.expfiledict['run__1']['parameters']={}
         self.expfiledict['run__1']['parameters']['plate_id']=0
         
-        self.updateontheflydata()
+        self.anafolder=''
+        
         self.anafiledict={}
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
-        self.fillxyoptions(clear=True)
+        self.updateontheflydata()
+        self.updatefomdlist_plateruncode(createnewfromexp=True)
+        self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
+
         self.ellabels=['A', 'B', 'C', 'D']
         self.fillcomppermutations()
+
+        self.setupfilterchoices()
+        self.updatefomplotchoices()
+        self.fillxyoptions(clear=True)
+        
         self.clearfomplotd()
         
     def updateontheflydata(self):
@@ -250,33 +266,44 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     #filters for ana file:
     #  ana defines an ana__ with ana and this may contain multipl runs/plate_ids but fom .csv within the ana__ have run and plate_id integers for subsequenct filtering and then code filtering after that
     
-    def updatefomdlist_plateruncode(self, inds=None):
+    def updatefomdlist_plateruncode(self, inds=None, createnewfromexp=False):
+        if createnewfromexp:
+            runint_pl_techd=[(int(runk.partition('run__')[2]), rund['parameters']['plate_id'], techd) for runk, rund in [(runk, rund) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')] for techk, techd in rund.iteritems() if techk.startswith('files_technique__')]
+            runint_pl_smp=sorted(list(set([(runint, pl, filed['sample_no']) for runint, pl, techd in runint_pl_techd for typed in techd.itervalues() for filed in typed.itervalues() if filed['sample_no']>0])))
+            self.l_fomdlist=[[dict({}, anaint=0, runint=runint, plate_id=pl, sample_no=smp) for runint, pl, smp in runint_pl_smp]]
+            if len(self.l_fomdlist[0])>0:
+                self.l_fomnames=[['anaint', 'runint', 'plate_id', 'sample_no']]
+                self.l_csvheaderdict=[{}]
+            else:
+                self.l_fomdlist=[]
+                self.l_fomnames=[]
+                self.l_csvheaderdict=[]
+            
         if inds is None:
             inds=range(len(self.l_fomdlist))
         for ind in inds:
             fomdlist=self.l_fomdlist[ind]
             fomnames=self.l_fomnames[ind]
-
+            for k in ['plate_id', 'runint', 'anaint', 'code']:
+                if not k in fomnames:
+                    fomnames+=[k]
             for d in fomdlist:
                 if not 'plate_id' in d.keys():
                     d['plate_id']=0
-                    fomnames+=['plate_id']
                 if not 'runint' in d.keys():
                     d['runint']=0
-                    fomnames+=['runint']
                 if not 'anaint' in d.keys():
                     d['anaint']=0
-                    fomnames+=['anaint']
                 if not 'code' in d.keys() and (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     d['code']=-1
-                    fomnames+=['code']
                 if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     rund=self.expfiledict['run__%d' %d['runint']]
                     pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
                     for k in self.ellabels+['code', 'x', 'y']:
                         if not k in d.keys():
                             d[k]=pmd[k]
-                            fomnames+=[k]
+                            if not k in fomnames:
+                                fomnames+=[k]
     
     def fillxyoptions(self, clear=False):
         
@@ -396,8 +423,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         #need to get the codes adn think about how to getapplicablefilesnames, i.e. create filedlist for simple cases, flag analysis classes by 'simple"
     def performontheflyfom(self):
-        analysisclass=AnalysisClasses[self.OnFlyAnaClassComboBox.currentIndex()]
-        analysisclass.getapplicablefilenames(self.expfiledict, 'onthefly', 'onthefly', 'all_files')
+        self.analysisclass=AnalysisClasses[self.OnFlyAnaClassComboBox.currentIndex()]
+        self.analysisclass.getapplicablefilenames(self.expfiledict, 'onthefly', 'onthefly', 'all_files')
         
         if self.SelectTreeFileFilterTopLevelItem is None:
             searchstrs=[]
@@ -405,9 +432,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             searchstrs=[str(self.SelectTreeFileFilterTopLevelItem.child(i).text(0)).strip() for i in range(self.SelectTreeFileFilterTopLevelItem.childCount()) if bool(self.SelectTreeFileFilterTopLevelItem.child(i).checkState(0))]
         
         #do the fitlering by search string after gettapplicablefilenames so the "critfracapplicable" might be really low
-        analysisclass.filedlist=[d for d in analysisclass.filedlist if not (False in [s in d['fn'] for s in searchstrs])]
+        self.analysisclass.filedlist=[d for d in self.analysisclass.filedlist if not (False in [s in d['fn'] for s in searchstrs])]
         
-        checkbool, checkmsg=analysisclass.check_input(critfracapplicable=.001)
+        checkbool, checkmsg=self.analysisclass.check_input(critfracapplicable=.001)
         if not checkbool:
             idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
             if not idialog.exec_():
@@ -462,17 +489,24 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.fomstats()
             self.plotfom()
     
-    def updatefomchoiceandplot(self):
-        fomname=str(self.fomplotchoiceComboBox.currentText())
-        compcolorbool=(fomname=='comp. color')
-        if compcolorbool:
-            self.fomplotd['fomname']='comp. color'
-            self.fomplotd['fom']=self.fomplotd['sample_no']
-            return
-        self.fomplotd['fomname']=fomname
-        self.fomdlist['fom']=numpy.array([self.l_fomdlist[i0][i1][fomname] for i0,i1 in zip(self.fomdlist['fomdlist_index0'], self.fomdlist['fomdlist_index1'])])
-        
-        self.plotfom()
+#    #can point the activate fom checkbox to here but user has to click "OK" to refilter data to ensure that the scope fo the plot matches the checked fitler boxes. can just re-filter without much loss of speed
+#    def updatefomchoiceandplot(self):
+#        fomname=str(self.fomplotchoiceComboBox.currentText())
+#        compcolorbool=(fomname=='comp. color')
+#        if compcolorbool:
+#            self.fomplotd['fomname']='comp. color'
+#            self.fomplotd['fom']=self.fomplotd['sample_no']
+#            return
+#        
+#        if False in [fomname in self.l_fomdlist[i0][i1].keys() for i0,i1 in zip(self.fomplotd['fomdlist_index0'], self.fomplotd['fomdlist_index1'])]:
+#            idialog=messageDialog(self, 'selected FOM is not in all of presently filtered samples.\nOK to re-filter or Cancel and select other FOM')
+#            if not idialog.exec_():
+#                return
+#            self.filterandplotfomdata()
+#        self.fomplotd['fom']=numpy.array([self.l_fomdlist[i0][i1][fomname] for i0,i1 in zip(self.fomplotd['fomdlist_index0'], self.fomplotd['fomdlist_index1'])])
+#        self.fomplotd['fomname']=fomname
+#        
+#        self.plotfom()
         
     def updatefomplotchoices(self):
         self.fomplotchoiceComboBox.clear()
@@ -1208,8 +1242,9 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.visui=visdataDialog(self, title='Visualize ANA, EXP, RUN data', **kwargs)
-            self.visui.importana(p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/eche/1/20150716.220140.ana')
+            #self.visui.importana(p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/eche/1/20150716.220140.ana')
             #self.visui.plotfom()
+            #self.visui.openontheflyfolder(folderpath='//htejcap.caltech.edu/share/home/users/hte/demo_proto/run/eche/onthefly1', platemappath='//htejcap.caltech.edu/share/home/users/hte/platemaps/0037-04-0730-mp.txt')
             if execute:
                 self.visui.exec_()
     os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')

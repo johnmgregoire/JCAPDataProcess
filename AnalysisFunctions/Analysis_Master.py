@@ -21,7 +21,8 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
     filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, plateid=expfiledict[runk]['parameters']['plate_id'], sample_no=v['sample_no'], \
-                                     nkeys=len(v['keys']), reqkeyinds=[v['keys'].index(reqk) for reqk in requiredkeys if reqk in v['keys']], \
+                                     nkeys=len(v['keys']), num_header_lines=v['num_header_lines'], \
+                                     reqkeyinds=[v['keys'].index(reqk) for reqk in requiredkeys if reqk in v['keys']], \
                                      optkeyinds=[(optk in v['keys'] and (v['keys'].index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
             for fnk, v in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
@@ -74,6 +75,15 @@ class Analysis_Master_nointer():
             self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
         else:
             self.runfiledict={}
+    def readdata(self, p, numkeys, keyinds, num_header_lines=0):
+        try:
+            dataarr=readbinary_selinds(p+'.dat', numkeys, keyinds)
+            return dataarr
+        except:
+            pass
+        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
+        return dataarr
+        
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.initfiledicts()
         self.fomdlist=[]
@@ -83,12 +93,12 @@ class Analysis_Master_nointer():
                     raiseTEMP
                 continue
             fn=filed['fn']
-            try:
-                dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            except:
-                if self.debugmode:
-                    raiseTEMP
-                continue
+            #try:
+            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+#            except:
+#                if self.debugmode:
+#                    raiseTEMP
+#                continue
             self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr), sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak)
@@ -114,7 +124,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 continue
             fn=filed['fn']
             try:
-                dataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
+                dataarr==self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
             except:
                 if self.debugmode:
                     raiseTEMP

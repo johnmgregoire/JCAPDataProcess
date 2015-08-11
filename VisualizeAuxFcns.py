@@ -151,12 +151,13 @@ class treeclass_anaexpfom():
         
         self.set_allfilekeys=set([])
         
-        self.filltree(expfiledict, self.expwidgetItem, startkey='exp_version', laststartswith='run__')
+        self.filltree(expfiledict, self.expwidgetItem, startkey='exp_version', laststartswith='run__', expparent=True)
         self.expwidgetItem.setExpanded(False)
         
         self.anawidgetItem=QTreeWidgetItem(['ana'], 0)
-        self.filltree(anafiledict, self.anawidgetItem)
-        self.anawidgetItem.setExpanded(False)
+        if len(anafiledict)>0:
+            self.filltree(anafiledict, self.anawidgetItem)
+            self.anawidgetItem.setExpanded(False)
         
         self.fomwidgetItem=QTreeWidgetItem(['fom'], 0)
         self.treeWidget.addTopLevelItem(self.expwidgetItem)
@@ -165,7 +166,8 @@ class treeclass_anaexpfom():
 
 
     def appendexpfiles(self, d_appended):
-        self.nestedfill(d_appended, self.expfileitem_forappend)
+        self.nestedfill(d_appended, self.expfileitem_forappend, prependstr='*')
+        self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d_appended.itervalues() for fk in filed['keys']]))
         
     def getusefombools(self):
         mainitem=self.fomwidgetItem
@@ -188,7 +190,7 @@ class treeclass_anaexpfom():
         
         self.fomwidgetItem.addChild(mainitem)
         
-    def filltree(self, d, toplevelitem, startkey='ana_version', laststartswith='ana__'):
+    def filltree(self, d, toplevelitem, startkey='ana_version', laststartswith='ana__', expparent=False):
         self.treeWidget.clear()
         #assume startkey is not for dict and laststatswith is dict
         
@@ -201,18 +203,18 @@ class treeclass_anaexpfom():
         
         for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([k+':'], 0)
-            self.nestedfill(d[k], mainitem)
+            self.nestedfill(d[k], mainitem, expparent=expparent)
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
             
         anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
-            self.nestedfill(d[k], mainitem)
+            self.nestedfill(d[k], mainitem, expparent=expparent)
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
             
-    def nestedfill(self, d, parentitem, laststartswith='files_', prependstr='', skipkeys=['platemapdlist', 'platemapsamples']):
+    def nestedfill(self, d, parentitem, laststartswith='files_', prependstr='', skipkeys=['platemapdlist', 'platemapsamples'], expparent=False):
         nondictkeys=sorted([k for k, v in d.iteritems() if not isinstance(v, dict) and not k in skipkeys])
         for k in nondictkeys:
             item=QTreeWidgetItem([': '.join([prependstr+k, str(d[k])])], 0)
@@ -223,18 +225,20 @@ class treeclass_anaexpfom():
             if k.endswith('_files'):#find the last _files where filename keys are being added and if this is in .exp make this the place where filenames are appened. the intention is that for on-the-fly this will be the only run__ in exp
                 self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d[k].itervalues() for fk in filed['keys']]))
                 #prepend this * to fielnames so they can be clicked and plotted. this inlcudes fom_files
-                self.nestedfill(d[k], item, prependstr='*')
-                while not parentitem.parent() is None:
-                    parentitem=parentitem.parent()
-                if parentitem==self.expwidgetItem:
+                self.nestedfill(d[k], item, prependstr='*', expparent=expparent)
+#                while not parentitem.parent() is None:
+#                    parentitem=parentitem.parent()
+#                print parentitem==self.expwidgetItem, str(parentitem.text(0)), str(self.expwidgetItemtext(0))
+#                if parentitem==self.expwidgetItem:
+                if expparent:
                     self.expfileitem_forappend=item
             else:
-                self.nestedfill(d[k], item)
+                self.nestedfill(d[k], item, expparent=expparent)
             parentitem.addChild(item)
         dictkeys2=sorted([k for k in d.keys() if k.startswith(laststartswith) and not k in skipkeys])
         for k in dictkeys2:
             item=QTreeWidgetItem([prependstr+k+':'], 0)
-            self.nestedfill(d[k], item)
+            self.nestedfill(d[k], item, expparent=expparent)
             parentitem.addChild(item)
 ###everything below here is copied and not necessarily needed in theis class def
     def createtxt(self, indent='    '):

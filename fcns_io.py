@@ -107,7 +107,12 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
             delim='\t'
     if selcolinds is None:
         selcolinds=range(lines[0].count(delim)+1)
-    fcn=itemgetter(*selcolinds)
+    if len(selcolinds)==0:
+        return numpy.array([[]])
+    elif len(selcolinds)==1:
+        fcn=lambda ls:(ls[selcolinds[0]],)
+    else:
+        fcn=itemgetter(*selcolinds)
     z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
     return numpy.array(z).T
 
@@ -685,7 +690,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         lines=f.readlines()
         f.close()
     lines=[l for l in lines if len(l)>0]
-    if len(delim)==0:
+    if delim is None or len(delim)==0:
         if lines[-1].count(',')>lines[-1].count('\t'):
             delim=','
         else:
