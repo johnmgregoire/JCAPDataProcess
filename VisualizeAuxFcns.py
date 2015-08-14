@@ -173,10 +173,17 @@ class treeclass_anaexpfom():
         mainitem=self.fomwidgetItem
         l_usefombool=[bool(mainitem.child(i).checkState(0)) for i in range(mainitem.childCount())]
         return l_usefombool
-        
-    def appendFom(self, fomnames, csvheaderdict):
+    
+    def uncheckfoms(self):
+        n=self.fomwidgetItem.childCount()
+        for count in range(n):
+            item=self.fomwidgetItem.child(count)
+            item.setCheckState(0, Qt.Unchecked)
+    def appendFom(self, fomnames, csvheaderdict, uncheckprevious=False):
         
         i=self.fomwidgetItem.childCount()
+        if uncheckprevious:
+            self.uncheckfoms()
         mainitem=QTreeWidgetItem(['%d' %i], 0)
         mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
         mainitem.setCheckState(0, Qt.Checked)

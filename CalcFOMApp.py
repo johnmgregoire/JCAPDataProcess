@@ -95,9 +95,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
-        self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder'))
+        
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
+        self.tempanafolder='None'
         self.clearanalysis()
 
     def edittreeitem(self, item, column):
@@ -140,11 +141,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
         
-    def importexp(self, expfiledict=None, exppath=None):
+    def importexp(self, expfiledict=None, exppath=None):#TODO support import from .zip on J
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
-            exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
+            exppath=openexpanafile(self, exp=True, markstr='Select .pck or .exp EXP file')
             if len(exppath)==0:
                 return
             expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
@@ -162,7 +163,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                          and 'plate_id' in rund['parameters'].keys():
                     rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(rund['parameters']['plate_id']), \
                         erroruifcn=\
-                    lambda s:mygetopenfile(parent=self, xpath="%s" % os.getcwd(), markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+                    lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
 
         
         self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['exp_type']
@@ -173,7 +174,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 le.setText(dfltstr)
         self.clearanalysis()
         
-        self.anadict['exp_path']=self.exppath.replace('.pck', '.exp')
+        rp=self.exppath.replace('.pck', '.exp')
+        if os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_J)):
+            rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_J)):]
+        elif os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_K)):
+            rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_K)):]
+        self.anadict['exp_path']=rp.replace(chr(92),chr(47))
         
         self.fillexpoptions()
     
@@ -276,7 +282,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
     def importana(self):
-        p=mygetopenfile(parent=self, xpath="%s" % os.getcwd(),markstr='Select .ana/.pck to import')
+        p=openexpanafile(self, exp=False, markstr='Select .ana/.pck to import')
         if len(p)==0:
             return
         anadict=openana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
@@ -286,7 +292,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             idialog=messageDialog(self, '.ana version %s is different from present. continue?' %anadict['ana_version'])
             if not idialog.exec_():
                 return
-        exppath=anadict['exp_path']
+        exppath=buildexppath(anadict['exp_path'])
         expfiledict=readexpasdict(exppath, includerawdata=False)
         if len(expfiledict)==0:
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
@@ -442,12 +448,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def viewresult(self):
         d=copy.deepcopy(self.anadict)
-        convertfilekeystolist(d)
-        importfomintoanadict(d)
-        self.parent.visdataui.importana(anafiledict=copy.deepcopy(d), anafolder=self.tempanafolder)
-        
-        self.parent.visdataui_exec()
+        convertfilekeystofiled(d)
+        #importfomintoanadict(d)
+        self.parent.visdataui.importana(anafiledict=d, anafolder=self.tempanafolder)
         self.hide()
+        self.parent.visdataui.show()
+        
 
     def clearsingleanalysis(self):
         keys=sorted([k for k in self.anadict.keys() if k.startswith('ana__')])
@@ -479,10 +485,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         self.AnaTreeWidget.clear()
         
-        for fn in os.listdir(self.tempanafolder):
-            os.remove(os.path.join(self.tempanafolder, fn))
         
-        
+        if os.path.isdir(self.tempanafolder):
+            for fn in os.listdir(self.tempanafolder):
+                os.remove(os.path.join(self.tempanafolder, fn))
+        else:
+            self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder'))
     def importanalysisparams(self):
         return
 
@@ -492,7 +500,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if not 'ana_version' in self.anafilestr:
             return
          
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, anadict=self.anadict, erroruifcn=\
+        saveana_tempfolder(self.anafilestr, self.tempanafolder, ana_type=self.anadict['ana_type'], anadict=self.anadict, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
             
         self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost

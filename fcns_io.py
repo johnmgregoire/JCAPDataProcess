@@ -2,6 +2,7 @@ import numpy, pickle, shutil
 from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as colors
 from fcns_math import *
+from fcns_ui import mygetopenfile
 import time
 import zipfile
 from operator import itemgetter
@@ -34,6 +35,21 @@ def attemptnumericconversion_tryintfloat(s):
 #        except:
 #            pass
 #    return s
+
+def openexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and ana from .zip
+    if exp:
+        fold0, fold1=EXPFOLDER_J, EXPFOLDER_K
+        ext='.exp'
+        if markstr is None:
+            markstr='open EXP'
+    else:
+        fold0, fold1=ANAFOLDER_J, ANAFOLDER_K
+        ext='.ana'
+        if markstr is None:
+            markstr='open ANA'
+    if not os.path.isdir(fold0):
+        fold0=fold1
+    return mygetopenfile(parent, xpath=fold0, markstr=markstr, filename=ext )
 
 def removefiles(folder, fns):
     for fn in fns:
@@ -203,7 +219,7 @@ def convertstrvalstonum_nesteddict(expfiledict):
                 nestednumconvert(v)
     nestednumconvert(expfiledict)
 
-def convertfilekeystolist(exporanafiledict):
+def convertfilekeystofiled(exporanafiledict):
     for k, rund in exporanafiledict.iteritems():
         if not (k.startswith('run__') or k.startswith('ana__')):
             continue
@@ -225,7 +241,7 @@ def convertfilekeystolist(exporanafiledict):
                     else:
                         d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
                     exporanafiledict[k][k2][k3][fn]=d
-def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystolist already run on anafiledict
+def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled already run on anafiledict
     for anak, anad in anafiledict.iteritems():
         if (not anak.startswith('ana__')) or not 'files_multi_run' in anad.keys():
             continue
@@ -303,18 +319,36 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
         x=numpy.float32([interd[kv] for kv in keys])
         x.tofile(f)
     return keys
-def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True):#for the num headerlines and rows to be written to .exp, saverawdat must be true
-    #TODO: write routine to auto generate user path
-    #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
-    savep=None
     
-    if savep is None or not os.path.isdir(os.path.split(savep)[0]):
-        if erroruifcn is None:
-            return
-        savep=erroruifcn('bad autosave path')
-        if len(savep)==0:
-            return
+def buildexppath(p):
+    if os.path.isfile(p):
+        return p
+    p=p.strip(chr(47)).strip(chr(92))
+    if os.path.isfile(os.path.join(EXPFOLDER_J, p)):
+        return os.path.join(EXPFOLDER_J, p)
+    elif os.path.isfile(os.path.join(EXPFOLDER_K, p)):
+        return os.path.join(EXPFOLDER_K, p)
+    else:
+        return p
+
+#don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat
+
+def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, exp_type='temp', rundone='.run', runtodonesavep=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
+    if runtodonesavep is None:
+        timename=time.strftime('%Y%m%d.%H%M%S')
+        
+        savep=os.path.join(os.path.join(os.path.join(EXPFOLDER_K, exp_type), timename+rundone), timename+'.exp')
+        
+        if savep is None or not os.path.isdir(os.path.split(os.path.split(savep)[0])[0]):
+            if erroruifcn is None:
+                return
+            savep=erroruifcn('bad autosave path')
+            if len(savep)==0:
+                return
+    else:
+        savep=runtodonesavep.replace('.run', '.done')
+        os.rename(os.path.split(runtodonesavep)[0], os.path.split(savep)[0])
     folder=os.path.split(savep)[0]
 
     #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
@@ -328,11 +362,20 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True):#for the num 
         else:
             os.mkdir(folder)
         saverawdat_expfiledict(saveexpfiledict, folder)#the filename attributes get update here
+    
+    for rund in saveexpfiledict.itervalues():
+        if isinstance(rund, dict) and 'run_path' in rund.keys():
+            rp=rund['run_path']
+            if os.path.normpath(rp).startswith(os.path.normpath(RUNFOLDER)):
+                rp=os.path.normpath(rp)[len(os.path.normpath(RUNFOLDER)):]
+            rp=rp.replace(chr(92),chr(47))
+            rund['run_path']=rp
+            
     expfilestr=strrep_filedict(saveexpfiledict)
     with open(savep, mode='w') as f:
         f.write(expfilestr)    
     convertstrvalstonum_nesteddict(saveexpfiledict)
-    convertfilekeystolist(saveexpfiledict)
+    convertfilekeystofiled(saveexpfiledict)
 
     dsavep=savep.replace('.exp', '.pck')
     with open(dsavep,'wb') as f:
@@ -416,7 +459,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None):
     fld=os.path.join(PLATEFOLDER, plateidstr)
     if os.path.isdir(fld):
         l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
-        p=os.pth.join(fld, l[0])
+        p=os.path.join(fld, l[0])
     if (not os.path.isfile(p)) and not erroruifcn is None:
         p=erroruifcn('', PLATEMAPBACKUP)
     return p
@@ -607,7 +650,7 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None):#create both a list 
         
         #these tiems would have been performed before saving .pck so only perform for .exp
         convertstrvalstonum_nesteddict(expfiledict)
-        convertfilekeystolist(expfiledict)
+        convertfilekeystofiled(expfiledict)
         
     else:
         return None
@@ -847,6 +890,11 @@ readdatafiledict=dict([\
 def getanadefaultfolder(erroruifcn=None):
     #TODO: createdefault path
     folder='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/temp'
+    
+    timename=time.strftime('%Y%m%d.%H%M%S')
+    
+    folder=os.path.join(os.path.join(ANAFOLDER_K, 'temp'), timename+'.run')
+    
     try:
         if not os.path.isdir(folder):
             os.mkdir(folder)
@@ -857,10 +905,21 @@ def getanadefaultfolder(erroruifcn=None):
             return ''
         return erroruifcn('')
             
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None):
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, ana_type='temp'):
     #TODO: write routine to auto generate user path
     #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
-    savefolder=None
+    
+    if srcfolder.endswith('.run'):
+        rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
+        if typefold=='temp':
+            savefolder=os.path.join(os.path.join(rootfold, ana_type), os.path.split(srcfolder)[1][:-3]+'done')
+        else:
+            savefolder=srcfolder[:-3]+'done'#replace run with done
+        timename=os.path.split(srcfolder)[1][:-4]#remove .run
+    else:
+        timename=time.strftime('%Y%m%d.%H%M%S')
+        savefolder=os.path.join(os.path.join(ANAFOLDER_K, ana_type), timename+'.done')
+
     try:
         if not os.path.isdir(savefolder):
             os.mkdir(savefolder)
@@ -870,26 +929,27 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
         savefolder=erroruifcn('bad autosave folder - select/create a folder to save Ana')
         if len(savefolder)==0:
             return
-    if '.ana' in srcfolder and os.path.normpath(os.path.split(srcfolder)[0])==os.path.normpath(os.path.split(savefolder)[0]):
-        try:
-            os.rename(srcfolder, savefolder)
-            return
-        except:
-            print 'Error renaming ', srcfolder
+#    if '.ana' in srcfolder and os.path.normpath(os.path.split(srcfolder)[0])==os.path.normpath(os.path.split(savefolder)[0]):
+#        try:
+#            os.rename(srcfolder, savefolder)
+#            return
+#        except:
+#            print 'Error renaming ', srcfolder
     if not os.path.isdir(savefolder):
         os.mkdir(savefolder)
     for fn in os.listdir(srcfolder):
         if skipana and fn.endswith('.ana'):
             continue
-        shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-    savep=os.path.join(savefolder, '%s.ana' %time.strftime('%Y%m%d.%H%M%S'))
+        shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+    os.rmdir(srcfolder)
+    savep=os.path.join(savefolder, '%s.ana' %timename)
     with open(savep, mode='w') as f:
         f.write(anafilestr)
     if anadict is None:
         return
     saveanadict=copy.deepcopy(anadict)
     convertstrvalstonum_nesteddict(saveanadict)
-    convertfilekeystolist(saveanadict)
+    convertfilekeystofiled(saveanadict)
     with open(savep.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
 
@@ -921,7 +981,7 @@ def openana(p, erroruifcn=None, stringvalues=False):
         anadict=dict(\
         [createdict_tup(tup) for tup in tuplist])
         if not stringvalues:
-            convertfilekeystolist(anadict)
+            convertfilekeystofiled(anadict)
             convertstrvalstonum_nesteddict(anadict)
     return anadict
     

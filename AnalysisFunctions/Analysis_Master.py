@@ -76,12 +76,15 @@ class Analysis_Master_nointer():
         else:
             self.runfiledict={}
     def readdata(self, p, numkeys, keyinds, num_header_lines=0):
+        
         try:
-            dataarr=readbinary_selinds(p+'.dat', numkeys, keyinds)
+            pd=buildexppath(p+'.dat')
+            dataarr=readbinary_selinds(pd, numkeys, keyinds)
             return dataarr
         except:
             pass
-        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
+        pt=buildexppath(p)
+        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
         return dataarr
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
@@ -123,8 +126,9 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                     raiseTEMP
                 continue
             fn=filed['fn']
+            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
             try:
-                dataarr==self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
             except:
                 if self.debugmode:
                     raiseTEMP

@@ -72,6 +72,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         QObject.connect(self.AnaExpFomTreeWidget, SIGNAL('itemClicked(QTreeWidgetItem*, int)'), self.processclick_selecttreeitem)
         
         QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"), self.filterandplotfomdata)
+        QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"), self.plot_preparestandardplot)
 
         QObject.connect(self.compPlotMarkSelectionsCheckBox,SIGNAL("released()"), self.plotfom)
         
@@ -115,15 +116,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     
         self.SelectTreeFileFilterTopLevelItem.addChild(item)
     
-    def importana(self, p=None):
-        if p is None:
-            p=mygetopenfile(parent=self, xpath="%s" % os.getcwd(),markstr='Select .ana/.pck to import')
-        if len(p)==0:
-            return
-        self.anafiledict=openana(p, stringvalues=False, erroruifcn=None)
-        self.anafolder=os.path.split(p)[0]
-        
-
+    def importana(self, p=None, anafiledict=None, anafolder=None):
+        if anafiledict is None or anafolder is None:
+            if p is None:
+                p=openexpanafile(self, exp=False, markstr='Select .ana/.pck to import')
+            if len(p)==0:
+                return
+            self.anafiledict=openana(p, stringvalues=False, erroruifcn=None)
+            self.anafolder=os.path.split(p)[0]
+        else:
+            self.anafiledict=anafiledict
+            self.anafolder=anafolder
         
         self.importexp(exppath=self.anafiledict['exp_path'], fromana=True)
         
@@ -142,9 +145,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
     def importexp(self, exppath=None, fromana=False):
         if exppath is None:
-            exppath=mygetopenfile(self, xpath=os.path.join(os.getcwd(), 'experiment'), markstr='Select .pck or .exp EXP file', filename='.pck' )
+            exppath=openexpanafile(self, exp=True, markstr='Select .pck or .exp EXP file' )
         if exppath is None or len(exppath)==0:
             return
+        exppath=buildexppath(exppath)
         expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
         if expfiledict is None:
             print 'Problem opening EXP'
@@ -162,7 +166,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 continue
             rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
                 erroruifcn=\
-            lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
+            lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             els=getelements_plateidstr(str(rund['parameters']['plate_id']))
             if els is None:
@@ -214,7 +218,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         
         if platemappath is None:
-            platemappath=mygetopenfile(parent=self, markstr='select platemap .txt')
+            platemappath=getplatemappath_plateid(str(rund['parameters']['plate_id']), \
+                erroruifcn=\
+            lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
         if platemappath is None or platemappath=='':
             return
             
@@ -449,7 +455,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         #self.l_usefombool+=[True]
         self.updatefomdlist_plateruncode(inds=[-1])
-        self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
+        self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1], uncheckprevious=True)
         self.setupfilterchoices()
         self.updatefomplotchoices()
         self.fillxyoptions()
@@ -522,7 +528,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         self.stdcsvplotchoiceComboBox.insertItem(0, 'null')
         tuplist=[(count, csvheaderdict) for count, csvheaderdict in enumerate(self.l_csvheaderdict) if 'plot_parameters' in csvheaderdict.keys() and 'plot__1' in csvheaderdict['plot_parameters'].keys()]
-        keys=['%d-%s' %(count, k) for count, csvheaderdict in tuplist for k in sorted(csvheaderdict['plot_parameters'].keys()) if k.startswith('plot__') and 'fom_name' in csvheaderdict['plot_parameters'][k].keys() and csvheaderdict['plot_parameters'][k]['fom_name'] in self.fomselectnames]
+        keys=['%d:%s:%s' %(count, k, csvheaderdict['plot_parameters'][k]['fom_name']) for count, csvheaderdict in tuplist for k in sorted(csvheaderdict['plot_parameters'].keys()) if k.startswith('plot__') and 'fom_name' in csvheaderdict['plot_parameters'][k].keys() and csvheaderdict['plot_parameters'][k]['fom_name'] in self.fomselectnames]
         for count, s in enumerate(keys):
             self.stdcsvplotchoiceComboBox.insertItem(count+1, s)
 #            if len(keys)==0:#not sure of new plots will be created in this app
@@ -540,11 +546,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         s=str(self.stdcsvplotchoiceComboBox.currentText())
         if s=='null':
            return
-        ind, garb, plotk=s.partition('-')
+        ind, plotk, fomname=s.split(':')
         ind=int(ind)
+        self.AnaExpFomTreeWidgetFcns.uncheckfoms()
+        item=self.AnaExpFomTreeWidgetFcns.fomwidgetItem.child(ind)
+        item.setCheckState(0, Qt.Checked)
         d=self.l_csvheaderdict[ind]['plot_parameters'][plotk]
-
-        self.fomplotchoiceComboBox.setCurrentIndex(self.fomnames.index(d['fom_name'])+1)
+        fomnames=[self.fomplotchoiceComboBox.itemText(i) for i in range(self.fomplotchoiceComboBox.count())]
+        if not d['fom_name'] in fomnames:
+            return
+        self.fomplotchoiceComboBox.setCurrentIndex(fomnames.index(d['fom_name']))
         for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
             if not k in d.keys():
                 continue
@@ -576,6 +587,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     
     def extractxy_fomnames(self, arrkeys):
         #get the fomdlist that have the requested fomname and make sure it is represented in the fomplotd,  which is post-filters
+        #if plotting fom1 vs fom2 they both need to be in the same fomd, i.e. this routine will not try to pair them up by plate,sample or other means
         fominds_xyy=[[i0 for i0, fomnames in enumerate(self.l_fomnames) if k in fomnames and i0 in self.fomplotd['fomdlist_index0']] for k in arrkeys]
         if len(fominds_xyy[0])+len(fominds_xyy[1])+len(fominds_xyy[2])==0:#if none of x,y,yl in fomnames quit but otherwise only use x,y,yl that are in fomnames
             return None
@@ -617,6 +629,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     xtemp=xtemp[sortinds]
                     ytemp=ytemp[notnaninds][sortinds]
                     plotdata[count-1]=[xtemp, ytemp]
+
         return plotdata, selectpointdata
     def extractxy_ana(self, arrkeys, anaint, runint, smp):
         xyy=[None, None, None]

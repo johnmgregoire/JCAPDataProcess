@@ -137,6 +137,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.ExpTextBrowser.setText('')
         self.expfiledict={}
         self.expfilestr=''
+        self.prevsaveexppath=None
     def removeruns(self):
         self.techlist=[]
         self.typelist=[]
@@ -150,7 +151,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
     #def undoexpfile(self):
         
     def importexpfile(self):
-        p=mygetopenfile(self, markstr='open EXP for edit', filename='.exp' )
+        p=openexpanafile(self, exp=True)
         if len(p)==0:
             return
         self.removeruns()
@@ -172,7 +173,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             %(len(self.rcpdlist), numpy.array([len(d['filenamedlist']) for d in self.rcpdlist]).sum()))
 
     def importexpparamsfile(self):
-        p=mygetopenfile(self, markstr='open EXP to extract top level params', filename='.exp' )
+        p=openexpanafile(self, exp=True)
         if len(p)==0:
             return
 
@@ -195,7 +196,6 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
     def importruns(self, pathlist=None, startfolder=None):
         if pathlist is None:
-            #pathlist=mygetopenfiles()
             if startfolder is None:
                 startfolder=self.defaultrcppath
             gff=getexistingFilesFolders(self, 'Open RUNs: Select Folders and .zip or .rcp Files', startfolder)
@@ -225,7 +225,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
-                lambda s:mygetopenfile(parent=self, xpath="%s" % os.getcwd(), markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
+                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
             else:
                 d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
@@ -516,8 +516,25 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
         if len(self.expfilestr)==0 or not 'exp_version' in self.expfilestr:
             return
-        return saveexp_txt_dat(self.expfiledict, erroruifcn=\
+        runtodonesavep=None
+        if not self.prevsaveexppath is None and os.path.split(self.prevsaveexppath)[0].endswith('run'):
+            idialog=messageDialog(self, 'convert the .run to a .done?')
+            if idialog.exec_():
+                rundone='.done'
+                runtodonesavep=self.prevsaveexppath
+            else:
+                rundone='.run'#will get a new timestamp
+        else:
+            idialog=messageDialog(self, 'save as .done ?')
+            if idialog.exec_():
+                rundone='.done'
+            else:
+                rundone='.run'
+        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, exp_type=self.expfiledict['exp_type'], runtodonesavep=runtodonesavep, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
+        
+        self.prevsaveexppath=exppath
+        return saveexpfiledict, exppath
 
 class treeclass_dlist():
     def __init__(self, tree, key_toplevel='rcp_file', key_nestedfill='rcptuplist'):
@@ -572,7 +589,13 @@ class treeclass_dlist():
                 s='run__%d:' %(count)
                 mainitem=QTreeWidgetItem([s],  0)
                 self.treeWidget.addTopLevelItem(mainitem)
-                runparams=['name: '+d[self.ktl],'run_use: '+k, 'run_path: '+d['run_path'], 'rcp_file: '+d['rcp_file']]
+                
+                rp=d['run_path']
+#                if os.path.normpath(rp).startswith(os.path.normpath(RUNFOLDER)):
+#                    rp=os.path.normpath(rp)[len(os.path.normpath(RUNFOLDER)):]
+#                rp=rp.replace(chr(92),chr(47))
+                
+                runparams=['name: '+d[self.ktl],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
                 for lab in runparams:
                     item=QTreeWidgetItem([lab],  1000)
                     mainitem.addChild(item)
