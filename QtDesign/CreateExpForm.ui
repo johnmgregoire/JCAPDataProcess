@@ -675,6 +675,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
    </property>
   </widget>
   <widget class="QLineEdit" name="ExpNameLineEdit">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>760</x>

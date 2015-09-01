@@ -259,7 +259,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
         openfnc=lambda fn:open(os.path.join(savefolder, fn+'.dat'), mode='wb')
         #savefcn=lambda d, keys:numpy.float64([d[k] for k in keys]).tofile(f)
     
-    readfcn=readdatafiledict[expfiledict['exp_type']]    
+    readfcn=readdatafiledict[expfiledict['experiment_type']]    
     for k, rund in expfiledict.iteritems():
         if not k.startswith('run__'):
             continue
@@ -333,12 +333,12 @@ def buildexppath(p):
 
 #don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat
 
-def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, exp_type='temp', rundone='.run', runtodonesavep=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
+def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
     if runtodonesavep is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
-        
-        savep=os.path.join(os.path.join(os.path.join(EXPFOLDER_K, exp_type), timename+rundone), timename+'.exp')
+        expfiledict['name']=timename
+        savep=os.path.join(os.path.join(os.path.join(EXPFOLDER_K, experiment_type), timename+rundone), timename+'.exp')
         
         if savep is None or not os.path.isdir(os.path.split(os.path.split(savep)[0])[0]):
             if erroruifcn is None:

@@ -81,7 +81,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.expparamsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
          ('name', [self.ExpNameLineEdit, 'temp_eche_name']), \
-         ('exp_type', [self.ExpTypeLineEdit, 'eche']), \
+         ('experiment_type', [self.ExpTypeLineEdit, 'eche']), \
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.ExpDescLineEdit, 'null']), \
         ])
@@ -222,6 +222,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         sorttups=sorted([(d['rcp_file']+str(count), d) for count, d in enumerate(self.rcpdlist)], reverse=True) #rcpfn is a time stamp so this will be reverse chron order
         self.rcpdlist=map(operator.itemgetter(1), sorttups)
         for d in self.rcpdlist:
+            d['name']=d['rcp_file'].rstrip('.rcp')
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
@@ -229,14 +230,14 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             else:
                 d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
-            self.exp_type='uvis'
+            self.experiment_type='uvis'
         else:
-            self.exp_type='eche'
-        self.expparamsdict_le_dflt['exp_type'][1]=self.exp_type
-        self.expparamsdict_le_dflt['created_by'][1]=self.exp_type
+            self.experiment_type='eche'
+        self.expparamsdict_le_dflt['experiment_type'][1]=self.experiment_type
+        self.expparamsdict_le_dflt['created_by'][1]=self.experiment_type
 
         for k, (le, dfltstr) in self.expparamsdict_le_dflt.items():
-            if k in ['exp_type', 'created_by']:
+            if k in ['experiment_type', 'created_by']:
                 le.setText(dfltstr)
         
         self.updaterunlist()
@@ -530,7 +531,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 rundone='.done'
             else:
                 rundone='.run'
-        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, exp_type=self.expfiledict['exp_type'], runtodonesavep=runtodonesavep, erroruifcn=\
+        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=self.expfiledict['experiment_type'], runtodonesavep=runtodonesavep, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
         
         self.prevsaveexppath=exppath

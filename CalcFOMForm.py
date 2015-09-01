@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
+# Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Thu May 28 14:30:56 2015
+# Created: Tue Sep 01 13:24:05 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -169,6 +169,7 @@ class Ui_CalcFOMDialog(object):
         self.AnaTypeLineEdit.setObjectName(_fromUtf8("AnaTypeLineEdit"))
         self.gridLayout_2.addWidget(self.AnaTypeLineEdit, 0, 1, 1, 1)
         self.AnaNameLineEdit = QtGui.QLineEdit(self.gridLayoutWidget_3)
+        self.AnaNameLineEdit.setEnabled(False)
         self.AnaNameLineEdit.setObjectName(_fromUtf8("AnaNameLineEdit"))
         self.gridLayout_2.addWidget(self.AnaNameLineEdit, 1, 1, 1, 1)
         self.AccessLineEdit = QtGui.QLineEdit(self.gridLayoutWidget_3)

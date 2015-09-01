@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
+# Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Fri May 22 10:56:19 2015
+# Created: Tue Sep 01 13:24:14 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -223,6 +223,7 @@ class Ui_CreateExpDialog(object):
         self.label_17.setGeometry(QtCore.QRect(690, 340, 91, 16))
         self.label_17.setObjectName(_fromUtf8("label_17"))
         self.ExpNameLineEdit = QtGui.QLineEdit(CreateExpDialog)
+        self.ExpNameLineEdit.setEnabled(False)
         self.ExpNameLineEdit.setGeometry(QtCore.QRect(760, 340, 221, 20))
         self.ExpNameLineEdit.setObjectName(_fromUtf8("ExpNameLineEdit"))
         self.label_18 = QtGui.QLabel(CreateExpDialog)

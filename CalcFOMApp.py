@@ -166,8 +166,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
 
         
-        self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['exp_type']
-        self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['exp_type']
+        self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['experiment_type']
+        self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
             if k in ['ana_type', 'created_by']:
@@ -490,7 +490,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             for fn in os.listdir(self.tempanafolder):
                 os.remove(os.path.join(self.tempanafolder, fn))
         else:
-            self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder'))
+            self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder - to meet compliance this should be format %Y%m%d.%H%M%S.run'))
+            #this is meant to result in rund['name']=%Y%m%d.%H%M%S but doesn't guarantee it
+            timestr=(os.path.split(self.tempanafolder)[1]).rstrip('.run')
+            self.AnaNameLineEdit.setText(timestr)
+            self.paramsdict_le_dflt['name'][1]=timestr
     def importanalysisparams(self):
         return
 

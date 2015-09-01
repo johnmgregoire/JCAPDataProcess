@@ -354,6 +354,9 @@ can be performed</string>
     </item>
     <item row="1" column="1">
      <widget class="QLineEdit" name="AnaNameLineEdit">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="toolTip">
        <string>Comment string to be included in EXP</string>
       </property>
