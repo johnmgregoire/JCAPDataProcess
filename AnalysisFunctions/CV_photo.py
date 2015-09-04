@@ -10,45 +10,32 @@ from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
 
 
-class Analysis__Ifin(Analysis_Master_nointer):
-    def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={}
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__Ifin'
-        self.requiredkeys=['I(A)']
-        self.optionalkeys=[]
-        self.fomnames=['I(A)_fin']
-        self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='t(s)'
-        self.plotparams['plot__1']['series__1']='I(A)'
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_fin', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    def fomtuplist_dataarr(self, dataarr):
-        return [('I(A)_fin', dataarr[0][-1])]
+
+#this take a filedlist based on required keys in raw data and then finds samples where a required prior analysis was completed and encodes the path to the intermediate data in anadict
+def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysis='Analysis__Iphoto'):
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_' in ftk]) for anak, anav in anadict.iteritems()\
+           if anak.startswith('ana__') and anav['name']==requiredanalysis and True in ['files_' in ftk for ftk in anav.keys()]]
+
+    
+    #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
+    ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk
+    #this used to use [anak, ftk, typek, fnk] but anadict is not available in perform() so use filename because it is the same .ana so should be in same folder
+    interfnks_filedlist=[\
+          [{'fn':fnk, 'keys':tagandkeys.split(';')[1].split(','), 'num_header_lines':int(tagandkeys.split(';')[2])}\
+            for anak, ftkl in anak_ftklist \
+            for ftk in ftkl \
+            for typek in ['inter_files', 'inter_rawlen_files']
+            for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
+                if ftk==('files_'+filed['run']) and int(tagandkeys.split(';')[4].strip())==filed['sample_no']\
+          ]
+        for filed in filedlist]
+    
+    #the keys anakeys__inter_file and anakeys__inter_rawlen_file assume there is only previous required analysis so this needs to be changed if combining multiple types of rpevious analysis
+    filedlist=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
+          for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
         
-class Analysis__Iave(Analysis_Master_nointer):
-    def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams=dict([('duration_s', 2.), ('num_std_dev_outlier', 2.), ('num_pts_outlier_window', 999999), ('from_end', True)])
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__Iave'
-        self.requiredkeys=['I(A)', 't(s)']
-        self.optionalkeys=[]
-        self.fomnames=['I(A)_ave']
-        self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='t(s)'
-        self.plotparams['plot__1']['series__1']='I(A)'
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_ave', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    def fomtuplist_dataarr(self, dataarr):
-        x, t=dataarr
-        if self.params['from_end']:
-            x=x[::-1]
-            t=t[::-1]
-        x=x[numpy.abs(t-t[0])<self.params['duration_s']]
-        x=removeoutliers_meanstd(x, self.params['num_pts_outlier_window']//2, self.params['num_std_dev_outlier'])
-        return [('I(A)_ave', x.mean())]
+    return filedlist#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
+
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
@@ -63,8 +50,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Pphotomax'
         # assume intermediate and raw data available
-        self.requiredkeys=['t(s)', 'Ewe(V)', 'I(A)', 't(s)_dark', 'Ewe(V)_dark', 'I(A)_dark', 't(s)_ill', 'Ewe(V)_ill', 'I(A)_ill', 'IllumBool']
+        self.requiredkeys=['t(s)', 'Ewe(V)']#, 't(s)_dark', 'Ewe(V)_dark', 'I(A)_dark', 't(s)_ill', 'Ewe(V)_ill', 'I(A)_ill', 'IllumBool']#these intermediate keys are not tested for explicitly, ontly through the custom getapplicablefilenames below
         self.optionalkeys=[]
+        self.requiredparams=['reference_e0', 'redox_couple_type']
         # Voc is almost always extrapolated, Vmicro will require i_photo_base parameter from previous analysis of Iphotomin_in_range
         self.fomnames=['Pphotomax', 'V_at_pmax', 'I_at_pmax', 'Voc_extrap', 'Isc', 'Fill_factor', 'Iphotomin_in_range', 'Vmicro']
         self.plotparams=dict({}, plot__1={})
@@ -85,10 +73,75 @@ class Analysis__Pphotomax(Analysis_Master_inter):
     #     self.description='%s on %s' %(','.join(self.fomnames), techk)
     #     return self.filedlist
 
-
-    def fomtuplist_rawlend_interlend(self, dataarr):
-        d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
-        filed=dict() # dictionary that contains RCP parameters
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
+        self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto')#this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
+        
+        self.description='%s on %s' %(','.join(self.fomnames), techk)
+        return self.filedlist    
+        
+    def readdata(self, p, numkeys, keyinds, num_header_lines=0):
+        try:
+            pd=buildexppath(p+'.dat')
+            dataarr=readbinary_selinds(pd, numkeys, keyinds)
+            return dataarr
+        except:
+            pass
+        pt=buildexppath(p)
+        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
+        return dataarr
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
+        self.multirunfiledict['misc_files']={}
+        self.fomdlist=[]
+        for filed in self.filedlist:
+            datadict={}
+            if numpy.isnan(filed['sample_no']):
+                if self.debugmode:
+                    raiseTEMP
+                continue
+            fn=filed['fn']
+            try:
+                #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
+                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+                for k, v in zip(self.requiredkeys, dataarr):
+                    datadict[k]=v
+                for interfiled in [filed['anakeys__inter_filed'], filed['anakeys__inter_rawlen_filed']]:
+                    tempdataarr=self.readdata(os.path.join(destfolder, fn), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])
+                    for k, v in zip(interfiled['keys'], tempdataarr):
+                        datadict[k]=v
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                continue
+            
+            fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
+            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
+                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            if destfolder is None:
+                continue
+            if len(rawlend.keys())>0:
+                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fnr)
+                kl=saveinterdata(p, rawlend, savetxt=True)
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
+            if 'rawselectinds' in interlend.keys():
+                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fni)
+                kl=saveinterdata(p, interlend, savetxt=True)
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
+            if not miscfilestr is None and isinstance(miscfilestr, str) and len(miscfilestr)>0:
+                fnm='%s__%s_polycoeff.txt' %(anak,os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fnm)        
+                with open(p, mode='w') as f:
+                    f.write(miscfilestr)
+                self.multirunfiledict['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
+            
+        self.writefom(destfolder, anak)
+        
+    def fomtuplist_rawlend_interlend(self, datadict, paramd):
+        d=datadict
+        
         interd={}
         rawlend={}
 
@@ -133,21 +186,22 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         fitcoeff_ill, fitresiduals_ill = fit_ill[0], fit_ill[1]
         diffcoeff = numpy.poly1d(fitcoeff_ill - fitcoeff_dark)
         fittedfunc = lambda x: numpy.polyval(diffcoeff, x)
-        interd['poly_coeff'] = diffcoeff.c
+        #interd['poly_coeff'] = diffcoeff.c
+        miscfilestr=','.join(['%.3e' %v for v in diffcoeff.c]) #if this algorithm can "fail" and return NaN for foms then make miscfilestr=None
         interd['Ewe(V)_fitrng'] = numpy.sort(numpy.append(interd['Ewe(V)_dark_fitrng'], interd['Ewe(V)_ill_fitrng']))
         interd['t(s)_fitrng'] = numpy.sort(numpy.append(interd['t(s)_dark_fitrng'], interd['t(s)_ill_fitrng']))
         interd['I(A)_fitrng'] = fittedfunc(interd['Ewe(V)_fitrng'])
         rawlend['I(A)_fit'] = fittedfunc(d['Ewe(V)'])
         rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
         
-        eo = filed['reference_e0']
+        eo = paramd['reference_e0']
         isc = fittedfunc(eo)
         ## fom values are calculated from fitted Ewe(V) range instead of full range
         ewe = interd['Ewe(V)_fitrng']
         ewe_eo = ewe-eo
         iphoto = interd['I(A)_fitrng']
         ## index of minimum Iphoto in range or polynomial root 'nearest' eo, use rcp value 'redox_couple_type' to determine which side of eo
-        iminsign = 1 if filed['redox_couple_type']=='O2/H2O' else -1
+        iminsign = 1 if paramd['redox_couple_type']=='O2/H2O' else -1
         ## what if all((iphoto*iminsign)<0)? -- then only reverse reaction current was observed, return smallest magnitude current index
         iminind = numpy.argmin(iphoto*iminsign) if all((iphoto*iminsign)>0) else numpy.argmin(numpy.absolute(iphoto)) if all((iphoto*iminsign)<0) else \
                 numpy.where((ewe_eo==numpy.max(iminsign*ewe_eo[numpy.where(numpy.sign((iphoto)[1:])!=numpy.sign((iphoto)[:-1]))[0]+1])) & (ewe<eo if iminsign==1 else ewe>eo))[0]
@@ -188,4 +242,4 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 ('Voc_extrap', voc), ('Isc', isc), ('Iphotomin_in_range', iphotomin), ('Vmicro', vmicro), \
                 ('Fill_factor', fillfactor)]
 
-        return fomtuplist, rawlend, interd
+        return fomtuplist, rawlend, interd, miscfilestr

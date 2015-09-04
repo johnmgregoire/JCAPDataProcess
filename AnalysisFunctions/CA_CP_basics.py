@@ -18,14 +18,14 @@ class Analysis__Ifin(Analysis_Master_nointer):
         self.analysis_name='Analysis__Ifin'
         self.requiredkeys=['I(A)']
         self.optionalkeys=[]
-        self.fomnames=['I(A)_fin']
+        self.fomnames=['I.A_fin']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_fin', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I.A_fin', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     def fomtuplist_dataarr(self, dataarr):
-        return [('I(A)_fin', dataarr[0][-1])]
+        return [('I.A_fin', dataarr[0][-1])]
         
 class Analysis__Iave(Analysis_Master_nointer):
     def __init__(self):
@@ -35,12 +35,12 @@ class Analysis__Iave(Analysis_Master_nointer):
         self.analysis_name='Analysis__Iave'
         self.requiredkeys=['I(A)', 't(s)']
         self.optionalkeys=[]
-        self.fomnames=['I(A)_ave']
+        self.fomnames=['I.A_ave']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_ave', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I.A_ave', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     def fomtuplist_dataarr(self, dataarr):
         x, t=dataarr
         if self.params['from_end']:
@@ -48,7 +48,7 @@ class Analysis__Iave(Analysis_Master_nointer):
             t=t[::-1]
         x=x[numpy.abs(t-t[0])<self.params['duration_s']]
         x=removeoutliers_meanstd(x, self.params['num_pts_outlier_window']//2, self.params['num_std_dev_outlier'])
-        return [('I(A)_ave', x.mean())]
+        return [('I.A_ave', x.mean())]
 
 class Analysis__Iphoto(Analysis_Master_inter):
     def __init__(self):
@@ -63,7 +63,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.analysis_name='Analysis__Iphoto'
         self.requiredkeys=['I(A)', 'Ewe(V)', 't(s)', 'Toggle']#0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
         self.optionalkeys=[]
-        self.fomnames=['I(A)_photo', 'I(A)_photo_ill', 'I(A)_photo_dark']
+        self.fomnames=['I.A_photo', 'I.A_photo_ill', 'I.A_photo_dark']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='I(A)'
@@ -72,8 +72,8 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.plotparams['plot__2']['x_axis']='t(s)_dark,t(s)_ill,t(s)_ill'
         self.plotparams['plot__2']['series__1']='I(A)_dark,I(A)_ill,I(A)_illdiff'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_photo', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_photo', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I.A_photo', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I.A_photo', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.requiredkeys[-1]=self.params['illum_key']

@@ -181,7 +181,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             if destfolder is None:
                 continue
@@ -189,13 +189,13 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         
         self.writefom(destfolder, anak)
         
@@ -329,7 +329,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
             rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
+                fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             if destfolder is None:
                 continue
@@ -337,19 +337,19 @@ class Analysis__BG_DA(Analysis_Master_inter):
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
             if 'rawselectinds' in selindd.keys():
                 fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, selindd, savetxt=True)
-                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]), filed['sample_no'])
 
             if len(linfitd.keys())>0:
                 fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnp)
                 kl=saveinterdata(p, linfitd, savetxt=False)
-                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]))
+                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]), filed['sample_no'])
 
         self.writefom(destfolder, anak)
         if destfolder is None:

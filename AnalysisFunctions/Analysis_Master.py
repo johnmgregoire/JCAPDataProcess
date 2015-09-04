@@ -10,7 +10,8 @@ def echeparsetech(s):
     while len(s)>0 and s[-1].isdigit():
         s=s[:-1]
     return s
-def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[]):
+def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], requiredparams=[]):
+    requiredparams+=['plate_id']
     if runklist is None:
         runklist=expfiledict.keys()
     runklist=[runk for runk in runklist \
@@ -20,19 +21,22 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
     num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
-    filedlist=[dict({}, expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, plateid=expfiledict[runk]['parameters']['plate_id'], sample_no=v['sample_no'], \
+    filedlist=[dict(\
+                        dict([(reqparam, expfiledict[runk]['parameters'][reqparam]) for reqparam in requiredparams]),\
+                                     expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, sample_no=v['sample_no'], \
                                      nkeys=len(v['keys']), num_header_lines=v['num_header_lines'], \
                                      reqkeyinds=[v['keys'].index(reqk) for reqk in requiredkeys if reqk in v['keys']], \
                                      optkeyinds=[(optk in v['keys'] and (v['keys'].index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
             for fnk, v in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
             if not (False in [reqk in v['keys'] for reqk in requiredkeys])\
+            and not (False in [reqparam in expfiledict[runk]['parameters'].keys() for reqparam in requiredparams])\
             ]
     filedlist=[dict(d, keyinds=d['reqkeyinds']+[k for k in d['optkeyinds'] if not k is None]) for d in filedlist]
 
     return num_files_considered, filedlist
 
-    
+
 def stdcheckoutput(fomdlist, fomnames, filedlist):
     nancount=[(not k in d) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
     nancount+=len(fomnames)*(len(filedlist)-len(fomdlist))#any missing fomd  (there is a filed but not fomd) counts as len(fomnames) wirth fo NaN
@@ -46,6 +50,7 @@ class Analysis_Master_nointer():
         self.analysis_name='Analysis_Master1'
         self.requiredkeys=[]
         self.optionalkeys=[]
+        self.requiredparams=[]
         self.fomnames=[]
         self.plotparams={}
         self.csvheaderdict=dict({}, csv_version='1')
@@ -54,7 +59,7 @@ class Analysis_Master_nointer():
         return
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
-        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
     
@@ -102,7 +107,7 @@ class Analysis_Master_nointer():
 #                if self.debugmode:
 #                    raiseTEMP
 #                continue
-            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr), sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr), sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak)
     def writefom(self, destfolder, anak):
@@ -135,17 +140,17 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 continue
             fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plateid'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:
                 continue
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
             if 'rawselectinds' in interlend.keys():
                 fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]))
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         self.writefom(destfolder, anak)
