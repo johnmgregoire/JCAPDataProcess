@@ -310,7 +310,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def editanalysisparams(self):
         if self.analysisclass is None or len(self.analysisclass.params)==0:
             return
-        keys_paramsd=[k for k in self.analysisclass.params.keys() if isinstance(v, dict)]
+        keys_paramsd=[k for k, v in self.analysisclass.params.iteritems() if isinstance(v, dict)]
         if len(keys_paramsd)==0:
             self.editanalysisparams_paramsd(self.analysisclass.params)
         else:

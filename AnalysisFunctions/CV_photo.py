@@ -13,7 +13,7 @@ from Analysis_Master import *
 
 #this take a filedlist based on required keys in raw data and then finds samples where a required prior analysis was completed and encodes the path to the intermediate data in anadict
 def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysis='Analysis__Iphoto'):
-    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_' in ftk]) for anak, anav in anadict.iteritems()\
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk]) for anak, anav in anadict.iteritems()\
            if anak.startswith('ana__') and anav['name']==requiredanalysis and True in ['files_' in ftk for ftk in anav.keys()]]
 
     
@@ -106,8 +106,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
                 for k, v in zip(self.requiredkeys, dataarr):
                     datadict[k]=v
-                for interfiled in [filed['anakeys__inter_filed'], filed['anakeys__inter_rawlen_filed']]:
-                    tempdataarr=self.readdata(os.path.join(destfolder, fn), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])
+                for interfiled in [filed['ana__inter_filed'], filed['ana__inter_rawlen_filed']]:
+                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])
                     for k, v in zip(interfiled['keys'], tempdataarr):
                         datadict[k]=v
             except:
@@ -154,7 +154,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             cathstartinds=numpy.append(0, cathstartinds)
         else:
             anodstartinds=numpy.append(0, anodstartinds)
-        anodendinds, cathendinds = map(lambda inds: [i for i in inds-1 if i>0], [anodendinds, cathendinds])
+        anodendinds, cathendinds = map(lambda inds: [i for i in inds-1 if i>0], [anodstartinds, cathstartinds])
         if deltaE[-1]>0:
             cathendinds=numpy.append(cathendinds, len(deltaE))
         else:
@@ -243,3 +243,25 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 ('Fill_factor', fillfactor)]
 
         return fomtuplist, rawlend, interd, miscfilestr
+        
+
+c=Analysis__Pphotomax()
+c.debugmode=True
+p_exp='//htejcap.caltech.edu/share/home/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
+p_ana='//htejcap.caltech.edu/share/home/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
+expd=readexpasdict(p_exp)
+usek='data'
+techk='CV3'
+typek='pstat_files'
+anadict=openana(p_ana, stringvalues=True, erroruifcn=None)
+filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=['run__1', 'run__2'], anadict=anadict)
+c.perform(os.path.split(p_ana)[0], expdatfolder=os.path.split(p_exp)[0], writeinterdat=True, anak='ana__2')
+print 'THESE FOM FILES WRITTEN'
+for k, v in c.multirunfiledict.items():
+    print k, v
+print 'THESE INTERMEDIATE DATA FILES WRITTEN'
+for k, v in c.interfiledict.items():
+    print k, v
+print 'THESE FOMs CALCULATED'
+print c.fomdlist
+

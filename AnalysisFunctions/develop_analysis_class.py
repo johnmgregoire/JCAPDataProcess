@@ -105,6 +105,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         #TODO: make intermediate column headings unique from raw
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
+        self.requiredparams=[]
         self.processnewparams()
         
         #TODO: update plotting defaults on both classes
@@ -291,6 +292,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
         self.processnewparams()
         self.requiredkeys=['wl']
         self.optionalkeys=[]
+        self.requiredparams=[]
         self.fom_chkqualitynames=['DA-bg_repr']
         self.histfomnames=['minslope']
     

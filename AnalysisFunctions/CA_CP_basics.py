@@ -18,6 +18,7 @@ class Analysis__Ifin(Analysis_Master_nointer):
         self.analysis_name='Analysis__Ifin'
         self.requiredkeys=['I(A)']
         self.optionalkeys=[]
+        self.requiredparams=[]
         self.fomnames=['I.A_fin']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
@@ -35,6 +36,7 @@ class Analysis__Iave(Analysis_Master_nointer):
         self.analysis_name='Analysis__Iave'
         self.requiredkeys=['I(A)', 't(s)']
         self.optionalkeys=[]
+        self.requiredparams=[]
         self.fomnames=['I.A_ave']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
@@ -63,6 +65,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.analysis_name='Analysis__Iphoto'
         self.requiredkeys=['I(A)', 'Ewe(V)', 't(s)', 'Toggle']#0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
         self.optionalkeys=[]
+        self.requiredparams=[]
         self.fomnames=['I.A_photo', 'I.A_photo_ill', 'I.A_photo_dark']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
