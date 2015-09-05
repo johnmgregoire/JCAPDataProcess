@@ -21,6 +21,7 @@ from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 from CreateExpForm import Ui_CreateExpDialog
+from SaveButtonForm import Ui_SaveOptionsDialog
 from SearchFolderApp import *
 PyCodePath=os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
 
@@ -30,7 +31,33 @@ from matplotlib.ticker import ScalarFormatter
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
-    
+class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
+    def __init__(self, parent, dflt):
+        super(SaveOptionsDialog, self).__init__(parent)
+        self.setupUi(self)
+        self.dfltButton.setText(dflt)
+        button_fcn=[\
+        (self.dfltButton, self.dflt), \
+        (self.tempButton, self.temp), \
+        (self.browseButton, self.browse), \
+        (self.cancelButton, self.cancel), \
+        ]
+        #(self.UndoExpPushButton, self.undoexpfile), \
+        for button, fcn in button_fcn:
+            QObject.connect(button, SIGNAL("pressed()"), fcn)
+        self.choice=dflt
+    def dflt(self):
+        self.close()
+    def temp(self):
+        self.choice='temp'
+        self.close()
+    def browse(self):
+        self.choice='browse'
+        self.close()
+    def cancel(self):
+        self.choice=''
+        self.close()
+        
 class expDialog(QDialog, Ui_CreateExpDialog):
     def __init__(self, parent=None, title='', folderpath=None):
         super(expDialog, self).__init__(parent)
@@ -515,10 +542,23 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.hide()
     def saveexp(self):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
+                    
+        idialog=SaveOptionsDialog(self, self.expfiledict['experiment_type'])
+        idialog.exec_()
+        if not idialog.choice:
+            return
+        exptype=idialog.choice
+        if idialog.choice=='browse':
+            savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
+            if savefolder is None or len(savefolder)==0:
+                return
+        else:
+            savefolder=None
+            
         if len(self.expfilestr)==0 or not 'exp_version' in self.expfilestr:
             return
         runtodonesavep=None
-        if not self.prevsaveexppath is None and os.path.split(self.prevsaveexppath)[0].endswith('run'):
+        if savefolder is None and not self.prevsaveexppath is None and os.path.split(self.prevsaveexppath)[0].endswith('run'):
             idialog=messageDialog(self, 'convert the .run to a .done?')
             if idialog.exec_():
                 rundone='.done'
@@ -531,7 +571,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 rundone='.done'
             else:
                 rundone='.run'
-        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=self.expfiledict['experiment_type'], runtodonesavep=runtodonesavep, erroruifcn=\
+        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=exptype, runtodonesavep=runtodonesavep, savefolder=savefolder, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
         
         self.prevsaveexppath=exppath

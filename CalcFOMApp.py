@@ -19,6 +19,7 @@ from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 from CalcFOMForm import Ui_CalcFOMDialog
+from SaveButtonForm import Ui_SaveOptionsDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
@@ -34,6 +35,33 @@ DEBUGMODE=True
 for ac in AnalysisClasses:
     ac.debugmode=DEBUGMODE
 
+class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
+    def __init__(self, parent, dflt):
+        super(SaveOptionsDialog, self).__init__(parent)
+        self.setupUi(self)
+        self.dfltButton.setText(dflt)
+        button_fcn=[\
+        (self.dfltButton, self.dflt), \
+        (self.tempButton, self.temp), \
+        (self.browseButton, self.browse), \
+        (self.cancelButton, self.cancel), \
+        ]
+        #(self.UndoExpPushButton, self.undoexpfile), \
+        for button, fcn in button_fcn:
+            QObject.connect(button, SIGNAL("pressed()"), fcn)
+        self.choice=dflt
+    def dflt(self):
+        self.close()
+    def temp(self):
+        self.choice='temp'
+        self.close()
+    def browse(self):
+        self.choice='browse'
+        self.close()
+    def cancel(self):
+        self.choice=''
+        self.close()
+        
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def __init__(self, parent=None, title='', folderpath=None):
         super(calcfomDialog, self).__init__(parent)
@@ -503,8 +531,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             return
+            
+        idialog=SaveOptionsDialog(self, self.anadict['ana_type'])
+        idialog.exec_()
+        if not idialog.choice:
+            return
+        
+        if idialog.choice=='browse':
+            savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
+            if savefolder is None or len(savefolder)==0:
+                return
+        else:
+            savefolder=None
+        
          
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, ana_type=self.anadict['ana_type'], anadict=self.anadict, erroruifcn=\
+        saveana_tempfolder(self.anafilestr, self.tempanafolder, ana_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
             
         self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
