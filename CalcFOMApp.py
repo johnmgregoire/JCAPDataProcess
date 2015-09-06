@@ -28,7 +28,9 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 
-AnalysisClasses=[Analysis__Ifin(), Analysis__Iave(), Analysis__Iphoto()]
+AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
+   Analysis__E_Ithresh(), Analysis__Eta_Ithresh()\
+    ]
 
 DEBUGMODE=True
 
@@ -341,6 +343,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         keys_paramsd=[k for k, v in self.analysisclass.params.iteritems() if isinstance(v, dict)]
         if len(keys_paramsd)==0:
             self.editanalysisparams_paramsd(self.analysisclass.params)
+            return
         else:
             keys_paramsd=['<non-nested params>']+keys_paramsd
         i=userselectcaller(self, options=keys_paramsd, title='Select type of parameter to edit')
