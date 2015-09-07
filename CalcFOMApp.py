@@ -120,7 +120,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
          ('name', [self.AnaNameLineEdit, 'temp_eche_name']), \
-         ('ana_type', [self.AnaTypeLineEdit, 'eche']), \
+         ('analysis_type', [self.AnaTypeLineEdit, 'eche']), \
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
@@ -196,11 +196,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
 
         
-        self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['experiment_type']
+        self.paramsdict_le_dflt['analysis_type'][1]=self.expfiledict['experiment_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
-            if k in ['ana_type', 'created_by']:
+            if k in ['analysis_type', 'created_by']:
                 le.setText(dfltstr)
         self.clearanalysis()
         
@@ -535,7 +535,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if not 'ana_version' in self.anafilestr:
             return
             
-        idialog=SaveOptionsDialog(self, self.anadict['ana_type'])
+        idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
         idialog.exec_()
         if not idialog.choice:
             return
@@ -548,7 +548,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             savefolder=None
         
          
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, ana_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
+        saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
             
         self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost

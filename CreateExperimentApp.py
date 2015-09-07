@@ -249,7 +249,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         sorttups=sorted([(d['rcp_file']+str(count), d) for count, d in enumerate(self.rcpdlist)], reverse=True) #rcpfn is a time stamp so this will be reverse chron order
         self.rcpdlist=map(operator.itemgetter(1), sorttups)
         for d in self.rcpdlist:
-            d['name']=d['rcp_file'].rstrip('.rcp')
+            d['name']=d['rcp_file'].strip().rstrip('.rcp')
+
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
@@ -636,7 +637,7 @@ class treeclass_dlist():
 #                    rp=os.path.normpath(rp)[len(os.path.normpath(RUNFOLDER)):]
 #                rp=rp.replace(chr(92),chr(47))
                 
-                runparams=['name: '+d[self.ktl],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
+                runparams=['name: '+d['name'],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
                 for lab in runparams:
                     item=QTreeWidgetItem([lab],  1000)
                     mainitem.addChild(item)
