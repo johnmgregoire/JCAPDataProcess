@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileManagementForm.ui'
 #
-# Created: Mon Sep 07 10:47:34 2015
+# Created: Mon Sep 07 11:15:58 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -35,6 +35,12 @@ class Ui_FileManDialog(object):
         self.findfoldersButton = QtGui.QPushButton(FileManDialog)
         self.findfoldersButton.setGeometry(QtCore.QRect(20, 10, 131, 23))
         self.findfoldersButton.setObjectName(_fromUtf8("findfoldersButton"))
+        self.endswithLineEdit = QtGui.QLineEdit(FileManDialog)
+        self.endswithLineEdit.setGeometry(QtCore.QRect(400, 10, 113, 20))
+        self.endswithLineEdit.setObjectName(_fromUtf8("endswithLineEdit"))
+        self.label = QtGui.QLabel(FileManDialog)
+        self.label.setGeometry(QtCore.QRect(310, 10, 91, 21))
+        self.label.setObjectName(_fromUtf8("label"))
 
         self.retranslateUi(FileManDialog)
         QtCore.QMetaObject.connectSlotsByName(FileManDialog)
@@ -43,6 +49,9 @@ class Ui_FileManDialog(object):
         FileManDialog.setWindowTitle(QtGui.QApplication.translate("FileManDialog", "EXP+ANA file management", None, QtGui.QApplication.UnicodeUTF8))
         self.deletefoldersButton.setText(QtGui.QApplication.translate("FileManDialog", "delete selected folders", None, QtGui.QApplication.UnicodeUTF8))
         self.findfoldersButton.setText(QtGui.QApplication.translate("FileManDialog", "find .run folders", None, QtGui.QApplication.UnicodeUTF8))
+        self.endswithLineEdit.setText(QtGui.QApplication.translate("FileManDialog", ".run", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("FileManDialog", "EXP or ANA folder\n"
+"must end with ", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

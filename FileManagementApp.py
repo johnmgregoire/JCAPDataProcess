@@ -62,6 +62,8 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         self.treeWidget.clear()
 
         self.toplevelitems=[]
+        
+        self.endswith=str(self.endswithLineEdit.text())
         for i, (lab, fold) in enumerate(zip(['EXP', 'ANA'], [EXPFOLDER_K, ANAFOLDER_K])):
             mainitem=QTreeWidgetItem([lab], 0)
             mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
@@ -87,8 +89,8 @@ class filemanDialog(QDialog, Ui_FileManDialog):
 
             if level=='top':
                 p=os.path.join(fold, fn)
-                print p
-                addbool=self.nestedfill(p, item, 'sub')
+                #print p
+                addbool=self.nestedfill(p, item, 'sub', endswith=self.endswith)
                 addbool=addbool>0
             else:
                 addbool=True
