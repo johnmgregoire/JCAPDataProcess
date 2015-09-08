@@ -164,7 +164,7 @@ class Analysis__Etaave(Analysis_Master_inter, Analysis__Iave):#this order is imp
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
     
-    def fomtuplist_dataarr(self, dataarr, filed):
+    def fomtuplist_rawlend_interlend(self, dataarr, filed):
         t=dataarr[1]
         eta=referenceshiftfcn(dataarr[0], filed['reference_e0'], filed['redox_couple_type'])
         return self.avefcn(eta, t), dict([('Eta(V)', eta)]), {}
