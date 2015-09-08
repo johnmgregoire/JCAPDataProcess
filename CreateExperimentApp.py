@@ -23,6 +23,7 @@ from fcns_ui import *
 from CreateExpForm import Ui_CreateExpDialog
 from SaveButtonForm import Ui_SaveOptionsDialog
 from SearchFolderApp import *
+from DBPaths import *
 PyCodePath=os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
 
 from matplotlib.ticker import FuncFormatter
@@ -113,7 +114,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
          ('description', [self.ExpDescLineEdit, 'null']), \
         ])
         
-        self.defaultrcppath=os.getcwd()
+        self.defaultrcppath=RUNFOLDER
         self.removeruns()
         self.clearexp()
         #self.expfilelist=[]
