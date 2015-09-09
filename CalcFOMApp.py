@@ -125,6 +125,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
+        self.getplatemapCheckBox.setChecked(True)
         
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
@@ -191,7 +192,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
-                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(rund['parameters']['plate_id']), \
+                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])), \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
 

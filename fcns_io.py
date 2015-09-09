@@ -264,9 +264,12 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
         if not k.startswith('run__'):
             continue
         runp=rund['run_path']
-        if not (os.path.isdir(runp) or os.path.isfile(runp)):
-            runp=RUNFOLDER+runp#this doesn't workl:?? os.path.join(RUNFOLDER, runp)
+
         zipbool=runp.endswith('.zip')
+        
+        if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
+            runp=os.path.join(RUNFOLDER, runp.strip('/'))
+        
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
             zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
@@ -830,6 +833,11 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         return d
 
 def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
+    zipbool=runp.endswith('.zip')
+    
+    if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
+        runp=os.path.join(RUNFOLDER, runp.strip('/'))
+
     zipbool=runp.endswith('.zip')
     if zipbool:
         archive=zipfile.ZipFile(runp, 'r')
