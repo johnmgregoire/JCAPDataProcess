@@ -107,7 +107,7 @@ class Analysis_Master_nointer():
 #                if self.debugmode:
 #                    raiseTEMP
 #                continue
-            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr), sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr, filed), sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak)
     def writefom(self, destfolder, anak):
@@ -138,7 +138,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 if self.debugmode:
                     raiseTEMP
                 continue
-            fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr)
+            fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:

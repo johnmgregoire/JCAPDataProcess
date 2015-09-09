@@ -210,10 +210,10 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None):
         d['mtime']=mtime_path_fcn(path)
     return d
 
-def convertstrvalstonum_nesteddict(expfiledict):
+def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'analysis_type', 'name', 'description', 'created_by']):
     def nestednumconvert(d):
         for k, v in d.iteritems():
-            if isinstance(v, str):
+            if isinstance(v, str) and not k in skipkeys:
                 d[k]=attemptnumericconversion_tryintfloat(v)
             elif isinstance(v, dict):
                 nestednumconvert(v)
@@ -264,8 +264,12 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
         if not k.startswith('run__'):
             continue
         runp=rund['run_path']
-        
+
         zipbool=runp.endswith('.zip')
+        
+        if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
+            runp=os.path.join(RUNFOLDER, runp.strip('/'))
+        
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
             zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
@@ -333,9 +337,9 @@ def buildexppath(p):
 
 #don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat
 
-def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
+def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
-    if runtodonesavep is None:
+    if runtodonesavep is None and savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
         expfiledict['name']=timename
         savep=os.path.join(os.path.join(os.path.join(EXPFOLDER_K, experiment_type), timename+rundone), timename+'.exp')
@@ -346,9 +350,11 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
             savep=erroruifcn('bad autosave path')
             if len(savep)==0:
                 return
-    else:
-        savep=runtodonesavep.replace('.run', '.done')
+    elif savefolder is None:
+        savep=runtodonesavep.replace('.run', '.done').replace('.pck', '.exp')
         os.rename(os.path.split(runtodonesavep)[0], os.path.split(savep)[0])
+    else:
+        savep=os.path.join(savefolder, os.path.split(savefolder)[1]+'.exp')
     folder=os.path.split(savep)[0]
 
     #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
@@ -373,7 +379,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
             
     expfilestr=strrep_filedict(saveexpfiledict)
     with open(savep, mode='w') as f:
-        f.write(expfilestr)    
+        f.write(expfilestr)
     convertstrvalstonum_nesteddict(saveexpfiledict)
     convertfilekeystofiled(saveexpfiledict)
 
@@ -828,6 +834,11 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
 
 def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
     zipbool=runp.endswith('.zip')
+    
+    if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
+        runp=os.path.join(RUNFOLDER, runp.strip('/'))
+
+    zipbool=runp.endswith('.zip')
     if zipbool:
         archive=zipfile.ZipFile(runp, 'r')
         zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
@@ -905,21 +916,20 @@ def getanadefaultfolder(erroruifcn=None):
             return ''
         return erroruifcn('')
             
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, ana_type='temp'):
-    #TODO: write routine to auto generate user path
-    #savep='C:/Users/Gregoire/Documents/PythonCode/JCAP/JCAPCreateExperimentAndFOM/exp/sampleexp.exp'
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', savefolder=None):
     
-    if srcfolder.endswith('.run'):
+    if srcfolder.endswith('.run') and savefolder is None:
         rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
         if typefold=='temp':
-            savefolder=os.path.join(os.path.join(rootfold, ana_type), os.path.split(srcfolder)[1][:-3]+'done')
+            savefolder=os.path.join(os.path.join(rootfold, analysis_type), os.path.split(srcfolder)[1][:-3]+'done')
         else:
             savefolder=srcfolder[:-3]+'done'#replace run with done
         timename=os.path.split(srcfolder)[1][:-4]#remove .run
-    else:
+    elif savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
-        savefolder=os.path.join(os.path.join(ANAFOLDER_K, ana_type), timename+'.done')
-
+        savefolder=os.path.join(os.path.join(ANAFOLDER_K, analysis_type), timename+'.done')
+    else:
+        timename=os.path.split(savefolder)[1]
     try:
         if not os.path.isdir(savefolder):
             os.mkdir(savefolder)

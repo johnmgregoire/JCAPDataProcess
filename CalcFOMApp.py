@@ -19,6 +19,7 @@ from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 from CalcFOMForm import Ui_CalcFOMDialog
+from SaveButtonForm import Ui_SaveOptionsDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
@@ -27,13 +28,42 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 
-AnalysisClasses=[Analysis__Ifin(), Analysis__Iave(), Analysis__Iphoto()]
+AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
+   Analysis__E_Ithresh(), Analysis__Eta_Ithresh()\
+    ]
 
 DEBUGMODE=True
 
 for ac in AnalysisClasses:
     ac.debugmode=DEBUGMODE
 
+class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
+    def __init__(self, parent, dflt):
+        super(SaveOptionsDialog, self).__init__(parent)
+        self.setupUi(self)
+        self.dfltButton.setText(dflt)
+        button_fcn=[\
+        (self.dfltButton, self.dflt), \
+        (self.tempButton, self.temp), \
+        (self.browseButton, self.browse), \
+        (self.cancelButton, self.cancel), \
+        ]
+        #(self.UndoExpPushButton, self.undoexpfile), \
+        for button, fcn in button_fcn:
+            QObject.connect(button, SIGNAL("pressed()"), fcn)
+        self.choice=dflt
+    def dflt(self):
+        self.close()
+    def temp(self):
+        self.choice='temp'
+        self.close()
+    def browse(self):
+        self.choice='browse'
+        self.close()
+    def cancel(self):
+        self.choice=''
+        self.close()
+        
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def __init__(self, parent=None, title='', folderpath=None):
         super(calcfomDialog, self).__init__(parent)
@@ -90,11 +120,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
          ('name', [self.AnaNameLineEdit, 'temp_eche_name']), \
-         ('ana_type', [self.AnaTypeLineEdit, 'eche']), \
+         ('analysis_type', [self.AnaTypeLineEdit, 'eche']), \
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
+        self.getplatemapCheckBox.setChecked(True)
         
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
@@ -161,16 +192,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
-                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(rund['parameters']['plate_id']), \
+                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])), \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
 
         
-        self.paramsdict_le_dflt['ana_type'][1]=self.expfiledict['experiment_type']
+        self.paramsdict_le_dflt['analysis_type'][1]=self.expfiledict['experiment_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
-            if k in ['ana_type', 'created_by']:
+            if k in ['analysis_type', 'created_by']:
                 le.setText(dfltstr)
         self.clearanalysis()
         
@@ -313,6 +344,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         keys_paramsd=[k for k, v in self.analysisclass.params.iteritems() if isinstance(v, dict)]
         if len(keys_paramsd)==0:
             self.editanalysisparams_paramsd(self.analysisclass.params)
+            return
         else:
             keys_paramsd=['<non-nested params>']+keys_paramsd
         i=userselectcaller(self, options=keys_paramsd, title='Select type of parameter to edit')
@@ -503,8 +535,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             return
+            
+        idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
+        idialog.exec_()
+        if not idialog.choice:
+            return
+        
+        if idialog.choice=='browse':
+            savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
+            if savefolder is None or len(savefolder)==0:
+                return
+        else:
+            savefolder=None
+        
          
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, ana_type=self.anadict['ana_type'], anadict=self.anadict, erroruifcn=\
+        saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
             
         self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
@@ -589,7 +634,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for runk in sorted(inds_runk.keys()):
             if daqtimebool:
                 fns=[self.filedlist[inds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
-                t+=[applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)]
+                t+=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
 
            # hy+=[fom[inds_runk[runk]]]
         if daqtimebool:

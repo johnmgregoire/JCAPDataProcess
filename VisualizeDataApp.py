@@ -567,21 +567,23 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             
     def fomstats(self):
         self.plotw_fomhist.axes.cla()
-        
-        if len(self.fomplotd['fom'])==0:
+        fom=self.fomplotd['fom']
+        fom=fom[numpy.logical_not(numpy.isnan(fom))]
+        if len(fom)==0:
             self.fomstatsTextBrowser.setText('')
             return
         tempfmt=lambda x:('%.2e' if x>999. else ('%.4f' if x>.009 else '%.2e')) %x
         strarr=[]
         for fcn in [numpy.mean, numpy.median, numpy.std, numpy.min, numpy.max, .05, .1, .9, .95]:
             if isinstance(fcn, float):
-                strarr+=[[('%d' %(fcn*100))+'%', tempfmt(numpy.percentile(self.fomplotd['fom'], fcn*100))]]
+                strarr+=[[('%d' %(fcn*100))+'%', tempfmt(numpy.percentile(fom, fcn*100))]]
             else:
-                strarr+=[[fcn.func_name, tempfmt(fcn(self.fomplotd['fom']))]]
+                strarr+=[[fcn.func_name, tempfmt(fcn(fom))]]
         strarr=numpy.array(strarr)
         s='\n'.join(['\t'.join([v for v in a]) for a in strarr])
         self.fomstatsTextBrowser.setText(s)
-        n, bins, patches = self.plotw_fomhist.axes.hist(self.fomplotd['fom'], 20, normed=False, histtype='stepfilled')
+        
+        n, bins, patches = self.plotw_fomhist.axes.hist(fom, 20, normed=False, histtype='stepfilled')
         #self.plotw_fomhist.fig.setp(patches)
         self.plotw_fomhist.fig.canvas.draw()
     
@@ -639,8 +641,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return xyy
         anarund=self.anafiledict[anak][anarunk]
         mainitem=self.widgetItems_pl_ru_te_ty_co[2]
-        allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
-        fn_filed_tosearch=[(fn, filed) for techk, techd in anarund.iteritems() for fn, filed in techd.iteritems() if techk in allowedvals and filed['sample_no']==smp]
+        #allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        fn_filed_tosearch=[(fn, filed) for techk, techd in anarund.iteritems() for fn, filed in techd.iteritems() if techk.startswith('inter_') and filed['sample_no']==smp]#techk in allowedvals 
         
         for count, k in enumerate(arrkeys):
             if k=='None':

@@ -9,7 +9,7 @@ from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
 from VisualizeDataApp import visdataDialog
 from CombineFomApp import combinefomDialog
-
+from FileManagementApp import filemanDialog
 
 
 class MainMenu(QMainWindow):
@@ -20,6 +20,7 @@ class MainMenu(QMainWindow):
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
         self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
         self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
+        self.filemanui=filemanDialog(self, title='Delete obsolete .run folders')
         
         expuiButton=QPushButton()
         expuiButton.setText("Create/edit\nExperiment")
@@ -37,12 +38,18 @@ class MainMenu(QMainWindow):
         combinefomuiButton.setText("Combine\nFOM files")
         QObject.connect(combinefomuiButton, SIGNAL("pressed()"), self.combinefomui_exec)
         
+        filemanButton=QPushButton()
+        filemanButton.setText("Delete\n.run")
+        QObject.connect(filemanButton, SIGNAL("pressed()"), self.filemanui_exec)
+        
+        
         mainlayout=QGridLayout()
 
         mainlayout.addWidget(expuiButton, 0, 0)
         mainlayout.addWidget(calcuiButton, 0, 1)
         mainlayout.addWidget(visdataButton, 0, 2)
         mainlayout.addWidget(combinefomuiButton, 0, 3)
+        mainlayout.addWidget(filemanButton, 0, 4)
    
         window=QWidget();
         window.setLayout(mainlayout);
@@ -59,7 +66,8 @@ class MainMenu(QMainWindow):
         self.visdataui.show()
     def combinefomui_exec(self):
         self.combinefomui.show()
-        
+    def filemanui_exec(self):
+        self.filemanui.show()
 mainapp=QApplication(sys.argv)
 form=MainMenu(None)
 form.show()
