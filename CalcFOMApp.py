@@ -534,6 +534,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def saveana(self):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
+            idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
+            idialog.exec_()
             return
             
         idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
