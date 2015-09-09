@@ -425,30 +425,12 @@ class visdataDialog(QDialog):
         codesLineEditLabel=QLabel()
         codesLineEditLabel.setText('only show these codes:\nwhen open platemap')
         
-        addComp=QPushButton()
-        addComp.setText("add")
-        QObject.connect(addComp, SIGNAL("pressed()"), self.addValuesComp)
-        
-        remComp=QPushButton()
-        remComp.setText("remove")
-        QObject.connect(remComp, SIGNAL("pressed()"), self.remValuesComp)
-        
-        addxy=QPushButton()
-        addxy.setText("add")
-        QObject.connect(addxy, SIGNAL("pressed()"), self.addValuesXY)
-        
-        remxy=QPushButton()
-        remxy.setText("remove")
-        QObject.connect(remxy, SIGNAL("pressed()"), self.remValuesXY)
-
-        addSample=QPushButton()
-        addSample.setText("add")
-        QObject.connect(addSample, SIGNAL("pressed()"), self.addValuesSample)
-
-        
-        remSample=QPushButton()
-        remSample.setText("remove")
-        QObject.connect(remSample, SIGNAL("pressed()"), self.remValuesSample)
+        (self.addComp, self.addValuesComp), 
+        (self.remComp, self.remValuesComp), 
+        (self.addxy, self.addValuesXY), 
+        (self.remxy, self.remValuesXY), 
+        (self.addSample, self.addValuesSample), 
+        (self.remSample, self.remValuesSample)
 
         savesampleButton=QPushButton()
         savesampleButton.setText("save select\nsample IDs")
@@ -707,11 +689,11 @@ class visdataDialog(QDialog):
             self.plotselect()
             
     def updateinfo(self):
-        self.compLineEdit.setText(','.join(['%.2f' %n for n in self.comp[self.selectind]]))
+        self.compLineEdit.setText(','.join(['%.2f' %n for n in self.fomplotd['comps'][self.selectind]]))
 
-        self.xyLineEdit.setText(','.join(['%.2f' %n for n in [self.x[self.selectind], self.y[self.selectind]]]))
+        self.xyLineEdit.setText(','.join(['%.2f' %n for n in self.fomplotd['xy'][self.selectind]]))
 
-        self.sampleLineEdit.setText('%d' %self.smplist[self.selectind])
+        self.sampleLineEdit.setText('%d' %self.fomplotd['sample_no'][self.selectind])
     
     def plotselect(self):
         if len(self.datadlist)==0:
