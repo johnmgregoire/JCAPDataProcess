@@ -544,7 +544,10 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.hide()
     def saveexp(self):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
-                    
+        if not 'experiment_type' in self.expfiledict.keys():
+            idialog=messageDialog(self, 'Aborting SAVE because no data in EXP')
+            idialog.exec_()
+            return
         idialog=SaveOptionsDialog(self, self.expfiledict['experiment_type'])
         idialog.exec_()
         if not idialog.choice:
