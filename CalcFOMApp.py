@@ -634,7 +634,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for runk in sorted(inds_runk.keys()):
             if daqtimebool:
                 fns=[self.filedlist[inds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
-                t+=[applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)]
+                t+=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
 
            # hy+=[fom[inds_runk[runk]]]
         if daqtimebool:
