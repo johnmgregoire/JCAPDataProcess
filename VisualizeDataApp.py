@@ -737,11 +737,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 continue
             for draw, dint in [(xd, yd), (yd, xd)]:
                 if 'rawselectinds' in dint.keys() and len(draw['arr'])>(dint['rawselectinds'].max()):
-                    draw['arr']=draw['arr']['rawselectinds']
+                    draw['arr']=draw['arr'][dint['rawselectinds']]
                     break
             if len(xd['arr'])==len(yd['arr']):
                 plotdata[count]=[xd['arr'], yd['arr']]
                 continue
+#            if count==0:
+#                helpme
         getval=lambda k:self.fomplotd[k][self.selectind]
         lab=self.customlegendfcn(getval('sample_no'), self.ellabels, getval('comps'), getval('code'), getval('fom'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])

@@ -6,8 +6,9 @@ def createcsvfilstr(fomdlist, fomkeys, intfomkeys=[], fmt='%.5e'):#for each samp
     smparr=[d['sample_no'] for d in fomdlist]
     fomarr_smps=numpy.array([[(k in d.keys() and (d[k],) or (numpy.nan,))[0] for k in fomkeys] for d in fomdlist]) 
     lines=[','.join(['sample_no']+intfomkeys+fomkeys)]
-    for smp, fomarr in zip(smparr, fomarr_smps):
-        lines+=[','.join(['%d' %smp]+['%d' %d[nk] for nk in intfomkeys]+[fmt %n for n in fomarr])]
+    lines+=[','.join(['%d' %smp]+['%d' %d[nk] for nk in intfomkeys]+[fmt %n for n in fomarr])\
+        for smp, d, fomarr in zip(smparr, fomdlist, fomarr_smps)\
+        ]
     s='\n'.join(lines).replace('nan', 'NaN')
     return s
 
