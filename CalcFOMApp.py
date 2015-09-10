@@ -33,7 +33,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax()\
     ]
-print AnalysisClasses[-1].analysis_name
+
 DEBUGMODE=True
 
 for ac in AnalysisClasses:
@@ -88,6 +88,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.EditAnalysisParamsPushButton, self.editanalysisparams), \
         (self.AnalyzeDataPushButton, self.analyzedata), \
         (self.ViewResultPushButton, self.viewresult), \
+        (self.SaveViewPushButton, self.saveview), \
         (self.EditDfltVisPushButton, self.editvisparams), \
         (self.SaveAnaPushButton, self.saveana), \
         (self.ClearAnalysisPushButton, self.clearanalysis), \
@@ -174,7 +175,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
         
-    def importexp(self, expfiledict=None, exppath=None):#TODO support import from .zip on J
+    def importexp(self, expfiledict=None, exppath=None):#TODO support import from .zip on J, expath here is the file not the folder
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
@@ -207,12 +208,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 le.setText(dfltstr)
         self.clearanalysis()
         
-        rp=self.exppath.replace('.pck', '.exp')
+        #rp=self.exppath.replace('.pck', '.exp')
+        rp=os.path.split(self.exppath)[0]
         if os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_J)):
             rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_J)):]
         elif os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_K)):
             rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_K)):]
-        self.anadict['exp_path']=rp.replace(chr(92),chr(47))
+        self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
         
         self.fillexpoptions()
     
@@ -319,13 +321,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if len(p)==0:
             return
         anadict=openana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
-        if not 'exp_path' in anadict.keys():
+        if not 'experiment_path' in anadict.keys():
             return
         if anadict['ana_version']!='3':
             idialog=messageDialog(self, '.ana version %s is different from present. continue?' %anadict['ana_version'])
             if not idialog.exec_():
                 return
-        exppath=buildexppath(anadict['exp_path'])
+        exppath=buildexppath(anadict['experiment_path'])#this is the place an experiment folder is turned into an exp fiel path so for the rest of this App exppath is the path of the .exp file
         expfiledict=readexpasdict(exppath, includerawdata=False)
         if len(expfiledict)==0:
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
@@ -482,14 +484,19 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
         
-    def viewresult(self):
+    def viewresult(self, anasavefolder=None):
+        if anasavefolder is None:
+            anasavefolder=self.tempanafolder
         d=copy.deepcopy(self.anadict)
         convertfilekeystofiled(d)
         #importfomintoanadict(d)
-        self.parent.visdataui.importana(anafiledict=d, anafolder=self.tempanafolder)
+        self.parent.visdataui.importana(anafiledict=d, anafolder=anasavefolder)
         self.hide()
         self.parent.visdataui.show()
-        
+    def saveview(self):
+        anasavefolder=self.saveana(dontclearyet=True)
+        self.viewresult(anasavefolder=anasavefolder)#just hide+show so shouldn't get hung here
+        self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)
 
     def clearsingleanalysis(self):
         keys=sorted([k for k in self.anadict.keys() if k.startswith('ana__')])
@@ -535,7 +542,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
 
-    def saveana(self):
+    def saveana(self, dontclearyet=False):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
@@ -555,12 +562,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             savefolder=None
         
          
-        saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
+        anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
-            
-        self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
-        #self.clearanalysis()
         
+        if not dontclearyet:
+            self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
+        #self.clearanalysis()
+        return anasavefolder
     def editvisparams(self):
         if self.activeana is None:
             print 'active ana__ has been lost so nothing done.'

@@ -128,7 +128,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.anafiledict=anafiledict
             self.anafolder=anafolder
         
-        self.importexp(exppath=self.anafiledict['exp_path'], fromana=True)
+        self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
         
         self.l_fomdlist=[]
         self.l_fomnames=[]
@@ -143,12 +143,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomplotchoices()
         self.fillxyoptions(clear=True)
 
-    def importexp(self, exppath=None, fromana=False):
-        if exppath is None:
+    def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file
+        if experiment_path is None:
             exppath=openexpanafile(self, exp=True, markstr='Select .pck or .exp EXP file' )
-        if exppath is None or len(exppath)==0:
-            return
-        exppath=buildexppath(exppath)
+            if exppath is None or len(exppath)==0:
+                return
+        else:
+            exppath=buildexppath(experiment_path)
         expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
         if expfiledict is None:
             print 'Problem opening EXP'
@@ -742,8 +743,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(xd['arr'])==len(yd['arr']):
                 plotdata[count]=[xd['arr'], yd['arr']]
                 continue
-#            if count==0:
-#                helpme
+            if count==0:
+                helpme
         getval=lambda k:self.fomplotd[k][self.selectind]
         lab=self.customlegendfcn(getval('sample_no'), self.ellabels, getval('comps'), getval('code'), getval('fom'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
@@ -1259,8 +1260,9 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.visui=visdataDialog(self, title='Visualize ANA, EXP, RUN data', **kwargs)
-            #self.visui.importana(p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/eche/1/20150716.220140.ana')
-            #self.visui.plotfom()
+            p=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20150909.230012.done\20150909.230012.ana'
+            self.visui.importana(p=p)
+            self.visui.plotfom()
             #self.visui.openontheflyfolder(folderpath='//htejcap.caltech.edu/share/home/users/hte/demo_proto/run/eche/onthefly1', platemappath='//htejcap.caltech.edu/share/home/users/hte/platemaps/0037-04-0730-mp.txt')
             if execute:
                 self.visui.exec_()

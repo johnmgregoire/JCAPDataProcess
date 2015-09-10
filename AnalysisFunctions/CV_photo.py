@@ -80,16 +80,6 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist    
         
-    def readdata(self, p, numkeys, keyinds, num_header_lines=0):
-        try:
-            pd=buildexppath(p+'.dat')
-            dataarr=readbinary_selinds(pd, numkeys, keyinds)
-            return dataarr
-        except:
-            pass
-        pt=buildexppath(p)
-        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
-        return dataarr
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         #self.multirunfiledict['misc_files']={}

@@ -335,19 +335,35 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
         x=numpy.float32([interd[kv] for kv in keys])
         x.tofile(f)
     return keys
-    
-def buildexppath(p):
+
+
+def prepend_root_exp_path(p):
     if os.path.isfile(p):
         return p
     p=p.strip(chr(47)).strip(chr(92))
-    if os.path.isfile(os.path.join(EXPFOLDER_J, p)):
-        return os.path.join(EXPFOLDER_J, p)
-    elif os.path.isfile(os.path.join(EXPFOLDER_K, p)):
-        return os.path.join(EXPFOLDER_K, p)
-    else:
+    if os.path.isdir(os.path.join(EXPFOLDER_J, p)):
+        p=os.path.join(EXPFOLDER_J, p)
+    elif os.path.isdir(os.path.join(EXPFOLDER_K, p)):
+        p=os.path.join(EXPFOLDER_K, p)
+    return p
+    
+def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
+    p=experiment_path_folder
+    fn=os.path.split(p)[1]+'.exp'
+    
+    if not os.path.isdir(p):#TODO: need to change this to handle .zip
+        p=prepend_root_exp_path(p)
+    
+    #from here down : turn an exp folder into an exp file
+    if os.path.isfile(os.path.join(p, fn)):
+        return os.path.join(p, fn)
+    fnl=[s for s in os.listdir(p) if s.endswith('.exp')]
+    if len(fnl)==0:
+        print 'cannot find .exp file in ', p
         return p
+    return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
 
-#don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat
+#don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat and exists in same folder as .exp
 
 def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
@@ -974,7 +990,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
     convertfilekeystofiled(saveanadict)
     with open(savep.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
-
+    return savefolder
 def openana(p, erroruifcn=None, stringvalues=False):
     if not ((p.endswith('ana') or p.endswith('pck')) and os.path.exists(p)):
         if erroruifcn is None:

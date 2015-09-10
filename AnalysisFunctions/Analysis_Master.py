@@ -81,15 +81,16 @@ class Analysis_Master_nointer():
         else:
             self.runfiledict={}
     def readdata(self, p, numkeys, keyinds, num_header_lines=0):
-        
+        pd=p+'.dat'
+        if not os.path.isfile(pd):
+            pd=prepend_root_exp_path(pd)
         try:
-            pd=buildexppath(p+'.dat')
             dataarr=readbinary_selinds(pd, numkeys, keyinds)
             return dataarr
         except:
             pass
-        pt=buildexppath(p)
-        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
+#        pt=<buildrunpath>(p)
+#        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
         return dataarr
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):

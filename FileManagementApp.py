@@ -85,7 +85,11 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         for fn in subfolds:
             item=QTreeWidgetItem([fn],  0)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(0, Qt.Checked)
+            if level=='top' and fn!='temp':#don't auto check the non-temp folders like eche, uvis, imag
+                item.setCheckState(0, Qt.Unchecked)
+            else:
+                item.setCheckState(0, Qt.Checked)
+            
 
             if level=='top':
                 p=os.path.join(fold, fn)
