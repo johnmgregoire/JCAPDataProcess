@@ -136,7 +136,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False):
     d={}
     arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str)
     for k, a in zip(fileattrd['keys'], arr):
-        if '.' in a[0]:
+        if '.' in a[0] or 'NaN' in a:
             d[k]=numpy.float32(a)
         else:
             d[k]=numpy.int32(a)
@@ -219,6 +219,29 @@ def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'an
                 nestednumconvert(v)
     nestednumconvert(expfiledict)
 
+
+def createfileattrdict(fileattrstr):
+    type_keys_heads_rows=fileattrstr.split(';')
+    d={}
+    d['file_type']=type_keys_heads_rows[0]
+    if len(type_keys_heads_rows)==0 or len(type_keys_heads_rows[1].strip())==0:
+        #only file_type
+        return d
+    if len(type_keys_heads_rows)==2:
+        #only file_type and sample_no
+        d['sample_no']=int(type_keys_heads_rows[-1].strip())
+        return d
+    keys=type_keys_heads_rows[1].split(',')
+    keys=[kv.strip() for kv in keys]
+    
+    d['keys']=keys
+    d['num_header_lines']=int(type_keys_heads_rows[2].strip())
+    d['num_data_rows']=int(type_keys_heads_rows[3].strip())
+    if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
+        d['sample_no']=int(type_keys_heads_rows[-1].strip())
+    else:
+        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
+    return d
 def convertfilekeystofiled(exporanafiledict):
     for k, rund in exporanafiledict.iteritems():
         if not (k.startswith('run__') or k.startswith('ana__')):
@@ -228,18 +251,7 @@ def convertfilekeystofiled(exporanafiledict):
                 continue
             for k3, typed in techd.iteritems():
                 for fn, keystr in typed.iteritems():
-                    type_keys_heads_rows=keystr.split(';')
-                    keys=type_keys_heads_rows[1].split(',')
-                    keys=[kv.strip() for kv in keys]
-                    d={}
-                    d['file_type']=type_keys_heads_rows[0]
-                    d['keys']=keys
-                    d['num_header_lines']=int(type_keys_heads_rows[2].strip())
-                    d['num_data_rows']=int(type_keys_heads_rows[3].strip())
-                    if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
-                        d['sample_no']=int(type_keys_heads_rows[4].strip())
-                    else:
-                        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
+                    d=createfileattrdict(keystr)
                     exporanafiledict[k][k2][k3][fn]=d
 def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled already run on anafiledict
     for anak, anad in anafiledict.iteritems():

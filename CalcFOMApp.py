@@ -27,11 +27,13 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
+from CV_photo import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
-   Analysis__E_Ithresh(), Analysis__Eta_Ithresh()\
+   Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
+   Analysis__Pphotomax()\
     ]
-
+print AnalysisClasses[-1].analysis_name
 DEBUGMODE=True
 
 for ac in AnalysisClasses:
@@ -477,6 +479,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.anadict[k]=s
         
         self.AnaTreeWidgetFcns.filltree(self.anadict)
+        
+        self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
         
     def viewresult(self):
         d=copy.deepcopy(self.anadict)

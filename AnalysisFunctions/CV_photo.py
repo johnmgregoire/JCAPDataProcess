@@ -91,8 +91,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
         return dataarr
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
-        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
-        self.multirunfiledict['misc_files']={}
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
+        #self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
         for filed in self.filedlist:
             datadict={}
@@ -136,7 +136,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 p=os.path.join(destfolder,fnm)        
                 with open(p, mode='w') as f:
                     f.write(miscfilestr)
-                self.multirunfiledict['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
+                self.runfiledict[filed['run']]['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
             
         self.writefom(destfolder, anak)
         
@@ -203,6 +203,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd['Ewe(V)_fitrng'] = numpy.array([d['Ewe(V)'][i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
         interd['I(A)_fitrng'] = fittedfunc(interd['Ewe(V)_fitrng'])
         interd['t(s)_fitrng'] = numpy.array([d['t(s)'][i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
+        rawinds=numpy.arange(len(d['t(s)']))
+        interd['rawselectinds'] = numpy.array([rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
         
         rawlend['I(A)_fit'] = fittedfunc(d['Ewe(V)'])
         rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
@@ -243,7 +245,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ## CX says prototyping reports photoanode and photocathode Voc both as positive values
         voc = numpy.absolute((-1*voccoeff[1]/voccoeff[0])-eo)
         vatpmax = numpy.absolute(ewe_eo[pmaxind])
-        fillfactor = numpy.absolute(pphotomax/(voc*isc)) if iatpmax<=(isc*(1+self.params['i_at_pmax_tolerance'])) and iminsign*pphotomax<(iminsign*voc*isc) else numpy.nan
+        fillfactor = numpy.absolute(pphotomax/(voc*isc)) if iatpmax<=(isc*(1+self.params['i_at_pmax_tolerance'])) and numpy.absolute(pphotomax)<numpy.absolute(voc*isc) else numpy.nan
 
         fomtuplist=[]
         fomtuplist+=[('Pmax.W', pphotomax), ('Vpmax.V', vatpmax), ('Ipmax.A', iatpmax), \
@@ -253,25 +255,22 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         return fomtuplist, rawlend, interd, miscfilestr
         
 
-c=Analysis__Pphotomax()
-c.debugmode=True
-p_exp='/home/dan/htehome/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
-p_ana='/home/dan/htehome/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
-# p_exp='//htejcap.caltech.edu/share/home/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
-# p_ana='//htejcap.caltech.edu/share/home/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
-expd=readexpasdict(p_exp)
-usek='data'
-techk='CV3'
-typek='pstat_files'
-anadict=openana(p_ana, stringvalues=True, erroruifcn=None)
-filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=['run__1', 'run__2'], anadict=anadict)
-c.perform(os.path.split(p_ana)[0], expdatfolder=os.path.split(p_exp)[0], writeinterdat=False, anak='ana__2')
-print 'THESE FOM FILES WRITTEN'
-for k, v in c.multirunfiledict.items():
-    print k, v
-print 'THESE INTERMEDIATE DATA FILES WRITTEN'
-for k, v in c.interfiledict.items():
-    print k, v
-print 'THESE FOMs CALCULATED'
-print c.fomdlist
+#c=Analysis__Pphotomax()
+#c.debugmode=True
+##p_exp='/home/dan/htehome/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
+##p_ana='/home/dan/htehome/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
+#p_exp='//htejcap.caltech.edu/share/home/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
+#p_ana='//htejcap.caltech.edu/share/home/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
+#expd=readexpasdict(p_exp)
+#usek='data'
+#techk='CV3'
+#typek='pstat_files'
+#anadict=openana(p_ana, stringvalues=True, erroruifcn=None)
+#filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=['run__1', 'run__2'], anadict=anadict)
+#c.perform(os.path.split(p_ana)[0], expdatfolder=os.path.split(p_exp)[0], writeinterdat=False, anak='ana__2')
+#print 'THESE FOM FILES WRITTEN'
+#for k, v in c.multirunfiledict.items():
+#    print k, v
+#print 'THESE FOMs CALCULATED'
+#print c.fomdlist
 

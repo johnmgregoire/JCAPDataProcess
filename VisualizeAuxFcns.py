@@ -167,7 +167,7 @@ class treeclass_anaexpfom():
 
     def appendexpfiles(self, d_appended):
         self.nestedfill(d_appended, self.expfileitem_forappend, prependstr='*')
-        self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d_appended.itervalues() for fk in filed['keys']]))
+        self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d_appended.itervalues() for fk in (filed['keys'] if 'keys' in filed.keys() else [])]))
         
     def getusefombools(self):
         mainitem=self.fomwidgetItem
@@ -230,7 +230,7 @@ class treeclass_anaexpfom():
         for k in dictkeys1:
             item=QTreeWidgetItem([prependstr+k+':'], 0)
             if k.endswith('_files'):#find the last _files where filename keys are being added and if this is in .exp make this the place where filenames are appened. the intention is that for on-the-fly this will be the only run__ in exp
-                self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d[k].itervalues() for fk in filed['keys']]))
+                self.set_allfilekeys=self.set_allfilekeys.union(set([fk for filed in d[k].itervalues() for fk in (filed['keys'] if 'keys' in filed.keys() else [])]))
                 #prepend this * to fielnames so they can be clicked and plotted. this inlcudes fom_files
                 self.nestedfill(d[k], item, prependstr='*', expparent=expparent)
 #                while not parentitem.parent() is None:
