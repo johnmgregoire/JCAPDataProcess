@@ -215,7 +215,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         elif os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_K)):
             rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_K)):]
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
-        
+        self.anadict['experiment_name']=self.expfiledict['name']
         self.fillexpoptions()
     
     def fillexpoptions(self):

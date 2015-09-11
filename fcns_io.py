@@ -349,7 +349,7 @@ def prepend_root_exp_path(p):
     
 def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
-    fn=os.path.split(p)[1]+'.exp'
+    fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
     
     if not os.path.isdir(p):#TODO: need to change this to handle .zip
         p=prepend_root_exp_path(p)
