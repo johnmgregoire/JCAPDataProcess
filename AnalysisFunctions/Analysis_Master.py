@@ -80,20 +80,20 @@ class Analysis_Master_nointer():
             self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
         else:
             self.runfiledict={}
-    def readdata(self, p, numkeys, keyinds, num_header_lines=0):
-        pd=p+'.dat'
-        if not os.path.isfile(pd):
-            pd=prepend_root_exp_path(pd)
+    def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
+        if not os.path.isdir(os.path.split(p)[0]):#works for .zip and non zip
+            p=prepend_root_exp_path(p)
         try:
-            dataarr=readbinary_selinds(pd, numkeys, keyinds)
+            pd=p+'.dat'
+            dataarr=readbinary_selinds(pd, numkeys, keyinds, zipclass=zipclass)
             return dataarr
         except:
             pass
-#        pt=<buildrunpath>(p)
-#        dataarr=readtxt_selectcolumns(pt, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines)
+#        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
+        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
         return dataarr
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
         self.initfiledicts()
         self.fomdlist=[]
         for filed in self.filedlist:
@@ -103,7 +103,7 @@ class Analysis_Master_nointer():
                 continue
             fn=filed['fn']
             #try:
-            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
 #            except:
 #                if self.debugmode:
 #                    raiseTEMP
@@ -123,7 +123,7 @@ class Analysis_Master_nointer():
         self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.fomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.fomdlist=[]
         for filed in self.filedlist:
@@ -132,9 +132,8 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                     raiseTEMP
                 continue
             fn=filed['fn']
-            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
             try:
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
             except:
                 if self.debugmode:
                     raiseTEMP

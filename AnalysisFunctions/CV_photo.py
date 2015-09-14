@@ -80,7 +80,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist    
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         #self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
@@ -94,11 +94,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             # print 'sample_no is ', filed['sample_no']
             try:
                 #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'])
+                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
                 for k, v in zip(self.requiredkeys, dataarr):
                     datadict[k]=v
                 for interfiled in [filed['ana__inter_filed'], filed['ana__inter_rawlen_filed']]:
-                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])
+                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder
                     for k, v in zip(interfiled['keys'], tempdataarr):
                         datadict[k]=v
             except:
@@ -255,7 +255,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 #usek='data'
 #techk='CV3'
 #typek='pstat_files'
-#anadict=openana(p_ana, stringvalues=True, erroruifcn=None)
+#anadict=readana(p_ana, stringvalues=True, erroruifcn=None)
 #filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=['run__1', 'run__2'], anadict=anadict)
 #c.perform(os.path.split(p_ana)[0], expdatfolder=os.path.split(p_exp)[0], writeinterdat=False, anak='ana__2')
 #print 'THESE FOM FILES WRITTEN'

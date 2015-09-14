@@ -179,7 +179,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
     #def undoexpfile(self):
         
     def importexpfile(self):
-        p=openexpanafile(self, exp=True)
+        p=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
         if len(p)==0:
             return
         self.removeruns()
@@ -201,7 +201,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             %(len(self.rcpdlist), numpy.array([len(d['filenamedlist']) for d in self.rcpdlist]).sum()))
 
     def importexpparamsfile(self):
-        p=openexpanafile(self, exp=True)
+        p=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
         if len(p)==0:
             return
 

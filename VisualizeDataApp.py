@@ -87,7 +87,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         self.anafiledict={}
         self.expfiledict={}
-        
+        self.expzipclass=None
+        self.anazipclass=None
         self.customlegendfcn=lambda sample, els, comp, code, fom: `sample`
         
         self.ellabels=['A', 'B', 'C', 'D']
@@ -116,18 +117,23 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     
         self.SelectTreeFileFilterTopLevelItem.addChild(item)
     
-    def importana(self, p=None, anafiledict=None, anafolder=None):
+    def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None):
         if anafiledict is None or anafolder is None:
             if p is None:
-                p=openexpanafile(self, exp=False, markstr='Select .ana/.pck to import')
+                p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
             if len(p)==0:
                 return
-            self.anafiledict=openana(p, stringvalues=False, erroruifcn=None)
+            self.anafiledict, anazipclass=readana(p, stringvalues=False, erroruifcn=None, returnzipclass=True)
             self.anafolder=os.path.split(p)[0]
+            if self.anazipclass:
+                self.anazipclass.close()
+            self.anazipclass=anazipclass
         else:
             self.anafiledict=anafiledict
             self.anafolder=anafolder
-        
+            if self.anazipclass:
+                self.anazipclass.close()
+            self.anazipclass=anazipclass#when run from CalcFOMApp the .ana can't be in a .zip so make this the default anazipclass=None 
         self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
         
         self.l_fomdlist=[]
@@ -135,7 +141,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_csvheaderdict=[]
         
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
-        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.AnaExpFomTreeWidgetFcns)
+        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass)
         
         self.updatefomdlist_plateruncode()
         
@@ -145,12 +151,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
     def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file
         if experiment_path is None:
-            exppath=openexpanafile(self, exp=True, markstr='Select .pck or .exp EXP file' )
+            exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
             if exppath is None or len(exppath)==0:
                 return
         else:
             exppath=buildexppath(experiment_path)
-        expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
+        expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
         if expfiledict is None:
             print 'Problem opening EXP'
             return
@@ -158,6 +164,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.exppath=exppath
         self.expfolder=os.path.split(exppath)[0]
         self.expfiledict=expfiledict
+        if self.expzipclass:
+            self.expzipclass.close()
+        self.expzipclass=expzipclass
         masterels=None
         for runk, rund in self.expfiledict.iteritems():
             if not (runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
@@ -212,7 +221,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.fillxyoptions(clear=True)
         self.clearfomplotd()
         
-    def openontheflyfolder(self, folderpath=None, platemappath=None):
+    def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
         if folderpath is None or len(folderpath)==0:
@@ -404,11 +413,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if anaorexp=='ana':
             d=self.anafiledict
             p=os.path.join(self.anafolder, keylist[-1])
+            zipclass=self.anazipclass
         else:
             d=self.expfiledict
             p=os.path.join(self.expfolder, keylist[-1])
+            zipclass=self.expzipclass
         filed=d_nestedkeys(d, keylist)
         filed['path']=p
+        filed['zipclass']=zipclass
         self.plotxy(filed=filed)
             
     def updatefiltereddata(self):
@@ -429,7 +441,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #filter ana fom data by plate, run and code
         
         #need to get the codes adn think about how to getapplicablefilesnames, i.e. create filedlist for simple cases, flag analysis classes by 'simple"
-    def performontheflyfom(self):
+    def performontheflyfom(self):#onthefly fom calc could be on existing (not on thefly) .exp so expfolder could be .zip
         self.analysisclass=AnalysisClasses[self.OnFlyAnaClassComboBox.currentIndex()]
         self.analysisclass.getapplicablefilenames(self.expfiledict, 'onthefly', 'onthefly', 'all_files')
         
@@ -655,7 +667,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 rawselbool=not rawselind is None
                 if rawselbool:
                     selcolinds+=[rawselind]
-                arr2d=getarrs_filed(os.path.join(self.anafolder, fn), filed, selcolinds=selcolinds)
+                arr2d=getarrs_filed(os.path.join(self.anafolder, fn), filed, selcolinds=selcolinds, zipclass=self.anazipclass)
                 if not arr2d is None:
                     xyy[count]={}
                     xyy[count]['arr']=arr2d[0]
@@ -681,7 +693,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(fn_filed_keyind)>0:#ideally this is length 1 because if onlger that means foudn the same array multiple places and choosing the 1 found first
                 fn, filed, keyind=fn_filed_keyind[0]
                 selcolinds=[keyind]
-                arr2d=getarrs_filed(os.path.join(self.expfolder, fn), filed, selcolinds=selcolinds)
+                arr2d=getarrs_filed(os.path.join(self.expfolder, fn), filed, selcolinds=selcolinds, zipclass=self.expzipclass)
                 if not arr2d is None:
                     xyysubset[count]={}
                     xyysubset[count]['arr']=arr2d[0]
@@ -694,7 +706,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if keyinds[0] is None or (keyinds[1] is None and keyinds[2] is None):#no pari of x,y to plot
                 return None
             selcolinds=[keyind for keyind in keyinds if not keyind is None]
-            arr2d=getarrs_filed(filed['path'], filed, selcolinds=selcolinds)
+            arr2d=getarrs_filed(filed['path'], filed, selcolinds=selcolinds, zipclass=filed['zipclass'])
             plotdata=[[[], []], [[], []]]
             for count, (keyind, yind_arr2d) in enumerate(zip(keyinds[1:], [1, -1])):
                 if keyind is None:
@@ -749,7 +761,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         lab=self.customlegendfcn(getval('sample_no'), self.ellabels, getval('comps'), getval('code'), getval('fom'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
         
-    #getarrs_filed(p,filed,selcolinds=
+
     def plotxy(self, filed=None):#filed to plot from a  single file and must have key 'path' in addition to standard filed
         cbl=[\
         self.xplotchoiceComboBox, \

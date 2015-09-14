@@ -35,8 +35,52 @@ def attemptnumericconversion_tryintfloat(s):
 #        except:
 #            pass
 #    return s
+class ZipClass():#TODO: zipclass instances are kept open in a few places and closed if something else opened but otherwise left open. could close these when the python application closed (an ExitRoutine)
+    def __init__(self, zp):
+        self.archive=zipfile.ZipFile(zp, 'r')
+        self.splitfn=lambda p: os.path.split(p)[1] if '.zip' in p else p
+        self.zipopenfcn= lambda fn: self.archive.open(self.splitfn(fn), 'r')
+    def fn_in_archive(self, fn):
+        return self.splitfn(fn) in self.archive.namelist()
+    def close(self):
+        self.archive.close()
+    def readlines(self, fn):
+        with self.zipopenfcn(fn) as f:
+            ans=f.readlines()
+        return ans
+    def loadpck(self, fn):
+        with self.zipopenfcn(fn) as f:
+            ans=pickle.load(f)
+        return ans
+    def readarr(self, fn, dtype='float32'):
+        with self.zipopenfcn(fn) as f:
+            ans=numpy.frombuffer(f.read(), dtype=dtype)#if not in a .zip this file would need be opened as 'rb' but .zip doesn't have that option because maybe it reads bytes as default but i think converts them to string so if get an error reading a binary array from a .zip, this is suspect
+        return ans
+        
+def gen_zipclass(p):
+    if '.zip' in p:
+        if not p.endswith('.zip'):
+            p=p.partition('.zip')[0]+'.zip'
+        zipclass=ZipClass(p)
+    else:
+        zipclass=False
+    return zipclass
 
-def openexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and ana from .zip
+def copyanafiles(src, dest):
+    zipclass=gen_zipclass(src)
+    
+    if zipclass:
+        for fn in zipclass.archive.namelist():
+            if fn.endswith('ana') or fn.endswith('pck'):
+                continue
+            zipclass.archive.extract(fn, dest)
+        zipclass.close()
+    else:
+        for fn in os.listdir(src):
+            if fn.endswith('ana') or fn.endswith('pck'):
+                continue
+            shutil.copy(os.path.join(src, fn), os.path.join(dest, fn))
+def selectexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and ana from .zip
     if exp:
         fold0, fold1=EXPFOLDER_J, EXPFOLDER_K
         ext='.exp'
@@ -49,7 +93,16 @@ def openexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and
             markstr='open ANA'
     if not os.path.isdir(fold0):
         fold0=fold1
-    return mygetopenfile(parent, xpath=fold0, markstr=markstr, filename=ext )
+    p=mygetopenfile(parent, xpath=fold0, markstr=markstr, filename=ext )
+    if p.endswith('.zip'):
+        archive=zipfile.ZipFile(zp, 'r')
+        fnl=[fn for fn in archive.namelist() if fn.endswith(ext)]
+        archive.close()
+        if len(fnl)==0:
+            print 'tried opening %s in a .zip file but could not find one' %ext
+            return ''
+        p=os.path.join(p, fnl[0]) #presumable only 1 .exp or .ana in any .zip
+    return p
 
 def removefiles(folder, fns):
     for fn in fns:
@@ -94,28 +147,64 @@ def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')]), repla
 #filed['sample_no']=236
 #selcolinds=[4]
 
-def getarrs_filed(p, filed, selcolinds=None, trydat=True):
+def getarrs_filed(p, filed, selcolinds=None, trydat=True, zipclass=None):
+    closezip=False
+    if zipclass is None:#only close zip if opened it here (not if it was passed)
+        zipclass=gen_zipclass(p)
+        closezip=bool(zipclass)
     if trydat:
         pdat=p+'.dat'
-        if os.path.isfile(pdat):
-            return readbinary_selinds(pdat, len(filed['keys']), keyinds=selcolinds)
-    if not os.path.isfile(p):
+        if os.path.isfile(pdat) or (zipclass and zipclass.fn_in_archive(pdat)):
+            ans=readbinary_selinds(pdat, len(filed['keys']), keyinds=selcolinds, zipclass=zipclass)
+            if closezip:
+                zipclass.close()
+            return ans
+                
+    if not (os.path.isfile(p) or (zipclass and zipclass.fn_in_archive(p))):
+        if closezip:
+            zipclass.close()
         return None
-    return readtxt_selectcolumns(p, selcolinds=selcolinds, delim=None, num_header_lines=filed['num_header_lines'])
+    ans=readtxt_selectcolumns(p, selcolinds=selcolinds, delim=None, num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+    if closezip:
+        zipclass.close()
+    return ans
 
-def readbinary_selinds(p, nkeys, keyinds=None):
-    with open(p, mode='rb') as f:
-        b=numpy.fromfile(f,dtype='float32')
+def readbinary_selinds(p, nkeys, keyinds=None, zipclass=None):
+    closezip=False
+    if zipclass is None:
+        zipclass=gen_zipclass(p)
+        closezip=bool(zipclass)
+        
+    if zipclass:
+        b=zipclass.readarr(p)
+    else:
+        with open(p, mode='rb') as f:
+            b=numpy.fromfile(f,dtype='float32')
     b=b.reshape((nkeys,len(b)//nkeys))
-
+    
+    if closezip:
+        zipclass.close()
+        
     if keyinds is None:
         return b
     else:
         return b[keyinds]
         
-def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float):
-    with open(p, mode='r') as f:
-        lines=f.readlines()[num_header_lines:]
+def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float, zipclass=None):
+    closezip=False
+    if zipclass is None:
+        zipclass=gen_zipclass(p)
+        closezip=bool(zipclass)
+        
+    if zipclass:
+        lines=zipclass.readlines(p)
+    else:
+        with open(p, mode='r') as f:
+            lines=f.readlines()[num_header_lines:]
+    
+    if closezip:
+        zipclass.close()
+        
     if delim is None:
         if lines[0].count(',')>lines[0].count('\t'):
             delim=','
@@ -132,9 +221,9 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
     z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
     return numpy.array(z).T
 
-def readcsvdict(p, fileattrd, returnheaderdict=False):
+def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None):
     d={}
-    arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str)
+    arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
     for k, a in zip(fileattrd['keys'], arr):
         if '.' in a[0] or 'NaN' in a:
             d[k]=numpy.float32(a)
@@ -531,6 +620,8 @@ def readrcpfrommultipleruns(pathlist):
             rcpfn, lines=rcplines_zip(p)
         elif os.path.isdir(p):
             rcpfn, lines=rcplines_folder(p)
+            if rcpfn is None:
+                continue
         elif p.endswith('.rcp'):
             with open(p, mode='r') as f:
                 lines=f.readlines()
@@ -552,7 +643,7 @@ def readrcpfrommultipleruns(pathlist):
 def rcplines_folder(foldp):
     fns=[fn for fn in os.listdir(foldp) if fn.endswith('.rcp')]
     if len(fns)!=1:
-        return []
+        return None, None
     rcpfn=fns[0]
     p=os.path.join(foldp, rcpfn)
     f=open(p, mode='r')
@@ -661,20 +752,33 @@ def createdict_tup(nam_listtup):
     d=dict([createdict_tup(v) for v in nam_listtup[1]])
     return (k_vtup[0], d)
         
-def readexpasdict(p, includerawdata=False, erroruifcn=None):#create both a list of rcpd but also a corresponding 
-    if not ((p.endswith('exp') or p.endswith('pck')) and os.path.exists(p)):
+def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
+    if not ((p.endswith('exp') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):#if .zip only tests if the zip file exists
         if erroruifcn is None:
-            return {}
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
         p=erroruifcn('select exp file')
         if len(p)==0:
-            return {}
-        
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
+    zipclass=gen_zipclass(p)
+    
     if p.endswith('.pck'):
-        with open(p, mode='r') as f:
-            expfiledict=pickle.load(f)
+        if zipclass:
+            expfiledict=zipclass.loadpck(p)
+        else:
+            with open(p, mode='r') as f:
+                expfiledict=pickle.load(f)
     elif p.endswith('.exp'):
-        with open(p, mode='r') as f:
-            lines=f.readlines()
+        if zipclass:
+            lines=zipclass.readlines(p)
+        else:
+            with open(p, mode='r') as f:
+                lines=f.readlines()
         lines=[l for l in lines if len(l.strip())>0]
         exptuplist=[]
         while len(lines)>0:
@@ -687,15 +791,31 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None):#create both a list 
         convertfilekeystofiled(expfiledict)
         
     else:
-        return None
+        if returnzipclass:
+            return None, False
+        else:
+            if zipclass:
+                zipclass.close()
+            return None
     if includerawdata:
         expfiledict=datastruct_expfiledict(expfiledict)
-        
-    return expfiledict
+    
+    if returnzipclass:
+        return expfiledict, zipclass
+    else:
+        if zipclass:
+            zipclass.close()
+        return expfiledict
+
 
 def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcpd but also a corresponding 
-    with open(p, mode='r') as f:
-        lines=f.readlines()
+    zipclass=gen_zipclass(p)
+
+    if zipclass:
+        lines=zipclass.readlines(p)
+    else:
+        with open(p, mode='r') as f:
+            lines=f.readlines()
     lines=[l for l in lines if len(l.strip())>0]
     exptuplist=[]
     while len(lines)>0:
@@ -991,27 +1111,47 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
     with open(savep.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
     return savefolder
-def openana(p, erroruifcn=None, stringvalues=False):
-    if not ((p.endswith('ana') or p.endswith('pck')) and os.path.exists(p)):
+def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
+    if not  ((p.endswith('ana') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):# if .zip only tests fo existence of .zip file
         if erroruifcn is None:
-            return {}
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
         p=erroruifcn('select ana/pck file to open')
         if len(p)==0:
-            return {}
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
     if stringvalues and p.endswith('pck'):
         p=p.rpartition('pck')[0]+'ana'
-    if not os.path.exists(p):
+    if not (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ):# if .zip only tests fo existence of .zip file
         if erroruifcn is None:
-            return {}
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
         p=erroruifcn('for text-only must use .ana file')
         if len(p)==0:
-            return {}
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
+    zipclass=gen_zipclass(p)
+    
     if p.endswith('pck'):
-        with open(p, mode='r') as f:
-            anadict=pickle.load(f)
+        if zipclass:
+            anadict=zipclass.loadpck(p)
+        else:
+            with open(p, mode='r') as f:
+                anadict=pickle.load(f)
     else:
-        with open(p, mode='r') as f:
-            lines=f.readlines()
+        if zipclass:
+            lines=zipclass.readlines(p)
+        else:
+            with open(p, mode='r') as f:
+                lines=f.readlines()
         lines=[l for l in lines if len(l.strip())>0]
         tuplist=[]
         while len(lines)>0:
@@ -1021,7 +1161,12 @@ def openana(p, erroruifcn=None, stringvalues=False):
         if not stringvalues:
             convertfilekeystofiled(anadict)
             convertstrvalstonum_nesteddict(anadict)
-    return anadict
+    if returnzipclass:
+        return {}, zipclass
+    else:
+        if zipclass:
+            zipclass.close()
+        return anadict
     
 #p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/eche.pck'
 #with open(p,mode='rb') as f:

@@ -141,7 +141,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         return fracnan>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
@@ -149,7 +149,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         refd={}#refd will be a dictionary with 4 keys that makes a good started for the intermediate dictionary with raw-data-length arrays
         try:
             refd['wl']=numpy.float32([\
-            readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])[0] \
+            readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)[0] \
             for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])
         except:
             raise ValueError('Number of data points in reference files do not match')
@@ -164,7 +164,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             for rktup, rk in refkeymap:
                 refd_all[rk]=numpy.float32([\
                     (readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'],\
-                    keyinds=filed['keyinds'])[1:]).mean(axis=0) \
+                    keyinds=filed['keyinds'], zipclass=zipclass)[1:]).mean(axis=0) \
                     for filed in self.refdict__filedlist[rktup]])
                 refd[rk]=ref_fnd[rk](refd_all[rk])
             refd_fn=lambda fn:refd
@@ -178,8 +178,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
-            Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'])
+            Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)
+            Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'], zipclass=zipclass)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -318,7 +318,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
         return fracnan/fracnan_abs>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak=''):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]      
@@ -327,8 +327,8 @@ class Analysis__BG_DA(Analysis_Master_inter):
         for Afiled in self.filedlist:
             fn=filed['fn']
             rawlend={}
-            rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'])
-            rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'])
+            rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)
+            rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'], zipclass=zipclass)
             fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))

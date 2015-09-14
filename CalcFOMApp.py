@@ -133,6 +133,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
         self.tempanafolder='None'
+        self.expzipclass=None
         self.clearanalysis()
 
     def edittreeitem(self, item, column):
@@ -175,14 +176,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
         
-    def importexp(self, expfiledict=None, exppath=None):#TODO support import from .zip on J, expath here is the file not the folder
+    def importexp(self, expfiledict=None, exppath=None, expzipclass=None):#TODO support import from .zip on J, expath here is the file not the folder
         if expfiledict is None:
             #TODO: define default path
             #exppath='exp/sampleexp_uvis.dat'
-            exppath=openexpanafile(self, exp=True, markstr='Select .pck or .exp EXP file')
+            exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(exppath)==0:
                 return
-            expfiledict=readexpasdict(exppath, includerawdata=False, erroruifcn=None)
+            expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
             if expfiledict is None:
                 print 'Problem opening EXP'
                 return
@@ -190,6 +191,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.exppath=exppath
         self.expfolder=os.path.split(exppath)[0]
         self.expfiledict=expfiledict
+        if self.expzipclass:
+            self.expzipclass.close()
+        self.expzipclass=expzipclass
         if self.getplatemapCheckBox.isChecked():
            for runk, rund in self.expfiledict.iteritems():
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
@@ -317,10 +321,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
     def importana(self):
-        p=openexpanafile(self, exp=False, markstr='Select .ana/.pck to import')
+        p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
         if len(p)==0:
             return
-        anadict=openana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
+        anadict=readana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
         if not 'experiment_path' in anadict.keys():
             return
         if anadict['ana_version']!='3':
@@ -328,18 +332,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if not idialog.exec_():
                 return
         exppath=buildexppath(anadict['experiment_path'])#this is the place an experiment folder is turned into an exp fiel path so for the rest of this App exppath is the path of the .exp file
-        expfiledict=readexpasdict(exppath, includerawdata=False)
+        expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, returnzipclass=True)
         if len(expfiledict)==0:
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
             idialog.exec_()
             return
-        self.importexp(expfiledict=expfiledict, exppath=exppath)#clearanalysis happens here
+        self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass)#clearanalysis happens here
         self.anadict=anadict
         anafolder=os.path.split(p)[0]
-        for fn in os.listdir(anafolder):
-            if fn.endswith('ana') or fn.endswith('pck'):
-                continue
-            shutil.copy(os.path.join(anafolder, fn), os.path.join(self.tempanafolder, fn))
+        copyanafiles(anafolder, self.tempanafolder)
         self.updateana()
 
     def editanalysisparams(self):
@@ -392,7 +393,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         anak=kfcn(i)
         #try:
         if 1:
-            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak)
+            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass)
 #        except:
 #            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
 #            if not idialog.exec_():

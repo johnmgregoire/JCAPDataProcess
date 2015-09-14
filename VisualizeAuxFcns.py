@@ -17,7 +17,7 @@ def createontheflyrundict(expfiledict, expfolder, lastmodtime=0):
     d_appended={}
     fnl=os.listdir(expfolder)
 
-    modtimes=[os.path.getmtime(os.path.join(expfolder, fn)) for fn in fnl]
+    modtimes=[os.path.getmtime(os.path.join(expfolder, fn)) for fn in fnl] #expfolder not a .zip becuase on-the-fly
     modtime=max(modtimes)
     fnl2=[fn for fn, mt in zip(fnl, modtimes) if mt>lastmodtime]
     
@@ -51,7 +51,7 @@ def extractplotdinfo(fomd, fomname, expfiledict, fomdlist_index0, fomdlist_index
         returnlist+=[[pmd[k] for k in ellabels]]
     return returnlist
 
-def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, treefcns):
+def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, treefcns, anazipclass=None):
     for anak, anad in anafiledict.iteritems():
         if not anak.startswith('ana__'):
             continue
@@ -64,7 +64,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     if not 'fom_file' in filed['file_type']:
                         continue
                     p=os.path.join(anafolder, filek)
-                    fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True)
+                    fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True, zipclass=anazipclass)
                     fomdlist=[dict([(k, fomd[k][count]) for k in filed['keys']]+[('anaint', anaint)]) for count in range(len(fomd[filed['keys'][0]]))]
                     l_fomdlist+=[fomdlist]
                     l_fomnames+=[filed['keys']+['anaint']]
