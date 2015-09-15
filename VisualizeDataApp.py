@@ -169,17 +169,22 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expzipclass=expzipclass
         masterels=None
         for runk, rund in self.expfiledict.iteritems():
-            if not (runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
-                     and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
+            if not runk.startswith('run__'):
+               continue
+            if not ('parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                      and 'plate_id' in rund['parameters'].keys()):
-                masterels=['A', 'B', 'C', 'D']
-                continue
-            rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
-                erroruifcn=\
-            lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
+                print 'critical info missing for ', runk
+            if not 'platemapdlist' in rund.keys():
+                rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
+                  erroruifcn=\
+                  lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
+
+            
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             els=getelements_plateidstr(str(rund['parameters']['plate_id']))
             if els is None:
+                print 'cannot find elements for ', str(rund['parameters']['plate_id'])
+                masterels=['A', 'B', 'C', 'D']
                 continue
             if len(els)>4:
                 els=els[:4]
@@ -188,7 +193,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             elif masterels==els:
                 continue
             elif set(masterels)==set(els):
-                idialog=messageDialog(self, 'Modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
+                idialog=messageDialog(self, 'Would you like to modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
                 if idialog.exec_():
                     rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D']) for d in rund['platemapdlist']]
                     lets=['A', 'B', 'C', 'D']
@@ -196,9 +201,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         for let, el in zip(lets, masterels):
                             d[let]=d['orig'+lets[els.index(el)]]
                 else:
-                    masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels
+                    masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels and when plots are made they are just vs the platemap channels not the printed elements
             else:
-                idialog=messageDialog(self, 'WARNING: plate_ids with incommensurate elements have been added')
+                idialog=messageDialog(self, 'WARNING: %s has elements %s but elements %s were already loaded' %(runk,','.join(els), ','.join(masterels)))
                 idialog.exec_()
                 masterels=['A', 'B', 'C', 'D']
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
@@ -206,12 +211,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         else:#to get here evrythign has a platemap
             self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
             for runk, rund in self.expfiledict.iteritems():
+                if not runk.startswith('run__'):
+                    continue
                 for d in rund['platemapdlist']:
                     for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
                         d[el]=d[oldlet]
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
+        self.clearfomplotd()
+        self.clearvisuals()
         
         if not fromana:
             self.updatefomdlist_plateruncode(createnewfromexp=True)
@@ -219,7 +228,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.setupfilterchoices()
             self.updatefomplotchoices()
             self.fillxyoptions(clear=True)
-        self.clearfomplotd()
+        
         
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
@@ -267,6 +276,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.fillxyoptions(clear=True)
         
         self.clearfomplotd()
+        self.clearvisuals()
         
     def updateontheflydata(self):
         #this treates all files in the folder the same and by doing so assumes each file is a measurement on s asample. this could read a .csv fom file but it would be sample_no=nan and would not be ported to self.fomdlist. that is tricky and could be done but not necessary if "on-the-fly" is used for a raw data stream.
@@ -1101,7 +1111,25 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         elif button==2:#center click
             self.addrem_select_fomplotdinds(fomplotdind=self.selectind, remove=True)
         self.plotxy()
-            
+    
+    def clearvisuals(self):
+        self.browser.setText('')
+        self.fomstatsTextBrowser.setText('')
+        
+        for plotw in self.tabs__plotw_plate+self.tabs__plotw_comp:
+            plotw.axes.cla()
+            plotw.fig.canvas.draw()
+        self.tabs__plateids=self.setup_TabWidget(self.tabs__plateids, [-1], compbool=False)
+        self.tabs__codes=self.setup_TabWidget(self.tabs__codes, [-1], compbool=True)
+        
+        
+
+        self.plotw_xy.axes.cla()
+        self.plotw_xy.twaxes.cla()
+        self.plotw_xy.fig.canvas.draw()
+        
+        self.plotw_fomhist.axes.cla()
+        self.plotw_fomhist.fig.canvas.draw()
     def plotwsetup(self):
         self.xyplotstyled=dict({}, marker='o', ms=5, c='b', ls='-', lw=0.7, right_marker='None', right_ms=3, right_ls=':', right_lw=0.7, select_ms=6, select_c='r')
         self.selectind=None
@@ -1272,10 +1300,9 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.visui=visdataDialog(self, title='Visualize ANA, EXP, RUN data', **kwargs)
-            p=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20150909.230012.done\20150909.230012.ana'
-            self.visui.importana(p=p)
-            self.visui.plotfom()
-            #self.visui.openontheflyfolder(folderpath='//htejcap.caltech.edu/share/home/users/hte/demo_proto/run/eche/onthefly1', platemappath='//htejcap.caltech.edu/share/home/users/hte/platemaps/0037-04-0730-mp.txt')
+#            p=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20150909.230012.done\20150909.230012.ana'
+#            self.visui.importana(p=p)
+#            self.visui.plotfom()
             if execute:
                 self.visui.exec_()
     os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')

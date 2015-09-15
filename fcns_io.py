@@ -1162,7 +1162,7 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
             convertfilekeystofiled(anadict)
             convertstrvalstonum_nesteddict(anadict)
     if returnzipclass:
-        return {}, zipclass
+        return anadict, zipclass
     else:
         if zipclass:
             zipclass.close()
