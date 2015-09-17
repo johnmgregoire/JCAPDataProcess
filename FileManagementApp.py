@@ -64,16 +64,17 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         self.toplevelitems=[]
         
         self.endswith=str(self.endswithLineEdit.text())
-        for i, (lab, fold) in enumerate(zip(['EXP', 'ANA'], [EXPFOLDER_K, ANAFOLDER_K])):
-            mainitem=QTreeWidgetItem([lab], 0)
-            mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-            mainitem.setCheckState(0, Qt.Checked)
-            if i==0:
-                item0=mainitem
-            self.treeWidget.addTopLevelItem(mainitem)
-            self.nestedfill(fold, mainitem, 'top', endswith=None)
-            mainitem.setExpanded(True)
-            self.toplevelitems+=[mainitem]
+        for i, (lab, foldlist) in enumerate(zip(['EXP', 'ANA'], [EXPFOLDERS_K, ANAFOLDERS_K])):
+            for fold in foldlist:
+                mainitem=QTreeWidgetItem([lab], 0)
+                mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
+                mainitem.setCheckState(0, Qt.Checked)
+                if i==0:
+                    item0=mainitem
+                self.treeWidget.addTopLevelItem(mainitem)
+                self.nestedfill(fold, mainitem, 'top', endswith=None)
+                mainitem.setExpanded(True)
+                self.toplevelitems+=[mainitem]
         self.treeWidget.setCurrentItem(item0)
 
 

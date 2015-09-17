@@ -214,10 +214,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         #rp=self.exppath.replace('.pck', '.exp')
         rp=os.path.split(self.exppath)[0]
-        if os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_J)):
-            rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_J)):]
-        elif os.path.normpath(rp).startswith(os.path.normpath(EXPFOLDER_K)):
-            rp=os.path.normpath(rp)[len(os.path.normpath(EXPFOLDER_K)):]
+        rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, rp)
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
         self.anadict['experiment_name']=self.expfiledict['name']
         self.fillexpoptions()

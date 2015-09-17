@@ -814,6 +814,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
         
         autotickformat(self.plotw_xy.axes, x=1, y=1)
+        autotickformat(self.plotw_xy.twaxes, x=0, y=1)
         self.plotw_xy.fig.canvas.draw()
     
     def getcustomlegendfcn(self):

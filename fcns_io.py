@@ -82,18 +82,17 @@ def copyanafiles(src, dest):
             shutil.copy(os.path.join(src, fn), os.path.join(dest, fn))
 def selectexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and ana from .zip
     if exp:
-        fold0, fold1=EXPFOLDER_J, EXPFOLDER_K
+        fold=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_K, '')
         ext='.exp'
         if markstr is None:
             markstr='open EXP'
     else:
-        fold0, fold1=ANAFOLDER_J, ANAFOLDER_K
+        fold=tryprependpath(ANAFOLDERS_J+ANAFOLDERS_K, '')
         ext='.ana'
         if markstr is None:
             markstr='open ANA'
-    if not os.path.isdir(fold0):
-        fold0=fold1
-    p=mygetopenfile(parent, xpath=fold0, markstr=markstr, filename=ext )
+
+    p=mygetopenfile(parent, xpath=fold, markstr=markstr, filename=ext )
     if p.endswith('.zip'):
         archive=zipfile.ZipFile(zp, 'r')
         fnl=[fn for fn in archive.namelist() if fn.endswith(ext)]
@@ -425,22 +424,30 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
         x.tofile(f)
     return keys
 
-
-def prepend_root_exp_path(p):
+def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
     if os.path.isfile(p):
         return p
     p=p.strip(chr(47)).strip(chr(92))
-    if os.path.isdir(os.path.join(EXPFOLDER_J, p)):
-        p=os.path.join(EXPFOLDER_J, p)
-    elif os.path.isdir(os.path.join(EXPFOLDER_K, p)):
-        p=os.path.join(EXPFOLDER_K, p)
+    for folder in preppendfolderlist:
+        pp=os.path.join(folder, p)
+        if (testdir and os.path.isdir(pp)) or (testfile and os.path.isfile(pp)):
+            return pp
+    return ''
+
+def compareprependpath(preppendfolderlist, p):
+    for folder in preppendfolderlist:
+        if os.path.normpath(p).startswith(os.path.normpath(folder)):
+            return os.path.normpath(rp)[len(os.path.normpath(folder)):]
     return p
+            
+def prepend_root_exp_path(p):
+    return tryprependpath(EXPFOLDERS_J+EXPFOLDERS_K, p)
     
 def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
     
-    if not os.path.isdir(p):#TODO: need to change this to handle .zip
+    if not os.path.isdir(p):
         p=prepend_root_exp_path(p)
     
     #from here down : turn an exp folder into an exp file
@@ -459,7 +466,8 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
     if runtodonesavep is None and savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
         expfiledict['name']=timename
-        savep=os.path.join(os.path.join(os.path.join(EXPFOLDER_K, experiment_type), timename+rundone), timename+'.exp')
+        Kfold=tryprependpath(EXPFOLDERS_K, '')#one of these better exist
+        savep=os.path.join(os.path.join(os.path.join(Kfold, experiment_type), timename+rundone), timename+'.exp')
         
         if savep is None or not os.path.isdir(os.path.split(os.path.split(savep)[0])[0]):
             if erroruifcn is None:
@@ -1047,12 +1055,10 @@ readdatafiledict=dict([\
     ])
 
 def getanadefaultfolder(erroruifcn=None):
-    #TODO: createdefault path
-    folder='//htejcap.caltech.edu/share/home/users/hte/demo_proto/analysis/temp'
-    
+
     timename=time.strftime('%Y%m%d.%H%M%S')
     
-    folder=os.path.join(os.path.join(ANAFOLDER_K, 'temp'), timename+'.run')
+    folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), 'temp'), timename+'.run')
     
     try:
         if not os.path.isdir(folder):
@@ -1075,7 +1081,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
         timename=os.path.split(srcfolder)[1][:-4]#remove .run
     elif savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
-        savefolder=os.path.join(os.path.join(ANAFOLDER_K, analysis_type), timename+'.done')
+        savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+'.done')
     else:
         timename=os.path.split(savefolder)[1]
     try:
