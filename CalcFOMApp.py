@@ -132,7 +132,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
-        self.tempanafolder='None'
+        self.tempanafolder=''
         self.expzipclass=None
         self.clearanalysis()
 
@@ -531,9 +531,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             for fn in os.listdir(self.tempanafolder):
                 os.remove(os.path.join(self.tempanafolder, fn))
         else:
-            self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder - to meet compliance this should be format %Y%m%d.%H%M%S.run'))
+            self.tempanafolder=getanadefaultfolder(erroruifcn=lambda s:mygetdir(parent=self, markstr='select ANA default folder - to meet compliance this should be format %Y%m%d.%H%M%S.incomplete'))
             #this is meant to result in rund['name']=%Y%m%d.%H%M%S but doesn't guarantee it
-            timestr=(os.path.split(self.tempanafolder)[1]).rstrip('.run')
+            timestr=(os.path.split(self.tempanafolder)[1]).rstrip('.incomplete')
             self.AnaNameLineEdit.setText(timestr)
             self.paramsdict_le_dflt['name'][1]=timestr
     def importanalysisparams(self):
@@ -556,11 +556,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
             if savefolder is None or len(savefolder)==0:
                 return
+            rundone=''#rundone not used if user browses for folder
         else:
             savefolder=None
+            idialog=messageDialog(self, 'save as .done ?')
+            if idialog.exec_():
+                rundone='.done'
+            else:
+                rundone='.run'
         
          
-        anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, erroruifcn=\
+        anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, rundone=rundone, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
         
         if not dontclearyet:

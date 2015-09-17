@@ -1058,7 +1058,7 @@ def getanadefaultfolder(erroruifcn=None):
 
     timename=time.strftime('%Y%m%d.%H%M%S')
     
-    folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), 'temp'), timename+'.run')
+    folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), 'temp'), timename+'.incomplete')
     
     try:
         if not os.path.isdir(folder):
@@ -1070,18 +1070,18 @@ def getanadefaultfolder(erroruifcn=None):
             return ''
         return erroruifcn('')
             
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', savefolder=None):
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', savefolder=None):
     
-    if srcfolder.endswith('.run') and savefolder is None:
+    if srcfolder.endswith('.incomplete') and savefolder is None:
         rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
         if typefold=='temp':
-            savefolder=os.path.join(os.path.join(rootfold, analysis_type), os.path.split(srcfolder)[1][:-3]+'done')
+            savefolder=os.path.join(os.path.join(rootfold, analysis_type), os.path.split(srcfolder)[1].rpartition('.')[0]+rundone)
         else:
-            savefolder=srcfolder[:-3]+'done'#replace run with done
+            savefolder=srcfolder.rpartition('.')[0]+rundone#replace incomplete with run or done
         timename=os.path.split(srcfolder)[1][:-4]#remove .run
     elif savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
-        savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+'.done')
+        savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+rundone)
     else:
         timename=os.path.split(savefolder)[1]
     try:
