@@ -368,7 +368,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
         zipbool=runp.endswith('.zip')
         
         if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
-            runp=os.path.join(RUNFOLDER, runp.strip('/'))
+            runp=tryprependpath(RUNFOLDERS, runp)
         
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
@@ -434,10 +434,13 @@ def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
             return pp
     return ''
 
-def compareprependpath(preppendfolderlist, p):
+def compareprependpath(preppendfolderlist, p, replaceslash=True):
     for folder in preppendfolderlist:
         if os.path.normpath(p).startswith(os.path.normpath(folder)):
-            return os.path.normpath(rp)[len(os.path.normpath(folder)):]
+            p=os.path.normpath(rp)[len(os.path.normpath(folder)):]
+            break
+    if replaceslash:
+        p=p.replace(chr(92),chr(47))
     return p
             
 def prepend_root_exp_path(p):
@@ -497,9 +500,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
     for rund in saveexpfiledict.itervalues():
         if isinstance(rund, dict) and 'run_path' in rund.keys():
             rp=rund['run_path']
-            if os.path.normpath(rp).startswith(os.path.normpath(RUNFOLDER)):
-                rp=os.path.normpath(rp)[len(os.path.normpath(RUNFOLDER)):]
-            rp=rp.replace(chr(92),chr(47))
+            rp=compareprependpath(RUNFOLDERS, rp)
             rund['run_path']=rp
             
     expfilestr=strrep_filedict(saveexpfiledict)
@@ -992,7 +993,7 @@ def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
     zipbool=runp.endswith('.zip')
     
     if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
-        runp=os.path.join(RUNFOLDER, runp.strip('/'))
+        runp=tryprependpath(RUNFOLDERS, runp)
 
     zipbool=runp.endswith('.zip')
     if zipbool:

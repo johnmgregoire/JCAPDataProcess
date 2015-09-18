@@ -114,7 +114,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
          ('description', [self.ExpDescLineEdit, 'null']), \
         ])
         
-        self.defaultrcppath=RUNFOLDER
+        self.defaultrcppath=tryprependpath(RUNFOLDERS, '')
         self.removeruns()
         self.clearexp()
         #self.expfilelist=[]
@@ -637,9 +637,6 @@ class treeclass_dlist():
                 self.treeWidget.addTopLevelItem(mainitem)
                 
                 rp=d['run_path']
-#                if os.path.normpath(rp).startswith(os.path.normpath(RUNFOLDER)):
-#                    rp=os.path.normpath(rp)[len(os.path.normpath(RUNFOLDER)):]
-#                rp=rp.replace(chr(92),chr(47))
                 
                 runparams=['name: '+d['name'],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
                 for lab in runparams:
