@@ -588,22 +588,22 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None):
 
 def getplatemappath_plateid(plateidstr, erroruifcn=None):
     p=''
-    fld=os.path.join(PLATEFOLDER, plateidstr)
+    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
     if os.path.isdir(fld):
         l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
         p=os.path.join(fld, l[0])
     if (not os.path.isfile(p)) and not erroruifcn is None:
-        p=erroruifcn('', PLATEMAPBACKUP)
+        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
     return p
     
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
-    fld=os.path.join(PLATEFOLDER, plateidstr)
+    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
     if os.path.isdir(fld):
         l=[fn for fn in os.listdir(fld) if fn.endswith('info')]+['None']
         p=os.path.join(fld, l[0])
     if (not os.path.isfile(p)) and not erroruifcn is None:
-        p=erroruifcn('', PLATEMAPBACKUP)
+        p=erroruifcn('', '')
     if (not os.path.isfile(p)):
         return None
     return p
