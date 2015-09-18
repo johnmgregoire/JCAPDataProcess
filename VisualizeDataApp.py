@@ -84,7 +84,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
-        
+        self.repr_anaint_plots=1
         self.anafiledict={}
         self.expfiledict={}
         self.expzipclass=None
@@ -791,9 +791,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.plotw_xy.axes.cla()
             self.plotw_xy.twaxes.cla()
         
+        somethingplotted=False
         for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], plotdata, selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
             if len(xarr)==0:
                 continue
+            somethingplotted=True
             if count==0:
                 styled=dict([(k, v) for k, v in self.xyplotstyled.iteritems() if not 'sel' in k and not 'right_' in k and v!=''])
             else:
@@ -959,6 +961,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 c=cols[inds]
             plotw.toComp=self.compplot(plotw, comps[inds], c, sm)
         
+        if len(idtupsarr)==0:
+            self.repr_anaint_plots=1
+        else:
+            self.repr_anaint_plots=numpy.median([self.l_fomdlist[i0][i1]['anaint'] for i0, i1 in idtupsarr]) #not sure if there is a better way to deicde whcih ana saved figures becomes associated with
+            
+    
     def plateplot(self, plotw, x, y, cols, sm):
         plotw.axes.cla()
         plotw.cbax.cla()

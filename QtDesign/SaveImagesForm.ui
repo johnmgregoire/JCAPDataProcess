@@ -82,6 +82,23 @@ with same name</string>
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QCheckBox" name="doneCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>370</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>convert .run 
+to .done</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

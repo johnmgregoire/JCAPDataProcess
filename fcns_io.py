@@ -1085,6 +1085,8 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
         savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+rundone)
     else:
         timename=os.path.split(savefolder)[1]
+        if timename.count('.')>1:
+            timename=timename.rpartition('.')[0]
     try:
         if not os.path.isdir(savefolder):
             os.mkdir(savefolder)
