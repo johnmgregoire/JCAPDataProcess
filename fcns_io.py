@@ -437,7 +437,7 @@ def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
 def compareprependpath(preppendfolderlist, p, replaceslash=True):
     for folder in preppendfolderlist:
         if os.path.normpath(p).startswith(os.path.normpath(folder)):
-            p=os.path.normpath(rp)[len(os.path.normpath(folder)):]
+            p=os.path.normpath(p)[len(os.path.normpath(folder)):]
             break
     if replaceslash:
         p=p.replace(chr(92),chr(47))

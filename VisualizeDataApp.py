@@ -496,7 +496,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         
         fomname=str(self.fomplotchoiceComboBox.currentText())
-        compcolorbool=(fomname=='comp. color')
+        compcolorbool=(fomname=='comp.color')
         if compcolorbool:
             fomname='sample_no'
         l_usefombool=self.AnaExpFomTreeWidgetFcns.getusefombools()
@@ -510,7 +510,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.fomplotd[k]=numpy.array(map(operator.itemgetter(count), plotdinfo))
         self.fomplotd['comps']=numpy.array([c/c.sum() for c in self.fomplotd['comps']])
         if compcolorbool:
-            self.fomplotd['fomname']='comp. color'
+            self.fomplotd['fomname']='comp.color'
         else:
             self.fomplotd['fomname']=fomname
         #if fomname is in multiple l_fomdlist a given sample can be included in fomplotd numerous times. this create ambiguity for selecting samples and the plotted fom colored symbols will overlay each other and only the top one will be visible
@@ -521,9 +521,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #    #can point the activate fom checkbox to here but user has to click "OK" to refilter data to ensure that the scope fo the plot matches the checked fitler boxes. can just re-filter without much loss of speed
 #    def updatefomchoiceandplot(self):
 #        fomname=str(self.fomplotchoiceComboBox.currentText())
-#        compcolorbool=(fomname=='comp. color')
+#        compcolorbool=(fomname=='comp.color')
 #        if compcolorbool:
-#            self.fomplotd['fomname']='comp. color'
+#            self.fomplotd['fomname']='comp.color'
 #            self.fomplotd['fom']=self.fomplotd['sample_no']
 #            return
 #        
@@ -543,7 +543,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.fomselectnames=sorted(list(set([nam for fomnames in self.l_fomnames for nam in fomnames])))
         if len(self.fomselectnames)==0:
             return
-        self.fomplotchoiceComboBox.insertItem(0,'comp. color')
+        self.fomplotchoiceComboBox.insertItem(0,'comp.color')
         for count, s in enumerate(self.fomselectnames):
             self.fomplotchoiceComboBox.insertItem(count+1, s)#fom choices are not associated with particular indeces of the l_ structures
         self.fomplotchoiceComboBox.setCurrentIndex(0)
@@ -853,7 +853,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         fom=self.fomplotd['fom']
         idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'],self.fomplotd['fomdlist_index1']]).T
 
-        if self.fomplotd['fomname']=='comp. color':
+        if self.fomplotd['fomname']=='comp.color':
             cols=QuaternaryPlotInstance.rgb_comp(comps)
             sm=None
         else:

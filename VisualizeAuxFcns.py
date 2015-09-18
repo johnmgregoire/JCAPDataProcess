@@ -275,4 +275,3 @@ class treeclass_anaexpfom():
             return tup
         d=dict([self.createdict_item(item.child(i)) for i in range(item.childCount())])
         return (tup[0], d)
-
