@@ -20,6 +20,7 @@ from fcns_io import *
 from fcns_ui import *
 from VisualizeAuxFcns import *
 from VisualizeDataForm import Ui_VisDataDialog
+from SaveImagesApp import *
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
@@ -55,6 +56,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.remxy, self.remValuesXY), \
         (self.addSample, self.addValuesSample), \
         (self.remSample, self.remValuesSample), \
+        (self.SaveFigsPushButton, self.savefigs), \
         ]
 
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -1303,6 +1305,32 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
         
+    def savefigs(self):
+        cbl=[\
+                self.xplotchoiceComboBox, \
+                self.yplotchoiceComboBox, \
+                self.rightyplotchoiceComboBox, \
+                ]
+        x_y_righty=[str(cb.currentText()) for cb in cbl if str(cb.currentText())!='None']
+
+        mainitem=self.widgetItems_pl_ru_te_ty_co[0]
+        plateid_dict_list=[(str(val), {'plotw':plotw, 'checked':\
+                   (True in [bool(mainitem.child(i).checkState(0)) for i in range(mainitem.childCount()) if str(val)==str(mainitem.child(i).text(0)).strip()])\
+                        })\
+                        for val, plotw in zip(self.tabs__plateids, self.tabs__plotw_plate)]
+        print [(bool(mainitem.child(i).checkState(0)), str(val), str(mainitem.child(i).text(0)).strip()) for i in range(mainitem.childCount())]
+        
+        mainitem=self.widgetItems_pl_ru_te_ty_co[-1]
+        code_dict_list=[(str(val), {'plotw':plotw, 'checked':\
+                   (True in [bool(mainitem.child(i).checkState(0)) for i in range(mainitem.childCount()) if str(val)==str(mainitem.child(i).text(0)).strip()])\
+                        })\
+                        for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp)]
+        print [(bool(mainitem.child(i).checkState(0)), str(val), str(mainitem.child(i).text(0)).strip()) for i in range(mainitem.childCount())]
+
+        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=self.plotw_xy, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots)
+        idialog.exec_()
+        if idialog.newanapath:
+            self.importana(p=idialog.newanapath)
         
 if __name__ == "__main__":
     class MainMenu(QMainWindow):

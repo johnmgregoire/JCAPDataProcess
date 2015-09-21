@@ -72,7 +72,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>find .run folders</string>
+    <string>find folders</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="endswithLineEdit">
@@ -85,7 +85,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>.run</string>
+    <string>.incomplete</string>
    </property>
   </widget>
   <widget class="QLabel" name="label">

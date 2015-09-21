@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 #import matplotlib.colors as colors
 #import matplotlib.cm as cm
 #import matplotlib.mlab as mlab
-import pylab
+#import pylab
 import pickle
 #from fcns_math import *
 from fcns_io import *
@@ -27,33 +27,6 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
 
-
-
-cbl=[\
-        self.xplotchoiceComboBox, \
-        self.yplotchoiceComboBox, \
-        self.rightyplotchoiceComboBox, \
-        ]
-x_y_righty=[str(cb.currentText()) for cb in cbl]
-
-
-
-
-mainitem=self.widgetItems_pl_ru_te_ty_co[0]
-plateid_dict_list=[(str(val), {'plotw':plotw, 'checked':\
-           (True in [bool(mainitem.child(i).checkState(0)) for i in range(mainitem.childCount()) if str(val)==str(mainitem.child(i).text(0)).strip()])\
-                })\
-                for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp)]
-                
-mainitem=self.widgetItems_pl_ru_te_ty_co[-1]
-code_dict_list=[(str(val), {'plotw':plotw, 'checked':\
-           (True in [bool(mainitem.child(i).checkState(0)) for i in range(mainitem.childCount()) if str(val)==str(mainitem.child(i).text(0)).strip()])\
-                })\
-                for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp)]
-
-
-idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=self.plotw_xy, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots)
-idialog.exec_()
 
 class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
     def __init__(self, parent, anafolder, fomname, plateid_dict_list=[], code_dict_list=[], histplow=None, xyplotw=None, x_y_righty=['x', 'y', ''], repr_anaint_plots=1):
@@ -70,7 +43,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
             self.reject()
             return
         
-        fnl=[fn for fn in os.listdir(anafolder.namelist) if fn.endswith('.ana')]
+        fnl=[fn for fn in os.listdir(anafolder) if fn.endswith('.ana')]
         if len(fnl)==0:
             idialog=messageDialog(self, 'Cannot save to ANA because no .ana in the folder')
             idialog.exec_()
@@ -88,6 +61,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         for k in self.widgetkeys:
             mainitem=QTreeWidgetItem([k], 0)
             self.FilesTreeWidget.addTopLevelItem(mainitem)
+            mainitem.setExpanded(True)
             self.widgetTopLevelItems[k]=mainitem
         
         self.xyyname='-'.join([k for k in x_y_righty if len(k)>0])
@@ -101,27 +75,31 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 s+=': python_visualizer_png_image'
                 item=QTreeWidgetItem([s], 0)
                 item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.Checked if checkbool else Qt.Unchecked)
+                item.setCheckState(0, Qt.Checked if d['checked'] else Qt.Unchecked)
                 mainitem.addChild(item)
                 d['item']=item
                 self.widget_plow_dlist+=[d]
         for widgk, plotw, lab in zip(self.widgetkeys[2:4], [xyplotw, histplow], [self.xyyname, self.fomname]):
             if plotw is None:
                 continue
+            mainitem=self.widgetTopLevelItems[widgk]
             d={'plotw':plotw}
             s=self.filterchars('%s__%s.png' %(widgk, lab))
             s+=': python_visualizer_png_image'
             item=QTreeWidgetItem([s], 0)
             item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(0, Qt.Checked if checkbool else Qt.Unchecked)
+            item.setCheckState(0, Qt.Unchecked)
             mainitem.addChild(item)
             d['item']=item
             self.widget_plow_dlist+=[d]
+        self.newanapath=False
+            
+            
     def editname(self, item, column):
         if item is None:
             item=widget.currentItem()
         s=str(item.text(column))
-        st=s.partition('.png: ')[0]
+        st=s.partition('.png: ')
         v=st[0]
         keepstr=''.join(st[1:])
         ans=userinputcaller(self, inputs=[('filename', str, v)], title='Enter new filename',  cancelallowed=True)
@@ -141,30 +119,37 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
             if not bool(d['item'].checkState(0)):
                 continue
             pngfn, garb, pngattr=str(d['item'].text(0)).partition(': ')
-            pylab.figure(d['plotw'].fig.number)
             existfns=os.listdir(self.anafolder)
             for fn, a in [(pngfn, pngattr), (pngfn.replace('png', 'eps'), pngattr.replace('png', 'eps'))]:
                 if (fn in existfns) and not overbool:
                     i=2
+                    fnorig=fn
                     while fn in existfns:
-                        fn=''.join([fn[:-4], '_%d' %i, fn[-4:]])
+                        fn=''.join([fnorig[:-4], '__%d' %i, fnorig[-4:]])
                         i+=1
                 savep=os.path.join(self.anafolder, fn)
                 existfns+=[fn]
-                pylab.savefig(savep)
+                d['plotw'].fig.savefig(savep)
                 lines+=[(fn, a)]
         if len(lines)==0:
             return
         p=os.path.join(self.anafolder, self.anafn)
         anadict=readana(p, erroruifcn=None, stringvalues=True, returnzipclass=False)#cannot be a .zip
-        d=anadict['ana__%d' %self.repr_anaint_plots]
-        d=d['files_multi_run']
+        da=anadict['ana__%d' %self.repr_anaint_plots]
+        if not 'files_multi_run' in da.keys():
+            da['files_multi_run']={}
+        df=da['files_multi_run']
+        if not 'image_files' in df.keys():
+            df['image_files']={}
+        d=df['image_files']
         for fn, a in lines:
             d[fn]=a#if fn exists and was overwritten this will jdo nothing or update the attrstr
         anafilestr=strrep_filedict(anadict)
         
         if self.doneCheckBox.isChecked() and os.path.split(self.anafolder)[1].count('.')>1:
-            saveana_tempfolder(anafilestr, self.anafolder, erroruifcn=None, skipana=True, anadict=None, savefolder=self.anafolder.rpartition('.')[0]+'.done')
+            newanafolder=self.anafolder.rpartition('.')[0]+'.done'
+            saveana_tempfolder(anafilestr, self.anafolder, erroruifcn=None, skipana=True, anadict=None, savefolder=newanafolder)
+            self.newanapath=os.path.join(newanafolder, self.anafn)
         else:
             with open(p, mode='w') as f:
                 f.write(anafilestr)

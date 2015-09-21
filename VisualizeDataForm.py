@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Mon Aug 10 17:08:58 2015
+# Created: Mon Sep 21 13:29:33 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -74,10 +74,10 @@ class Ui_VisDataDialog(object):
         self.UpdateFolderPushButton.setGeometry(QtCore.QRect(10, 100, 101, 23))
         self.UpdateFolderPushButton.setObjectName(_fromUtf8("UpdateFolderPushButton"))
         self.OnFlyAnaClassComboBox = QtGui.QComboBox(VisDataDialog)
-        self.OnFlyAnaClassComboBox.setGeometry(QtCore.QRect(0, 200, 111, 22))
+        self.OnFlyAnaClassComboBox.setGeometry(QtCore.QRect(0, 220, 111, 22))
         self.OnFlyAnaClassComboBox.setObjectName(_fromUtf8("OnFlyAnaClassComboBox"))
         self.OnFlyStoreInterCheckBox = QtGui.QCheckBox(VisDataDialog)
-        self.OnFlyStoreInterCheckBox.setGeometry(QtCore.QRect(0, 230, 81, 21))
+        self.OnFlyStoreInterCheckBox.setGeometry(QtCore.QRect(0, 250, 81, 21))
         self.OnFlyStoreInterCheckBox.setObjectName(_fromUtf8("OnFlyStoreInterCheckBox"))
         self.compLineEdit = QtGui.QLineEdit(VisDataDialog)
         self.compLineEdit.setGeometry(QtCore.QRect(990, 10, 111, 20))
@@ -231,7 +231,7 @@ class Ui_VisDataDialog(object):
         self.UpdatePlotPushButton.setGeometry(QtCore.QRect(400, 40, 101, 23))
         self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
         self.ontheflyPushButton = QtGui.QPushButton(VisDataDialog)
-        self.ontheflyPushButton.setGeometry(QtCore.QRect(0, 170, 111, 21))
+        self.ontheflyPushButton.setGeometry(QtCore.QRect(0, 190, 111, 21))
         self.ontheflyPushButton.setObjectName(_fromUtf8("ontheflyPushButton"))
         self.line_3 = QtGui.QFrame(VisDataDialog)
         self.line_3.setGeometry(QtCore.QRect(250, 290, 20, 121))
@@ -251,6 +251,9 @@ class Ui_VisDataDialog(object):
         self.line.setFrameShape(QtGui.QFrame.HLine)
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
         self.line.setObjectName(_fromUtf8("line"))
+        self.SaveFigsPushButton = QtGui.QPushButton(VisDataDialog)
+        self.SaveFigsPushButton.setGeometry(QtCore.QRect(10, 160, 101, 23))
+        self.SaveFigsPushButton.setObjectName(_fromUtf8("SaveFigsPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -316,6 +319,7 @@ class Ui_VisDataDialog(object):
         self.ontheflyPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "perform on-the-fly", None, QtGui.QApplication.UnicodeUTF8))
         self.customxystylePushButton.setText(QtGui.QApplication.translate("VisDataDialog", "configure\n"
 "x-y style", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveFigsPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Save figs to ANA", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

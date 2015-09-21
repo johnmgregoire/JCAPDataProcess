@@ -559,8 +559,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             rundone=''#rundone not used if user browses for folder
         else:
             savefolder=None
-            idialog=messageDialog(self, 'save as .done ?')
-            if idialog.exec_():
+            idialog2=messageDialog(self, 'save as .done ?')
+            if idialog2.exec_():
                 rundone='.done'
             else:
                 rundone='.run'

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesForm.ui'
 #
-# Created: Fri Sep 18 11:26:07 2015
+# Created: Mon Sep 21 14:02:14 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -38,6 +38,10 @@ class Ui_SaveImagesDialog(object):
         self.overwriteCheckBox.setGeometry(QtCore.QRect(30, 370, 101, 21))
         self.overwriteCheckBox.setChecked(True)
         self.overwriteCheckBox.setObjectName(_fromUtf8("overwriteCheckBox"))
+        self.doneCheckBox = QtGui.QCheckBox(SaveImagesDialog)
+        self.doneCheckBox.setGeometry(QtCore.QRect(140, 370, 101, 21))
+        self.doneCheckBox.setChecked(False)
+        self.doneCheckBox.setObjectName(_fromUtf8("doneCheckBox"))
 
         self.retranslateUi(SaveImagesDialog)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), SaveImagesDialog.accept)
@@ -48,6 +52,8 @@ class Ui_SaveImagesDialog(object):
         SaveImagesDialog.setWindowTitle(QtGui.QApplication.translate("SaveImagesDialog", "ChooseImagesToSave", None, QtGui.QApplication.UnicodeUTF8))
         self.overwriteCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "overwrite files\n"
 "with same name", None, QtGui.QApplication.UnicodeUTF8))
+        self.doneCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "convert .run \n"
+"to .done", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

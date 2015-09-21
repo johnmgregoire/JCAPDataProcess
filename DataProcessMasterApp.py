@@ -39,7 +39,7 @@ class MainMenu(QMainWindow):
         QObject.connect(combinefomuiButton, SIGNAL("pressed()"), self.combinefomui_exec)
         
         filemanButton=QPushButton()
-        filemanButton.setText("Delete\n.run")
+        filemanButton.setText("Delete obsolete\nEXP/ANA folders")
         QObject.connect(filemanButton, SIGNAL("pressed()"), self.filemanui_exec)
         
         

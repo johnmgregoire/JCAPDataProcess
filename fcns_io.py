@@ -312,7 +312,7 @@ def createfileattrdict(fileattrstr):
     type_keys_heads_rows=fileattrstr.split(';')
     d={}
     d['file_type']=type_keys_heads_rows[0]
-    if len(type_keys_heads_rows)==0 or len(type_keys_heads_rows[1].strip())==0:
+    if len(type_keys_heads_rows)==1 or len(type_keys_heads_rows[1].strip())==0:
         #only file_type
         return d
     if len(type_keys_heads_rows)==2:
@@ -1079,14 +1079,14 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
             savefolder=os.path.join(os.path.join(rootfold, analysis_type), os.path.split(srcfolder)[1].rpartition('.')[0]+rundone)
         else:
             savefolder=srcfolder.rpartition('.')[0]+rundone#replace incomplete with run or done
-        timename=os.path.split(srcfolder)[1][:-4]#remove .run
+        timename=os.path.split(srcfolder)[1].partition('.incomplete')[0]
     elif savefolder is None:
         timename=time.strftime('%Y%m%d.%H%M%S')
         savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+rundone)
     else:
         timename=os.path.split(savefolder)[1]
         if timename.count('.')>1:
-            timename=timename.rpartition('.')[0]
+            timename='.'.join(timename.split('.')[:2])
     try:
         if not os.path.isdir(savefolder):
             os.mkdir(savefolder)
@@ -1108,7 +1108,10 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
         if skipana and fn.endswith('.ana'):
             continue
         shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-    os.rmdir(srcfolder)
+    try:
+        os.rmdir(srcfolder)
+    except:
+        print 'The old folder still exists due to a problem deleting it: ', srcfolder
     savep=os.path.join(savefolder, '%s.ana' %timename)
     with open(savep, mode='w') as f:
         f.write(anafilestr)

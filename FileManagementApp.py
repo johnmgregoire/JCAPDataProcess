@@ -18,7 +18,7 @@ import matplotlib.mlab as mlab
 import pylab
 import pickle
 #from fcns_math import *
-#from fcns_io import *
+from fcns_io import *
 from fcns_ui import *
 from FileManagementForm import Ui_FileManDialog
 from DBPaths import *
@@ -42,12 +42,18 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         
         self.treeWidget=self.foldersTreeWidget
         self.toplevelitems=[]
-
+        
+        self.anafolder=tryprependpath(ANAFOLDERS_K, '')
+        self.expfolder=tryprependpath(EXPFOLDERS_K, '')
+        if len(self.anafolder)==0 and len(self.expfolder)==0:
+            print 'cannot find exp or ana folder'
+            return
+        
         
     def deletefolders(self):
        
-        for mainitem, fold in zip(self.toplevelitems, [EXPFOLDER_K, ANAFOLDER_K]):
-            if not bool(mainitem.checkState(0)):
+        for mainitem, fold in zip(self.toplevelitems, [self.expfolder, self.anafolder]):
+            if mainitem is None or not bool(mainitem.checkState(0)):
                 continue
             subitems=[mainitem.child(i) for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
             delpaths=[os.path.join(os.path.join(fold, str(subitem.text(0))), str(subitem.child(i).text(0))) for subitem in subitems for i in range(subitem.childCount()) if bool(subitem.child(i).checkState(0))]
@@ -64,17 +70,19 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         self.toplevelitems=[]
         
         self.endswith=str(self.endswithLineEdit.text())
-        for i, (lab, foldlist) in enumerate(zip(['EXP', 'ANA'], [EXPFOLDERS_K, ANAFOLDERS_K])):
-            for fold in foldlist:
-                mainitem=QTreeWidgetItem([lab], 0)
-                mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-                mainitem.setCheckState(0, Qt.Checked)
-                if i==0:
-                    item0=mainitem
-                self.treeWidget.addTopLevelItem(mainitem)
-                self.nestedfill(fold, mainitem, 'top', endswith=None)
-                mainitem.setExpanded(True)
-                self.toplevelitems+=[mainitem]
+        for i, (lab, fold) in enumerate(zip(['EXP', 'ANA'], [self.expfolder, self.anafolder])):
+            if len(fold)==0: #didn't find exp or ana folder but found other one
+                self.toplevelitems+=[None]
+                continue
+            mainitem=QTreeWidgetItem([lab], 0)
+            mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
+            mainitem.setCheckState(0, Qt.Checked)
+            if i==0:
+                item0=mainitem
+            self.treeWidget.addTopLevelItem(mainitem)
+            self.nestedfill(fold, mainitem, 'top', endswith=None)
+            mainitem.setExpanded(True)
+            self.toplevelitems+=[mainitem]
         self.treeWidget.setCurrentItem(item0)
 
 

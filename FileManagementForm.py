@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileManagementForm.ui'
 #
-# Created: Mon Sep 07 11:15:58 2015
+# Created: Mon Sep 21 13:50:54 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -48,8 +48,8 @@ class Ui_FileManDialog(object):
     def retranslateUi(self, FileManDialog):
         FileManDialog.setWindowTitle(QtGui.QApplication.translate("FileManDialog", "EXP+ANA file management", None, QtGui.QApplication.UnicodeUTF8))
         self.deletefoldersButton.setText(QtGui.QApplication.translate("FileManDialog", "delete selected folders", None, QtGui.QApplication.UnicodeUTF8))
-        self.findfoldersButton.setText(QtGui.QApplication.translate("FileManDialog", "find .run folders", None, QtGui.QApplication.UnicodeUTF8))
-        self.endswithLineEdit.setText(QtGui.QApplication.translate("FileManDialog", ".run", None, QtGui.QApplication.UnicodeUTF8))
+        self.findfoldersButton.setText(QtGui.QApplication.translate("FileManDialog", "find folders", None, QtGui.QApplication.UnicodeUTF8))
+        self.endswithLineEdit.setText(QtGui.QApplication.translate("FileManDialog", ".incomplete", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("FileManDialog", "EXP or ANA folder\n"
 "must end with ", None, QtGui.QApplication.UnicodeUTF8))
 
