@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Wed Sep 09 22:56:24 2015
+# Created: Mon Sep 21 17:47:59 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -193,6 +193,11 @@ class Ui_CalcFOMDialog(object):
         self.AnalyzeDataPushButton.setObjectName(_fromUtf8("AnalyzeDataPushButton"))
         self.AnalysisGridLayout.addWidget(self.AnalyzeDataPushButton, 0, 1, 1, 1)
         self.EditDfltVisPushButton = QtGui.QPushButton(self.layoutWidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.EditDfltVisPushButton.sizePolicy().hasHeightForWidth())
+        self.EditDfltVisPushButton.setSizePolicy(sizePolicy)
         self.EditDfltVisPushButton.setObjectName(_fromUtf8("EditDfltVisPushButton"))
         self.AnalysisGridLayout.addWidget(self.EditDfltVisPushButton, 1, 1, 1, 1)
         self.ClearAnalysisPushButton = QtGui.QPushButton(self.layoutWidget)
@@ -366,7 +371,8 @@ class Ui_CalcFOMDialog(object):
         self.AnaDescLineEdit.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.AnalyzeDataPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Perform the selected analysis", None, QtGui.QApplication.UnicodeUTF8))
         self.AnalyzeDataPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Analyze Data", None, QtGui.QApplication.UnicodeUTF8))
-        self.EditDfltVisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Edit the FOM visualization parameters", None, QtGui.QApplication.UnicodeUTF8))
+        self.EditDfltVisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Edit the FOM visualization parameters in the .csv\n"
+"ONLY WORKS ON MOST RECENT \"Analyze Data\"", None, QtGui.QApplication.UnicodeUTF8))
         self.EditDfltVisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Update Dflt Vis", None, QtGui.QApplication.UnicodeUTF8))
         self.ClearAnalysisPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Clear the analysis, removing intermediate data and FOMs", None, QtGui.QApplication.UnicodeUTF8))
         self.ClearAnalysisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Clear Analysis", None, QtGui.QApplication.UnicodeUTF8))

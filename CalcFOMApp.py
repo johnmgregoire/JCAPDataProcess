@@ -304,7 +304,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.analysisclass=None
             return
         self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
-        self.activeana=None
+        #self.activeana=None
     
     def clearexp(self):
         self.ExpRunUseComboBox.clear()
@@ -447,6 +447,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.filedlist=self.analysisclass.filedlist
         self.fomnames=self.analysisclass.fomnames
         self.csvheaderdict=self.analysisclass.csvheaderdict
+        self.primarycsvpath=self.analysisclass.primarycsvpath
         self.fomplotchoiceComboBox.clear()
         for count, s in enumerate(self.fomnames):
             self.fomplotchoiceComboBox.insertItem(count, s)
@@ -519,6 +520,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def clearanalysis(self):
         self.analysisclass=None
+        self.activeana=None
         self.anadict={}
         self.anadict['ana_version']='3'
         
@@ -599,9 +601,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 d['colormap_min_value']=a.strip()
             if len(b.strip())>0:
                 d['colormap_max_value']=b.strip()
-        totnumheadlines=writecsv_smpfomd(self.analysisclass.primarycsvpath, '', headerdict=self.csvheaderdict, replaceheader=True)
-        fnf=os.path.split(self.analysisclass.primarycsvpath)[1]
-        files_techd=self.activeana[[k for k in self.activeana.keys() if k.startswith('files_')][0]]
+        totnumheadlines=writecsv_smpfomd(self.primarycsvpath, '', headerdict=self.csvheaderdict, replaceheader=True)
+        fnf=os.path.split(self.primarycsvpath)[1]
+        files_techd=self.activeana['files_multi_run']
         files_fomd=files_techd['fom_files']
         s=files_fomd[fnf]
         l=s.split(';')

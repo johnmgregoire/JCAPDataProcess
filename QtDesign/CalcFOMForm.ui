@@ -419,8 +419,15 @@ can be performed</string>
     </item>
     <item row="1" column="1">
      <widget class="QPushButton" name="EditDfltVisPushButton">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="toolTip">
-       <string>Edit the FOM visualization parameters</string>
+       <string>Edit the FOM visualization parameters in the .csv
+ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
       </property>
       <property name="text">
        <string>Update Dflt Vis</string>
