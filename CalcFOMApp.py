@@ -100,12 +100,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
         
-        self.runcheckboxlist=[\
-        self.RunCheckBox_0, self.RunCheckBox_1, self.RunCheckBox_2, \
-        self.RunCheckBox_3, self.RunCheckBox_4, self.RunCheckBox_5, \
-        self.RunCheckBox_6, self.RunCheckBox_7]
-        for cb in self.runcheckboxlist:
-            QObject.connect(cb, SIGNAL("toggled(bool)"), self.filltechtyperadiobuttons)
+
+        QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
+        self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)
         
         QObject.connect(self.ExpRunUseComboBox,SIGNAL("activated(QString)"),self.fillruncheckboxes)
         
@@ -236,23 +233,30 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.fillruncheckboxes()
     
     def fillruncheckboxes(self):
+        self.runselectionaction=False
         self.usek=str(self.ExpRunUseComboBox.currentText())
         runklist=[runk for runk, usek in self.runk_use if usek==self.usek]
-        for cb, runk in zip(self.runcheckboxlist, runklist):
-            s=','.join([runk, self.expfiledict[runk]['name']])
-            cb.setText(s)
-            cb.setChecked(True)
+        d=dict([(runk, dict([(k, v) for k, v in self.expfiledict[runk].iteritems() if not k.startswith('platemap')])) for runk in runklist])
+        self.runtreeclass.filltree(d, startkey='')
+        self.runtreeclass.maketoplevelchecked()
         self.filltechtyperadiobuttons()
+        self.runselectionaction=True
+    def runselectionchanged(self, item, column):
+        if not self.runselectionaction:
+            return
+
+        if item.parent() is None:#top level run
+            self.filltechtyperadiobuttons()
     
-    def filltechtyperadiobuttons(self):
+    def filltechtyperadiobuttons(self, startind=0):
         qlist=self.TechTypeButtonGroup.buttons()
         numbuttons=len(qlist)
         for button in qlist:
             button.setText('')
             button.setToolTip('')
-            
-        self.selectrunklist=[str(cb.text()).partition(',')[0] for cb in self.runcheckboxlist if cb.isChecked()]
-        self.selectrunklist=[s for s in self.selectrunklist if len(s)>0]
+            button.setVisible(False)
+        self.selectrunklist=self.runtreeclass.getlistofchecktoplevelitems()
+        #self.selectrunklist=[s for s in self.selectrunklist if len(s)>0]
         runk_techk=[(runk, techk)
         for runk in self.selectrunklist \
         for techk in self.expfiledict[runk].keys() \
@@ -268,26 +272,45 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 if 'files_technique__'+techk in self.expfiledict[runk].keys() and typek in self.expfiledict[runk]['files_technique__'+techk].keys()]).sum(dtype='int32')
             for techk, typek in self.techk_typek]
         
+        temp_t_t=self.techk_typek
+        numcanlist=numbuttons
+        displaystrs=[]
+        if startind>0:
+            numcanlist-=1
+            temp_t_t=temp_t_t[startind:]
+            numfiles=numfiles[startind:]
+            displaystrs+=['Display 0-9']
+        if len(temp_t_t)>numcanlist:
+            numcanlist-=1
+            temp_t_t=temp_t_t[:numcanlist]
+            numfiles=numfiles[:numcanlist]
+            displaystrs+=['Display %d-?' %(startind+numcanlist)]
         count=0
         for nfiles, techk_typek in zip(numfiles, self.techk_typek):
-            if count==numbuttons:
-                break
             button=qlist[count]
-            
             s=','.join(techk_typek)
             button.setText(s)
             button.setToolTip('%d files' %(nfiles))
+            button.setVisible(True)
             if count==0:
                 button.setChecked(True)
                 self.fillanalysistypes(button)
             count+=1
-        
-    
+        for s in displaystrs:
+            button=qlist[count]
+            button.setText(s)
+            button.setVisible(True)
+            count+=1
+            
     def fillanalysistypes(self, button):
         if button is None:
             button=self.TechTypeButtonGroup.buttons()[0]
             button.setChecked(True)
         s=str(button.text())
+        if s.startswith('Display '):
+            i=int(s.partition('Display ')[2].partition('-')[0])
+            filltechtyperadiobuttons(startind=i)
+            return
         self.techk, garb, self.typek=s.partition(',')
         nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict)) for i, c in enumerate(AnalysisClasses)]
         self.AnalysisClassInds=[i for i, nf in enumerate(nfiles_classes) if nf>0]
@@ -308,11 +331,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     
     def clearexp(self):
         self.ExpRunUseComboBox.clear()
-        for cbl in [self.runcheckboxlist, self.TechTypeButtonGroup.buttons()]:
-            for cb in cbl:
-                cb.setText('')
-                cb.setToolTip('')
-                cb.setChecked(False)
+        self.RunSelectTreeWidget.clear()
         self.plotd={}
     def runbatchprocess(self):
         return
@@ -932,15 +951,23 @@ class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree
         self.treeWidget.clear()
-        
-        
+    
+    def getlistofchecktoplevelitems(self):
+        return [str(self.treeWidget.topLevelItem(count).text(0)).strip().strip(':') for count in range(int(self.treeWidget.topLevelItemCount()))\
+            if bool(self.treeWidget.topLevelItem(count).checkState(0))]
+    def maketoplevelchecked(self):
+        for count in range(int(self.treeWidget.topLevelItemCount())):
+            item=self.treeWidget.topLevelItem(count)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.Checked)
     def filltree(self, d, startkey='ana_version', laststartswith='ana__'):
         self.treeWidget.clear()
         #assume startkey is not for dict and laststatswith is dict
         
-        mainitem=QTreeWidgetItem([': '.join([startkey, d[startkey]])], 0)
-        self.treeWidget.addTopLevelItem(mainitem)
-        self.treeWidget.setCurrentItem(mainitem)
+        if len(startkey)>0:
+            mainitem=QTreeWidgetItem([': '.join([startkey, d[startkey]])], 0)
+            self.treeWidget.addTopLevelItem(mainitem)
+            self.treeWidget.setCurrentItem(mainitem)
         
         for k in sorted([k for k, v in d.iteritems() if k!=startkey and not isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([': '.join([k, str(d[k])])], 0)
