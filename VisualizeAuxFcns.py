@@ -69,7 +69,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     l_fomdlist+=[fomdlist]
                     l_fomnames+=[filed['keys']+['anaint']]
                     l_csvheaderdict+=[csvheaderdict]
-                    treefcns.appendFom(filed['keys'], csvheaderdict)
+                    treefcns.appendFom(filed['keys'], csvheaderdict, anak=anak, anad=anad)
 
 class legendformatwidget(QDialog):
     def __init__(self, parent=None, title='', arr=None):
@@ -179,7 +179,7 @@ class treeclass_anaexpfom():
         for count in range(n):
             item=self.fomwidgetItem.child(count)
             item.setCheckState(0, Qt.Unchecked)
-    def appendFom(self, fomnames, csvheaderdict, uncheckprevious=False):
+    def appendFom(self, fomnames, csvheaderdict, uncheckprevious=False, anak=None, anad=None):
         
         i=self.fomwidgetItem.childCount()
         if uncheckprevious:
@@ -194,6 +194,12 @@ class treeclass_anaexpfom():
         item=QTreeWidgetItem(['csvheader'], 0)
         self.nestedfill(csvheaderdict, item, laststartswith='plot')
         mainitem.addChild(item)
+        
+        if not anak is None:
+            item=QTreeWidgetItem([anak], 0)
+            if not anad is None:
+                self.nestedfill(dict([(k, v) for k, v in anad.iteritems() if not isinstance(v, dict)]), item, laststartswith='xx')
+            mainitem.addChild(item)
         
         self.fomwidgetItem.addChild(mainitem)
         

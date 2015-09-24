@@ -609,6 +609,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.fomstatsTextBrowser.setText(s)
         
         n, bins, patches = self.plotw_fomhist.axes.hist(fom, 20, normed=False, histtype='stepfilled')
+        autotickformat(self.plotw_fomhist.axes, x=1, y=0)
         #self.plotw_fomhist.fig.setp(patches)
         self.plotw_fomhist.fig.canvas.draw()
     
