@@ -69,7 +69,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.ExpTreeWidgetFcns=treeclass_dlist(self.ExpTreeWidget, key_toplevel='rcp_file', key_nestedfill='rcptuplist')
         QObject.connect(self.RunTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.editrunparams)
         QObject.connect(self.ExpTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.editexpparams)
-
+        QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
+        
         button_fcn=[\
         (self.AddMeasPushButton, self.editexp_addmeasurement), \
         (self.FilterMeasPushButton, self.editexp_filtercriteria), \
@@ -120,6 +121,36 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.expfilelist=[]
         #self.TechInFilesComboBox, self.FileInFilesComboBox
         #self.FileSearchLineEdit
+    
+        self.updateuserfomd(clear=True)
+        
+    
+    def updateuserfomd(self, clear=False):
+        if clear:
+            self.userfomd={}
+            self.UserFOMLineEdit.setText('')
+            self.text_UserFOMLineEdit=''
+            return
+            
+        s=str(self.UserFOMLineEdit.text())
+        if self.text_UserFOMLineEdit==s:#"duplicate" signals being emitted so ignore them 
+            return
+        self.text_UserFOMLineEdit=s
+
+        vals=s.split(',')
+        keys=['user_fom_ana__%d' %i for i, v in enumerate(vals)]
+        ans=[]
+        count=0
+        while ans!=keys:
+            inputs=[('key for %s' %v, str, k) for k, v in zip(keys, vals)]
+            ans=userinputcaller(self, inputs=inputs, title='Enter user FOM keys',  cancelallowed=True)
+            if ans is None:
+                return
+            keys=[filterchars(k) for k in ans]
+
+            count+=1
+        vals=[v.strip() for v in vals]#no numericalconversion here
+        self.userfomd=dict([(k, v) for k, v in zip(keys, vals)])
         
     def runbatchprocess(self):
          self.batchprocesses[self.BatchComboBox.currentIndex()]()
@@ -332,9 +363,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         inexpfcndict_previnexp_filter[0]=lambda filterresult: (filterresult==1) and set.union or set.difference
         inexpfcndict_previnexp_filter[1]=lambda filterresult: set.union
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: 1
-        self.editexp(inexpfcndict_previnexp_filter)
+        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd)
+        self.updateuserfomd(clear=True)
         
-    
     #filter:               N/A fail pass
     # previous no ->  no     no    no
     # previous yes->  yes   no   yes
@@ -345,7 +376,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: abs(filterresult)
         self.editexp(inexpfcndict_previnexp_filter)
     
-    def editexp(self, inexpfcndict):
+    def editexp(self, inexpfcndict, user_run_foms={}):
         selrun=self.FilterRunComboBox.currentIndex()
         datause=str(self.RunTypeLineEdit.text()).strip()
         dus=set([datause])
@@ -382,7 +413,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             le.setText(newdflt)
         self.expparamsdict_le_dflt['description'][1]=newdflt
         
-        self.updateexp(datause)
+        self.updateexp(datause, user_run_foms=user_run_foms)
         
         numfiles=len(expfilelist)
         delnumfiles=numfiles-prevnumfiles
@@ -478,7 +509,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     echeparamactiondict[kv]['changefcn'](item, v, ans)
         item.setText(column,''.join([k, ans]))
 
-    def updateexp(self, datause):
+    def updateexp(self, datause, user_run_foms={}):
         #make expdlist_use a copy of rcpdlist but update each rcptuplist so that the files sections contain on "in exp" files
         #[tup for tup in rcpd['rcptuplist'] if not tup[0].startswith('files_technique__')], \
         
@@ -487,7 +518,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             rcptuplist=\
             self.RunTreeWidgetFcns.createtuplist_item(self.RunTreeWidget.topLevelItem(count), filesbool=False)[1], \
             filenamedlist=\
-            [fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']]\
+            [fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']], \
+            user_run_foms=user_run_foms, \
             ) for count, rcpd in enumerate(self.rcpdlist) \
             if len([fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']])>0]
 
@@ -642,6 +674,8 @@ class treeclass_dlist():
                 for lab in runparams:
                     item=QTreeWidgetItem([lab],  1000)
                     mainitem.addChild(item)
+                if 'user_run_foms' in d.keys() and len(d['user_run_foms'])>0:
+                    self.nestedfill([('user_run_foms:', [(': '.join(kv), []) for kv in d['user_run_foms'].iteritems()])], mainitem)
                 self.nestedfill([('parameters:', [tup for tup in d[self.knf] if not tup[0].startswith('files_technique__')])], mainitem)
                 self.nestedfill([tup for tup in d[self.knf] if tup[0].startswith('files_technique__')], mainitem)
                 mainitem.setExpanded(False)

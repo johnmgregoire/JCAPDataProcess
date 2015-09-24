@@ -34,6 +34,8 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
             ]
     filedlist=[dict(d, keyinds=d['reqkeyinds']+[k for k in d['optkeyinds'] if not k is None]) for d in filedlist]
 
+    filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
+    
     return num_files_considered, filedlist
 
 
@@ -92,8 +94,30 @@ class Analysis_Master_nointer():
 #        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
         dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
         return dataarr
+    
+    def genuserfomdlist(self, anauserfomd, appendtofomdlist=True):
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
+        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) for d in filedlist]
+        #if anything is str, then all will be str
+        strkeys=set([k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)])
+        floatkeys=list(set([k for d in userfomdlist for k in d.keys()]).difference(strkeys))
+        strkeys=list(strkeys)
+        
+        #fill i missing values withappropriate defaults. would also filter any unnecesary keys but there aren't and it wouldn't be necessary anyway
+        userfomdlist=[dict([(k, str(d[k]) if k in d.keys() else '') for k in strkeys]+[(k, float(d[k]) if k in d.keys() else numpy.nan) for k in floatkeys]) for d in userfomdlist]
+
+        
+        
+        anauserfomd=dict([(k, v) for k, v in anauserfomd.iteritems() if not k in self.fomnames])
+        strkeys+=[k for k, v in anauserfomd.iteritems() if isinstance(v, str)]
+        floatkeys+=[k for k, v in anauserfomd.iteritems() if not isinstance(v, str)]
+        
+        userfomdlist=[dict(d, **anauserfomd) for d in userfomdlist]
+        
+        if appendtofomdlist:
+            self.fomdlist=[dict(d, **userd) for d, userd in zip(self.fomdlist, userfomdlist)]#adds user foms to fomdlist dicts but the corresponding keys are NOT in self.fomnames
+        return strkeys, floatkeys, userfomdlist
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
         self.initfiledicts()
         self.fomdlist=[]
         for filed in self.filedlist:
@@ -110,17 +134,22 @@ class Analysis_Master_nointer():
 #                continue
             self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr, filed), sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
-        self.writefom(destfolder, anak)
-    def writefom(self, destfolder, anak):
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
+    def writefom(self, destfolder, anak, anauserfomd={}):
+        
+        strkeys, floatkeys, userfomdlist=self.genuserfomdlist(anauserfomd)
+        
         fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
-        self.csvfilstr=createcsvfilstr(self.fomdlist, self.fomnames, intfomkeys=['runint','plate_id'])#, fn=fnf)
+        self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys+self.fomnames, intfomkeys=['runint','plate_id'], strfomkeys=strkeys)#, fn=fnf)
         if destfolder is None:
             return
-
+        
+        allfomnames=['sample_no', 'runint', 'plate_id']+strkeys+floatkeys+self.fomnames#this is the order in createcsvfilstr and doesn't allow int userfoms
+        
         p=os.path.join(destfolder,fnf)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
-        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.fomnames), totnumheadlines, len(self.fomdlist))
+        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):

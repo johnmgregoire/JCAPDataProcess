@@ -1,4 +1,4 @@
-import time
+import time, string
 import os, os.path, shutil
 import sys
 import numpy
@@ -100,6 +100,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
         
+        QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
+
 
         QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
         self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)
@@ -132,9 +134,40 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.tempanafolder=''
         self.expzipclass=None
         self.clearanalysis()
+        self.updateuserfomd(clear=True)
+        
+    
+    def updateuserfomd(self, clear=False):
+        if clear:
+            self.userfomd={}
+            self.UserFOMLineEdit.setText('')
+            self.text_UserFOMLineEdit=''
+            return
+            
+        s=str(self.UserFOMLineEdit.text())
+        if self.text_UserFOMLineEdit==s:#"duplicate" signals being emitted so ignore them 
+            return
+        self.text_UserFOMLineEdit=s
+
+        vals=s.split(',')
+        keys=['user_ana_fom__%d' %i for i, v in enumerate(vals)]
+        ans=[]
+        count=0
+        while ans!=keys:
+            inputs=[('key for %s' %v, str, k) for k, v in zip(keys, vals)]
+            ans=userinputcaller(self, inputs=inputs, title='Enter user FOM keys',  cancelallowed=True)
+            if ans is None:
+                return
+            keys=[filterchars(k) for k in ans]
+
+            count+=1
+        vals=[attemptnumericconversion(v.strip()) for v in vals]
+        self.userfomd=dict([(k, v) for k, v in zip(keys, vals)])
+
 
     def edittreeitem(self, item, column):
         self.editparams(self.AnaTreeWidget, item=item, column=column)
+        
     def editparams(self, widget, item=None, column=0):
         if item is None:
             item=widget.currentItem()
@@ -166,8 +199,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         item.setText(column,''.join([k, ans]))
         kl=[k.partition(':')[0].strip()]
         while not item.parent() is None:
-            kl=[str(item.text(0)).partition(':')[0].strip()]+kl
             item=item.parent()
+            kl=[str(item.text(0)).partition(':')[0].strip()]+kl
+
         d=self.anadict
         while len(kl)>1:
             d=d[kl.pop(0)]
@@ -328,7 +362,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
         #self.activeana=None
-    
+        
+        le, dflt=self.paramsdict_le_dflt['description']
+        s=str(le.text()).strip()
+        if ';' in s:
+            s=s.partition(';')[0]
+            newdflt=';'.join([s, self.analysisclass.description])
+        else:
+            newdflt=self.analysisclass.description
+        le.setText(newdflt)
+        self.paramsdict_le_dflt['description'][1]=newdflt
+        
     def clearexp(self):
         self.ExpRunUseComboBox.clear()
         self.RunSelectTreeWidget.clear()
@@ -389,6 +433,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
+            self.getactiveanalysisclass()#this is only to update the description if necessary
     def analyzedata(self):
         if self.analysisclass is None:
             return
@@ -409,7 +454,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         anak=kfcn(i)
         #try:
         if 1:
-            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass)
+            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, anauserfomd=self.userfomd)
 #        except:
 #            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
 #            if not idialog.exec_():
@@ -423,24 +468,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 removefiles(self.tempanafolder, [k for d in \
                    ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
                 return
-                
+        
+        self.updateuserfomd(clear=True)
         self.anadict[anak]={}
         self.activeana=self.anadict[anak]
         
         self.activeana['name']=self.analysisclass.analysis_name
         self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
-        self.activeana['description']=self.analysisclass.description
-        self.activeana['plot_parameters']=self.analysisclass.plotparams
-        le, dflt=self.paramsdict_le_dflt['description']
-        s=str(le.text()).strip()
-        if len(s)==0 or 'null' in s:
-            newdflt=self.activeana['description']
-        else:
-            newdflt=','.join([s, self.activeana['description']])
-        if s==dflt:            
-            le.setText(newdflt)
-        self.paramsdict_le_dflt['description'][1]=newdflt
         
+        self.activeana['plot_parameters']=self.analysisclass.plotparams
+        le, desc=self.paramsdict_le_dflt['description']
+        s=str(le.text()).strip()
+        if not (len(s)==0 or 'null' in s):
+            desc=s
+        self.activeana['description']=desc
+        le.setText('')#clear description to clear any user-entered comment
         if len(self.analysisclass.params)>0:
             self.activeana['parameters']={}
         for k, v in self.analysisclass.params.iteritems():

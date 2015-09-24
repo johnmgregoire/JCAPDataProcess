@@ -1,4 +1,4 @@
-import numpy, pickle, shutil
+import numpy, pickle, shutil, string
 from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as colors
 from fcns_math import *
@@ -18,6 +18,10 @@ ExpTickLabels=FuncFormatter(myexpformat)
 are_paths_equivalent=lambda path1, path2:os.path.normcase(os.path.abspath(path1))==os.path.normcase(os.path.abspath(path2))
 
 
+def filterchars(s, valid_chars = "-_.%s%s" % (string.ascii_letters, string.digits)):
+    return ''.join([c for c in s if c in valid_chars])
+        
+        
 def attemptnumericconversion(s, fcn=float):
     try:
         return fcn(s)
@@ -220,14 +224,17 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
     z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
     return numpy.array(z).T
 
-def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None):
+def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
     d={}
     arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
     for k, a in zip(fileattrd['keys'], arr):
         if '.' in a[0] or 'NaN' in a:
             d[k]=numpy.float32(a)
-        else:
+        elif a[0].isdigit():
             d[k]=numpy.int32(a)
+        elif includestrvals:
+            d[k]=a#a string array that is onlcude included if "requested" via includestrvals
+            
     if not returnheaderdict:
         return d
     with open(p, mode='r') as f:

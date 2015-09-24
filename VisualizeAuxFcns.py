@@ -65,11 +65,14 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                         continue
                     p=os.path.join(anafolder, filek)
                     fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True, zipclass=anazipclass)
-                    fomdlist=[dict([(k, fomd[k][count]) for k in filed['keys']]+[('anaint', anaint)]) for count in range(len(fomd[filed['keys'][0]]))]
+                    if len(fomd)==0:#csv was only str values that were not read
+                        continue
+                    keys=fomd.keys()#this is different from filed['keys'] if there are str vlaues in csv
+                    fomdlist=[dict([(k, fomd[k][count]) for k in keys]+[('anaint', anaint)]) for count in range(len(fomd[keys[0]]))]
                     l_fomdlist+=[fomdlist]
-                    l_fomnames+=[filed['keys']+['anaint']]
+                    l_fomnames+=[keys+['anaint']]
                     l_csvheaderdict+=[csvheaderdict]
-                    treefcns.appendFom(filed['keys'], csvheaderdict, anak=anak, anad=anad)
+                    treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
 
 class legendformatwidget(QDialog):
     def __init__(self, parent=None, title='', arr=None):
