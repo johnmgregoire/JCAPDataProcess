@@ -196,7 +196,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>220</y>
+     <y>270</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -206,7 +206,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>250</y>
+     <y>300</y>
      <width>81</width>
      <height>21</height>
     </rect>
@@ -624,7 +624,7 @@ No(s):</string>
   <widget class="QComboBox" name="rightyplotchoiceComboBox">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>200</x>
      <y>390</y>
      <width>111</width>
      <height>22</height>
@@ -637,7 +637,7 @@ No(s):</string>
   <widget class="QLabel" name="label_13">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>200</x>
      <y>370</y>
      <width>111</width>
      <height>21</height>
@@ -650,8 +650,8 @@ No(s):</string>
   <widget class="QComboBox" name="yplotchoiceComboBox">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>350</y>
+     <x>80</x>
+     <y>390</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -663,8 +663,8 @@ No(s):</string>
   <widget class="QLabel" name="label_14">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>330</y>
+     <x>80</x>
+     <y>370</y>
      <width>111</width>
      <height>21</height>
     </rect>
@@ -676,8 +676,8 @@ No(s):</string>
   <widget class="QComboBox" name="xplotchoiceComboBox">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>310</y>
+     <x>80</x>
+     <y>350</y>
      <width>111</width>
      <height>22</height>
     </rect>
@@ -689,8 +689,8 @@ No(s):</string>
   <widget class="QLabel" name="label_15">
    <property name="geometry">
     <rect>
-     <x>130</x>
-     <y>290</y>
+     <x>80</x>
+     <y>330</y>
      <width>111</width>
      <height>21</height>
     </rect>
@@ -704,7 +704,7 @@ No(s):</string>
     <rect>
      <x>10</x>
      <y>380</y>
-     <width>101</width>
+     <width>61</width>
      <height>31</height>
     </rect>
    </property>
@@ -716,8 +716,8 @@ x-y legend</string>
   <widget class="QCheckBox" name="overlayselectCheckBox">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>310</y>
+     <x>210</x>
+     <y>340</y>
      <width>81</width>
      <height>17</height>
     </rect>
@@ -729,9 +729,9 @@ x-y legend</string>
   <widget class="QTreeWidget" name="SelectTreeWidget">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>370</x>
      <y>10</y>
-     <width>271</width>
+     <width>201</width>
      <height>171</height>
     </rect>
    </property>
@@ -765,10 +765,10 @@ x-y legend</string>
   <widget class="QTextBrowser" name="fomstatsTextBrowser">
    <property name="geometry">
     <rect>
-     <x>510</x>
-     <y>10</y>
-     <width>181</width>
-     <height>171</height>
+     <x>120</x>
+     <y>190</y>
+     <width>191</width>
+     <height>141</height>
     </rect>
    </property>
    <property name="font">
@@ -780,10 +780,10 @@ x-y legend</string>
   <widget class="QTextBrowser" name="textBrowser_fomhist">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>320</x>
      <y>190</y>
-     <width>401</width>
-     <height>201</height>
+     <width>371</width>
+     <height>221</height>
     </rect>
    </property>
   </widget>
@@ -803,7 +803,7 @@ x-y legend</string>
   <widget class="QPushButton" name="UpdateFiltersPushButton">
    <property name="geometry">
     <rect>
-     <x>400</x>
+     <x>580</x>
      <y>10</y>
      <width>101</width>
      <height>23</height>
@@ -816,7 +816,7 @@ x-y legend</string>
   <widget class="QCheckBox" name="compPlotMarkSelectionsCheckBox">
    <property name="geometry">
     <rect>
-     <x>400</x>
+     <x>580</x>
      <y>70</y>
      <width>101</width>
      <height>31</height>
@@ -830,7 +830,7 @@ on Comp.plots</string>
   <widget class="QPushButton" name="UpdatePlotPushButton">
    <property name="geometry">
     <rect>
-     <x>400</x>
+     <x>580</x>
      <y>40</y>
      <width>101</width>
      <height>23</height>
@@ -844,7 +844,7 @@ on Comp.plots</string>
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>190</y>
+     <y>240</y>
      <width>111</width>
      <height>21</height>
     </rect>
@@ -856,10 +856,10 @@ on Comp.plots</string>
   <widget class="Line" name="line_3">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>290</y>
+     <x>300</x>
+     <y>330</y>
      <width>20</width>
-     <height>121</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="orientation">
@@ -871,7 +871,7 @@ on Comp.plots</string>
     <rect>
      <x>10</x>
      <y>340</y>
-     <width>101</width>
+     <width>61</width>
      <height>31</height>
     </rect>
    </property>
@@ -883,10 +883,10 @@ x-y style</string>
   <widget class="Line" name="line_5">
    <property name="geometry">
     <rect>
-     <x>500</x>
+     <x>680</x>
      <y>10</y>
      <width>20</width>
-     <height>101</height>
+     <height>171</height>
     </rect>
    </property>
    <property name="orientation">
@@ -896,10 +896,10 @@ x-y style</string>
   <widget class="Line" name="line">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>280</y>
-     <width>261</width>
-     <height>16</height>
+     <x>10</x>
+     <y>321</y>
+     <width>291</width>
+     <height>20</height>
     </rect>
    </property>
    <property name="orientation">
@@ -917,6 +917,51 @@ x-y style</string>
    </property>
    <property name="text">
     <string>Save figs to ANA</string>
+   </property>
+  </widget>
+  <widget class="QTextBrowser" name="SummaryTextBrowser">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>10</y>
+     <width>241</width>
+     <height>171</height>
+    </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="lineWrapMode">
+    <enum>QTextEdit::NoWrap</enum>
+   </property>
+  </widget>
+  <widget class="Line" name="line_4">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>10</y>
+     <width>20</width>
+     <height>311</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+  </widget>
+  <widget class="Line" name="line_2">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>230</y>
+     <width>121</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
    </property>
   </widget>
  </widget>

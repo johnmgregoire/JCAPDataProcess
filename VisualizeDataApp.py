@@ -28,7 +28,6 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 from CalcFOMApp import AnalysisClasses
 
 
-
 class visdataDialog(QDialog, Ui_VisDataDialog):
     def __init__(self, parent=None, title='', folderpath=None):
         super(visdataDialog, self).__init__(parent)
@@ -37,7 +36,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.parent=parent
         
         #self.SelectTreeView.setModel(CheckableDirModel(self))
-        self.AnaExpFomTreeWidgetFcns=treeclass_anaexpfom(self.AnaExpFomTreeWidget)
+        self.AnaExpFomTreeWidgetFcns=treeclass_anaexpfom(self.AnaExpFomTreeWidget, self.SummaryTextBrowser)
         self.OnFlyStoreInterCheckBox.setEnabled(False)
         button_fcn=[\
         (self.AnaPushButton, self.importana), \
@@ -136,6 +135,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if self.anazipclass:
                 self.anazipclass.close()
             self.anazipclass=anazipclass#when run from CalcFOMApp the .ana can't be in a .zip so make this the default anazipclass=None 
+        summlines=sorted(['-'.join([anak, anad['description'] if 'description' in anad.keys() else '']) for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')])
+        self.SummaryTextBrowser.setText('\n'.join(summlines))
         self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
         
         self.l_fomdlist=[]
@@ -224,12 +225,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.clearfomplotd()
         self.clearvisuals()
         
-        if not fromana:
+        if fromana:
+            summlines=[str(self.SummaryTextBrowser.toPlainText())]
+        else:
+            summlines=[]
             self.updatefomdlist_plateruncode(createnewfromexp=True)
             self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
             self.setupfilterchoices()
             self.updatefomplotchoices()
             self.fillxyoptions(clear=True)
+        
+        summlines+=sorted(['-'.join([runk, rund['description'] if 'description' in rund.keys() else '']) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+        self.SummaryTextBrowser.setText('\n'.join(summlines))
+        
         
         
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip

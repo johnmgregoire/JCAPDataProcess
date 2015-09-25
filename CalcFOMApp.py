@@ -207,10 +207,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
         
-    def importexp(self, expfiledict=None, exppath=None, expzipclass=None):#TODO support import from .zip on J, expath here is the file not the folder
+    def importexp(self, expfiledict=None, exppath=None, expzipclass=None):
         if expfiledict is None:
-            #TODO: define default path
-            #exppath='exp/sampleexp_uvis.dat'
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(exppath)==0:
                 return
@@ -270,7 +268,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.runselectionaction=False
         self.usek=str(self.ExpRunUseComboBox.currentText())
         runklist=[runk for runk, usek in self.runk_use if usek==self.usek]
-        d=dict([(runk, dict([(k, v) for k, v in self.expfiledict[runk].iteritems() if not k.startswith('platemap')])) for runk in runklist])
+        d=dict([('-'.join([runk, self.expfiledict[runk]['description'] if 'description' in self.expfiledict[runk].keys() else '']), dict([(k, v) for k, v in self.expfiledict[runk].iteritems() if not k.startswith('platemap')])) for runk in runklist])
         self.runtreeclass.filltree(d, startkey='')
         self.runtreeclass.maketoplevelchecked()
         self.filltechtyperadiobuttons()
@@ -290,11 +288,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             button.setToolTip('')
             button.setVisible(False)
         self.selectrunklist=self.runtreeclass.getlistofchecktoplevelitems()
-        #self.selectrunklist=[s for s in self.selectrunklist if len(s)>0]
+        self.selectrunklist=[s.partition('-')[0] for s in self.selectrunklist if len(s.partition('-')[0])>0]
         runk_techk=[(runk, techk)
-        for runk in self.selectrunklist \
-        for techk in self.expfiledict[runk].keys() \
-        if techk.startswith('files_technique__')]
+           for runk in self.selectrunklist \
+           for techk in self.expfiledict[runk].keys() \
+              if techk.startswith('files_technique__')]
         
         self.techk_typek=list(set([(techk.partition('files_technique__')[2], typek) \
         for runk, techk in runk_techk \
@@ -364,10 +362,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         #self.activeana=None
         
         le, dflt=self.paramsdict_le_dflt['description']
-        s=str(le.text()).strip()
+        s=filterchars(str(le.text()), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
         if ';' in s:
             s=s.partition(';')[0]
-            newdflt=';'.join([s, self.analysisclass.description])
+            newdflt='; '.join([s, self.analysisclass.description])
         else:
             newdflt=self.analysisclass.description
         le.setText(newdflt)
@@ -481,6 +479,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         s=str(le.text()).strip()
         if not (len(s)==0 or 'null' in s):
             desc=s
+        desc+='; run '+','.join('%d' %i for i in sorted(list(set([d['runint'] for d in self.analysisclass.fomdlist]))))
+        desc+='; plate_id '+','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
         self.activeana['description']=desc
         le.setText('')#clear description to clear any user-entered comment
         if len(self.analysisclass.params)>0:

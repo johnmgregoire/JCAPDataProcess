@@ -97,7 +97,7 @@ class Analysis_Master_nointer():
     
     def genuserfomdlist(self, anauserfomd, appendtofomdlist=True):
         
-        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) for d in filedlist]
+        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) for d in self.filedlist]
         #if anything is str, then all will be str
         strkeys=set([k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)])
         floatkeys=list(set([k for d in userfomdlist for k in d.keys()]).difference(strkeys))
@@ -116,7 +116,7 @@ class Analysis_Master_nointer():
         
         if appendtofomdlist:
             self.fomdlist=[dict(d, **userd) for d, userd in zip(self.fomdlist, userfomdlist)]#adds user foms to fomdlist dicts but the corresponding keys are NOT in self.fomnames
-        return strkeys, floatkeys, userfomdlist
+        return sorted(strkeys), sorted(floatkeys), userfomdlist
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
         self.initfiledicts()
         self.fomdlist=[]

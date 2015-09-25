@@ -356,7 +356,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         inexpfcndict_previnexp_filter[0]=lambda filterresult: (filterresult==1) and set.union or set.difference
         inexpfcndict_previnexp_filter[1]=lambda filterresult: set.union
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: 1
-        rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_. ()%s%s" % (string.ascii_letters, string.digits))
+        rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
         self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd, rundesc=rundesc)
         self.updateuserfomd(clear=True)
         self.RunDescLineEdit.setText('')
@@ -403,7 +403,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         le, dflt=self.expparamsdict_le_dflt['description']
         s=str(le.text()).strip()
-        s=filterchars(s, valid_chars = "-_. ()%s%s" % (string.ascii_letters, string.digits))
+        s=filterchars(s, valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
         if s==dflt or len(s)==0:
             le.setText(newdflt)
         self.expparamsdict_le_dflt['description'][1]=newdflt
@@ -525,6 +525,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             tuplistinds_inexp=[fd['tuplistinds'] for fd in rcpd['filenamedlist'] if datause in fd['inexp']]
             i0vals=sorted(list(set([i0 for i0, i1, i2 in tuplistinds_inexp])))
             filetuplist=[]
+            filecount=0
+            techlist=[]
             for i0v in i0vals:
                 k0, l0=rcpd['rcptuplist'][i0v]
                 i1vals=sorted(list(set([i1 for i0, i1, i2 in tuplistinds_inexp if i0==i0v])))
@@ -534,10 +536,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     l1n=[tup for i2v, tup in enumerate(l1) if (i0v, i1v, i2v) in tuplistinds_inexp]
                     if len(l1n)>0:
                         l0n+=[(k1, l1n)]
+                        filecount+=len(l1n)
                 if len(l0n)>0:
                     filetuplist+=[(k0, l0n)]
+                    techlist+=[k0.partition('__')[2].strip().strip(':')]
             expd['rcptuplist']+=filetuplist
-        
+            expd['rundesc']='; '.join([s for s in [expd['rundesc'], '%d files' %filecount, ','.join(techlist), 'plate_id '+rcpd['plateidstr'], datause] if len(s)>0])
+
 #        #create master list of filename dicts for use in FOm anlaysis
 #        self.expfilenamedlist=[dict(fd,runtype=expd['runtype'], runpath=expd['run_path'])  for expd in self.expdlist_use for fd in expd['filenamedlist']]
         

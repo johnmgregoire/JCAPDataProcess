@@ -52,9 +52,9 @@ def extractplotdinfo(fomd, fomname, expfiledict, fomdlist_index0, fomdlist_index
     return returnlist
 
 def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, treefcns, anazipclass=None):
-    for anak, anad in anafiledict.iteritems():
-        if not anak.startswith('ana__'):
-            continue
+    anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
+    for anak in anakl:
+        anad=anafiledict[anak]
         anaint=int(anak.partition('ana__')[2])
         for anarunk, anarund in anad.iteritems():
             if not anarunk.startswith('files_'):
@@ -145,8 +145,9 @@ class legendformatwidget(QDialog):
         
         
 class treeclass_anaexpfom():
-    def __init__(self, tree):
+    def __init__(self, tree, summarybrowser):
         self.treeWidget=tree
+        self.summarybrowser=summarybrowser
         
     def initfilltree(self, expfiledict, anafiledict):
         self.treeWidget.clear()
@@ -187,7 +188,8 @@ class treeclass_anaexpfom():
         i=self.fomwidgetItem.childCount()
         if uncheckprevious:
             self.uncheckfoms()
-        mainitem=QTreeWidgetItem(['%d' %i], 0)
+        fomlabel='%d' %i
+        mainitem=QTreeWidgetItem([fomlabel], 0)
         mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
         mainitem.setCheckState(0, Qt.Checked)
         
@@ -205,6 +207,10 @@ class treeclass_anaexpfom():
             mainitem.addChild(item)
         
         self.fomwidgetItem.addChild(mainitem)
+        
+        summlines=[str(self.summarybrowser.toPlainText())]
+        summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
+        self.summarybrowser.setText('\n'.join(summlines))
         
     def filltree(self, d, toplevelitem, startkey='ana_version', laststartswith='ana__', expparent=False):
         self.treeWidget.clear()
