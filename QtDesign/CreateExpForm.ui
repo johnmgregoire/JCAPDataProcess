@@ -425,8 +425,8 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QLineEdit" name="RunTypeLineEdit">
    <property name="geometry">
     <rect>
-     <x>750</x>
-     <y>10</y>
+     <x>560</x>
+     <y>120</y>
      <width>91</width>
      <height>20</height>
     </rect>
@@ -441,9 +441,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QLabel" name="label_13">
    <property name="geometry">
     <rect>
-     <x>680</x>
-     <y>10</y>
-     <width>61</width>
+     <x>510</x>
+     <y>120</y>
+     <width>51</width>
      <height>16</height>
     </rect>
    </property>
@@ -466,142 +466,6 @@ If the same filename appears in multiple runs, this sets the priorty for which i
    <property name="text">
     <string>Remove all RUNs</string>
    </property>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget_2">
-   <property name="geometry">
-    <rect>
-     <x>510</x>
-     <y>120</y>
-     <width>164</width>
-     <height>156</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <item>
-     <widget class="QLabel" name="label_10">
-      <property name="text">
-       <string>Choose file types to include:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_0">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_1">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_2">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_3">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_4">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="FiletypeCheckBox_5">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="verticalLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>680</x>
-     <y>101</y>
-     <width>173</width>
-     <height>171</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
-    <item>
-     <widget class="QLabel" name="label_14">
-      <property name="text">
-       <string>Choose techniques to include:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_0">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_1">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_2">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_3">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_4">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_5">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_6">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="TechCheckBox_7">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-   </layout>
   </widget>
   <widget class="QLineEdit" name="LastActionLineEdit">
    <property name="geometry">
@@ -998,9 +862,9 @@ on RUN import</string>
   <widget class="QLineEdit" name="UserFOMLineEdit">
    <property name="geometry">
     <rect>
-     <x>680</x>
-     <y>60</y>
-     <width>171</width>
+     <x>510</x>
+     <y>220</y>
+     <width>151</width>
      <height>20</height>
     </rect>
    </property>
@@ -1013,14 +877,91 @@ After entry complete, you will be prompted for fom names</string>
   <widget class="QLabel" name="label_21">
    <property name="geometry">
     <rect>
-     <x>680</x>
-     <y>40</y>
-     <width>161</width>
+     <x>510</x>
+     <y>200</y>
+     <width>141</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
     <string>User-defined FOMs</string>
+   </property>
+  </widget>
+  <widget class="QTreeWidget" name="TechTypeTreeWidget">
+   <property name="geometry">
+    <rect>
+     <x>680</x>
+     <y>30</y>
+     <width>171</width>
+     <height>251</height>
+    </rect>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAsNeeded</enum>
+   </property>
+   <property name="headerHidden">
+    <bool>true</bool>
+   </property>
+   <property name="expandsOnDoubleClick">
+    <bool>false</bool>
+   </property>
+   <attribute name="headerVisible">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerCascadingSectionResizes">
+    <bool>false</bool>
+   </attribute>
+   <attribute name="headerStretchLastSection">
+    <bool>true</bool>
+   </attribute>
+   <column>
+    <property name="text">
+     <string notr="true">1</string>
+    </property>
+   </column>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>680</x>
+     <y>10</y>
+     <width>171</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select tech+type to add/keep:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_22">
+   <property name="geometry">
+    <rect>
+     <x>510</x>
+     <y>150</y>
+     <width>161</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Run(s) description for next &quot;add&quot;:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="RunDescLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>510</x>
+     <y>170</y>
+     <width>151</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>enter comma-delimited list of string or
+number FOMS that will become a constant column in the .csv generated by &quot;Analyze Data&quot;.
+After entry complete, you will be prompted for fom names</string>
    </property>
   </widget>
  </widget>

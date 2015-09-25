@@ -98,8 +98,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.BatchComboBox.insertItem(i, l)
         #These are the filter criteria controls
         
-        self.TechCheckBoxList=[self.TechCheckBox_0, self.TechCheckBox_1, self.TechCheckBox_2, self.TechCheckBox_3, self.TechCheckBox_4, self.TechCheckBox_5, self.TechCheckBox_6, self.TechCheckBox_7]
-        self.FiletypeCheckBoxList=[self.FiletypeCheckBox_0, self.FiletypeCheckBox_1, self.FiletypeCheckBox_2, self.FiletypeCheckBox_3, self.FiletypeCheckBox_4, self.FiletypeCheckBox_5]
+        self.techtypetreefcns=treeclass_techtype(self.TechTypeTreeWidget)
         
         self.platemapEqualLessMore_combobox_spinbox=[\
         (self.PlateAttrEqualComboBox, self.PlateAttrEqualSpinBox), \
@@ -174,19 +173,16 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         self.FileStartLineEdit.setText('')
     def batchechedark(self):
-        chbl=self.FiletypeCheckBoxList
-        
-        for chb in chbl:
-            chb.setChecked(str(chb.text()).startswith('spectrum'))
-            
+
+        self.techtypetreefcns.checkbysearchstr('spectrum', self.techtypetreefcns.typewidgetItem)
+
         self.RunTypeLineEdit.setText('ref_dark')
         self.FileSearchLineEdit.setText('_DARK')
         self.editexp_addmeasurement()
         
         self.RunTypeLineEdit.setText('data')
         self.FileSearchLineEdit.setText('')
-        for chb in chbl:
-            chb.setChecked(len(str(chb.text()))>0)
+        self.techtypetreefcns.checkbysearchstr('', self.techtypetreefcns.typewidgetItem)
     
     def clearexp(self):
         for rcpd in self.rcpdlist:
@@ -201,10 +197,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.techlist=[]
         self.typelist=[]
         self.rcpdlist=[]
-        for cbl in [self.TechCheckBoxList, self.FiletypeCheckBoxList]:
-            for cb in cbl:
-                cb.setText('')
-                cb.setToolTip('')
+        
+        self.techtypetreefcns.cleartree()
         self.RunTreeWidget.clear()
     
     #def undoexpfile(self):
@@ -301,22 +295,21 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 le.setText(dfltstr)
         
         self.updaterunlist()
-        
+
+
     def updaterunlist(self):
         self.RunTreeWidgetFcns.filltree(self.rcpdlist)
         #fill technique and file type check boxes
-        for ind, (k, tl, cbl) in enumerate([('tech', self.techlist, self.TechCheckBoxList), ('type', self.typelist, self.FiletypeCheckBoxList)]):
-
-            for t, cb in zip(tl, cbl):
+        
+        self.techtypetreefcns.cleartree()
+        for ind, (k, tl, treeitem) in enumerate([('tech', self.techlist, self.techtypetreefcns.techwidgetItem), ('type', self.typelist, self.techtypetreefcns.typewidgetItem)]):
+            k_comments_tuplist=[]
+            for t in tl:
                 smps=[fd['smp'] for d in self.rcpdlist for fd in d['filenamedlist'] if fd[k]==t]
-                cb.setText(t+('(%d)' %len(smps)))
-                cb.setToolTip('Samples in [%d,%d]' %(min(smps), max(smps)))
-                cb.setChecked(True)
-            if len(tl)<len(cbl):
-                for cb in cbl[len(tl):]:
-                    cb.setText('')
-                    cb.setToolTip('')
-                    cb.setChecked(False)
+                k_comments_tuplist+=[(t, ['%d files' %len(smps),'Samples in [%d,%d]' %(min(smps), max(smps)), ])]
+
+            self.techtypetreefcns.fillmainitem(k_comments_tuplist, treeitem)
+            
         #fill run select comboboxs
         self.FilterRunComboBox.clear()
         self.FilterRunComboBox.insertItem(0, 'All RUNs')
@@ -363,9 +356,10 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         inexpfcndict_previnexp_filter[0]=lambda filterresult: (filterresult==1) and set.union or set.difference
         inexpfcndict_previnexp_filter[1]=lambda filterresult: set.union
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: 1
-        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd)
+        rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_. ()%s%s" % (string.ascii_letters, string.digits))
+        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd, rundesc=rundesc)
         self.updateuserfomd(clear=True)
-        
+        self.RunDescLineEdit.setText('')
     #filter:               N/A fail pass
     # previous no ->  no     no    no
     # previous yes->  yes   no   yes
@@ -376,7 +370,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: abs(filterresult)
         self.editexp(inexpfcndict_previnexp_filter)
     
-    def editexp(self, inexpfcndict, user_run_foms={}):
+    def editexp(self, inexpfcndict, user_run_foms={}, rundesc=''):
         selrun=self.FilterRunComboBox.currentIndex()
         datause=str(self.RunTypeLineEdit.text()).strip()
         dus=set([datause])
@@ -409,11 +403,12 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         le, dflt=self.expparamsdict_le_dflt['description']
         s=str(le.text()).strip()
+        s=filterchars(s, valid_chars = "-_. ()%s%s" % (string.ascii_letters, string.digits))
         if s==dflt or len(s)==0:
             le.setText(newdflt)
         self.expparamsdict_le_dflt['description'][1]=newdflt
         
-        self.updateexp(datause, user_run_foms=user_run_foms)
+        self.updateexp(datause, user_run_foms=user_run_foms, rundesc=rundesc)
         
         numfiles=len(expfilelist)
         delnumfiles=numfiles-prevnumfiles
@@ -426,11 +421,11 @@ class expDialog(QDialog, Ui_CreateExpDialog):
 
     
     def createFilterEvalFcn(self, rcpd):
-        strlist_cbl=lambda cbl:[str(cb.text()).partition('(')[0].strip() for cb in cbl if cb.isChecked()]
-        techlist=strlist_cbl(self.TechCheckBoxList)
+
+        techlist=self.techtypetreefcns.strlist_checked(self.techtypetreefcns.techwidgetItem)
         techfcn=lambda fd:fd['tech'] in techlist
         
-        typelist=strlist_cbl(self.FiletypeCheckBoxList)
+        typelist=self.techtypetreefcns.strlist_checked(self.techtypetreefcns.typewidgetItem)
         typefcn=lambda fd:fd['type'] in typelist
         
         filesearchfcn=self.createFileSearchfilterfcn()
@@ -509,7 +504,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     echeparamactiondict[kv]['changefcn'](item, v, ans)
         item.setText(column,''.join([k, ans]))
 
-    def updateexp(self, datause, user_run_foms={}):
+    def updateexp(self, datause, user_run_foms={}, rundesc=''):
         #make expdlist_use a copy of rcpdlist but update each rcptuplist so that the files sections contain on "in exp" files
         #[tup for tup in rcpd['rcptuplist'] if not tup[0].startswith('files_technique__')], \
         
@@ -520,6 +515,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             filenamedlist=\
             [fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']], \
             user_run_foms=user_run_foms, \
+            rundesc=rundesc, \
             ) for count, rcpd in enumerate(self.rcpdlist) \
             if len([fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']])>0]
 
@@ -614,6 +610,44 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.prevsaveexppath=exppath
         return saveexpfiledict, exppath
 
+
+
+
+class treeclass_techtype():
+    def __init__(self, tree):
+        self.treeWidget=tree
+        self.cleartree()
+    def cleartree(self):#, tech_comments_tuplist, type_comments_tuplist):
+        self.treeWidget.clear()
+        
+        self.techwidgetItem=QTreeWidgetItem(['techniques'], 0)
+        #self.fillmainitem(tech_comments_tuplist, self.techwidgetItem)
+        self.treeWidget.addTopLevelItem(self.techwidgetItem)
+        self.techwidgetItem.setExpanded(True)
+        
+        self.typewidgetItem=QTreeWidgetItem(['file types'], 0)
+        #self.fillmainitem(type_comments_tuplist, self.typewidgetItem)
+        self.treeWidget.addTopLevelItem(self.typewidgetItem)
+        self.typewidgetItem.setExpanded(True)
+        
+    def fillmainitem(self, k_comments_tuplist, mainitem):
+        for k, comments in k_comments_tuplist:
+            item=QTreeWidgetItem([k], 0)
+            item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.Checked)
+            mainitem.addChild(item)
+            for s in comments:
+                item2=QTreeWidgetItem([s], 0)
+                item.addChild(item2)
+            item.setExpanded(False)
+    
+    def checkbysearchstr(self, searchstr, mainitem):
+        for i in range(mainitem.childCount()):
+            mainitem.child(i).setCheckState(0, Qt.Checked if searchstr in str(mainitem.child(i).text(0)) else Qt.Unchecked)
+    
+    def strlist_checked(self, mainitem):
+        return [str(mainitem.child(i).text(0)) for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+
 class treeclass_dlist():
     def __init__(self, tree, key_toplevel='rcp_file', key_nestedfill='rcptuplist'):
         self.treeWidget=tree
@@ -671,6 +705,8 @@ class treeclass_dlist():
                 rp=d['run_path']
                 
                 runparams=['name: '+d['name'],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
+                if 'rundesc' in d.keys() and len(d['rundesc'])>0:
+                    runparams+=['description: '+d['rundesc']]
                 for lab in runparams:
                     item=QTreeWidgetItem([lab],  1000)
                     mainitem.addChild(item)
