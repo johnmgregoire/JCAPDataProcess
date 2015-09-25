@@ -141,7 +141,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         return fracnan>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
@@ -198,7 +198,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         
-        self.writefom(destfolder, anak)
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         
         if destfolder is None:#dont' do anything with quality items if output not being saved
             return
@@ -318,7 +318,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
         return fracnan/fracnan_abs>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]      
@@ -353,7 +353,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
                 kl=saveinterdata(p, linfitd, savetxt=False)
                 self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]), filed['sample_no'])
 
-        self.writefom(destfolder, anak)
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         if destfolder is None:
             return
         fnf='%s__%s.csv' %(anak,'qualityfoms')

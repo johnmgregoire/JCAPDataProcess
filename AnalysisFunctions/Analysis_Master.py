@@ -152,7 +152,7 @@ class Analysis_Master_nointer():
         self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.fomdlist=[]
         for filed in self.filedlist:
@@ -182,4 +182,4 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
-        self.writefom(destfolder, anak)
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)

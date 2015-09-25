@@ -80,7 +80,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist    
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         #self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
@@ -128,7 +128,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     f.write(miscfilestr)
                 self.runfiledict[filed['run']]['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
             
-        self.writefom(destfolder, anak)
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         
     def fomtuplist_rawlend_interlend(self, datadict, paramd):
         d=datadict
