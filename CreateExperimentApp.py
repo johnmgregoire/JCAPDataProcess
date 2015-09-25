@@ -92,8 +92,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         
         
-        self.batchprocesses=[self.batchuvissingleplate, self.batchechedark]
-        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark']
+        self.batchprocesses=[self.batchuvissingleplate, self.batchechedark, self.batchechewavelengths]
+        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark', 'Add eche runs by wavelength label']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
         #These are the filter criteria controls
@@ -120,11 +120,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.expfilelist=[]
         #self.TechInFilesComboBox, self.FileInFilesComboBox
         #self.FileSearchLineEdit
-    
+        self.batchmode=False
         self.updateuserfomd(clear=True)
         
     
-    def updateuserfomd(self, clear=False):
+    def updateuserfomd(self, clear=False, batchkeys=None):
+        if self.batchmode and batchkeys is None:
+            return
         if clear:
             self.userfomd={}
             self.UserFOMLineEdit.setText('')
@@ -137,17 +139,20 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.text_UserFOMLineEdit=s
 
         vals=s.split(',')
-        keys=['user_fom_ana__%d' %i for i, v in enumerate(vals)]
-        ans=[]
-        count=0
-        while ans!=keys:
-            inputs=[('key for %s' %v, str, k) for k, v in zip(keys, vals)]
-            ans=userinputcaller(self, inputs=inputs, title='Enter user FOM keys',  cancelallowed=True)
-            if ans is None:
-                return
-            keys=[filterchars(k) for k in ans]
+        if batchkeys is None:
+            keys=['user_fom_run__%d' %i for i, v in enumerate(vals)]
+            ans=[]
+            count=0
+            while ans!=keys:
+                inputs=[('key for %s' %v, str, k) for k, v in zip(keys, vals)]
+                ans=userinputcaller(self, inputs=inputs, title='Enter user FOM keys',  cancelallowed=True)
+                if ans is None:
+                    return
+                keys=[filterchars(k) for k in ans]
 
-            count+=1
+                count+=1
+        else:
+            keys=batchkeys
         vals=[v.strip() for v in vals]#no numericalconversion here
         self.userfomd=dict([(k, v) for k, v in zip(keys, vals)])
         
@@ -184,6 +189,15 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.FileSearchLineEdit.setText('')
         self.techtypetreefcns.checkbysearchstr('', self.techtypetreefcns.typewidgetItem)
     
+    def batchechewavelengths(self):
+        self.batchmode=True
+        for wl in ['385', '455', '530', '617']:
+            self.FileSearchLineEdit.setText('-'+wl)
+            self.UserFOMLineEdit.setText(wl)
+            self.updateuserfomd(batchkeys=['user_fom_led_wavelength'])
+            self.editexp_addmeasurement()
+        self.FileSearchLineEdit.setText('')
+        self.batchmode=False
     def clearexp(self):
         for rcpd in self.rcpdlist:
             rcpd['filenamedlist']=[dict(fd, previnexp=set([]), inexp=set([])) for fd in rcpd['filenamedlist']]
