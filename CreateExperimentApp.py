@@ -125,14 +125,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
     
     def updateuserfomd(self, clear=False, batchkeys=None):
-        if self.batchmode and batchkeys is None:
-            return
         if clear:
             self.userfomd={}
             self.UserFOMLineEdit.setText('')
             self.text_UserFOMLineEdit=''
             return
-            
+        if self.batchmode and batchkeys is None:
+            return    
         s=str(self.UserFOMLineEdit.text())
         if self.text_UserFOMLineEdit==s:#"duplicate" signals being emitted so ignore them 
             return
@@ -196,6 +195,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.UserFOMLineEdit.setText(wl)
             self.updateuserfomd(batchkeys=['user_fom_led_wavelength'])
             self.editexp_addmeasurement()
+            #self.updateuserfomd(clear=True)
         self.FileSearchLineEdit.setText('')
         self.batchmode=False
     def clearexp(self):
