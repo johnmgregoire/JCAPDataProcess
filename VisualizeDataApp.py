@@ -578,9 +578,21 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def plot_preparestandardplot(self, plotbool=True):
         s=str(self.stdcsvplotchoiceComboBox.currentText())
         if s=='null':
-           return
+            for mainitem in self.widgetItems_pl_ru_te_ty_co[:2]:
+                for i in range(mainitem.childCount()):
+                    mainitem.child(i).setCheckState(0, Qt.Checked)
+            return
         ind, plotk, fomname=s.split(':')
         ind=int(ind)
+        #check only the rleevant plate_id and run in top treewidget
+        dlist=self.l_fomdlist[ind]
+        platelist=set(['%s' %d['plate_id'] for d in dlist if 'plate_id' in d.keys()])
+        runlist=set(['run__%d' %d['runint'] for d in dlist if 'runint' in d.keys()])
+        for mainitem, vals in zip(self.widgetItems_pl_ru_te_ty_co[:2], [platelist, runlist]):
+            for i in range(mainitem.childCount()):
+                item=mainitem.child(i)
+                item.setCheckState(0, Qt.Checked if str(item.text(0)) in vals else Qt.Unchecked)
+        #check only the fom in bottom tree widget
         self.AnaExpFomTreeWidgetFcns.uncheckfoms()
         item=self.AnaExpFomTreeWidgetFcns.fomwidgetItem.child(ind)
         item.setCheckState(0, Qt.Checked)

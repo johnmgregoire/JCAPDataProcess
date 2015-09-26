@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Fri Sep 25 22:16:30 2015
+# Created: Fri Sep 25 23:04:24 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!

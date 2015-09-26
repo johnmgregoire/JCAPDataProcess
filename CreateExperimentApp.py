@@ -322,7 +322,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             k_comments_tuplist=[]
             for t in tl:
                 smps=[fd['smp'] for d in self.rcpdlist for fd in d['filenamedlist'] if fd[k]==t]
-                k_comments_tuplist+=[(t, ['%d files' %len(smps),'Samples in [%d,%d]' %(min(smps), max(smps)), ])]
+                k_comments_tuplist+=[(t, ['%d files' %len(smps),'Samples in\n[%d,%d]' %(min(smps), max(smps)), ])]
 
             self.techtypetreefcns.fillmainitem(k_comments_tuplist, treeitem)
             
