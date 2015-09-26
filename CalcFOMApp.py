@@ -251,7 +251,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def fillexpoptions(self):
         self.clearexp()
         
-        self.runk_use=[(k, v['run_use']) for k, v in self.expfiledict.iteritems() if k.startswith('run__')]
+        self.runk_use=[(k, v['run_use'].partition('__')[0]) for k, v in self.expfiledict.iteritems() if k.startswith('run__')]
         self.uselist=list(set(map(operator.itemgetter(1), self.runk_use)))
         if 'data' in self.uselist:
             temp=self.uselist.pop(self.uselist.index('data'))

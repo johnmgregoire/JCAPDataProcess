@@ -129,6 +129,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.userfomd={}
             self.UserFOMLineEdit.setText('')
             self.text_UserFOMLineEdit=''
+            self.RunTypeLineEdit.setText(str(self.RunTypeLineEdit.text()).partition('__')[0])
             return
         if self.batchmode and batchkeys is None:
             return    
@@ -154,7 +155,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             keys=batchkeys
         vals=[v.strip() for v in vals]#no numericalconversion here
         self.userfomd=dict([(k, v) for k, v in zip(keys, vals)])
-        
+        if len(vals)>0:
+            self.RunTypeLineEdit.setText(str(self.RunTypeLineEdit.text()).partition('__')[0]+'__'+','.join(vals))
+
     def runbatchprocess(self):
          self.batchprocesses[self.BatchComboBox.currentIndex()]()
     def batchuvissingleplate(self):
@@ -195,9 +198,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.UserFOMLineEdit.setText(wl)
             self.updateuserfomd(batchkeys=['user_fom_led_wavelength'])
             self.editexp_addmeasurement()
-            #self.updateuserfomd(clear=True)
         self.FileSearchLineEdit.setText('')
         self.batchmode=False
+        
     def clearexp(self):
         for rcpd in self.rcpdlist:
             rcpd['filenamedlist']=[dict(fd, previnexp=set([]), inexp=set([])) for fd in rcpd['filenamedlist']]
@@ -228,13 +231,12 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.typelist=list(typeset)
         
         self.processrunimport()
-        for datause in self.expdlist_use.keys():
-            self.updateexp(datause)
-        #the above update for every data use is a little overkill but at least 1 reason (compared to the direct ui update below) it is necessary is that the rcpdlistind may be out of date due to rcpdlist sorting
-#        self.ExpTreeWidgetFcns.filltreeexp(self.expdlist_use, self.expparamstuplist)
-#        self.expfiledict=self.ExpTreeWidgetFcns.createdict()
-#        self.expfilestr=self.ExpTreeWidgetFcns.createtxt()
-#        self.ExpTextBrowser.setText(self.expfilestr)
+#        for datause in self.expdlist_use.keys():
+#            self.updateexp(datause)
+#        #the above update for every data use is a little overkill but at least 1 reason (compared to the direct ui update below) it is necessary is that the rcpdlistind may be out of date due to rcpdlist sorting
+#        
+##the above re-creation of the .exp from import doesn't catch important keys so for now just import the runs
+        self.clearexp()
         
         self.LastActionLineEdit.setText('Imported EXP including %d RUNs containing %d files' \
             %(len(self.rcpdlist), numpy.array([len(d['filenamedlist']) for d in self.rcpdlist]).sum()))
@@ -370,10 +372,10 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         inexpfcndict_previnexp_filter[0]=lambda filterresult: (filterresult==1) and set.union or set.difference
         inexpfcndict_previnexp_filter[1]=lambda filterresult: set.union
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: 1
-        rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
-        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd, rundesc=rundesc)
+        #rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
+        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd)#, rundesc=rundesc)
         self.updateuserfomd(clear=True)
-        self.RunDescLineEdit.setText('')
+        #self.RunDescLineEdit.setText('')
     #filter:               N/A fail pass
     # previous no ->  no     no    no
     # previous yes->  yes   no   yes
@@ -384,7 +386,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: abs(filterresult)
         self.editexp(inexpfcndict_previnexp_filter)
     
-    def editexp(self, inexpfcndict, user_run_foms={}, rundesc=''):
+    def editexp(self, inexpfcndict, user_run_foms={}):#, rundesc=''):
         selrun=self.FilterRunComboBox.currentIndex()
         datause=str(self.RunTypeLineEdit.text()).strip()
         dus=set([datause])
@@ -422,7 +424,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             le.setText(newdflt)
         self.expparamsdict_le_dflt['description'][1]=newdflt
         
-        self.updateexp(datause, user_run_foms=user_run_foms, rundesc=rundesc)
+
+        self.updateexp(datause, user_run_foms=user_run_foms)#, rundesc=rundesc)
         
         numfiles=len(expfilelist)
         delnumfiles=numfiles-prevnumfiles
@@ -518,7 +521,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     echeparamactiondict[kv]['changefcn'](item, v, ans)
         item.setText(column,''.join([k, ans]))
 
-    def updateexp(self, datause, user_run_foms={}, rundesc=''):
+    def updateexp(self, datause, user_run_foms={}):#, rundesc=''):
         #make expdlist_use a copy of rcpdlist but update each rcptuplist so that the files sections contain on "in exp" files
         #[tup for tup in rcpd['rcptuplist'] if not tup[0].startswith('files_technique__')], \
         
@@ -529,7 +532,6 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             filenamedlist=\
             [fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']], \
             user_run_foms=user_run_foms, \
-            rundesc=rundesc, \
             ) for count, rcpd in enumerate(self.rcpdlist) \
             if len([fd for fd in rcpd['filenamedlist'] if datause in fd['inexp']])>0]
 
@@ -555,11 +557,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     filetuplist+=[(k0, l0n)]
                     techlist+=[k0.partition('__')[2].strip().strip(':')]
             expd['rcptuplist']+=filetuplist
-            expd['rundesc']='; '.join([s for s in [expd['rundesc'], '%d files' %filecount, ','.join(techlist), 'plate_id '+rcpd['plateidstr'], datause] if len(s)>0])
 
-#        #create master list of filename dicts for use in FOm anlaysis
-#        self.expfilenamedlist=[dict(fd,runtype=expd['runtype'], runpath=expd['run_path'])  for expd in self.expdlist_use for fd in expd['filenamedlist']]
-        
         #params
         self.expparamstuplist=[('exp_version: 3',  [])]
 
@@ -724,8 +722,13 @@ class treeclass_dlist():
                 rp=d['run_path']
                 
                 runparams=['name: '+d['name'],'run_use: '+k, 'run_path: '+rp, 'rcp_file: '+d['rcp_file']]
-                if 'rundesc' in d.keys() and len(d['rundesc'])>0:
-                    runparams+=['description: '+d['rundesc']]
+                
+                filecount=numpy.array([len(tup2[1]) for tup in d[self.knf] for tup2 in tup[1] if tup[0].startswith('files_technique__')]).sum()
+                techlist=list(set([tup[0].partition('files_technique__')[2].strip().strip(':') for tup in d[self.knf] if tup[0].startswith('files_technique__')]))
+                plateid=[tup[0].partition('plate_id: ')[2].strip() for tup in d[self.knf] if tup[0].startswith('plate_id: ')][0]
+                rundesc='; '.join(['%d files' %filecount, ','.join(techlist), 'plate_id '+plateid, k])
+                runparams+=['description: '+rundesc]
+                
                 for lab in runparams:
                     item=QTreeWidgetItem([lab],  1000)
                     mainitem.addChild(item)
