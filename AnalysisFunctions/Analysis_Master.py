@@ -16,7 +16,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         runklist=expfiledict.keys()
     runklist=[runk for runk in runklist \
     if runk.startswith('run__') and \
-        expfiledict[runk]['run_use']==usek and \
+        expfiledict[runk]['run_use'].partition('__')[0]==usek and \
         ('files_technique__'+techk) in expfiledict[runk].keys() and \
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
