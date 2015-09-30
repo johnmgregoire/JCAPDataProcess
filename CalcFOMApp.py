@@ -94,6 +94,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.ClearAnalysisPushButton, self.clearanalysis), \
         (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
         (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
+        (self.UpdatePlotPushButton, self.plotwithcaution), \
 
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -538,8 +539,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             s=str(le.text()).strip()
             if len(s)==0:
                 s=dfltstr
-            self.anadict[k]=s
+            self.anadict[k]=s#this makes description just the last ana__ description
         
+        plateids=sorted(list(set(['%d' %rund['parameters']['plate_id'] for rund in [v for k, v in self.expfiledict.iteritems() if k.startswith('run__')]])))
+        ananames=sorted(list(set([anad['name'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]])))
+        self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), ', '.join(plateids))
         self.AnaTreeWidgetFcns.filltree(self.anadict)
         
         self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
@@ -569,8 +573,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.clearanalysis()
             return
         anad=self.anadict[keys[i]]
-        fdlist=[v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)]
-        removefiles(self.tempanafolder, [k for d in fdlist for k in d.keys()])
+        fnlist=[fn for d in [v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)] for d2 in d.itervalues() for fn in d2.keys()]
+        removefiles(self.tempanafolder, fnlist)
         
         if i<(len(keys)-1):
             for ki, knext in zip(keys[i:-1], keys[i+1:]):
@@ -758,7 +762,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotd['fomname']=self.fomnames[fi]
         if plotbool:
             self.plot()
-        
+    def plotwithcaution(self):
+        try:
+            self.plot()
+        except:
+            print 'ERROR UPDATING PLOTS. Porbably data not setup, try selecting a standard plot'
     def plot(self):
         if len(self.plotd)==0:
             return
@@ -862,7 +870,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         pointsizestr=str(self.compplotsizeLineEdit.text())
         
-        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=70, marker='s', cmap=cmap, norm=norm)
+        m=self.plotw_plate.axes.scatter(x, y, c=fom, s=20, marker='s', edgecolor='none', cmap=cmap, norm=norm)
         if x.max()-x.min()<2. or y.max()-y.min()<2.:
             self.plotw_plate.axes.set_xlim(x.min()-1, x.max()+1)
             self.plotw_plate.axes.set_ylim(y.min()-1, y.max()+1)

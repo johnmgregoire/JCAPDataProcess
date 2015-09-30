@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Thu Sep 24 16:42:44 2015
+# Created: Tue Sep 29 23:02:18 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -104,6 +104,14 @@ class Ui_CalcFOMDialog(object):
         self.SaveViewPushButton = QtGui.QPushButton(self.layoutWidget)
         self.SaveViewPushButton.setObjectName(_fromUtf8("SaveViewPushButton"))
         self.AnalysisGridLayout.addWidget(self.SaveViewPushButton, 4, 0, 1, 1)
+        self.UpdatePlotPushButton = QtGui.QPushButton(self.layoutWidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.UpdatePlotPushButton.sizePolicy().hasHeightForWidth())
+        self.UpdatePlotPushButton.setSizePolicy(sizePolicy)
+        self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
+        self.AnalysisGridLayout.addWidget(self.UpdatePlotPushButton, 4, 1, 1, 1)
         self.ImportExpPushButton = QtGui.QPushButton(CalcFOMDialog)
         self.ImportExpPushButton.setGeometry(QtCore.QRect(80, 10, 81, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
@@ -357,6 +365,9 @@ class Ui_CalcFOMDialog(object):
         self.ClearSingleAnalysisPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Del 1 ana__x", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveViewPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Send Raw, Intermediate and FOM data to the Visualize window", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveViewPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Save+View", None, QtGui.QApplication.UnicodeUTF8))
+        self.UpdatePlotPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Edit the FOM visualization parameters in the .csv\n"
+"ONLY WORKS ON MOST RECENT \"Analyze Data\"", None, QtGui.QApplication.UnicodeUTF8))
+        self.UpdatePlotPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Update Plots", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Import a .exp file, which will provide options for the data type, RUNs and analysis type", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Import EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportAnaPushButton.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Grab the EXP from the \"Create EXP\" window", None, QtGui.QApplication.UnicodeUTF8))
