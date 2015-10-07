@@ -101,12 +101,14 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder
                     for k, v in zip(interfiled['keys'], tempdataarr):
                         datadict[k]=v
+                fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
             except:
                 if self.debugmode:
                     raiseTEMP
-                continue
+                fomtuplist, rawlend, interlend, miscfilestr=[(k, numpy.nan) for k in self.fomnames], {}, {}, None
+                pass
             
-            fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
+            
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:

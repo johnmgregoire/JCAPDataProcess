@@ -121,18 +121,20 @@ class Analysis_Master_nointer():
         self.initfiledicts()
         self.fomdlist=[]
         for filed in self.filedlist:
-            if numpy.isnan(filed['sample_no']):
-                if self.debugmode:
-                    raiseTEMP
-                continue
-            fn=filed['fn']
-            #try:
-            dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
-#            except:
+#            if numpy.isnan(filed['sample_no']):
 #                if self.debugmode:
 #                    raiseTEMP
 #                continue
-            self.fomdlist+=[dict(self.fomtuplist_dataarr(dataarr, filed), sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            fn=filed['fn']
+            try:
+                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+                fomtuplist=self.fomtuplist_dataarr(dataarr, filed)
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                fomtuplist=[(k, numpy.nan) for k in self.fomnames]
+                pass
+            self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
     def writefom(self, destfolder, anak, anauserfomd={}):
@@ -163,11 +165,12 @@ class Analysis_Master_inter(Analysis_Master_nointer):
             fn=filed['fn']
             try:
                 dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+                fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
             except:
                 if self.debugmode:
                     raiseTEMP
-                continue
-            fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
+                fomtuplist, rawlend, interlend=[(k, numpy.nan) for k in self.fomnames], {}, {}#if error have the sample written below so fomdlist stays commensurate with filedlist, but fill everythign with NaN and no interdata
+                pass
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:

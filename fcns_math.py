@@ -816,11 +816,13 @@ def calcdiff_ill_caller(d, interd, ikey='Illum', thresh=0, **kwargs):
     riseinds=numpy.where(illum[1:]&numpy.logical_not(illum[:-1]))[0]+1
     fallinds=numpy.where(numpy.logical_not(illum[1:])&illum[:-1])[0]+1
     d['IllumBool']=illum
-    if len(riseinds)==0 or len(fallinds)==0 or (len(riseinds)==1 and len(fallinds)==1 and riseinds[0]>fallinds[0]):
-        err=calcdiff_stepill(d, interd, ikey=ikey, **kwargs)
-    else:
-        err=calcdiff_choppedill(d, interd, ikey='IllumBool', **kwargs)
-    
+    try:
+        if len(riseinds)==0 or len(fallinds)==0 or (len(riseinds)==1 and len(fallinds)==1 and riseinds[0]>fallinds[0]):
+            err=calcdiff_stepill(d, interd, ikey=ikey, **kwargs)
+        else:
+            err=calcdiff_choppedill(d, interd, ikey='IllumBool', **kwargs)
+    except:
+        return 1
     return err
 
 

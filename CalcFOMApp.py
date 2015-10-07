@@ -34,7 +34,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__Pphotomax()\
     ]
 
-DEBUGMODE=True
+DEBUGMODE=False
 
 for ac in AnalysisClasses:
     ac.debugmode=DEBUGMODE
