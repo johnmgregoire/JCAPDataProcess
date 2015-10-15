@@ -856,7 +856,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.plotw_xy.fig.canvas.draw()
     
     def getcustomlegendfcn(self):
-        widg=legendformatwidget(self.parent, arr=self.fom)
+        widg=legendformatwidget(self.parent)
         widg.exec_()
         self.customlegendfcn=widg.genlegfcn
         

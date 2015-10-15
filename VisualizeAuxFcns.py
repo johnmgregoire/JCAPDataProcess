@@ -75,7 +75,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
 
 class legendformatwidget(QDialog):
-    def __init__(self, parent=None, title='', arr=None):
+    def __init__(self, parent=None, title=''):#, arr=None):
         super(legendformatwidget, self).__init__(parent)
         self.parent=parent
 
@@ -133,13 +133,15 @@ class legendformatwidget(QDialog):
                 else:
                     s='%d' %n
                 legstr=legstr.replace(ss, s)
-            if 'd' in compfmt:
-                compstr=[compfmt %int(round(c*100.)) for c in comp]
-            else:
-                compstr=[compfmt %c for c in comp]
-            for l, ssl in zip([els, compstr], [['<A>', '<B>', '<C>', '<D>'], ['<a>', '<b>', '<c>', '<d>']]):
-                for s, ss in zip(l, ssl):
-                    legstr=legstr.replace(ss, s)
+            compusedandisnan=[numpy.isnan(c) for s, c in zip(['<a>', '<b>', '<c>', '<d>'], comp) if s in legstr]
+            if len(compusedandisnan)>0 and not (True in compusedandisnan):# if list is empty then no compositions used in label so skip this. if there is a composition used in label then if e.g. the list is [True,False] skip because can't provide full compsotiion label but if [False,False] then proceed
+                if 'd' in compfmt:
+                    compstr=[compfmt %int(round(c*100.)) for c in comp]
+                else:
+                    compstr=[compfmt %c for c in comp]
+                for l, ssl in zip([els, compstr], [['<A>', '<B>', '<C>', '<D>'], ['<a>', '<b>', '<c>', '<d>']]):
+                    for s, ss in zip(l, ssl):
+                        legstr=legstr.replace(ss, s)
             return legstr
         self.genlegfcn=genlegtext
         

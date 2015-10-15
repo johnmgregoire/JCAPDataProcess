@@ -46,6 +46,12 @@ class ZipClass():#TODO: zipclass instances are kept open in a few places and clo
         self.zipopenfcn= lambda fn: self.archive.open(self.splitfn(fn), 'r')
     def fn_in_archive(self, fn):
         return self.splitfn(fn) in self.archive.namelist()
+    def first_fn_endswith(self, endswithstr):
+        fnl=[fnv for fnv in self.archive.namelist() if fnv.endswith(endswithstr)]
+        if len(fnl)==0:
+            return None
+        return fnl[0]
+
     def close(self):
         self.archive.close()
     def readlines(self, fn):
@@ -451,7 +457,17 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
     return p
             
 def prepend_root_exp_path(p):
-    return tryprependpath(EXPFOLDERS_J+EXPFOLDERS_K, p)
+    parentfold, subfold=os.path.split(p)
+    parentfold=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_K, parentfold)
+    if os.path.isfile(os.path.join(parentfold, subfold)):
+        return os.path.join(parentfold, subfold)
+    if subfold.count('.')>1:
+        subfold='.'.join(subfold.split('.')[:2])
+    subfoldl=[s for s in os.listdir(parentfold) if s.startswith(subfold)]
+    if len(subfoldl)==0:
+        print 'cannot find folder %s in %s', subfold, parentfold
+        return p
+    return os.path.join(parentfold, subfoldl[0])
     
 def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
@@ -463,6 +479,9 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     #from here down : turn an exp folder into an exp file
     if os.path.isfile(os.path.join(p, fn)):
         return os.path.join(p, fn)
+    if '.zip' in p:
+        return os.path.join(p, fn)#hope this works out without checking if it is actually there
+
     fnl=[s for s in os.listdir(p) if s.endswith('.exp')]
     if len(fnl)==0:
         print 'cannot find .exp file in ', p
