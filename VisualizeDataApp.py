@@ -180,7 +180,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if not 'platemapdlist' in rund.keys():
                 rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
                   erroruifcn=\
-                  lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
+                  lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
 
             
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
@@ -247,9 +247,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         
         if platemappath is None:
-            platemappath=getplatemappath_plateid(str(rund['parameters']['plate_id']), \
+            plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2]
+            print plateidstr
+            platemappath=getplatemappath_plateid(plateidstr, \
                 erroruifcn=\
-            lambda s, xpath:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+            lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, plateidstr)))
         if platemappath is None or platemappath=='':
             return
             
@@ -455,8 +457,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         mainitem=self.widgetItems_pl_ru_te_ty_co[-1]
         allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         #uses the run,tech,typ filekey tuple to get and then sort the filenames, zip those with the codes and then check if each code is in the allowedvalues and if so build the full run,tech,type,fn key list
-        self.filteredexpfilekeys=[list(l_keytup)+[filek] for pl, expkeytup in l_keytup for co, filek in zip(self.exp_keys_codearr_dict[(pl, expkeytup)], sorted(d_nestedkeys(self.expfiledict, expkeytup).keys())) if co in allowedvals]
-        
+        if self.SelectTreeFileFilterTopLevelItem is None:
+            searchstrs=[]
+        else:
+            searchstrs=[str(self.SelectTreeFileFilterTopLevelItem.child(i).text(0)).strip() for i in range(self.SelectTreeFileFilterTopLevelItem.childCount()) if bool(self.SelectTreeFileFilterTopLevelItem.child(i).checkState(0))]
+        self.filteredexpfilekeys=[list(l_keytup)+[filek] for pl, expkeytup in l_keytup for co, filek in zip(self.exp_keys_codearr_dict[(pl, expkeytup)], sorted(d_nestedkeys(self.expfiledict, expkeytup).keys())) if (co in allowedvals and not (False in [s in filek for s in searchstrs]))]
+        #filteredexpfilekeys is not used anywhere!!!
         self.filterandplotfomdata()
         #filter ana fom data by plate, run and code
         
@@ -717,7 +723,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         mainitem=self.widgetItems_pl_ru_te_ty_co[3]
         typeallowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         techitems=[(techk, techd) for techk, techd in rund.iteritems() if techk in techallowedvals and isinstance(techd, dict)]
-        fn_filed_tosearch=[(fn, filed) for techk, techd in techitems for typek, typed in techd.iteritems() for fn, filed in typed.iteritems() if typek in typeallowedvals and filed['sample_no']==smp]
+        if self.SelectTreeFileFilterTopLevelItem is None:
+            searchstrs=[]
+        else:
+            searchstrs=[str(self.SelectTreeFileFilterTopLevelItem.child(i).text(0)).strip() for i in range(self.SelectTreeFileFilterTopLevelItem.childCount()) if bool(self.SelectTreeFileFilterTopLevelItem.child(i).checkState(0))]
+
+        fn_filed_tosearch=[(fn, filed) for techk, techd in techitems for typek, typed in techd.iteritems() for fn, filed in typed.iteritems() if typek in typeallowedvals and filed['sample_no']==smp and (not (False in [s in fn for s in searchstrs]))]
         
         for count, k in enumerate(arrkeys):
             if k=='None':
@@ -768,6 +779,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return None
         if anaint>0:
             xyydlist=self.extractxy_ana(arrkeys, anaint, runint, smp)
+        else:
+            xyydlist=[None, None, None]
         if runint>0:
             lefttogetinds=[count for count, (d, arrk) in enumerate(zip(xyydlist, arrkeys)) if d is None and not arrk=='None']
             if len(lefttogetinds)>0:
