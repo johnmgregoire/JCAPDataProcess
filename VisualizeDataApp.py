@@ -135,6 +135,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if self.anazipclass:
                 self.anazipclass.close()
             self.anazipclass=anazipclass#when run from CalcFOMApp the .ana can't be in a .zip so make this the default anazipclass=None 
+        self.clearvisuals()
         summlines=sorted(['-'.join([anak, anad['description'] if 'description' in anad.keys() else '']) for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')])
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
@@ -223,11 +224,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
         self.clearfomplotd()
-        self.clearvisuals()
+        
         
         if fromana:
             summlines=[str(self.SummaryTextBrowser.toPlainText())]
         else:
+            self.clearvisuals()
             summlines=[]
             self.updatefomdlist_plateruncode(createnewfromexp=True)
             self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
@@ -247,8 +249,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         
         if platemappath is None:
-            plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2]
-            print plateidstr
+            plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
+
             platemappath=getplatemappath_plateid(plateidstr, \
                 erroruifcn=\
             lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, plateidstr)))
@@ -470,7 +472,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def performontheflyfom(self):#onthefly fom calc could be on existing (not on thefly) .exp so expfolder could be .zip
         self.analysisclass=AnalysisClasses[self.OnFlyAnaClassComboBox.currentIndex()]
         self.analysisclass.getapplicablefilenames(self.expfiledict, 'onthefly', 'onthefly', 'all_files')
-        
+        #TODO: looks like this only filters by the search file str, should also apply other fitlers fior when this is being run on a .exp or .ana load
         if self.SelectTreeFileFilterTopLevelItem is None:
             searchstrs=[]
         else:
@@ -827,6 +829,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.plotw_xy.axes.cla()
             self.plotw_xy.twaxes.cla()
         
+        if self.overlayselectCheckBox.isChecked():
+            self.xyplotcolorrotation=self.xyplotcolorrotation[1:]+[self.xyplotcolorrotation[0]]
+            self.xyplotstyled['c']=self.xyplotcolorrotation[0]
+        else:
+            self.xyplotcolorrotation=['b', 'k', 'm', 'y', 'c','r', 'g']
+            self.xyplotstyled['c']='b'
+            
         somethingplotted=False
         for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], plotdata, selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
             if len(xarr)==0:
@@ -850,7 +859,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         leg=self.plotw_xy.axes.legend(loc=0)
         #leg.draggable()
 
-        
+
+            
         autotickformat(self.plotw_xy.axes, x=1, y=1)
         autotickformat(self.plotw_xy.twaxes, x=0, y=1)
         self.plotw_xy.fig.canvas.draw()
@@ -1172,7 +1182,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def clearvisuals(self):
         self.browser.setText('')
         self.fomstatsTextBrowser.setText('')
-        
+        self.SummaryTextBrowser.setText('')
         for plotw in self.tabs__plotw_plate+self.tabs__plotw_comp:
             plotw.axes.cla()
             plotw.fig.canvas.draw()
@@ -1188,7 +1198,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.plotw_fomhist.axes.cla()
         self.plotw_fomhist.fig.canvas.draw()
     def plotwsetup(self):
-        self.xyplotstyled=dict({}, marker='o', ms=5, c='b', ls='-', lw=0.7, right_marker='None', right_ms=3, right_ls=':', right_lw=0.7, select_ms=6, select_c='r')
+        self.xyplotstyled=dict({}, marker='o', ms=5, c='b', ls='-', lw=0.7, right_marker='None', right_ms=3, right_ls=':', right_lw=0.7, select_ms=6, select_c='r', right_c='g')
+        self.xyplotcolorrotation=['b', 'k', 'm', 'y', 'c','r', 'g']
         self.selectind=None
         self.plottabgeom_comp=self.textBrowser_comp.geometry()
         self.textBrowser_comp.hide()
@@ -1345,7 +1356,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.addValuesXY(remove=True)
     
     def getxystyle_user(self):
-        inputs=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems()]
+        inputs=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if not (k.startswith('right_') or k.startswith('select_'))]
+        inputs+=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if k.startswith('select_')]
+        inputs+=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if k.startswith('right_')]
         ans=userinputcaller(self, inputs=inputs, title='Enter x-y plot parameters',  cancelallowed=True)
         if ans is None:
             return
