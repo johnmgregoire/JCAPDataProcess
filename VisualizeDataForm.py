@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Thu Oct 15 16:59:14 2015
+# Created: Fri Oct 16 10:21:02 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -338,6 +338,7 @@ class Ui_VisDataDialog(object):
         self.compPlotMarkSelectionsCheckBox.setText(QtGui.QApplication.translate("VisDataDialog", "Mark selections\n"
 "on Comp.plots", None, QtGui.QApplication.UnicodeUTF8))
         self.UpdatePlotPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "update plots only", None, QtGui.QApplication.UnicodeUTF8))
+        self.ontheflyPushButton.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Perform on the first checked \"technique\" and \"type\"", None, QtGui.QApplication.UnicodeUTF8))
         self.ontheflyPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "perform on-the-fly", None, QtGui.QApplication.UnicodeUTF8))
         self.customxystylePushButton.setText(QtGui.QApplication.translate("VisDataDialog", "configure\n"
 "x-y style", None, QtGui.QApplication.UnicodeUTF8))

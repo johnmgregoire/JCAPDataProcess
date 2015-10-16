@@ -849,6 +849,9 @@ on Comp.plots</string>
      <height>21</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Perform on the first checked &quot;technique&quot; and &quot;type&quot;</string>
+   </property>
    <property name="text">
     <string>perform on-the-fly</string>
    </property>

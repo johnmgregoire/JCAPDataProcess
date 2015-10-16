@@ -471,8 +471,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #need to get the codes adn think about how to getapplicablefilesnames, i.e. create filedlist for simple cases, flag analysis classes by 'simple"
     def performontheflyfom(self):#onthefly fom calc could be on existing (not on thefly) .exp so expfolder could be .zip
         self.analysisclass=AnalysisClasses[self.OnFlyAnaClassComboBox.currentIndex()]
-        self.analysisclass.getapplicablefilenames(self.expfiledict, 'onthefly', 'onthefly', 'all_files')
-        #TODO: looks like this only filters by the search file str, should also apply other fitlers fior when this is being run on a .exp or .ana load
+        mainitem=self.widgetItems_pl_ru_te_ty_co[2]
+        temp=[str(mainitem.child(i).text(0)).strip().partition('__')[2] for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        if len(temp)==0:
+            return
+        te=temp[0]
+        mainitem=self.widgetItems_pl_ru_te_ty_co[3]
+        temp=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
+        if len(temp)==0:
+            return
+        ty=temp[0]
+        self.analysisclass.getapplicablefilenames(self.expfiledict, '', te, ty)#empty "data usek" string will not filter and then filter by the first checked technique and type
+
         if self.SelectTreeFileFilterTopLevelItem is None:
             searchstrs=[]
         else:
@@ -489,7 +499,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #rawd=readbinaryarrasdict(keys)
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
 
-        self.analysisclass.perform(None, expdatfolder=self.expfolder, anak='')
+        self.analysisclass.perform(None, expdatfolder=self.expfolder, anak='', zipclass=self.expzipclass)
         self.l_fomdlist+=[self.analysisclass.fomdlist]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[self.analysisclass.fomnames]
         self.l_csvheaderdict+=[self.analysisclass.csvheaderdict]#this contains default plot info
@@ -500,6 +510,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.setupfilterchoices()
         self.updatefomplotchoices()
         self.fillxyoptions()
+        
     def filterandplotfomdata(self, plotbool=True):
         self.clearfomplotd()
         
@@ -1255,7 +1266,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 k='comps'
                 arr=numpy.array(comp)
             xy=numpy.array(xy)
-            dist=numpy.array([((numpy.array(v)-arr)**2).sum() for xyv in self.fomplotd[k]])
+            dist=numpy.array([((numpy.array(xyv)-arr)**2).sum() for xyv in self.fomplotd[k]])
             selectinds=list(numpy.where(dist==dist.min())[0])
         if len(selectinds)==0:
             return

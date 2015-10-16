@@ -104,8 +104,8 @@ def selectexpanafile(parent, exp=True, markstr=None):#TODO support getting exp a
 
     p=mygetopenfile(parent, xpath=fold, markstr=markstr, filename=ext )
     if p.endswith('.zip'):
-        archive=zipfile.ZipFile(zp, 'r')
-        fnl=[fn for fn in archive.namelist() if fn.endswith(ext)]
+        archive=zipfile.ZipFile(p, 'r')
+        fnl=[fn for fn in archive.namelist() if fn.endswith(ext) and not fn.startswith('._')]
         archive.close()
         if len(fnl)==0:
             print 'tried opening %s in a .zip file but could not find one' %ext
@@ -169,7 +169,7 @@ def getarrs_filed(p, filed, selcolinds=None, trydat=True, zipclass=None):
                 zipclass.close()
             return ans
                 
-    if not (os.path.isfile(p) or (zipclass and zipclass.fn_in_archive(p))):
+    if not ((os.path.isfile(p) or (zipclass and zipclass.fn_in_archive(p)))):
         if closezip:
             zipclass.close()
         return None
@@ -206,7 +206,7 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
         closezip=bool(zipclass)
         
     if zipclass:
-        lines=zipclass.readlines(p)
+        lines=zipclass.readlines(p)[num_header_lines:]
     else:
         with open(p, mode='r') as f:
             lines=f.readlines()[num_header_lines:]
@@ -243,14 +243,19 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
             
     if not returnheaderdict:
         return d
-    with open(p, mode='r') as f:
-        lines=[f.readline() for count in range(fileattrd['num_header_lines'])]
-        lines=lines[1:-1]
-        tuplist=[]
-        while len(lines)>0:
-            tuplist+=[createnestparamtup(lines)]
-            headerdict=dict(\
-            [createdict_tup(tup) for tup in tuplist])
+    
+    if zipclass:
+        lines=zipclass.readlines(p)[:fileattrd['num_header_lines']]
+    else:
+        with open(p, mode='r') as f:
+            lines=f.readlines()[:fileattrd['num_header_lines']]
+            
+    lines=lines[1:-1]
+    tuplist=[]
+    while len(lines)>0:
+        tuplist+=[createnestparamtup(lines)]
+        headerdict=dict(\
+        [createdict_tup(tup) for tup in tuplist])
     return d, headerdict
     
 def readechemtxt(path, mtime_path_fcn=None, lines=None):
@@ -473,7 +478,7 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
     
-    if not os.path.isdir(p):
+    if not (os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])):
         p=prepend_root_exp_path(p)
     
     #from here down : turn an exp folder into an exp file

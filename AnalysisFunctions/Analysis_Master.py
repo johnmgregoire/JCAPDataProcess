@@ -16,7 +16,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
         runklist=expfiledict.keys()
     runklist=[runk for runk in runklist \
     if runk.startswith('run__') and \
-        expfiledict[runk]['run_use'].partition('__')[0]==usek and \
+        (usek in expfiledict[runk]['run_use']) and \
         ('files_technique__'+techk) in expfiledict[runk].keys() and \
         typek in expfiledict[runk]['files_technique__'+techk].keys()]
 
@@ -83,7 +83,7 @@ class Analysis_Master_nointer():
         else:
             self.runfiledict={}
     def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
-        if not os.path.isdir(os.path.split(p)[0]):#works for .zip and non zip
+        if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
             p=prepend_root_exp_path(p)
         try:
             pd=p+'.dat'
