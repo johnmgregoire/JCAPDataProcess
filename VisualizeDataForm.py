@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Fri Sep 25 11:12:32 2015
+# Created: Thu Oct 15 16:59:14 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -120,20 +120,20 @@ class Ui_VisDataDialog(object):
         self.addSample.setGeometry(QtCore.QRect(1530, 10, 21, 23))
         self.addSample.setObjectName(_fromUtf8("addSample"))
         self.label_4 = QtGui.QLabel(VisDataDialog)
-        self.label_4.setGeometry(QtCore.QRect(700, 140, 111, 21))
+        self.label_4.setGeometry(QtCore.QRect(700, 130, 111, 21))
         self.label_4.setObjectName(_fromUtf8("label_4"))
         self.label_5 = QtGui.QLabel(VisDataDialog)
-        self.label_5.setGeometry(QtCore.QRect(700, 50, 119, 21))
+        self.label_5.setGeometry(QtCore.QRect(700, 40, 119, 21))
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.fomplotchoiceComboBox = QtGui.QComboBox(VisDataDialog)
-        self.fomplotchoiceComboBox.setGeometry(QtCore.QRect(700, 70, 111, 21))
+        self.fomplotchoiceComboBox.setGeometry(QtCore.QRect(700, 60, 111, 21))
         self.fomplotchoiceComboBox.setWhatsThis(_fromUtf8(""))
         self.fomplotchoiceComboBox.setObjectName(_fromUtf8("fomplotchoiceComboBox"))
         self.label_6 = QtGui.QLabel(VisDataDialog)
-        self.label_6.setGeometry(QtCore.QRect(700, 90, 111, 16))
+        self.label_6.setGeometry(QtCore.QRect(700, 80, 111, 16))
         self.label_6.setObjectName(_fromUtf8("label_6"))
         self.CompPlotTypeComboBox = QtGui.QComboBox(VisDataDialog)
-        self.CompPlotTypeComboBox.setGeometry(QtCore.QRect(700, 110, 111, 31))
+        self.CompPlotTypeComboBox.setGeometry(QtCore.QRect(700, 100, 111, 31))
         self.CompPlotTypeComboBox.setObjectName(_fromUtf8("CompPlotTypeComboBox"))
         self.label_8 = QtGui.QLabel(VisDataDialog)
         self.label_8.setGeometry(QtCore.QRect(820, 130, 91, 21))
@@ -142,7 +142,7 @@ class Ui_VisDataDialog(object):
         self.label_10.setGeometry(QtCore.QRect(820, 170, 91, 21))
         self.label_10.setObjectName(_fromUtf8("label_10"))
         self.stdcsvplotchoiceComboBox = QtGui.QComboBox(VisDataDialog)
-        self.stdcsvplotchoiceComboBox.setGeometry(QtCore.QRect(700, 30, 111, 22))
+        self.stdcsvplotchoiceComboBox.setGeometry(QtCore.QRect(700, 20, 111, 22))
         self.stdcsvplotchoiceComboBox.setObjectName(_fromUtf8("stdcsvplotchoiceComboBox"))
         self.label_7 = QtGui.QLabel(VisDataDialog)
         self.label_7.setGeometry(QtCore.QRect(820, 90, 91, 20))
@@ -154,7 +154,7 @@ class Ui_VisDataDialog(object):
         self.belowrangecolLineEdit.setGeometry(QtCore.QRect(820, 110, 91, 22))
         self.belowrangecolLineEdit.setObjectName(_fromUtf8("belowrangecolLineEdit"))
         self.label_9 = QtGui.QLabel(VisDataDialog)
-        self.label_9.setGeometry(QtCore.QRect(700, 10, 111, 21))
+        self.label_9.setGeometry(QtCore.QRect(700, 0, 111, 21))
         self.label_9.setObjectName(_fromUtf8("label_9"))
         self.label_11 = QtGui.QLabel(VisDataDialog)
         self.label_11.setGeometry(QtCore.QRect(820, 0, 91, 21))
@@ -166,7 +166,7 @@ class Ui_VisDataDialog(object):
         self.vminmaxLineEdit.setGeometry(QtCore.QRect(820, 150, 91, 22))
         self.vminmaxLineEdit.setObjectName(_fromUtf8("vminmaxLineEdit"))
         self.CompPlotOrderComboBox = QtGui.QComboBox(VisDataDialog)
-        self.CompPlotOrderComboBox.setGeometry(QtCore.QRect(700, 160, 111, 22))
+        self.CompPlotOrderComboBox.setGeometry(QtCore.QRect(700, 150, 111, 22))
         self.CompPlotOrderComboBox.setObjectName(_fromUtf8("CompPlotOrderComboBox"))
         self.label_12 = QtGui.QLabel(VisDataDialog)
         self.label_12.setGeometry(QtCore.QRect(820, 50, 91, 16))
@@ -270,6 +270,12 @@ class Ui_VisDataDialog(object):
         self.line_2.setFrameShape(QtGui.QFrame.HLine)
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName(_fromUtf8("line_2"))
+        self.platescatterLineEdit = QtGui.QLineEdit(VisDataDialog)
+        self.platescatterLineEdit.setGeometry(QtCore.QRect(760, 180, 41, 22))
+        self.platescatterLineEdit.setObjectName(_fromUtf8("platescatterLineEdit"))
+        self.label_16 = QtGui.QLabel(VisDataDialog)
+        self.label_16.setGeometry(QtCore.QRect(710, 180, 51, 21))
+        self.label_16.setObjectName(_fromUtf8("label_16"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -336,6 +342,11 @@ class Ui_VisDataDialog(object):
         self.customxystylePushButton.setText(QtGui.QApplication.translate("VisDataDialog", "configure\n"
 "x-y style", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveFigsPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Save figs to ANA", None, QtGui.QApplication.UnicodeUTF8))
+        self.platescatterLineEdit.setToolTip(QtGui.QApplication.translate("VisDataDialog", "first character can be the markertype, e.g. \'s\' for square, or this can be omitted.\n"
+"Rest of the string is the interger marker size.", None, QtGui.QApplication.UnicodeUTF8))
+        self.platescatterLineEdit.setText(QtGui.QApplication.translate("VisDataDialog", "s70", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_16.setText(QtGui.QApplication.translate("VisDataDialog", "plate\n"
+"scatter:", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

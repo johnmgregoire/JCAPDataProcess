@@ -271,7 +271,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
         self.expfiledict['run__1']['parameters']={}
         self.expfiledict['run__1']['parameters']['plate_id']=0
-        
+        self.ellabels=['A', 'B', 'C', 'D']
         self.anafolder=''
         
         self.anafiledict={}
@@ -280,7 +280,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomdlist_plateruncode(createnewfromexp=True)
         self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
 
-        self.ellabels=['A', 'B', 'C', 'D']
+        
         self.fillcomppermutations()
 
         self.setupfilterchoices()
@@ -1008,7 +1008,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         plotw.cbax.cla()
         if len(cols)==0:
             return
-        m=plotw.axes.scatter(x, y, c=cols, s=70, marker='s')#, cmap=self.cmap, norm=self.norm)
+        userstr=str(self.platescatterLineEdit.text())
+        try:
+            if not userstr[0].isdigit():
+                marker=userstr[0]
+                s=int(userstr[1:])
+            else:
+                marker='s'
+                s=int(userstr)
+        except:
+            print 'plate scatter format to default because cannot understand ', userstr
+            marker='s'
+            s=70
+        m=plotw.axes.scatter(x, y, c=cols, s=s, marker=marker, edgecolor='none')#, cmap=self.cmap, norm=self.norm)
         if x.max()-x.min()<2. or y.max()-y.min()<2.:
             plotw.axes.set_xlim(x.min()-1, x.max()+1)
             plotw.axes.set_ylim(y.min()-1, y.max()+1)
