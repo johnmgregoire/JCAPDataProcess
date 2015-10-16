@@ -11,3 +11,5 @@ EXPFOLDERS_K=['//htejcap.caltech.edu/share/home/processes/experiment', 'K:/proce
 ANAFOLDERS_J=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/analysis', 'J:/hte_jcap_app_proto/analysis']
 
 ANAFOLDERS_K=['//htejcap.caltech.edu/share/home/processes/analysis', 'K:/processes/analysis']
+
+SMOOTHFOLDERS=['//htejcap.caltech.edu/share/home/users/hte/platemaps/FilterSmoothMaps', 'K:/users/hte/platemaps/FilterSmoothMaps']

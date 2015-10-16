@@ -14,7 +14,6 @@ from matplotlib import colors
 import pickle
 import time
 import tkMessageBox
-from scipy.signal import savgol_filter
 import shutil
 
 def residuals(params,xdata,ydata): return sum((np.abs(ydata-linpiecewise(params,xdata))/ydata)**2)

@@ -7,7 +7,9 @@ from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
-from scipy.signal import savgol_filter
+#from scipy.signal import savgol_filter
+def savgol_filter(x, y, z, delta=0, deriv=0):
+    return x
 from bgmath_fcn import *
 import matplotlib.pyplot as plt
 
@@ -31,7 +33,7 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
     filedlist=[dict(d, Afiled=Afiledlist[Asmp.index(d['fn'].partition('_')[0])]) for d in filedlist if d['fn'].partition('_')[0] in Asmp]
     return num_files_considered, filedlist#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
     
-def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[]):
+def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
     if techk!='T_UVVIS':
         return 0, [], {}
     
@@ -41,6 +43,10 @@ def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
         uk, tk=k
 #?   runklist,nkeys and keyinds,ntemp,temp,typek
         ntemp, filedlist=stdgetapplicablefilenames(expfiledict, uk, tk, typek, runklist=None, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
+        if ref_run_selection.startswith('run__'):#filter to only use refs from user-specified list
+            runlist=ref_run_selection.split(',')
+            runlist=[s.strip() for s in runlist]
+            filedlist=[d for d in filedlist if d['run'] in runlist]
         if len(filedlist)==0:
             return 0, [], {}
         refdict__filedlist[k]=filedlist
@@ -99,7 +105,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4)])
+        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), ('ref_run_selection', 'all')])
+        
+        #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__TR_UVVIS'
         #TODO: make intermediate column headings unique from raw
@@ -127,7 +135,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
-              TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys)
+              TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'])
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
 
@@ -385,8 +393,8 @@ class Analysis__BG_DA(Analysis_Master_inter):
 
         
 c=Analysis__TR_UVVIS()
-p_exp=r'\\htejcap.caltech.edu\share\home\users\hte\demo_proto\experiment\4\eche.pck'
-p_ana=r'\\htejcap.caltech.edu\share\home\users\hte\demo_proto\analysis\uvistemp'
+p_exp=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151016.160701.testuvissmall\20151016.160701.pck'
+p_ana=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\testuvis'
 expd=readexpasdict(p_exp)
 usek='data'
 techk='T_UVVIS'
@@ -397,19 +405,19 @@ print 'THESE FOM FILES WRITTEN'
 for k, v in c.multirunfiledict.items():
     print k, v
 print 'THESE INTERMEDIATE DATA FILES WRITTEN'
-for k, v in c.interfiledict.items():
-    print k, v
+for runk, runfiled in c.runfiledict.items():
+    print runk, runfiled
 print 'THESE FOMs CALCULATED'
 print c.fomdlist
 
-for k, v in c.interfiledict.items():
-    if '_996_' in k and 'wl' in v and '_interlen.txt.dat' in k:
-        print k
-        break
-keys=v.split(';')[1].split(',')
-xi=keys.index('wl')
-yi=keys.index('abs_smth_scl')
-x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
-import pylab
-pylab.plot(x, y)
-pylab.show()
+#for k, v in c.interfiledict.items():
+#    if '_996_' in k and 'wl' in v and '_interlen.txt.dat' in k:
+#        print k
+#        break
+#keys=v.split(';')[1].split(',')
+#xi=keys.index('wl')
+#yi=keys.index('abs_smth_scl')
+#x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
+#import pylab
+#pylab.plot(x, y)
+#pylab.show()

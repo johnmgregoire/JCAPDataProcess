@@ -90,7 +90,7 @@ class SearchFolderDialog(QDialog, Ui_SearchFolderDialog):
             temp3=[p for p in temp if not p in temp2]
             folderlist+=temp3
             runpathlist+=temp2
-            runpathlist+=[os.path.join(dirpath, fn) for fn in filenames if searchstr in fn and '.zip' in fn]
+            runpathlist+=[os.path.join(dirpath, fn) for fn in filenames if (searchstr in fn or searchstr in os.path.split(dirpath)[1]) and '.zip' in fn]
         return folderlist, runpathlist
 
 if __name__ == "__main__":
