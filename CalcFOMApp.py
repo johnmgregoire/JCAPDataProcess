@@ -28,10 +28,12 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 from CV_photo import *
+from develop_analysis_class import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
-   Analysis__Pphotomax()\
+   Analysis__Pphotomax(), \
+   Analysis__TR_UVVIS(), Analysis__BG_DA()\
     ]
 
 DEBUGMODE=False
@@ -208,7 +210,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
         
-    def importexp(self, expfiledict=None, exppath=None, expzipclass=None):
+    def importexp(self, expfiledict=None, exppath=None, expzipclass=None, anadict=None):
         if expfiledict is None:
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(exppath)==0:
@@ -240,8 +242,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
             if k in ['analysis_type', 'created_by']:
                 le.setText(dfltstr)
-        self.clearanalysis()
-        
+        self.clearanalysis(anadict=anadict)
         #rp=self.exppath.replace('.pck', '.exp')
         rp=os.path.split(self.exppath)[0]
         rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, rp)
@@ -384,6 +385,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if len(p)==0:
             return
         anadict=readana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
+        print anadict.keys()
         if not 'experiment_path' in anadict.keys():
             return
         if anadict['ana_version']!='3':
@@ -396,11 +398,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
             idialog.exec_()
             return
-        self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass)#clearanalysis happens here
-        self.anadict=anadict
+        self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass, anadict=anadict)#clearanalysis happens here and anadcit is ported into self.anadict in the clearanalysis
+        #self.anadict=anadict
         anafolder=os.path.split(p)[0]
         copyanafiles(anafolder, self.tempanafolder)
         self.updateana()
+        print self.anadict.keys()
 
     def editanalysisparams(self):
         if self.analysisclass is None or len(self.analysisclass.params)==0:
@@ -583,13 +586,22 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.activeana=None
         self.updateana()
         
-    def clearanalysis(self):
+    def clearanalysis(self, anadict=None):
         self.analysisclass=None
         self.activeana=None
         self.anadict={}
-        self.anadict['ana_version']='3'
         
         self.paramsdict_le_dflt['description'][1]='null'
+        
+        if not anadict is None:
+            for k, v in anadict.iteritems():
+                self.anadict[k]=v
+            if 'description' in anadict.keys():
+                self.paramsdict_le_dflt['description'][1]=anadict['description']
+                
+        self.anadict['ana_version']='3'
+        
+        
 
         self.AnaTreeWidget.clear()
         

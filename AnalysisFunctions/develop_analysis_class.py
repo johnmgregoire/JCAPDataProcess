@@ -14,24 +14,27 @@ from bgmath_fcn import *
 import matplotlib.pyplot as plt
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
-    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_' in ftk]) for anak, anav in anadict.iteritems()\
+    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk and 'inter_files' in anav[ftk].keys()]) for anak, anav in anadict.iteritems()\
     if anak.startswith('ana__') and True in ['files_' in ftk for ftk in anav.keys()]]
 
-    Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, \
-                                 nkeys=len(tagandkeys.split(';')[1].split(',')), \
-                                 Akeyind=tagandkeys.split(';')[1].split(',').index('abs_smth_scl')) \
+    Afiledlist=[dict({}, anakeys=[anak, ftk, typek, fnk], ana=anak, fn=fnk, sample_no=int(tagandkeys.split(';')[4].strip()), \
+                                 nkeys=len(tagandkeys.split(';')[1].split(',')), num_header_lines=int(tagandkeys.split(';')[2]), \
+                                 Akeyind=tagandkeys.split(';')[1].split(',').index('abs_smth_scl'), keys=tagandkeys.split(';')[1].split(',')) \
         for anak, ftkl in anak_ftklist \
         for ftk in ftkl \
-        for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
+        for fnk, tagandkeys in anadict[anak][ftk]['inter_files'].iteritems()\
         if 'abs_smth_scl' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys\
         ]
-    if len(absfiledlist)==0:
+    if len(Afiledlist)==0:
         return 0, []
     num_files_considered, filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
     
-    Asmp=[Ad['fn'].partition(Ad['ana']+'__')[2].partition('_')[0] for Ad in Afiledlist]
-    filedlist=[dict(d, Afiled=Afiledlist[Asmp.index(d['fn'].partition('_')[0])]) for d in filedlist if d['fn'].partition('_')[0] in Asmp]
-    return num_files_considered, filedlist#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
+    Asmp=[Ad['sample_no'] for Ad in Afiledlist]
+    filedlist2=[dict(d, Afiled=Afiledlist[Asmp.index(d['sample_no'])]) for d in filedlist if (Asmp.count(d['sample_no'])==1)]#require that 1 previous Abs intermediate fiel be found for the given sample_no
+    if len(filedlist2)==0:
+        aaa
+    return num_files_considered, filedlist2#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
+
     
 def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
     if techk!='T_UVVIS':
@@ -157,7 +160,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         refd={}#refd will be a dictionary with 4 keys that makes a good started for the intermediate dictionary with raw-data-length arrays
         try:
             refd['wl']=numpy.float32([\
-            readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)[0] \
+            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
             for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])
         except:
             raise ValueError('Number of data points in reference files do not match')
@@ -171,8 +174,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             refd_all={}
             for rktup, rk in refkeymap:
                 refd_all[rk]=numpy.float32([\
-                    (readbinary_selinds(os.path.join(expdatfolder, filed['fn']+'.dat'), filed['nkeys'],\
-                    keyinds=filed['keyinds'], zipclass=zipclass)[1:]).mean(axis=0) \
+                    self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1:], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
                     for filed in self.refdict__filedlist[rktup]])
                 refd[rk]=ref_fnd[rk](refd_all[rk])
             refd_fn=lambda fn:refd
@@ -186,8 +188,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
-            Tdataarr=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)
-            Rdataarr=readbinary_selinds(os.path.join(expdatfolder, Rfn+'.dat'), Rfiled['nkeys'], keyinds=Rfiled['keyinds'], zipclass=zipclass)
+            Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+            Rdataarr=self.readdata(os.path.join(expdatfolder, Rfn), Rfiled['nkeys'], Rfiled['keyinds'], num_header_lines=Rfiled['num_header_lines'], zipclass=zipclass)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -294,11 +296,11 @@ class Analysis__BG_DA(Analysis_Master_inter):
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
             ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
             ('max_merge_differentialTP',0.02),('min_knotdist',0.05),('min_diff',0.1),('min_numpeaks',1),\
-            ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4),('analtypes',['DA'])])
+            ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4),('analysis_types',['DA'])])
         self.maxbgspersmp=4
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
-        self.requiredkeys=['wl']
+        self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
         self.optionalkeys=[]
         self.requiredparams=[]
         self.fom_chkqualitynames=['DA-bg_repr']
@@ -306,7 +308,7 @@ class Analysis__BG_DA(Analysis_Master_inter):
     
     def processnewparams(self):
         self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
-                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if self.params[x]]\
+                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if x in self.params['analysis_types']]\
                              for item in sublist]
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
@@ -332,17 +334,25 @@ class Analysis__BG_DA(Analysis_Master_inter):
         self.fomdlist=[]      
         #inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis \
 #        folder is an intermediate data arr whose column 'Akeyind' is the absorption array
-        for Afiled in self.filedlist:
+        for filed in self.filedlist:
             fn=filed['fn']
+            Afiled=filed['Afiled']
+            Afn=Afiled['fn']
             rawlend={}
-            rawlend['wl']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['keyinds'], zipclass=zipclass)
-            rawlend['abs']=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], keyinds=filed['Akeyind'], zipclass=zipclass)
-            fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)
+            #self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)#this is how you read all raw data but not sure that's necessary for BG calculation
+            #rawlend=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], zipclass=zipclass)#, keyinds=filed['keyinds']#this is how you read
+            Adataarr=self.readdata(os.path.join(destfolder, Afn), filed['nkeys'], None, num_header_lines=Afiled['num_header_lines'], zipclass=None)#the inter_data cannot be zipped because it is from the active ana, inds=None will return all inds
+            datadict={}
+            for k, v in zip(Afiled['keys'], Adataarr):
+                datadict[k]=v
+            fomdict,linfitd,selindd=self.fomd_rawlend_interlend(datadict)#use datadict as the argument or use the necessary keys like 'wl' amd 'abs_smth_scl'
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             if destfolder is None:
                 continue
+                
+            continue #SANTOH - I AM JUST PUTTING THIS HERE TO TEST THAT WE CAN MAKE IT THIS FAR. THE BELOW LOGIC USES 'rawlend' WHICH DOESN'T EXIST ANYMORE SO THAT NEEDS TO BE CHANGED
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
@@ -391,33 +401,23 @@ class Analysis__BG_DA(Analysis_Master_inter):
         
         
 
-        
-c=Analysis__TR_UVVIS()
-p_exp=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151016.160701.testuvissmall\20151016.160701.pck'
-p_ana=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\testuvis'
-expd=readexpasdict(p_exp)
-usek='data'
-techk='T_UVVIS'
-typek='spectrum_files'
-filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=None)
-c.perform(p_ana, expdatfolder=os.path.split(p_exp)[0], writeinterdat=True, anak='ana__0')
-print 'THESE FOM FILES WRITTEN'
-for k, v in c.multirunfiledict.items():
-    print k, v
-print 'THESE INTERMEDIATE DATA FILES WRITTEN'
-for runk, runfiled in c.runfiledict.items():
-    print runk, runfiled
-print 'THESE FOMs CALCULATED'
-print c.fomdlist
+if 0:
+    c=Analysis__TR_UVVIS()
+    p_exp=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151016.160701.testuvissmall\20151016.160701.pck'
+    p_ana=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\testuvis'
+    expd=readexpasdict(p_exp)
+    usek='data'
+    techk='T_UVVIS'
+    typek='spectrum_files'
+    filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=None)
+    c.perform(p_ana, expdatfolder=os.path.split(p_exp)[0], writeinterdat=True, anak='ana__0')
+    print 'THESE FOM FILES WRITTEN'
+    for k, v in c.multirunfiledict.items():
+        print k, v
+    print 'THESE INTERMEDIATE DATA FILES WRITTEN'
+    for runk, runfiled in c.runfiledict.items():
+        print runk, runfiled
+    print 'THESE FOMs CALCULATED'
+    print c.fomdlist
 
-#for k, v in c.interfiledict.items():
-#    if '_996_' in k and 'wl' in v and '_interlen.txt.dat' in k:
-#        print k
-#        break
-#keys=v.split(';')[1].split(',')
-#xi=keys.index('wl')
-#yi=keys.index('abs_smth_scl')
-#x, y=readbinary_selinds(os.path.join(p_ana, k), len(keys), keyinds=[xi, yi])
-#import pylab
-#pylab.plot(x, y)
-#pylab.show()
+

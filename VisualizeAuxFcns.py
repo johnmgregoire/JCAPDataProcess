@@ -61,7 +61,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                 continue
             for typek, typed in anarund.iteritems():
                 for filek, filed in typed.iteritems():
-                    if not 'fom_file' in filed['file_type']:
+                    if not ('fom_file' in filed['file_type'] and filek.endswith('.csv')):#TODO: is this the right way to selct what is read as foms?
                         continue
                     p=os.path.join(anafolder, filek)
                     fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True, zipclass=anazipclass)
