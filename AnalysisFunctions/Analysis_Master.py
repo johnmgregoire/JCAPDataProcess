@@ -56,7 +56,10 @@ class Analysis_Master_nointer():
         self.fomnames=[]
         self.plotparams={}
         self.csvheaderdict=dict({}, csv_version='1')
-        
+    
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'standard'
+    
     def processnewparams(self):
         return
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
@@ -97,7 +100,7 @@ class Analysis_Master_nointer():
     
     def genuserfomdlist(self, anauserfomd, appendtofomdlist=True):
         
-        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) for d in self.filedlist]
+        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) if 'user_run_foms' in d.keys() else {} for d in self.filedlist]
         #if anything is str, then all will be str
         strkeys=set([k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)])
         floatkeys=list(set([k for d in userfomdlist for k in d.keys()]).difference(strkeys))
@@ -106,7 +109,8 @@ class Analysis_Master_nointer():
         #fill i missing values withappropriate defaults. would also filter any unnecesary keys but there aren't and it wouldn't be necessary anyway
         userfomdlist=[dict([(k, str(d[k]) if k in d.keys() else '') for k in strkeys]+[(k, float(d[k]) if k in d.keys() else numpy.nan) for k in floatkeys]) for d in userfomdlist]
 
-        
+        if len(userfomdlist)<len(self.fomdlist):#for typicaly analysis filedlit and fomdlit are same length but for process fom filedlist is only the fom files and fomdlist is arbitrary length - in this case shouldn't have anr run-based FOMs anyway so this is just a formality
+            userfomdlist=[userfomdlist[0]]*len(self.fomdlist)
         
         anauserfomd=dict([(k, v) for k, v in anauserfomd.iteritems() if not k in self.fomnames])
         strkeys+=[k for k, v in anauserfomd.iteritems() if isinstance(v, str)]
@@ -137,21 +141,22 @@ class Analysis_Master_nointer():
             self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-    def writefom(self, destfolder, anak, anauserfomd={}):
+    def writefom(self, destfolder, anak, anauserfomd={}, fn=None, strkeys_fomdlist=[]):#self.fomnames assumed to be float
         
         strkeys, floatkeys, userfomdlist=self.genuserfomdlist(anauserfomd)
         
-        fnf='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
-        self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys+self.fomnames, intfomkeys=['runint','plate_id'], strfomkeys=strkeys)#, fn=fnf)
+        if fn is None:
+            fn='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
+        self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys+self.fomnames, intfomkeys=['runint','plate_id'], strfomkeys=strkeys+strkeys_fomdlist)#, fn=fnf)
         if destfolder is None:
             return
         
-        allfomnames=['sample_no', 'runint', 'plate_id']+strkeys+floatkeys+self.fomnames#this is the order in createcsvfilstr and doesn't allow int userfoms
+        allfomnames=['sample_no', 'runint', 'plate_id']+strkeys+strkeys_fomdlist+floatkeys+self.fomnames#this is the order in createcsvfilstr and doesn't allow int userfoms
         
-        p=os.path.join(destfolder,fnf)
+        p=os.path.join(destfolder,fn)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
-        self.multirunfiledict['fom_files'][fnf]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
+        self.multirunfiledict['fom_files'][fn]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
@@ -187,63 +192,63 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
 
-class Analysis_Master_onlyfom(Analysis_Master_nointer):
-    def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams=dict(['analysis_key', 'ana__x'])
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis_Master1'
-        self.requiredkeys=[]
-        self.optionalkeys=[]
-        self.requiredparams=[]
-        self.fomnames=[]
-        self.plotparams={}
-        self.csvheaderdict=dict({}, csv_version='1')
-        
-    def processnewparams(self):
-        return
-    #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
-        return []
-    
-    def check_input(self, critfracapplicable=0.9):
-        return True, ''
-    def check_output(self, critfracnan=0.9):
-        if len(self.fomdlist)==0:
-            return False, 'No data'
-        return True, ''
-
-    def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
-        if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
-            p=prepend_root_exp_path(p)
-        try:
-            pd=p+'.dat'
-            dataarr=readbinary_selinds(pd, numkeys, keyinds, zipclass=zipclass)
-            return dataarr
-        except:
-            pass
-#        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
-        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
-        return dataarr
-    
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
-        self.initfiledicts()
-        self.fomdlist=[]
-        for filed in self.filedlist:
-#            if numpy.isnan(filed['sample_no']):
+#class Analysis_Master_onlyfom(Analysis_Master_nointer):
+#    def __init__(self):
+#        self.analysis_fcn_version='1'
+#        self.dfltparams=dict(['analysis_key', 'ana__x'])
+#        self.params=copy.copy(self.dfltparams)
+#        self.analysis_name='Analysis_Master1'
+#        self.requiredkeys=[]
+#        self.optionalkeys=[]
+#        self.requiredparams=[]
+#        self.fomnames=[]
+#        self.plotparams={}
+#        self.csvheaderdict=dict({}, csv_version='1')
+#        
+#    def processnewparams(self):
+#        return
+#    #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
+#    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+#        return []
+#    
+#    def check_input(self, critfracapplicable=0.9):
+#        return True, ''
+#    def check_output(self, critfracnan=0.9):
+#        if len(self.fomdlist)==0:
+#            return False, 'No data'
+#        return True, ''
+#
+#    def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
+#        if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
+#            p=prepend_root_exp_path(p)
+#        try:
+#            pd=p+'.dat'
+#            dataarr=readbinary_selinds(pd, numkeys, keyinds, zipclass=zipclass)
+#            return dataarr
+#        except:
+#            pass
+##        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
+#        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
+#        return dataarr
+#    
+#    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
+#        self.initfiledicts()
+#        self.fomdlist=[]
+#        for filed in self.filedlist:
+##            if numpy.isnan(filed['sample_no']):
+##                if self.debugmode:
+##                    raiseTEMP
+##                continue
+#            fn=filed['fn']
+#            try:
+#                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+#                fomtuplist=self.fomtuplist_dataarr(dataarr, filed)
+#            except:
 #                if self.debugmode:
 #                    raiseTEMP
-#                continue
-            fn=filed['fn']
-            try:
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
-                fomtuplist=self.fomtuplist_dataarr(dataarr, filed)
-            except:
-                if self.debugmode:
-                    raiseTEMP
-                fomtuplist=[(k, numpy.nan) for k in self.fomnames]
-                pass
-            self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
-            #writeinterdat
-        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-        
+#                fomtuplist=[(k, numpy.nan) for k in self.fomnames]
+#                pass
+#            self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+#            #writeinterdat
+#        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
+#        

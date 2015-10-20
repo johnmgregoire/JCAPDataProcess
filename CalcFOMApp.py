@@ -29,6 +29,7 @@ sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 from CV_photo import *
 from develop_analysis_class import *
+from FOM_process_basics import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
@@ -36,9 +37,12 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__TR_UVVIS(), Analysis__BG_DA()\
     ]
 
+FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__FilterSmoothFromFile]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
+#NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
+
 DEBUGMODE=False
 
-for ac in AnalysisClasses:
+for ac in AnalysisClasses+FOMProcessClasses:
     ac.debugmode=DEBUGMODE
 
 class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
@@ -115,6 +119,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
         
         QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+        QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+        
+        
         QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
@@ -226,16 +233,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if self.expzipclass:
             self.expzipclass.close()
         self.expzipclass=expzipclass
+        self.FilterSmoothMapDict={}
         if self.getplatemapCheckBox.isChecked():
-           for runk, rund in self.expfiledict.iteritems():
+            for runk, rund in self.expfiledict.iteritems():
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
                     rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])), \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
-
-        
+                if runk.startswith('run__') and not 'platemap_id' in rund.keys():
+                    rund['platemap_id']=getplatemapid_plateidstr(str(rund['parameters']['plate_id']), erroruifcn=\
+                    lambda s:userinputcaller(self, inputs=[('platemap id: ', str, '')], title=s,  cancelallowed=False)[0])
+            platemapids=[rund['platemap_id'] for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
+            self.FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
+            
         self.paramsdict_le_dflt['analysis_type'][1]=self.expfiledict['experiment_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
@@ -353,14 +365,40 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for count, i in enumerate(self.AnalysisClassInds):
             self.AnalysisNamesComboBox.insertItem(count+1, AnalysisClasses[i].analysis_name+('(%d)' %nfiles_classes[i]))
             self.AnalysisNamesComboBox.setCurrentIndex(1)
+            
+        
+        filternames=list(set([k for d in self.FilterSmoothMapDict.values() for k in d.keys()]))
+        
+        nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict)) for i, c in enumerate(FOMProcessClasses[:-1])]
+        self.FOMProcessClassInds=[i for i, nf in enumerate(nfiles_classes) if nf>0]
+        self.FOMProcessNamesComboBox.clear()
+        self.FOMProcessNamesComboBox.insertItem(0, 'use analysis function')
+        for count, i in enumerate(self.FOMProcessClassInds):
+            self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(FOMProcessClasses[i].analysis_name, FOMProcessClasses[i].params['select_ana']))
+#        if len(FOMProcessClasses[-1].getapplicablefomfiles(anadict=self.anadict))>0 and len(filternames)>0:
+#            self.FOMProcessClassInds+=[-1]
+#            for filtername in filternames:
+#                count+=1
+#                self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+            
+        
         self.getactiveanalysisclass()
     
     def getactiveanalysisclass(self):
-        selind=int(self.AnalysisNamesComboBox.currentIndex())
-        if selind==0:
-            self.analysisclass=None
-            return
-        self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
+        procselind=int(self.FOMProcessNamesComboBox.currentIndex())
+        if procselind>0:
+            procclassind=self.FOMProcessClassInds[procselind-1]
+            self.analysisclass=FOMProcessClasses[procclassind]
+            if procclassind==-1:#filter from pck
+                filtername=str(self.FOMProcessNamesComboBox.currentIndex()).partition('(')[0]#write the filter_path__runk while handy here to use later
+                self.analysisclass.filter_path__runk=dict([(runk, self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+        else:
+            selind=int(self.AnalysisNamesComboBox.currentIndex())
+            if selind==0:
+                self.analysisclass=None
+                return
+            self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
         #self.activeana=None
         
         le, dflt=self.paramsdict_le_dflt['description']
@@ -432,9 +470,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
             self.analysisclass.processnewparams()
-            selind=int(self.AnalysisNamesComboBox.currentIndex())
             nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
-            self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
+            if self.analysisclass.getgeneraltype()=='processfom':
+                selind=int(self.FOMProcessNamesComboBox.currentIndex())
+                self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(self.analysisclass.analysis_name, self.analysisclass.params['select_ana']))
+            else:
+                selind=int(self.AnalysisNamesComboBox.currentIndex())
+                self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
             self.getactiveanalysisclass()#this is only to update the description if necessary
     def analyzedata(self):
         if self.analysisclass is None:
@@ -711,7 +753,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         fi=self.fomplotchoiceComboBox.currentIndex()
         fom=numpy.array([d[self.fomnames[fi]] for d in self.fomdlist])
-        runkarr=numpy.array([d['expkeys'][0] for d in self.filedlist])
+        runkarr=numpy.array(['run__%d' %(d['runint']) for d in self.fomdlist])
+        if 'expkeys' in self.filedlist[0].keys():#generally standard analysis class
+            #runkarr=numpy.array([d['expkeys'][0] for d in self.filedlist])
+            daqtimebool=self.usedaqtimeCheckBox.isChecked()
+        else:#generally Process FOM
+            daqtimebool=False
+            
         
         inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
         if len(inds)==0:
@@ -722,7 +770,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         sample=numpy.array([self.fomdlist[i]['sample_no'] for i in inds])
         
         inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
-        daqtimebool=self.usedaqtimeCheckBox.isChecked()
+        
 
         t=[]
 #        else:

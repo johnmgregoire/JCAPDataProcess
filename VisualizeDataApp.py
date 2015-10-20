@@ -339,7 +339,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     rund=self.expfiledict['run__%d' %d['runint']]
                     pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
-                    for k in self.ellabels+['code', 'x', 'y']:
+                    for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D']:
                         if not k in d.keys():
                             d[k]=pmd[k]
                             if not k in fomnames:

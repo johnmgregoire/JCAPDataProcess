@@ -643,13 +643,49 @@ def getelements_plateidstr(plateidstr):
     if p is None:
         return None
     with open(p, mode='r') as f:
-        filestr=f.read(1000)
+        filestr=f.read(10000)
     searchstr='        elements: '
     if not searchstr in filestr:
         return None
     s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
     return s.split(',')
-    
+
+def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
+    p=getinfopath_plateid(plateidstr)
+    s=None
+    if not p is None:
+        with open(p, mode='r') as f:
+            filestr=f.read(10000)
+        searchstr='        map_id: '
+        if searchstr in filestr:
+            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+    if s is None and not erroruifcn is None:
+        s=erroruifcn('Enter Platemap ID')
+    return s
+
+def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
+    fold=tryprependpath(FOMPROCESSFOLDERS, '', testfile=False, testdir=True)
+    if fold is None:
+        return {}
+    platemapids=[str(v) for v in list(set(platemapids))]
+    d=dict([(str(v), {}) for v in platemapids])
+    for fn in os.listdir(fold):
+        id=fn.partition('-')[0].lstrip('0')
+        if not id in platemapids:
+            continue
+        filtername=fn.partition('_')[2].rstrip('.pck')
+        d[id][filtername]=os.path.join(fold, fn)
+    if len(platemapids)<=1 or not requirepckforallmapids:
+        return d
+    kl=set(d[platemapids[0]])
+    for id in platemapids[1:]:
+        kl=kl.intersection(set(d[id]))
+    for dv in d.values():
+        for kv in dv.keys():
+            if not kv in kl:
+                dv.pop(kv)
+    return d
+
 def readrcpfrommultipleruns(pathlist):
     techset=set([])
     typeset=set([])

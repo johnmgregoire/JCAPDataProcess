@@ -12,4 +12,4 @@ ANAFOLDERS_J=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/analysis', 'J
 
 ANAFOLDERS_K=['//htejcap.caltech.edu/share/home/processes/analysis', 'K:/processes/analysis']
 
-SMOOTHFOLDERS=['//htejcap.caltech.edu/share/home/users/hte/platemaps/FilterSmoothMaps', 'K:/users/hte/platemaps/FilterSmoothMaps']
+FOMPROCESSFOLDERS=['//htejcap.caltech.edu/share/home/users/hte/platemaps/FilterSmoothMaps', 'K:/users/hte/platemaps/FilterSmoothMaps']
