@@ -65,10 +65,12 @@ def mergelinsegs(params,num_knots,max_merge_differentialTP,merge_linsegslopediff
         newslopes[0]=slopes[0]
         newknots[0:2]=knots[0:2]
         while loc <np.shape(slopes)[0]-1:
-            medianslope=(newslopes[j]*(newknots[j+1]-newknots[j])+slopes[loc+1]*(knots[loc+2]-knots[loc+1]))/(knots[loc+2]-newknots[j])
+            medianslope=(newslopes[j]*(newknots[j+1]-newknots[j])+slopes[loc+1]*(knots[loc+2]-knots[loc+1]))\
+            /(knots[loc+2]-newknots[j])
             differentialTPdiff=(medianslope-newslopes[j])*(newknots[j+1]-newknots[j])
             TPdiff=newslopes[j]*(newknots[j+1]-newknots[j])
-            if abs(differentialTPdiff)<min(max_merge_differentialTP,merge_linsegslopediff_percent*TPdiff):
+            TPdiffn=slopes[loc+1]*(knots[loc+2]-knots[loc+1])
+            if abs(differentialTPdiff)<min(max_merge_differentialTP,merge_linsegslopediff_percent*(TPdiff+TPdiffn)):
                 newslopes[j]=medianslope
                 slopes[loc]=medianslope
                 slopes[loc+1]=medianslope
