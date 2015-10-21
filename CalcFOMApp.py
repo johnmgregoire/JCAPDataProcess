@@ -137,8 +137,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
-        self.batchprocesses=[self.batch_filterallana]
-        batchdesc=['Run Prcoess FOM on all presetn ana__x']
+        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess]
+        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
             
@@ -485,6 +485,19 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
         self.getactiveanalysisclass()#this is only to update the description if necessary
+        
+    def gethighestanak(self, getnextone=False):
+        kfcn=lambda i:'ana__%d' %i
+        i=1
+        while kfcn(i) in self.anadict.keys():
+            i+=1
+        if getnextone:
+            anak=kfcn(i)
+        else:
+            anak=kfcn(i-1)
+            if not anak in self.anadict.keys():
+                return None
+        return anak
     def analyzedata(self):
         if self.analysisclass is None:
             return
@@ -498,11 +511,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
         expdatfolder=self.expfolder
         
-        kfcn=lambda i:'ana__%d' %i
-        i=1
-        while kfcn(i) in self.anadict.keys():
-            i+=1
-        anak=kfcn(i)
+        anak=self.gethighestanak(getnextone=True)
         #try:
         if 1:
             self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, anauserfomd=self.userfomd)
@@ -1064,7 +1073,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
     
-    def batch_filterallana(self):
+    def batch_processallana(self):
         if int(self.FOMProcessNamesComboBox.currentIndex())==0:
             print 'quitting batch process because use analysis function was selected instead of a FOM process'
             return
@@ -1084,7 +1093,35 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.FOMProcessNamesComboBox.setCurrentIndex(i)
             self.getactiveanalysisclass()
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
+    
+    def batch_analyzethenprocess(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        self.getactiveanalysisclass()
+        anak=self.gethighestanak(getnextone=True)
+        self.analyzedata()
+        if anak!=self.gethighestanak(getnextone=False):
+            print 'quitting batch process because analysis function did not successfully run'
+            return 
+
         
+        matchbool=False
+        for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+            matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+            if matchbool:
+                break
+        if not matchbool:
+            print 'skipping %s, probably because no appropriate fom_files found' %anak
+        self.FOMProcessNamesComboBox.setCurrentIndex(i)
+        self.getactiveanalysisclass()
+        self.analysisclass.params['select_ana']=anak
+        self.processeditedparams()#self.getactiveanalysisclass() run in here
+        self.analyzedata()
+        
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
         
         
         #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label

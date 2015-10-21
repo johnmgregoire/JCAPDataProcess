@@ -94,12 +94,17 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
         self.plotparams=dict({}, plot__1={})
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
     
+    
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'processfom'
         
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         return self.getapplicablefomfiles(anadict)
+        
     def getapplicablefomfiles(self, anadict):
+        if not anadict is None and self.params['select_ana'] in anadict.keys() and 'plot_parameters' in anadict[self.params['select_ana']]:
+            self.plotparams=copy.deepcopy(anadict[self.params['select_ana']]['plot_parameters'])
+            
         self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)#has to be called filedlist tro work with other analysis fcns
         #self.filedlist=[dict(d, user_run_foms={}) for d in self.filedlist]#has to be here because only place with access to expfiledict
         self.description='process %s' %self.params['select_ana']
