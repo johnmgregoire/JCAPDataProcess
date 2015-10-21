@@ -137,6 +137,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
+        self.batchprocesses=[self.batch_filterallana]
+        batchdesc=['Run Prcoess FOM on all presetn ana__x']
+        for i, l in enumerate(batchdesc):
+            self.BatchComboBox.insertItem(i, l)
+            
         self.getplatemapCheckBox.setChecked(True)
         
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
@@ -416,7 +421,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.RunSelectTreeWidget.clear()
         self.plotd={}
     def runbatchprocess(self):
-        return
+        self.batchprocesses[self.BatchComboBox.currentIndex()]()
 
     def importana(self):
         p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
@@ -469,15 +474,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 paramsd[k]=newv
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
-            self.analysisclass.processnewparams()
-            nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
-            if self.analysisclass.getgeneraltype()=='processfom':
-                selind=int(self.FOMProcessNamesComboBox.currentIndex())
-                self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
-            else:
-                selind=int(self.AnalysisNamesComboBox.currentIndex())
-                self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
-            self.getactiveanalysisclass()#this is only to update the description if necessary
+            self.processeditedparams()
+    def processeditedparams(self):
+        self.analysisclass.processnewparams()
+        nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
+        if self.analysisclass.getgeneraltype()=='processfom':
+            selind=int(self.FOMProcessNamesComboBox.currentIndex())
+            self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
+        else:
+            selind=int(self.AnalysisNamesComboBox.currentIndex())
+            self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
+        self.getactiveanalysisclass()#this is only to update the description if necessary
     def analyzedata(self):
         if self.analysisclass is None:
             return
@@ -1056,7 +1063,31 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
         
         self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
-
+    
+    def batch_filterallana(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        presentanakeys=sorted([k for k, v in self.anadict.iteritems() if k.startswith('ana__')])
+        for anak in presentanakeys:
+            self.analysisclass.params['select_ana']=anak
+            self.processeditedparams()#self.getactiveanalysisclass() run in here
+            self.analyzedata()
+            matchbool=False
+            for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+                matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+                if matchbool:
+                    break
+            if not matchbool:
+                print 'skipping %s, probably because no appropriate fom_files found' %anak
+            self.FOMProcessNamesComboBox.setCurrentIndex(i)
+            self.getactiveanalysisclass()
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        
+        
+        
+        #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

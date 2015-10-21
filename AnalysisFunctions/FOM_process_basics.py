@@ -141,7 +141,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
 class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999.}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999.}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FilterSmoothFromFile'
         self.requiredkeys=[]
@@ -199,7 +199,7 @@ class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED
 class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__AveCompDuplicates'
         self.requiredkeys=[]

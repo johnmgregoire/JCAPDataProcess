@@ -159,7 +159,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.RunTypeLineEdit.setText(str(self.RunTypeLineEdit.text()).partition('__')[0]+'__'+','.join(vals))
 
     def runbatchprocess(self):
-         self.batchprocesses[self.BatchComboBox.currentIndex()]()
+        self.batchprocesses[self.BatchComboBox.currentIndex()]()
     def batchuvissingleplate(self):
         cb=self.PlateAttrMoreComboBox
         for i in range(int(cb.count())):
