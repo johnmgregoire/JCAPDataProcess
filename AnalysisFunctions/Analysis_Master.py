@@ -60,6 +60,10 @@ class Analysis_Master_nointer():
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'standard'
     
+    def prepareanafilestuples__runk_typek_multirunbool(self):
+        runk_typek_b=sorted([('multi_run', typek, True) for typek in self.multirunfiledict.keys() if len(self.multirunfiledict[typek])>0])
+        runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
+        return runk_typek_b
     def processnewparams(self):
         return
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform

@@ -478,7 +478,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def processeditedparams(self):
         self.analysisclass.processnewparams()
         nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
-        if self.analysisclass.getgeneraltype()=='processfom':
+        if 'process_fom' in self.analysisclass.getgeneraltype():
             selind=int(self.FOMProcessNamesComboBox.currentIndex())
             self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
         else:
@@ -521,18 +521,34 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #                removefiles(self.tempanafolder, [k for rund in \
 #                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
 #                return
-        checkbool, checkmsg=self.analysisclass.check_output()
-        if not checkbool:
-            idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
-            if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for d in \
-                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
-                return
+        runk_typek_b=self.analysisclass.prepareanafilestuples__runk_typek_multirunbool()
+        killana=False
+        if len(runk_typek_b)==0:
+            killana=True
+        else:
+            checkbool, checkmsg=self.analysisclass.check_output()
+            if not checkbool:
+                idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
+                if not idialog.exec_():
+                    killana=True
+                    removefiles(self.tempanafolder, [k for d in \
+                        ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
+        if killana:
+            return #anadict not been modified yet
         
         self.updateuserfomd(clear=True)
         self.anadict[anak]={}
         self.activeana=self.anadict[anak]
         
+        for runk, typek, b in runk_typek_b:
+            frunk='files_'+runk
+            if not frunk in self.activeana.keys():
+                self.activeana[frunk]={}
+            if b:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
+            else:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
+                
         self.activeana['name']=self.analysisclass.analysis_name
         self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
         
@@ -554,17 +570,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     self.activeana['parameters'][k][v2]=str(v2)
             else:
                 self.activeana['parameters'][k]=str(v)
-        self.activeana['technique']=self.techk
-        runk_typek_b=sorted([('multi_run', typek, True) for typek in self.analysisclass.multirunfiledict.keys() if len(self.analysisclass.multirunfiledict[typek])>0])
-        runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.analysisclass.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
-        for runk, typek, b in runk_typek_b:
-            frunk='files_'+runk
-            if not frunk in self.activeana.keys():
-                self.activeana[frunk]={}
-            if b:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
-            else:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
+        
+        gentype=self.analysisclass.getgeneraltype()
+        if 'process_fom' in gentype:
+            if 'from_file' in gentype:
+                self.activeana['process_fom_from_file_paths']=','.join(sorted(list(set([compareprependpath(FOMPROCESSFOLDERS, p) for p in self.analysisclass.filter_path__runint.values()]))))
+        else:
+            self.activeana['technique']=self.techk
+        self.activeana['analysis_general_type']=gentype
+
 
         self.fomdlist=self.analysisclass.fomdlist
         self.filedlist=self.analysisclass.filedlist

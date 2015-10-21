@@ -96,7 +96,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
     
     
     def getgeneraltype(self):#make this fucntion so it is inhereted
-        return 'processfom'
+        return 'process_fom'
         
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         return self.getapplicablefomfiles(anadict)
@@ -140,6 +140,9 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
                 print 'skipped filter/smooth of file ', fn
                 self.fomdlist=[]
                 continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
 
         
@@ -156,7 +159,9 @@ class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED
         self.plotparams=dict({}, plot__1={})
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.filter_path__runint={}
-    
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'process_fom_from_file'
+        
     def process_fomd(self, fomd, process_keys, along_for_the_ride_keys):
         i0=self.params['sorted_ind_start']
         i1=self.params['sorted_ind_stop']
