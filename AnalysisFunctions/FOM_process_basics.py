@@ -138,10 +138,10 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
 
         
-class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):
+class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':''}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999.}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FilterSmoothFromFile'
         self.requiredkeys=[]
@@ -150,8 +150,52 @@ class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):
         self.fomnames=[]
         self.plotparams=dict({}, plot__1={})
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.filter_path__runk=''
+        self.filter_path__runint={}
+    
+    def process_fomd(self, fomd, process_keys, along_for_the_ride_keys):
+        i0=self.params['sorted_ind_start']
+        i1=self.params['sorted_ind_stop']
+        numstd=self.params['nsig_remove_outliers']
+        ignorebool=self.params['ignore_if_any_nan']
+        runintset=sorted(list(set(fomd['runint'])))
         
+        d_smpstoave__runint={}
+        for runint in runintset:
+            with open(self.filter_path__runint[runint], mode='rU') as f:
+                d_smpstoave__runint[runint]=pickle.load(f)
+
+        d_smpstoave=dict([(sample_no, d_smpstoave__runint[runint][sample_no]) for (runint, sample_no) in zip(fomd['runint'], fomd['sample_no']) if sample_no in d_smpstoave__runint[runint].keys()])#creates sample-index dict that combines all runs and potentially plates. THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
+        smplist=list(fomd['sample_no'])
+        smpkey_reprinds=[(sample_no, smplist.index(sample_no)) for sample_no in d_smpstoave.keys()]
+        
+        
+        fomdlist=[]
+        strk='SmpRunPlate_Association'
+        for smpkey, repind in smpkey_reprinds:
+            inds=[smplist.index(sample_no) for sample_no in d_smpstoave[smpkey] if sample_no in smplist]
+            fd={}
+            fd[strk]=';'.join(['_'.join([str(fomd[k][i]) for k in ['sample_no', 'runint', 'plate_id']]) for i in inds])
+            for k in along_for_the_ride_keys:
+                fd[k]=fomd[k][repind]
+            for k in process_keys:
+                arr=fomd[k][inds]
+                if numpy.all(numpy.isnan(arr)) or (ignorebool and numpy.any(numpy.isnan(arr))):
+                    fd[k]=numpy.nan
+                    continue
+                arr=arr[numpy.logical_not(numpy.isnan(arr))]
+                #stddevremoval***
+                
+                if len(arr)>1 and numstd<999.:
+                    arr2=numpy.abs((arr-arr.mean())/arr.std())
+                    while (len(arr)>1) and numpy.max(arr2)>numstd:
+                        arr=numpy.delete(arr, arr2.argmax())
+                        arr2=numpy.abs((arr-arr.mean())/arr.std())
+                arr=arr[numpy.argsort(arr)]
+                fd[k]=arr[i0:i1].mean()
+            fomdlist+=[fd]
+        self.strkeys_fomdlist=[strk]
+        return fomdlist
+
 class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
@@ -212,6 +256,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
         self.strkeys_fomdlist=[strk]
         return fomdlist
 
+##SIMPLE DUMMY DATA TEST
 #c=Analysis__AveCompDuplicates()
 #
 #c.platemapdlist_runint={}
@@ -222,6 +267,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 #fomd={'sample_no':numpy.array([4, 6, 8, 9, 11]), 'runint':numpy.array([1, 1, 1, 2, 2]), 'z':numpy.array([1., 10., 100., 1000., 10000.])}
 #fdl=c.process_fomd(fomd, ['z'], ['sample_no','runint'])
 
+##TEST ANALYSIS__AVECOMPDUPLICATES
 #exppath=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151019.165501.done\20151019.165501.exp'
 #anapath=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20151020.145208.run\20151020.145208.ana'
 #expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
@@ -278,3 +324,83 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 #
 #arr=arr[numpy.argsort(arr)]
 #ans=arr[i0:i1].mean()
+
+
+###TEST Analysis__FilterSmoothFromFile
+#exppath=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151020.090148.done\20151020.090148.exp'
+#anapath=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20151020.203002.run\20151020.203002.ana'
+#
+#
+#expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
+#anadict=readana(anapath, stringvalues=True)
+#destfolder=os.path.split(anapath)[0]
+#
+#FilterSmoothMapDict={}
+#
+#for runk, rund in expfiledict.iteritems():
+#    if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
+#             and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
+#             and 'plate_id' in rund['parameters'].keys():
+#        rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])))
+#    if runk.startswith('run__') and not 'platemap_id' in rund.keys():
+#        rund['platemap_id']=getplatemapid_plateidstr(str(rund['parameters']['plate_id']))
+#platemapids=[rund['platemap_id'] for runk, rund in expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
+#FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
+#
+#c=Analysis__FilterSmoothFromFile()
+#c.filter_path__runint={}
+#c.filter_path__runint[1]=r'\\htejcap.caltech.edu\share\home\experiments\eche\FilterSmoothMaps\0049-04-0830-mp_dneighbor_code130.pck'
+#
+#c.getapplicablefomfiles(anadict)
+#c.perform(destfolder)
+#
+#
+#
+#filed=c.filedlist[0]
+#fn=filed['fn']
+#fomd, csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+#fomnames=list(set(fomd.keys()).difference(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))#this is to emulate otherAnalysisClass for self.writefom()
+#process_keys=filed['process_keys']
+#along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
+#compdelta=c.params['crit_comp_dist']
+#i0=c.params['sorted_ind_start']
+#i1=c.params['sorted_ind_stop']
+#
+#
+#i0=c.params['sorted_ind_start']
+#i1=c.params['sorted_ind_stop']
+#numstd=c.params['nsig_remove_outliers']
+#ignorebool=c.params['ignore_if_any_nan']
+#runintset=sorted(list(set(fomd['runint'])))
+#        
+#d_smpstoave__runint={}
+#for runint in runintset:
+#    with open(c.filter_path__runint[runint], mode='rU') as f:
+#        d_smpstoave__runint[runint]=pickle.load(f)
+#
+#d_smpstoave=dict([(sample_no, d_smpstoave__runint[runint][sample_no]) for (runint, sample_no) in zip(fomd['runint'], fomd['sample_no']) if sample_no in d_smpstoave__runint[runint].keys()])#creates sample-index dict that combines all runs and potentially plates. THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
+#smplist=list(fomd['sample_no'])
+#smpkey_reprinds=[(sample_no, smplist.index(sample_no)) for sample_no in d_smpstoave.keys()]
+#strk='strk'
+#smpkey, repind = smpkey_reprinds[0]
+#inds=[smplist.index(sample_no) for sample_no in d_smpstoave[smpkey] if sample_no in smplist]
+#fd={}
+#fd[strk]=';'.join(['_'.join([str(fomd[k][i]) for k in ['sample_no', 'runint', 'plate_id']]) for i in inds])
+#for k in along_for_the_ride_keys:
+#    fd[k]=fomd[k][repind]
+#for k in process_keys:
+#    arr=fomd[k][inds]
+#    if numpy.all(numpy.isnan(arr)) or (ignorebool and numpy.any(numpy.isnan(arr))):
+#        fd[k]=numpy.nan
+#        continue
+#    arr=arr[numpy.logical_not(numpy.isnan(arr))]
+#   #stddevremoval***
+#    
+#    if len(arr)>1 and numstd<999.:
+#        arr2=numpy.abs((arr-arr.mean())/arr.std())
+#        while (len(arr)>1) and numpy.max(arr2)>numstd:
+#            arr=numpy.delete(arr, arr2.argmax())
+#            arr2=numpy.abs((arr-arr.mean())/arr.std())
+#    arr=arr[numpy.argsort(arr)]
+#    fd[k]=arr[i0:i1].mean()
+#    

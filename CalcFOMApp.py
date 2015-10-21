@@ -37,7 +37,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__TR_UVVIS(), Analysis__BG_DA()\
     ]
 
-FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__FilterSmoothFromFile]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
+FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
 #NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
 
 DEBUGMODE=False
@@ -375,11 +375,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.FOMProcessNamesComboBox.insertItem(0, 'use analysis function')
         for count, i in enumerate(self.FOMProcessClassInds):
             self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(FOMProcessClasses[i].analysis_name, FOMProcessClasses[i].params['select_ana']))
-#        if len(FOMProcessClasses[-1].getapplicablefomfiles(anadict=self.anadict))>0 and len(filternames)>0:
-#            self.FOMProcessClassInds+=[-1]
-#            for filtername in filternames:
-#                count+=1
-#                self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
+        if len(FOMProcessClasses[-1].getapplicablefomfiles(self.anadict))>0 and len(filternames)>0:
+            for filtername in filternames:
+                self.FOMProcessClassInds+=[-1]#each filtername from a .pck file uses the same analysis class
+                count+=1
+                self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
             
         
@@ -391,8 +391,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             procclassind=self.FOMProcessClassInds[procselind-1]
             self.analysisclass=FOMProcessClasses[procclassind]
             if procclassind==-1:#filter from pck
-                filtername=str(self.FOMProcessNamesComboBox.currentIndex()).partition('(')[0]#write the filter_path__runk while handy here to use later
-                self.analysisclass.filter_path__runk=dict([(runk, self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+                filtername=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]#write the filter_path__runint while handy here to use later
+                self.analysisclass.filter_path__runint=dict([(int(runk.partition('__')[2]), self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
         else:
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             if selind==0:
@@ -473,7 +473,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
             if self.analysisclass.getgeneraltype()=='processfom':
                 selind=int(self.FOMProcessNamesComboBox.currentIndex())
-                self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(self.analysisclass.analysis_name, self.analysisclass.params['select_ana']))
+                self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
             else:
                 selind=int(self.AnalysisNamesComboBox.currentIndex())
                 self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
