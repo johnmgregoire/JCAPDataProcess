@@ -264,6 +264,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         rp=os.path.split(self.exppath)[0]
         rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, rp)
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
+        print 'active experiment_path is %s' %(self.anadict['experiment_path'])
         self.anadict['experiment_name']=self.expfiledict['name']
         self.fillexpoptions()
     
