@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Fri Sep 25 23:04:24 2015
+# Created: Fri Oct 23 15:22:22 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -226,6 +226,7 @@ class Ui_CreateExpDialog(object):
         self.SaveExpGoAnaPushButton.setObjectName(_fromUtf8("SaveExpGoAnaPushButton"))
         self.getplatemapCheckBox = QtGui.QCheckBox(CreateExpDialog)
         self.getplatemapCheckBox.setGeometry(QtCore.QRect(360, 40, 119, 31))
+        self.getplatemapCheckBox.setChecked(True)
         self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
         self.UserFOMLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.UserFOMLineEdit.setGeometry(QtCore.QRect(510, 220, 151, 20))

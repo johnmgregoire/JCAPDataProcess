@@ -606,7 +606,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.updateana()
         self.plot_preparestandardplot(plotbool=False)
-        self.plot_generatedata(plotbool=True)
+        if self.autoplotCheckBox.isChecked():
+            self.plot_generatedata(plotbool=True)
 
 
         
@@ -791,15 +792,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         else:#generally Process FOM
             daqtimebool=False
             
-        
-        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
-        if len(inds)==0:
+        # inds are inds from  self.fomdlist, not all of which are used because some are NaN
+        fomdlistinds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
+        if len(fomdlistinds)==0:
             print 'ABORTING PLOTTING BECAUSE ALL FOMs ARE NaN'
             return
-        fom=fom[inds]
-        runkarr=runkarr[inds]
-        sample=numpy.array([self.fomdlist[i]['sample_no'] for i in inds])
-        
+        #here the fom and runkarr and sample arrays are setup 
+        fom=fom[fomdlistinds]
+        runkarr=runkarr[fomdlistinds]
+        sample=numpy.array([self.fomdlist[i]['sample_no'] for i in fomdlistinds])
+        #and now this is a dictionary that given a runk looks ups the inds from the above arrays, i.e. these inds are inds of the selction from fomdlist, NOT from fomdlist
         inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
         
 
@@ -807,13 +809,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #        else:
 #            hx=numpy.arange(len(fom))
 
-        for runk in sorted(inds_runk.keys()):
-            if daqtimebool:
-                fns=[self.filedlist[inds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
-                t+=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
-
-           # hy+=[fom[inds_runk[runk]]]
+        #remapinds=[i for runk in sorted(inds_runk.keys()) for i in inds_runk[runk]]
+        
         if daqtimebool:
+            t=numpy.zeros(len(fom), dtype='float64')
+            for runk in sorted(inds_runk.keys()):
+                fns=[self.filedlist[fomdlistinds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
+                t[inds_runk[runk]]=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
             t=numpy.array(t)
             t-=t.min()
 #        else:
@@ -823,26 +825,27 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         nanxy=[numpy.nan]*2
         nancomp=[numpy.nan]*4
-        xy=[]
-        comps=[]
+        xy=numpy.ones((len(fom), 2), dtype='float64')*numpy.nan
+        comps=numpy.ones((len(fom), 4), dtype='float64')*numpy.nan
         for runk in sorted(inds_runk.keys()):
             if not 'platemapdlist' in self.expfiledict[runk].keys() or len(self.expfiledict[runk]['platemapdlist'])==0:
-                if not compplottype=='none':
-                    comps+=[nancomp]*len(inds_runk[runk])
-                xy+=[nanxy]*len(inds_runk[runk])
+#                if not compplottype=='none':
+#                    comps+=[nancomp]*len(inds_runk[runk])
+#                xy+=[nanxy]*len(inds_runk[runk])
                 continue
             pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
-            xy+=[(smp in pmsmps and \
-                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']],) \
-                         or (nanxy, ))[0] for smp in sample[inds_runk[runk]]]
+            xy[inds_runk[runk]]=numpy.float64([ \
+                         [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']] \
+                         if smp in pmsmps else nanxy for smp in sample[inds_runk[runk]]])
                          
-            if not compplottype=='none':
-                pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
-                comps+=[(smp in pmsmps and \
-                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']],) \
-                         or (nancomp, ))[0] for smp in sample[inds_runk[runk]]]
-        xy=numpy.float64(xy)
-        comps=numpy.float64(comps)
+            if compplottype=='none':
+                continue
+                
+            comps[inds_runk[runk]]=numpy.float64([\
+                     [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']] \
+                     if smp in pmsmps else nancomp for smp in sample[inds_runk[runk]]])
+#        xy=numpy.float64(xy)
+#        comps=numpy.float64(comps)
         
         self.plotd['comps']=numpy.array([c/c.sum() for c in comps])
         self.plotd['xy']=xy

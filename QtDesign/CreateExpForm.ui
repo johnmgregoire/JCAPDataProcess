@@ -858,6 +858,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
     <string>Get platemaps
 on RUN import</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QLineEdit" name="UserFOMLineEdit">
    <property name="geometry">

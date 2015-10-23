@@ -484,6 +484,9 @@ to generate Intermediate and FOM results</string>
    <property name="text">
     <string>Get platemaps</string>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QComboBox" name="CompPlotOrderComboBox">
    <property name="geometry">
@@ -596,7 +599,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>10</y>
+     <y>50</y>
      <width>119</width>
      <height>20</height>
     </rect>
@@ -609,7 +612,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>40</y>
+     <y>80</y>
      <width>119</width>
      <height>16</height>
     </rect>
@@ -622,7 +625,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>60</y>
+     <y>100</y>
      <width>119</width>
      <height>22</height>
     </rect>
@@ -635,7 +638,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>90</y>
+     <y>120</y>
      <width>119</width>
      <height>20</height>
     </rect>
@@ -648,7 +651,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>110</y>
+     <y>140</y>
      <width>119</width>
      <height>22</height>
     </rect>
@@ -661,7 +664,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>140</y>
+     <y>160</y>
      <width>119</width>
      <height>21</height>
     </rect>
@@ -674,7 +677,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>640</x>
-     <y>160</y>
+     <y>180</y>
      <width>119</width>
      <height>22</height>
     </rect>
@@ -1073,6 +1076,22 @@ to generate Intermediate and FOM results</string>
    </property>
    <property name="text">
     <string>Choose FOM post-process function:</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="autoplotCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>20</y>
+     <width>119</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Auto plot ana__x</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

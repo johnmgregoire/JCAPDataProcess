@@ -214,12 +214,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.ellabels=['A', 'B', 'C', 'D']
         else:#to get here evrythign has a platemap
             self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
-            for runk, rund in self.expfiledict.iteritems():
-                if not runk.startswith('run__'):
-                    continue
-                for d in rund['platemapdlist']:
-                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
-                        d[el]=d[oldlet]
+            self.remap_platemaplabels()
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
@@ -241,7 +236,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         
         
-        
+    def remap_platemaplabels(self):
+        for runk, rund in self.expfiledict.iteritems():
+                if not runk.startswith('run__'):
+                    continue
+                for d in rund['platemapdlist']:
+                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
+                        d[el]=d[oldlet]
+                        
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
@@ -887,6 +889,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
             if not ans is None:
                 self.ellabels=[v.strip() for v in ans]
+                self.remap_platemaplabels()
         self.CompPlotOrderComboBox.clear()
         for count, l in enumerate(itertools.permutations(self.ellabels, 4)):
             self.CompPlotOrderComboBox.insertItem(count, ','.join(l))

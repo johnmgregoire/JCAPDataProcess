@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Tue Oct 20 10:35:49 2015
+# Created: Fri Oct 23 15:14:59 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -170,6 +170,7 @@ class Ui_CalcFOMDialog(object):
         self.AnaTreeWidget.header().setStretchLastSection(True)
         self.getplatemapCheckBox = QtGui.QCheckBox(CalcFOMDialog)
         self.getplatemapCheckBox.setGeometry(QtCore.QRect(170, 10, 111, 21))
+        self.getplatemapCheckBox.setChecked(True)
         self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
         self.CompPlotOrderComboBox = QtGui.QComboBox(CalcFOMDialog)
         self.CompPlotOrderComboBox.setGeometry(QtCore.QRect(520, 220, 111, 22))
@@ -196,25 +197,25 @@ class Ui_CalcFOMDialog(object):
         self.fomplotchoiceComboBox.setGeometry(QtCore.QRect(520, 60, 111, 22))
         self.fomplotchoiceComboBox.setObjectName(_fromUtf8("fomplotchoiceComboBox"))
         self.usedaqtimeCheckBox = QtGui.QCheckBox(CalcFOMDialog)
-        self.usedaqtimeCheckBox.setGeometry(QtCore.QRect(640, 10, 119, 20))
+        self.usedaqtimeCheckBox.setGeometry(QtCore.QRect(640, 50, 119, 20))
         self.usedaqtimeCheckBox.setObjectName(_fromUtf8("usedaqtimeCheckBox"))
         self.label_9 = QtGui.QLabel(CalcFOMDialog)
-        self.label_9.setGeometry(QtCore.QRect(640, 40, 119, 16))
+        self.label_9.setGeometry(QtCore.QRect(640, 80, 119, 16))
         self.label_9.setObjectName(_fromUtf8("label_9"))
         self.aboverangecolLineEdit = QtGui.QLineEdit(CalcFOMDialog)
-        self.aboverangecolLineEdit.setGeometry(QtCore.QRect(640, 60, 119, 22))
+        self.aboverangecolLineEdit.setGeometry(QtCore.QRect(640, 100, 119, 22))
         self.aboverangecolLineEdit.setObjectName(_fromUtf8("aboverangecolLineEdit"))
         self.label_6 = QtGui.QLabel(CalcFOMDialog)
-        self.label_6.setGeometry(QtCore.QRect(640, 90, 119, 20))
+        self.label_6.setGeometry(QtCore.QRect(640, 120, 119, 20))
         self.label_6.setObjectName(_fromUtf8("label_6"))
         self.belowrangecolLineEdit = QtGui.QLineEdit(CalcFOMDialog)
-        self.belowrangecolLineEdit.setGeometry(QtCore.QRect(640, 110, 119, 22))
+        self.belowrangecolLineEdit.setGeometry(QtCore.QRect(640, 140, 119, 22))
         self.belowrangecolLineEdit.setObjectName(_fromUtf8("belowrangecolLineEdit"))
         self.label_8 = QtGui.QLabel(CalcFOMDialog)
-        self.label_8.setGeometry(QtCore.QRect(640, 140, 119, 21))
+        self.label_8.setGeometry(QtCore.QRect(640, 160, 119, 21))
         self.label_8.setObjectName(_fromUtf8("label_8"))
         self.vminmaxLineEdit = QtGui.QLineEdit(CalcFOMDialog)
-        self.vminmaxLineEdit.setGeometry(QtCore.QRect(640, 160, 119, 22))
+        self.vminmaxLineEdit.setGeometry(QtCore.QRect(640, 180, 119, 22))
         self.vminmaxLineEdit.setObjectName(_fromUtf8("vminmaxLineEdit"))
         self.stdcsvplotchoiceComboBox = QtGui.QComboBox(CalcFOMDialog)
         self.stdcsvplotchoiceComboBox.setGeometry(QtCore.QRect(520, 20, 111, 22))
@@ -326,6 +327,10 @@ class Ui_CalcFOMDialog(object):
         self.label_22 = QtGui.QLabel(CalcFOMDialog)
         self.label_22.setGeometry(QtCore.QRect(290, 430, 219, 21))
         self.label_22.setObjectName(_fromUtf8("label_22"))
+        self.autoplotCheckBox = QtGui.QCheckBox(CalcFOMDialog)
+        self.autoplotCheckBox.setGeometry(QtCore.QRect(640, 20, 119, 20))
+        self.autoplotCheckBox.setChecked(True)
+        self.autoplotCheckBox.setObjectName(_fromUtf8("autoplotCheckBox"))
 
         self.retranslateUi(CalcFOMDialog)
         QtCore.QMetaObject.connectSlotsByName(CalcFOMDialog)
@@ -416,6 +421,7 @@ class Ui_CalcFOMDialog(object):
         self.FOMProcessNamesComboBox.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "The name of the functions that will be applied to data\n"
 "to generate Intermediate and FOM results", None, QtGui.QApplication.UnicodeUTF8))
         self.label_22.setText(QtGui.QApplication.translate("CalcFOMDialog", "Choose FOM post-process function:", None, QtGui.QApplication.UnicodeUTF8))
+        self.autoplotCheckBox.setText(QtGui.QApplication.translate("CalcFOMDialog", "Auto plot ana__x", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":
