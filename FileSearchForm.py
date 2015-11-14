@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileSearchForm.ui'
 #
-# Created: Sat Nov 14 00:35:22 2015
+# Created: Sat Nov 14 00:41:08 2015
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -34,6 +34,7 @@ class Ui_filesearchDialog(object):
         self.findfoldersButton.setObjectName(_fromUtf8("findfoldersButton"))
         self.withinfileLineEdit = QtGui.QLineEdit(filesearchDialog)
         self.withinfileLineEdit.setGeometry(QtCore.QRect(440, 10, 113, 20))
+        self.withinfileLineEdit.setText(_fromUtf8(""))
         self.withinfileLineEdit.setObjectName(_fromUtf8("withinfileLineEdit"))
         self.label = QtGui.QLabel(filesearchDialog)
         self.label.setGeometry(QtCore.QRect(370, 10, 71, 31))
@@ -82,7 +83,6 @@ class Ui_filesearchDialog(object):
     def retranslateUi(self, filesearchDialog):
         filesearchDialog.setWindowTitle(QtGui.QApplication.translate("filesearchDialog", "EXP+ANA file management", None, QtGui.QApplication.UnicodeUTF8))
         self.findfoldersButton.setText(QtGui.QApplication.translate("filesearchDialog", "find folders", None, QtGui.QApplication.UnicodeUTF8))
-        self.withinfileLineEdit.setText(QtGui.QApplication.translate("filesearchDialog", "plate_id: ", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("filesearchDialog", "Search within\n"
 "exp/ana file", None, QtGui.QApplication.UnicodeUTF8))
         self.label_2.setText(QtGui.QApplication.translate("filesearchDialog", "Search within\n"

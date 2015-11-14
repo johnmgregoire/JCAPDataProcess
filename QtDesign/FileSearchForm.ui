@@ -72,7 +72,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>plate_id: </string>
+    <string/>
    </property>
   </widget>
   <widget class="QLabel" name="label">
