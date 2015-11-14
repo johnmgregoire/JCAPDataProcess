@@ -370,7 +370,7 @@ def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled
 
 def saverawdat_expfiledict(expfiledict, folder):
     datastruct_expfiledict(expfiledict, savefolder=folder)
-def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
+def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsample=True):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
     if savefolder is None:
         convertstrvalstonum_nesteddict(expfiledict)
     if not savefolder is None:
@@ -420,6 +420,14 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
                             s=fileattrstr
                         else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
                             s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                            if trytoappendmissingsample:
+                                try:
+                                    tempsmp=getsamplenum_fn(fn)
+                                    if not tempsmp>1:
+                                        raise
+                                    s+=(';%d' %tempsmp)
+                                except:
+                                    pass
                         expfiledict[k][k2][k3][fn]=s
         if zipbool:
             archive.close()
