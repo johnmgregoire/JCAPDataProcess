@@ -6,3 +6,6 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui -
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMForm.py
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CreateExpForm.py
+
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileSearchForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\FileSearchForm.py

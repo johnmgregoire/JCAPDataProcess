@@ -9,6 +9,7 @@ from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
 from VisualizeDataApp import visdataDialog
 from CombineFomApp import combinefomDialog
+from FileSearchApp import filesearchDialog
 from FileManagementApp import filemanDialog
 
 
@@ -20,6 +21,7 @@ class MainMenu(QMainWindow):
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
         self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
         self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
+        self.filesearchui=filesearchDialog(self, title='Search for exp/ana files')
         self.filemanui=filemanDialog(self, title='Delete obsolete .run folders')
         
         expuiButton=QPushButton()
@@ -38,10 +40,13 @@ class MainMenu(QMainWindow):
         combinefomuiButton.setText("Combine\nFOM files")
         QObject.connect(combinefomuiButton, SIGNAL("pressed()"), self.combinefomui_exec)
         
+        filesearchButton=QPushButton()
+        filesearchButton.setText("Search for\nEXP/ANA files")
+        QObject.connect(filesearchButton, SIGNAL("pressed()"), self.filesearchui_exec)
+        
         filemanButton=QPushButton()
         filemanButton.setText("Delete obsolete\nEXP/ANA folders")
         QObject.connect(filemanButton, SIGNAL("pressed()"), self.filemanui_exec)
-        
         
         mainlayout=QGridLayout()
 
@@ -49,7 +54,8 @@ class MainMenu(QMainWindow):
         mainlayout.addWidget(calcuiButton, 0, 1)
         mainlayout.addWidget(visdataButton, 0, 2)
         mainlayout.addWidget(combinefomuiButton, 0, 3)
-        mainlayout.addWidget(filemanButton, 0, 4)
+        mainlayout.addWidget(filesearchButton, 0, 4)
+        mainlayout.addWidget(filemanButton, 0, 5)
    
         window=QWidget();
         window.setLayout(mainlayout);
@@ -66,8 +72,12 @@ class MainMenu(QMainWindow):
         self.visdataui.show()
     def combinefomui_exec(self):
         self.combinefomui.show()
+    def filesearchui_exec(self):
+        self.filesearchui.show()
     def filemanui_exec(self):
         self.filemanui.show()
+        
+        
 mainapp=QApplication(sys.argv)
 form=MainMenu(None)
 form.show()
