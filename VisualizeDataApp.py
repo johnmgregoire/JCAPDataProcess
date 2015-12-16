@@ -442,8 +442,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             zipclass=self.anazipclass
         else:
             d=self.expfiledict
-            p=os.path.join(self.expfolder, keylist[-1])
-            zipclass=self.expzipclass
+            runk=keylist[-4]
+            fn=keylist[-1]
+            ans=buildrunpath_selectfile(fn, self.expfolder, runp=self.expfiledict[runk]['run_path'], expzipclass=self.expzipclass, returnzipclass=True)
+            if ans is None:
+                return
+            p, zipclass=ans
+            
         filed=d_nestedkeys(d, keylist)
         filed['path']=p
         filed['zipclass']=zipclass

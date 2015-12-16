@@ -502,6 +502,36 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
 
 #don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat and exists in same folder as .exp
 
+def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
+        
+    returnvalfcn=lambda val:(val, expzipclass) if returnzipclass else val
+    
+    if expzipclass is None:
+        expzipclass=gen_zipclass(expfolder_fullpath)
+    if expzipclass:
+        if expzipclass.fn_in_archive(fn+'.dat'):
+            return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
+        if expzipclass.fn_in_archive(fn):
+            return returnvalfcn(os.path.join(expfolder_fullpath, fn))
+    if os.path.isfile(os.path.join(expfolder_fullpath, fn+'.dat')):
+        return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
+    if os.path.isfile(os.path.join(expfolder_fullpath, fn)):
+        return returnvalfcn(os.path.join(expfolder_fullpath, fn))
+    
+    if runp is None:
+        return None
+    runp_fullpath=tryprependpath(RUNFOLDERS, runp)
+    runzipclass=gen_zipclass(runp_fullpath)
+    
+    returnvalfcn=lambda val:(val, runzipclass) if returnzipclass else val
+    
+    if runzipclass:
+        if runzipclass.fn_in_archive(fn):
+            return returnvalfcn(os.path.join(runp_fullpath, fn))
+    if os.path.isfile(os.path.join(runp_fullpath, fn)):
+        return returnvalfcn(os.path.join(runp_fullpath, fn))
+    return None
+
 def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
     if runtodonesavep is None and savefolder is None:
