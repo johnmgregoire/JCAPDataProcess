@@ -130,14 +130,14 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         # also colormap_min_value,colormap_max_value
         
         self.fom_chkqualitynames=['max_abs',]
-        self.quality_foms=['max_abs2ndderiv(nm^(-2))','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
-        self.histfomnames=['max_abs2ndderiv(nm^(-2))']
+        self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
+        self.histfomnames=['max_abs2ndderiv']
     
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'standard_with_multiple_data_use'
         
     def processnewparams(self):
-        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) \
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\

@@ -912,13 +912,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         newcodes=sorted(list(set(self.fomplotd['code'])))
         if self.tabs__codes!=newcodes:
             self.tabs__codes=self.setup_TabWidget(self.tabs__codes, newcodes, compbool=True)
-
-        plate=self.fomplotd['plate_id']
-        code=self.fomplotd['code']
-        x, y=self.fomplotd['xy'].T
-        comps=self.fomplotd['comps']
         fom=self.fomplotd['fom']
-        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'],self.fomplotd['fomdlist_index1']]).T
+        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
+        fom=fom[inds]
+        plate=self.fomplotd['plate_id'][inds]
+        code=self.fomplotd['code'][inds]
+        x, y=(self.fomplotd['xy'][inds]).T
+        comps=self.fomplotd['comps'][inds]
+        
+        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'][inds],self.fomplotd['fomdlist_index1'][inds]]).T
 
         if self.fomplotd['fomname']=='comp.color':
             cols=QuaternaryPlotInstance.rgb_comp(comps)

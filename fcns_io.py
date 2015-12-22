@@ -346,7 +346,7 @@ def createfileattrdict(fileattrstr):
     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
         d['sample_no']=int(type_keys_heads_rows[-1].strip())
     else:
-        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
+        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and float. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
     return d
 def convertfilekeystofiled(exporanafiledict):
     for k, rund in exporanafiledict.iteritems():
@@ -865,7 +865,7 @@ def createdict_tup(nam_listtup):
     d=dict([createdict_tup(v) for v in nam_listtup[1]])
     return (k_vtup[0], d)
         
-def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
+def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False, createfiledicts=True):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
     if not ((p.endswith('exp') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):#if .zip only tests if the zip file exists
         if erroruifcn is None:
             if returnzipclass:
@@ -901,7 +901,8 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
         
         #these tiems would have been performed before saving .pck so only perform for .exp
         convertstrvalstonum_nesteddict(expfiledict)
-        convertfilekeystofiled(expfiledict)
+        if createfiledicts:
+            convertfilekeystofiled(expfiledict)
         
     else:
         if returnzipclass:
