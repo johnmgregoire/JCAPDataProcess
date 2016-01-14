@@ -14,7 +14,7 @@ infop=r'D:\data\201512uvispcktoana\pcktoana.csv'
 
 l_expname, l_ananame, l_resultsfolder=readtxt_selectcolumns(infop, selcolinds=[1, 2, 3], delim=',', num_header_lines=1, floatintstr=str, zipclass=0)
 
-istart, istop=418,999#0, 999
+istart, istop=70,85#0, 999
 l_expname=l_expname[istart:istop]
 l_ananame=l_ananame[istart:istop]
 l_resultsfolder=l_resultsfolder[istart:istop]
@@ -183,33 +183,37 @@ for expname, ananame, resultsfolder in zip(l_expname, l_ananame, l_resultsfolder
                         del typed[smpfn] #fn was in rcp but does not exist
                         continue
                     #######fix exp file line
-                    if filedstr.count(';')<3: #needs addition of headlines and numpts and remove sample_no 0
-                        if filedstr.endswith(';0'):
-                            a, garb, garb=filedstr.rpartition(';')
-                            samplestrwithcolon=''
-                            samplestr=''
-                        elif filedstr.count(';')==1: #no sample_no
-                            a=filedstr
-                            stemp=getsamplenum_fn(smpfn)
-                            if stemp==0:
+                    try:
+                        if filedstr.count(';')<3: #needs addition of headlines and numpts and remove sample_no 0
+                            if filedstr.endswith(';0'):
+                                a, garb, garb=filedstr.rpartition(';')
                                 samplestrwithcolon=''
                                 samplestr=''
-                            else:  
-                                samplestr='%d' %stemp
-                                samplestrwithcolon=';'+samplestr
+                            elif filedstr.count(';')==1: #no sample_no
+                                a=filedstr
+                                stemp=getsamplenum_fn(smpfn)
+                                if stemp==0:
+                                    samplestrwithcolon=''
+                                    samplestr=''
+                                else:  
+                                    samplestr='%d' %stemp
+                                    samplestrwithcolon=';'+samplestr
+                                    
                                 
+                            else:
+                                a, garb, b=filedstr.rpartition(';')
+                                samplestrwithcolon=';'+b
+                                samplestr=b
                             
-                        else:
-                            a, garb, b=filedstr.rpartition(';')
-                            samplestrwithcolon=';'+b
-                            samplestr=b
-                        
-                        smpstr=zipclass.readlines(smpfn)[0].strip()
-                        garb, garb, nrawpts, nheads=smpstr.split('\t')
-                        nheads='%d' %(eval(nheads)+2)
-                        typed[smpfn]='%s;%s;%s%s' %(a, nheads, nrawpts, samplestrwithcolon)
-                        nrawpts=eval(nrawpts)
-                    
+                            smpstr=zipclass.readlines(smpfn)[0].strip()
+                            garb, garb, nrawpts, nheads=smpstr.split('\t')
+                            nheads='%d' %(eval(nheads)+2)
+                            typed[smpfn]='%s;%s;%s%s' %(a, nheads, nrawpts, samplestrwithcolon)
+                            nrawpts=eval(nrawpts)
+                    except:
+                        print 'error, skipping ', smpfn
+                        del typed[smpfn] #fn was in rcp but does not exist
+                        continue
                     ####if T or DR process the file for ana and initial parameters including the search strs fopr dark and light ref
                     if (techcount<2) and (smpfn[:-4] in resfns):
                         resfn=resfns.pop(resfns.index(smpfn[:-4]))+'.pck'

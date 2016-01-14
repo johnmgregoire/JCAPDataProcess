@@ -327,6 +327,7 @@ def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'an
 
 
 def createfileattrdict(fileattrstr):
+    fileattrstr=fileattrstr.replace(';;', ';') #201601 see that images_files has double ;  due to no column headings - not sure if this is corerect protocal but change it here to pick up the sample_no
     type_keys_heads_rows=fileattrstr.split(';')
     d={}
     d['file_type']=type_keys_heads_rows[0]
@@ -406,28 +407,31 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                     if savefolder is None:
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
-                        keys=[kv.strip() for kv in keys]
-                        filed=readfcn(os.path.splitext(fn), lines)
-                        x=numpy.float32([filed[kv] for kv in keys])
-                        with openfnc(fn) as f:
-                            x.tofile(f)
-                            #savefcn(filed, keys)***
-                        if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
-                            first2attrs, garb, samplestr=fileattrstr.rpartition(';')
-                            s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
-                        elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
-                            s=fileattrstr
-                        else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
-                            s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
-                            if trytoappendmissingsample:
-                                try:
-                                    tempsmp=getsamplenum_fn(fn)
-                                    if not tempsmp>1:
-                                        raise
-                                    s+=(';%d' %tempsmp)
-                                except:
-                                    pass
+                        if k3 in ['image_files']:#list here the types of files that should not be converted to binary
+                            s=fileattrstr#no sample_no appended or any modifications made to file attr str  for image_files, etc.
+                        else:
+                            keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
+                            keys=[kv.strip() for kv in keys]
+                            filed=readfcn(os.path.splitext(fn), lines)
+                            x=numpy.float32([filed[kv] for kv in keys])
+                            with openfnc(fn) as f:
+                                x.tofile(f)
+                                #savefcn(filed, keys)***
+                            if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
+                                first2attrs, garb, samplestr=fileattrstr.rpartition(';')
+                                s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
+                            elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
+                                s=fileattrstr
+                            else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
+                                s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                                if trytoappendmissingsample:
+                                    try:
+                                        tempsmp=getsamplenum_fn(fn)
+                                        if not tempsmp>1:
+                                            raise
+                                        s+=(';%d' %tempsmp)
+                                    except:
+                                        pass
                         expfiledict[k][k2][k3][fn]=s
         if zipbool:
             archive.close()

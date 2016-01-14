@@ -29,7 +29,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
                                      optkeyinds=[(optk in v['keys'] and (v['keys'].index(optk),) or (None,))[0] for optk in optionalkeys])\
             for runk in runklist \
             for fnk, v in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
-            if not (False in [reqk in v['keys'] for reqk in requiredkeys])\
+            if 'keys' in v.keys() and not (False in [reqk in v['keys'] for reqk in requiredkeys])\
             and not (False in [reqparam in expfiledict[runk]['parameters'].keys() for reqparam in requiredparams])\
             ]
     filedlist=[dict(d, keyinds=d['reqkeyinds']+[k for k in d['optkeyinds'] if not k is None]) for d in filedlist]
