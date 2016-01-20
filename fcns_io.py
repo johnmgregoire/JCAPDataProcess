@@ -706,17 +706,22 @@ def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
     return s
 
 def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
+#find pcks with matching mapid in the root folder or 1 level of subfolders. onyl matches mapid before the first '-'
     fold=tryprependpath(FOMPROCESSFOLDERS, '', testfile=False, testdir=True)
     if fold is None:
         return {}
     platemapids=[str(v) for v in list(set(platemapids))]
     d=dict([(str(v), {}) for v in platemapids])
-    for fn in os.listdir(fold):
-        id=fn.partition('-')[0].lstrip('0')
-        if not id in platemapids:
-            continue
-        filtername=fn.partition('_')[2].rstrip('.pck')
-        d[id][filtername]=os.path.join(fold, fn)
+    #assemble list of root and subfolders
+    foldlist=[fold]+[os.path.join(fold, fn) for fn in os.listdir(fold) if os.path.isdir(os.path.join(fold, fn))]
+    #loop through all filnames and mtch mapid, name is between the first '_' and '.pck'
+    for fold2 in foldlist:
+        for fn in os.listdir(fold2):
+            id=fn.partition('-')[0].lstrip('0')
+            if not id in platemapids:
+                continue
+            filtername=fn.partition('_')[2].rstrip('.pck')
+            d[id][filtername]=os.path.join(fold2, fn)
     if len(platemapids)<=1 or not requirepckforallmapids:
         return d
     kl=set(d[platemapids[0]])

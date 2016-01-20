@@ -140,8 +140,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
-        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess]
-        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process']
+        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_analyzethenprocess_allsubspace]
+        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'Run Analysis and Process all Sub-Space options with same root name']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
             
@@ -1144,6 +1144,43 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
         
+    def batch_analyzethenprocess_allsubspace(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel_original=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        selprocess_root=selprocesslabel_original.partition('__')[0]
+        if len(selprocess_root)==0:
+            print 'quitting batch process because FOM process function not iterable (must be "<root>__<indexstr>")'
+            return
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        self.getactiveanalysisclass()
+        anak=self.gethighestanak(getnextone=True)
+        self.analyzedata()
+        if anak!=self.gethighestanak(getnextone=False):
+            print 'quitting batch process because analysis function did not successfully run'
+            return 
+
+        
+        selprocesslabel_list=[str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0] for i in range(1, int(self.FOMProcessNamesComboBox.count())) if (str(self.FOMProcessNamesComboBox.itemText(i)).partition('__')[0])==selprocess_root]
+        for selprocesslabel in selprocesslabel_list:
+            matchbool=False
+            for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+                matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+                if matchbool:
+                    break
+            if not matchbool:
+                print 'skipping %s, probably because no appropriate fom_files found' %anak
+            self.FOMProcessNamesComboBox.setCurrentIndex(i)
+            self.getactiveanalysisclass()
+            self.analysisclass.params['select_ana']=anak
+            self.processeditedparams()#self.getactiveanalysisclass() run in here
+            anak_processed=self.gethighestanak(getnextone=True)
+            self.analyzedata()
+            if anak_processed!=self.gethighestanak(getnextone=False):
+                print 'quitting batch process because processing function did not successfully run'
+                return 
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
         
         #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label
 class treeclass_anadict():
