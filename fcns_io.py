@@ -327,6 +327,7 @@ def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'an
 
 
 def createfileattrdict(fileattrstr):
+    fileattrstr=fileattrstr.replace(';;', ';') #201601 see that images_files has double ;  due to no column headings - not sure if this is corerect protocal but change it here to pick up the sample_no
     type_keys_heads_rows=fileattrstr.split(';')
     d={}
     d['file_type']=type_keys_heads_rows[0]
@@ -346,7 +347,7 @@ def createfileattrdict(fileattrstr):
     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
         d['sample_no']=int(type_keys_heads_rows[-1].strip())
     else:
-        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and lofat. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
+        d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and float. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
     return d
 def convertfilekeystofiled(exporanafiledict):
     for k, rund in exporanafiledict.iteritems():
@@ -370,7 +371,7 @@ def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled
 
 def saverawdat_expfiledict(expfiledict, folder):
     datastruct_expfiledict(expfiledict, savefolder=folder)
-def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
+def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsample=True):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
     if savefolder is None:
         convertstrvalstonum_nesteddict(expfiledict)
     if not savefolder is None:
@@ -406,20 +407,31 @@ def datastruct_expfiledict(expfiledict, savefolder=None):#savefolder will save b
                     if savefolder is None:
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
-                        keys=[kv.strip() for kv in keys]
-                        filed=readfcn(os.path.splitext(fn), lines)
-                        x=numpy.float32([filed[kv] for kv in keys])
-                        with openfnc(fn) as f:
-                            x.tofile(f)
-                            #savefcn(filed, keys)***
-                        if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
-                            first2attrs, garb, samplestr=fileattrstr.rpartition(';')
-                            s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
-                        elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
-                            s=fileattrstr
-                        else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
-                            s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                        if k3 in ['image_files']:#list here the types of files that should not be converted to binary
+                            s=fileattrstr#no sample_no appended or any modifications made to file attr str  for image_files, etc.
+                        else:
+                            keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
+                            keys=[kv.strip() for kv in keys]
+                            filed=readfcn(os.path.splitext(fn), lines)
+                            x=numpy.float32([filed[kv] for kv in keys])
+                            with openfnc(fn) as f:
+                                x.tofile(f)
+                                #savefcn(filed, keys)***
+                            if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
+                                first2attrs, garb, samplestr=fileattrstr.rpartition(';')
+                                s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
+                            elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
+                                s=fileattrstr
+                            else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
+                                s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                                if trytoappendmissingsample:
+                                    try:
+                                        tempsmp=getsamplenum_fn(fn)
+                                        if not tempsmp>1:
+                                            raise
+                                        s+=(';%d' %tempsmp)
+                                    except:
+                                        pass
                         expfiledict[k][k2][k3][fn]=s
         if zipbool:
             archive.close()
@@ -493,6 +505,36 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
 
 #don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat and exists in same folder as .exp
+
+def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
+        
+    returnvalfcn=lambda val:(val, expzipclass) if returnzipclass else val
+    
+    if expzipclass is None:
+        expzipclass=gen_zipclass(expfolder_fullpath)
+    if expzipclass:
+        if expzipclass.fn_in_archive(fn+'.dat'):
+            return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
+        if expzipclass.fn_in_archive(fn):
+            return returnvalfcn(os.path.join(expfolder_fullpath, fn))
+    if os.path.isfile(os.path.join(expfolder_fullpath, fn+'.dat')):
+        return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
+    if os.path.isfile(os.path.join(expfolder_fullpath, fn)):
+        return returnvalfcn(os.path.join(expfolder_fullpath, fn))
+    
+    if runp is None:
+        return None
+    runp_fullpath=tryprependpath(RUNFOLDERS, runp)
+    runzipclass=gen_zipclass(runp_fullpath)
+    
+    returnvalfcn=lambda val:(val, runzipclass) if returnzipclass else val
+    
+    if runzipclass:
+        if runzipclass.fn_in_archive(fn):
+            return returnvalfcn(os.path.join(runp_fullpath, fn))
+    if os.path.isfile(os.path.join(runp_fullpath, fn)):
+        return returnvalfcn(os.path.join(runp_fullpath, fn))
+    return None
 
 def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
@@ -643,13 +685,54 @@ def getelements_plateidstr(plateidstr):
     if p is None:
         return None
     with open(p, mode='r') as f:
-        filestr=f.read(1000)
+        filestr=f.read(10000)
     searchstr='        elements: '
     if not searchstr in filestr:
         return None
     s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
     return s.split(',')
-    
+
+def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
+    p=getinfopath_plateid(plateidstr)
+    s=None
+    if not p is None:
+        with open(p, mode='r') as f:
+            filestr=f.read(10000)
+        searchstr='        map_id: '
+        if searchstr in filestr:
+            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+    if s is None and not erroruifcn is None:
+        s=erroruifcn('Enter Platemap ID')
+    return s
+
+def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
+#find pcks with matching mapid in the root folder or 1 level of subfolders. onyl matches mapid before the first '-'
+    fold=tryprependpath(FOMPROCESSFOLDERS, '', testfile=False, testdir=True)
+    if fold is None:
+        return {}
+    platemapids=[str(v) for v in list(set(platemapids))]
+    d=dict([(str(v), {}) for v in platemapids])
+    #assemble list of root and subfolders
+    foldlist=[fold]+[os.path.join(fold, fn) for fn in os.listdir(fold) if os.path.isdir(os.path.join(fold, fn))]
+    #loop through all filnames and mtch mapid, name is between the first '_' and '.pck'
+    for fold2 in foldlist:
+        for fn in os.listdir(fold2):
+            id=fn.partition('-')[0].lstrip('0')
+            if not id in platemapids:
+                continue
+            filtername=fn.partition('_')[2].rstrip('.pck')
+            d[id][filtername]=os.path.join(fold2, fn)
+    if len(platemapids)<=1 or not requirepckforallmapids:
+        return d
+    kl=set(d[platemapids[0]])
+    for id in platemapids[1:]:
+        kl=kl.intersection(set(d[id]))
+    for dv in d.values():
+        for kv in dv.keys():
+            if not kv in kl:
+                dv.pop(kv)
+    return d
+
 def readrcpfrommultipleruns(pathlist):
     techset=set([])
     typeset=set([])
@@ -791,7 +874,7 @@ def createdict_tup(nam_listtup):
     d=dict([createdict_tup(v) for v in nam_listtup[1]])
     return (k_vtup[0], d)
         
-def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
+def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False, createfiledicts=True):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
     if not ((p.endswith('exp') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):#if .zip only tests if the zip file exists
         if erroruifcn is None:
             if returnzipclass:
@@ -827,7 +910,8 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
         
         #these tiems would have been performed before saving .pck so only perform for .exp
         convertstrvalstonum_nesteddict(expfiledict)
-        convertfilekeystofiled(expfiledict)
+        if createfiledicts:
+            convertfilekeystofiled(expfiledict)
         
     else:
         if returnzipclass:

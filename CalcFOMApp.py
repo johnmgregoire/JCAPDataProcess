@@ -7,7 +7,10 @@ from PyQt4.QtGui import *
 import operator
 import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+try:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+except ImportError:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy.ma as ma
 import matplotlib.colors as colors
@@ -29,6 +32,7 @@ sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
 from CA_CP_basics import *
 from CV_photo import *
 from develop_analysis_class import *
+from FOM_process_basics import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
@@ -36,9 +40,12 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__TR_UVVIS(), Analysis__BG_DA()\
     ]
 
+FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
+#NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
+
 DEBUGMODE=False
 
-for ac in AnalysisClasses:
+for ac in AnalysisClasses+FOMProcessClasses:
     ac.debugmode=DEBUGMODE
 
 class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
@@ -115,6 +122,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
         
         QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+        QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+        
+        
         QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
@@ -130,6 +140,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
+        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_analyzethenprocess_allsubspace]
+        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'Run Analysis and Process all Sub-Space options with same root name']
+        for i, l in enumerate(batchdesc):
+            self.BatchComboBox.insertItem(i, l)
+            
         self.getplatemapCheckBox.setChecked(True)
         
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
@@ -226,16 +241,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if self.expzipclass:
             self.expzipclass.close()
         self.expzipclass=expzipclass
+        self.FilterSmoothMapDict={}
         if self.getplatemapCheckBox.isChecked():
-           for runk, rund in self.expfiledict.iteritems():
+            for runk, rund in self.expfiledict.iteritems():
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
                     rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])), \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
-
-        
+                if runk.startswith('run__') and not 'platemap_id' in rund.keys():
+                    rund['platemap_id']=getplatemapid_plateidstr(str(rund['parameters']['plate_id']), erroruifcn=\
+                    lambda s:userinputcaller(self, inputs=[('platemap id: ', str, '')], title=s,  cancelallowed=False)[0])
+            platemapids=[rund['platemap_id'] for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
+            self.FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
+            
         self.paramsdict_le_dflt['analysis_type'][1]=self.expfiledict['experiment_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
@@ -247,6 +267,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         rp=os.path.split(self.exppath)[0]
         rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, rp)
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
+        print 'active experiment_path is %s' %(self.anadict['experiment_path'])
         self.anadict['experiment_name']=self.expfiledict['name']
         self.fillexpoptions()
     
@@ -353,14 +374,40 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for count, i in enumerate(self.AnalysisClassInds):
             self.AnalysisNamesComboBox.insertItem(count+1, AnalysisClasses[i].analysis_name+('(%d)' %nfiles_classes[i]))
             self.AnalysisNamesComboBox.setCurrentIndex(1)
+            
+        
+        filternames=list(set([k for d in self.FilterSmoothMapDict.values() for k in d.keys()]))
+        
+        nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict)) for i, c in enumerate(FOMProcessClasses[:-1])]
+        self.FOMProcessClassInds=[i for i, nf in enumerate(nfiles_classes) if nf>0]
+        self.FOMProcessNamesComboBox.clear()
+        self.FOMProcessNamesComboBox.insertItem(0, 'use analysis function')
+        for count, i in enumerate(self.FOMProcessClassInds):
+            self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(FOMProcessClasses[i].analysis_name, FOMProcessClasses[i].params['select_ana']))
+        if len(FOMProcessClasses[-1].getapplicablefomfiles(self.anadict))>0 and len(filternames)>0:
+            for filtername in filternames:
+                self.FOMProcessClassInds+=[-1]#each filtername from a .pck file uses the same analysis class
+                count+=1
+                self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+            
+        
         self.getactiveanalysisclass()
     
     def getactiveanalysisclass(self):
-        selind=int(self.AnalysisNamesComboBox.currentIndex())
-        if selind==0:
-            self.analysisclass=None
-            return
-        self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
+        procselind=int(self.FOMProcessNamesComboBox.currentIndex())
+        if procselind>0:
+            procclassind=self.FOMProcessClassInds[procselind-1]
+            self.analysisclass=FOMProcessClasses[procclassind]
+            if procclassind==-1:#filter from pck
+                filtername=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]#write the filter_path__runint while handy here to use later
+                self.analysisclass.filter_path__runint=dict([(int(runk.partition('__')[2]), self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+        else:
+            selind=int(self.AnalysisNamesComboBox.currentIndex())
+            if selind==0:
+                self.analysisclass=None
+                return
+            self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
         #self.activeana=None
         
         le, dflt=self.paramsdict_le_dflt['description']
@@ -378,7 +425,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.RunSelectTreeWidget.clear()
         self.plotd={}
     def runbatchprocess(self):
-        return
+        self.batchprocesses[self.BatchComboBox.currentIndex()]()
 
     def importana(self):
         p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
@@ -431,11 +478,30 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 paramsd[k]=newv
                 somethingchanged=True
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
-            self.analysisclass.processnewparams()
+            self.processeditedparams()
+    def processeditedparams(self):
+        self.analysisclass.processnewparams()
+        nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
+        if 'process_fom' in self.analysisclass.getgeneraltype():
+            selind=int(self.FOMProcessNamesComboBox.currentIndex())
+            self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
+        else:
             selind=int(self.AnalysisNamesComboBox.currentIndex())
-            nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict))
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
-            self.getactiveanalysisclass()#this is only to update the description if necessary
+        self.getactiveanalysisclass()#this is only to update the description if necessary
+        
+    def gethighestanak(self, getnextone=False):
+        kfcn=lambda i:'ana__%d' %i
+        i=1
+        while kfcn(i) in self.anadict.keys():
+            i+=1
+        if getnextone:
+            anak=kfcn(i)
+        else:
+            anak=kfcn(i-1)
+            if not anak in self.anadict.keys():
+                return None
+        return anak
     def analyzedata(self):
         if self.analysisclass is None:
             return
@@ -449,11 +515,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
         expdatfolder=self.expfolder
         
-        kfcn=lambda i:'ana__%d' %i
-        i=1
-        while kfcn(i) in self.anadict.keys():
-            i+=1
-        anak=kfcn(i)
+        anak=self.gethighestanak(getnextone=True)
         #try:
         if 1:
             self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, anauserfomd=self.userfomd)
@@ -463,18 +525,34 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #                removefiles(self.tempanafolder, [k for rund in \
 #                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
 #                return
-        checkbool, checkmsg=self.analysisclass.check_output()
-        if not checkbool:
-            idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
-            if not idialog.exec_():
-                removefiles(self.tempanafolder, [k for d in \
-                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
-                return
+        runk_typek_b=self.analysisclass.prepareanafilestuples__runk_typek_multirunbool()
+        killana=False
+        if len(runk_typek_b)==0:
+            killana=True
+        else:
+            checkbool, checkmsg=self.analysisclass.check_output()
+            if not checkbool:
+                idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
+                if not idialog.exec_():
+                    killana=True
+                    removefiles(self.tempanafolder, [k for d in \
+                        ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
+        if killana:
+            return #anadict not been modified yet
         
         self.updateuserfomd(clear=True)
         self.anadict[anak]={}
         self.activeana=self.anadict[anak]
         
+        for runk, typek, b in runk_typek_b:
+            frunk='files_'+runk
+            if not frunk in self.activeana.keys():
+                self.activeana[frunk]={}
+            if b:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
+            else:
+                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
+                
         self.activeana['name']=self.analysisclass.analysis_name
         self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
         
@@ -496,17 +574,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     self.activeana['parameters'][k][v2]=str(v2)
             else:
                 self.activeana['parameters'][k]=str(v)
-        self.activeana['technique']=self.techk
-        runk_typek_b=sorted([('multi_run', typek, True) for typek in self.analysisclass.multirunfiledict.keys() if len(self.analysisclass.multirunfiledict[typek])>0])
-        runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.analysisclass.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
-        for runk, typek, b in runk_typek_b:
-            frunk='files_'+runk
-            if not frunk in self.activeana.keys():
-                self.activeana[frunk]={}
-            if b:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
-            else:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
+        
+        gentype=self.analysisclass.getgeneraltype()
+        if 'process_fom' in gentype:
+            if 'from_file' in gentype:
+                self.activeana['process_fom_from_file_paths']=','.join(sorted(list(set([compareprependpath(FOMPROCESSFOLDERS, p) for p in self.analysisclass.filter_path__runint.values()]))))
+        else:
+            self.activeana['technique']=self.techk
+        self.activeana['analysis_general_type']=gentype
+
 
         self.fomdlist=self.analysisclass.fomdlist
         self.filedlist=self.analysisclass.filedlist
@@ -533,7 +609,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.updateana()
         self.plot_preparestandardplot(plotbool=False)
-        self.plot_generatedata(plotbool=True)
+        if self.autoplotCheckBox.isChecked():
+            self.plot_generatedata(plotbool=True)
 
 
         
@@ -711,30 +788,37 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         fi=self.fomplotchoiceComboBox.currentIndex()
         fom=numpy.array([d[self.fomnames[fi]] for d in self.fomdlist])
-        runkarr=numpy.array([d['expkeys'][0] for d in self.filedlist])
-        
-        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
-        if len(inds)==0:
+        runkarr=numpy.array(['run__%d' %(d['runint']) for d in self.fomdlist])
+        if 'expkeys' in self.filedlist[0].keys():#generally standard analysis class
+            #runkarr=numpy.array([d['expkeys'][0] for d in self.filedlist])
+            daqtimebool=self.usedaqtimeCheckBox.isChecked()
+        else:#generally Process FOM
+            daqtimebool=False
+            
+        # inds are inds from  self.fomdlist, not all of which are used because some are NaN
+        fomdlistinds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
+        if len(fomdlistinds)==0:
             print 'ABORTING PLOTTING BECAUSE ALL FOMs ARE NaN'
             return
-        fom=fom[inds]
-        runkarr=runkarr[inds]
-        sample=numpy.array([self.fomdlist[i]['sample_no'] for i in inds])
-        
+        #here the fom and runkarr and sample arrays are setup 
+        fom=fom[fomdlistinds]
+        runkarr=runkarr[fomdlistinds]
+        sample=numpy.array([self.fomdlist[i]['sample_no'] for i in fomdlistinds])
+        #and now this is a dictionary that given a runk looks ups the inds from the above arrays, i.e. these inds are inds of the selction from fomdlist, NOT from fomdlist
         inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
-        daqtimebool=self.usedaqtimeCheckBox.isChecked()
+        
 
         t=[]
 #        else:
 #            hx=numpy.arange(len(fom))
 
-        for runk in sorted(inds_runk.keys()):
-            if daqtimebool:
-                fns=[self.filedlist[inds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
-                t+=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
-
-           # hy+=[fom[inds_runk[runk]]]
+        #remapinds=[i for runk in sorted(inds_runk.keys()) for i in inds_runk[runk]]
+        
         if daqtimebool:
+            t=numpy.zeros(len(fom), dtype='float64')
+            for runk in sorted(inds_runk.keys()):
+                fns=[self.filedlist[fomdlistinds[i]]['expkeys'][-1] for i in inds_runk[runk]]#reduce(dict.get, ['x','q','w'], d)
+                t[inds_runk[runk]]=applyfcn_txtfnlist_run(gettimefromheader, self.expfiledict[runk]['run_path'], fns)
             t=numpy.array(t)
             t-=t.min()
 #        else:
@@ -744,26 +828,27 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         nanxy=[numpy.nan]*2
         nancomp=[numpy.nan]*4
-        xy=[]
-        comps=[]
+        xy=numpy.ones((len(fom), 2), dtype='float64')*numpy.nan
+        comps=numpy.ones((len(fom), 4), dtype='float64')*numpy.nan
         for runk in sorted(inds_runk.keys()):
             if not 'platemapdlist' in self.expfiledict[runk].keys() or len(self.expfiledict[runk]['platemapdlist'])==0:
-                if not compplottype=='none':
-                    comps+=[nancomp]*len(inds_runk[runk])
-                xy+=[nanxy]*len(inds_runk[runk])
+#                if not compplottype=='none':
+#                    comps+=[nancomp]*len(inds_runk[runk])
+#                xy+=[nanxy]*len(inds_runk[runk])
                 continue
             pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
-            xy+=[(smp in pmsmps and \
-                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']],) \
-                         or (nanxy, ))[0] for smp in sample[inds_runk[runk]]]
+            xy[inds_runk[runk]]=numpy.float64([ \
+                         [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']] \
+                         if smp in pmsmps else nanxy for smp in sample[inds_runk[runk]]])
                          
-            if not compplottype=='none':
-                pmsmps=[d['Sample'] for d in self.expfiledict[runk]['platemapdlist']]
-                comps+=[(smp in pmsmps and \
-                         ([self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']],) \
-                         or (nancomp, ))[0] for smp in sample[inds_runk[runk]]]
-        xy=numpy.float64(xy)
-        comps=numpy.float64(comps)
+            if compplottype=='none':
+                continue
+                
+            comps[inds_runk[runk]]=numpy.float64([\
+                     [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']] \
+                     if smp in pmsmps else nancomp for smp in sample[inds_runk[runk]]])
+#        xy=numpy.float64(xy)
+#        comps=numpy.float64(comps)
         
         self.plotd['comps']=numpy.array([c/c.sum() for c in comps])
         self.plotd['xy']=xy
@@ -1008,7 +1093,96 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
         
         self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
+    
+    def batch_processallana(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        presentanakeys=sorted([k for k, v in self.anadict.iteritems() if k.startswith('ana__')])
+        for anak in presentanakeys:
+            self.analysisclass.params['select_ana']=anak
+            self.processeditedparams()#self.getactiveanalysisclass() run in here
+            self.analyzedata()
+            matchbool=False
+            for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+                matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+                if matchbool:
+                    break
+            if not matchbool:
+                print 'skipping %s, probably because no appropriate fom_files found' %anak
+            self.FOMProcessNamesComboBox.setCurrentIndex(i)
+            self.getactiveanalysisclass()
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+    
+    def batch_analyzethenprocess(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        self.getactiveanalysisclass()
+        anak=self.gethighestanak(getnextone=True)
+        self.analyzedata()
+        if anak!=self.gethighestanak(getnextone=False):
+            print 'quitting batch process because analysis function did not successfully run'
+            return 
 
+        
+        matchbool=False
+        for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+            matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+            if matchbool:
+                break
+        if not matchbool:
+            print 'skipping %s, probably because no appropriate fom_files found' %anak
+        self.FOMProcessNamesComboBox.setCurrentIndex(i)
+        self.getactiveanalysisclass()
+        self.analysisclass.params['select_ana']=anak
+        self.processeditedparams()#self.getactiveanalysisclass() run in here
+        self.analyzedata()
+        
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        
+    def batch_analyzethenprocess_allsubspace(self):
+        if int(self.FOMProcessNamesComboBox.currentIndex())==0:
+            print 'quitting batch process because use analysis function was selected instead of a FOM process'
+            return
+        selprocesslabel_original=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        selprocess_root=selprocesslabel_original.partition('__')[0]
+        if len(selprocess_root)==0:
+            print 'quitting batch process because FOM process function not iterable (must be "<root>__<indexstr>")'
+            return
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        self.getactiveanalysisclass()
+        anak=self.gethighestanak(getnextone=True)
+        self.analyzedata()
+        if anak!=self.gethighestanak(getnextone=False):
+            print 'quitting batch process because analysis function did not successfully run'
+            return 
+
+        
+        selprocesslabel_list=[str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0] for i in range(1, int(self.FOMProcessNamesComboBox.count())) if (str(self.FOMProcessNamesComboBox.itemText(i)).partition('__')[0])==selprocess_root]
+        for selprocesslabel in selprocesslabel_list:
+            matchbool=False
+            for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+                matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+                if matchbool:
+                    break
+            if not matchbool:
+                print 'skipping %s, probably because no appropriate fom_files found' %anak
+            self.FOMProcessNamesComboBox.setCurrentIndex(i)
+            self.getactiveanalysisclass()
+            self.analysisclass.params['select_ana']=anak
+            self.processeditedparams()#self.getactiveanalysisclass() run in here
+            anak_processed=self.gethighestanak(getnextone=True)
+            self.analyzedata()
+            if anak_processed!=self.gethighestanak(getnextone=False):
+                print 'quitting batch process because processing function did not successfully run'
+                return 
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        
+        #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

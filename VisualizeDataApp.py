@@ -7,7 +7,10 @@ from PyQt4.QtGui import *
 import operator
 import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+try:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+except ImportError:
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy.ma as ma
 import matplotlib.colors as colors
@@ -214,12 +217,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.ellabels=['A', 'B', 'C', 'D']
         else:#to get here evrythign has a platemap
             self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
-            for runk, rund in self.expfiledict.iteritems():
-                if not runk.startswith('run__'):
-                    continue
-                for d in rund['platemapdlist']:
-                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
-                        d[el]=d[oldlet]
+            self.remap_platemaplabels()
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
@@ -241,7 +239,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         
         
-        
+    def remap_platemaplabels(self):
+        for runk, rund in self.expfiledict.iteritems():
+                if not runk.startswith('run__'):
+                    continue
+                for d in rund['platemapdlist']:
+                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
+                        d[el]=d[oldlet]
+                        
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
@@ -339,7 +344,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     rund=self.expfiledict['run__%d' %d['runint']]
                     pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
-                    for k in self.ellabels+['code', 'x', 'y']:
+                    for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D']:
                         if not k in d.keys():
                             d[k]=pmd[k]
                             if not k in fomnames:
@@ -440,8 +445,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             zipclass=self.anazipclass
         else:
             d=self.expfiledict
-            p=os.path.join(self.expfolder, keylist[-1])
-            zipclass=self.expzipclass
+            runk=keylist[-4]
+            fn=keylist[-1]
+            ans=buildrunpath_selectfile(fn, self.expfolder, runp=self.expfiledict[runk]['run_path'], expzipclass=self.expzipclass, returnzipclass=True)
+            if ans is None:
+                return
+            p, zipclass=ans
+            
         filed=d_nestedkeys(d, keylist)
         filed['path']=p
         filed['zipclass']=zipclass
@@ -887,6 +897,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
             if not ans is None:
                 self.ellabels=[v.strip() for v in ans]
+                self.remap_platemaplabels()
         self.CompPlotOrderComboBox.clear()
         for count, l in enumerate(itertools.permutations(self.ellabels, 4)):
             self.CompPlotOrderComboBox.insertItem(count, ','.join(l))
@@ -904,13 +915,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         newcodes=sorted(list(set(self.fomplotd['code'])))
         if self.tabs__codes!=newcodes:
             self.tabs__codes=self.setup_TabWidget(self.tabs__codes, newcodes, compbool=True)
-
-        plate=self.fomplotd['plate_id']
-        code=self.fomplotd['code']
-        x, y=self.fomplotd['xy'].T
-        comps=self.fomplotd['comps']
         fom=self.fomplotd['fom']
-        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'],self.fomplotd['fomdlist_index1']]).T
+        inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
+        fom=fom[inds]
+        plate=self.fomplotd['plate_id'][inds]
+        code=self.fomplotd['code'][inds]
+        x, y=(self.fomplotd['xy'][inds]).T
+        comps=self.fomplotd['comps'][inds]
+        
+        idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'][inds],self.fomplotd['fomdlist_index1'][inds]]).T
 
         if self.fomplotd['fomname']=='comp.color':
             cols=QuaternaryPlotInstance.rgb_comp(comps)

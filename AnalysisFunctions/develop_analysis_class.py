@@ -132,14 +132,27 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
         # also colormap_min_value,colormap_max_value
         
+<<<<<<< HEAD
         self.fom_chkqualitynames=['max_abs']
 #        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
         self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
         self.histfomnames=['max_abs2ndderiv']
 #        should this be made self.multirunfomnames
+=======
+        self.fom_chkqualitynames=['max_abs',]
+        self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
+        self.histfomnames=['max_abs2ndderiv']
+>>>>>>> origin/master
     
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'standard_with_multiple_data_use'
+        
     def processnewparams(self):
+<<<<<<< HEAD
         self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'to'+str(self.params['abs_range'][idx][1]) \
+=======
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
+>>>>>>> origin/master
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
                                  
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
@@ -312,6 +325,9 @@ class Analysis__BG_DA(Analysis_Master_inter):
         self.fom_chkqualitynames=['DA-bg_repr']
         self.histfomnames=['minslope']
     
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'analysis_of_ana'
+        
     def processnewparams(self):
         self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
                              for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if x in self.params['analysis_types']]\
