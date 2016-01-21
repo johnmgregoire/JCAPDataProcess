@@ -120,22 +120,28 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.processnewparams()
         
         #TODO: update plotting defaults on both classes
-        self.plotparams=dict({}, plot__1={})
+        self.plotparams=dict({}, plot__1={'x_axis':'E'})
+        print self.fomnames
         self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
-        self.plotparams['plot__1']['series__1']='abs_smth_scl,t_smth'#list of keys
+        self.plotparams['plot__1']['series__1']='abs_smth_scl'
+#        ,t_smth'#list of keys
+#        self.plotparams['plot__1']['series__2']=','.join([fom for fom in self.fomnames if 'abs_' not in fom])
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='I(A)_ave', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
         # also colormap_min_value,colormap_max_value
         
-        self.fom_chkqualitynames=['max_abs',]
-        self.quality_foms=['max_abs2ndderiv(nm^(-2))','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
-        self.histfomnames=['max_abs2ndderiv(nm^(-2))']
+        self.fom_chkqualitynames=['max_abs']
+#        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
+        self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
+        self.histfomnames=['max_abs2ndderiv']
+#        should this be made self.multirunfomnames
     
     def processnewparams(self):
-        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) \
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'to'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
+                                 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
               TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'])
@@ -274,8 +280,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_selindd['abs_smth']=-numpy.log(inter_selindd[anal_expr+'_smth'])
             inter_selindd['abs_smth_scl']=inter_selindd['abs_smth']/numpy.max(inter_selindd['abs_smth'])
             fomd['max_abs']=numpy.max(inter_selindd['abs_smth_scl'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'-'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/self.params['abs_range'][idx][0],inter_selindd['wl']>1239.8/self.params['abs_range'][idx][1]))[0]
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'to'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-1].split('to')[0]),inter_selindd['wl']>1239.8/float(key.split('to')[-1])))[0]
                 fomd[key]=numpy.sum(inter_selindd['abs_smth_scl'][inds])
             for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
                 fomd['0<='+sig_str+'<=1']=check_inrange(inter_selindd[sigkey])
@@ -283,7 +289,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         dx+=[(inter_selindd['wl'][idx+1]-inter_selindd['wl'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
         dx+=[inter_selindd['wl'][-1]-inter_selindd['wl'][-2]]
         dx=numpy.array(dx) 
-        fomd['max_abs2ndderiv(nm^(-2))']=numpy.max(savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2))
+        fomd['max_abs2ndderiv']=numpy.max(savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2))
         return fomd,inter_rawlend,inter_selindd
         
 #    
