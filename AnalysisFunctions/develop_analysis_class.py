@@ -46,6 +46,7 @@ def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
         uk, tk=k
 #?   runklist,nkeys and keyinds,ntemp,temp,typek
         ntemp, filedlist=stdgetapplicablefilenames(expfiledict, uk, tk, typek, runklist=None, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
+#        filedlist is 
         if ref_run_selection.startswith('run__'):#filter to only use refs from user-specified list
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
@@ -110,7 +111,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), ('ref_run_selection', 'all')])
         
-        #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
+        #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
+#        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
+#        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__TR_UVVIS'
         #TODO: make intermediate column headings unique from raw
@@ -118,10 +121,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
         self.processnewparams()
-        
+        print self.fomnames
         #TODO: update plotting defaults on both classes
         self.plotparams=dict({}, plot__1={'x_axis':'E'})
-        print self.fomnames
         self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']='abs_smth_scl'
 #        ,t_smth'#list of keys
@@ -132,27 +134,18 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
         # also colormap_min_value,colormap_max_value
         
-<<<<<<< HEAD
         self.fom_chkqualitynames=['max_abs']
 #        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
         self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
         self.histfomnames=['max_abs2ndderiv']
 #        should this be made self.multirunfomnames
-=======
-        self.fom_chkqualitynames=['max_abs',]
-        self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
-        self.histfomnames=['max_abs2ndderiv']
->>>>>>> origin/master
+
     
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'standard_with_multiple_data_use'
         
     def processnewparams(self):
-<<<<<<< HEAD
-        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'to'+str(self.params['abs_range'][idx][1]) \
-=======
         self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
->>>>>>> origin/master
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
                                  
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
@@ -176,7 +169,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
-        refd={}#refd will be a dictionary with 4 keys that makes a good started for the intermediate dictionary with raw-data-length arrays
+        refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate dictionary with raw-data-length arrays
         try:
             refd['wl']=numpy.float32([\
             self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
