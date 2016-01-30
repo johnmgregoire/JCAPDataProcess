@@ -37,7 +37,7 @@ from FOM_process_basics import *
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax(), \
-   Analysis__TR_UVVIS(), Analysis__BG_DA()\
+   Analysis__TR_UVVIS(), Analysis__BG()\
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
