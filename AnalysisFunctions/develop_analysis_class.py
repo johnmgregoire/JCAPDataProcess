@@ -95,8 +95,10 @@ def check_wl(wl_2darray,axis=0):
     for j in xrange(0,i) for k in [0,-1]])>0.01)[0])==0
         
 def savefomhist(p,fomdlist, histfom,nbins=50):
+    arr=numpy.array([fomd[histfom] for fomd in fomdlist])
+    nonan_arr=arr[~numpy.isnan(arr)]
     fig=plt.figure()
-    hist, bins = numpy.histogram(numpy.array([fomd[histfom] for fomd in fomdlist]), bins=nbins)
+    hist, bins = numpy.histogram(nonan_arr, bins=nbins)
     center=(bins[:-1]+bins[1:])/2
     width=0.7*(bins[1]-bins[0])
     plt.bar(center,hist,align='center',width=width)
@@ -109,7 +111,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), ('ref_run_selection', 'all')])
+        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), \
+        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF'])])
         
         #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
 #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
@@ -121,7 +124,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
         self.processnewparams()
-        print self.fomnames
+#        print self.fomnames
         #TODO: update plotting defaults on both classes
         self.plotparams=dict({}, plot__1={'x_axis':'E'})
         self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
@@ -131,13 +134,16 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
+        colormap_under_color='(0.,0.,0.)')
         # also colormap_min_value,colormap_max_value
         
-        self.fom_chkqualitynames=['max_abs']
+        self.fom_chkqualitynames=['abs_hasnan']
 #        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
         self.quality_foms=['max_abs2ndderiv','min_rescaled','max_rescaled','0<=T<=1','0<=R<=1','0<=T+R<=1']
         self.histfomnames=['max_abs2ndderiv']
+        self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
+
 #        should this be made self.multirunfomnames
 
     
@@ -173,7 +179,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         try:
             refd['wl']=numpy.float32([\
             self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
-            for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])
+            for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
         except:
             raise ValueError('Number of data points in reference files do not match')
             
@@ -186,9 +192,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             refd_all={}
             for rktup, rk in refkeymap:
                 refd_all[rk]=numpy.float32([\
-                    self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1:], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
+                    self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
                     for filed in self.refdict__filedlist[rktup]])
-                refd[rk]=ref_fnd[rk](refd_all[rk])
+                refd[rk]=ref_fnd[rk](refd_all[rk])[::-1]
             refd_fn=lambda fn:refd
             
             #this trivial function costs no time and for nontrivial on-the-fly ref calculations, define a fcn with the same name
@@ -197,11 +203,12 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         
         for filed in self.filedlist:
             fn=filed['fn']
-            print fn
+#            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
-            Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
-            Rdataarr=self.readdata(os.path.join(expdatfolder, Rfn), Rfiled['nkeys'], Rfiled['keyinds'], num_header_lines=Rfiled['num_header_lines'], zipclass=zipclass)
+            Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[:,::-1]
+            Rdataarr=self.readdata(os.path.join(expdatfolder, Rfn), Rfiled['nkeys'], Rfiled['keyinds'], num_header_lines=Rfiled['num_header_lines'], zipclass=zipclass)[:,::-1]
+#            print np.shape(Tdataarr),np.shape(Rdataarr)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(fn))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -241,6 +248,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         
         for rktup,rk in refkeymap:
             fn_refimg='%s__%s.png' %(anak,rk)
+#            print rk,numpy.shape(refd_all[rk])
             fig=plt.figure()
             for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
                 plt.plot(refd['wl'][0],sig,label=os.path.basename(fn))
@@ -254,6 +262,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
     def fomd_rawlend_interlend(self, Tdataarr, Rdataarr, refd):
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
+#        print Tdataarr[0][0:5],Rdataarr[0][0:5],refd['wl'][0][0:5]
         if not check_wl(numpy.array(numpy.s_[Tdataarr[0],Rdataarr[0],refd['wl'][0]])):
             raise ValueError('Wavelength incompatibility between Tdata, Rdata and ref')
         inter_rawlend=copy.copy(refd)
@@ -265,8 +274,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             raise ValueError('Insufficient signals to remove %d initial signals and %d end signals'\
             %(self.params['exclinitcols'],self.params['exclfincols']))
         else:
-            inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['R_av-signal']=Rdataarr[1+self.params['exclinitcols']:Tdataarr.shape[1]-self.params['exclfincols']].mean(axis=0)
+            inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
+            inter_rawlend['R_av-signal']=Rdataarr[1+self.params['exclinitcols']:Rdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
             inter_rawlend['R_fullrng']=(inter_rawlend['R_av-signal']-refd['Rdark'])/(refd['Rlight']-refd['Rdark'])
             inter_rawlend[anal_expr+'_fullrng']=inter_rawlend['T_fullrng']/(1.-inter_rawlend['R_fullrng'])
@@ -274,6 +283,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             for key in ['T','R',anal_expr,'wl']:            
                 keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],[''])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
+            
+            inter_selindd['E']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','R']:
                 inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
@@ -284,47 +295,71 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
             inter_selindd['abs_unsmth']=-numpy.log(inter_selindd[anal_expr+'_unsmth'])            
             inter_selindd['abs_smth']=-numpy.log(inter_selindd[anal_expr+'_smth'])
-            inter_selindd['abs_smth_scl']=inter_selindd['abs_smth']/numpy.max(inter_selindd['abs_smth'])
-            fomd['max_abs']=numpy.max(inter_selindd['abs_smth_scl'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'to'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-1].split('to')[0]),inter_selindd['wl']>1239.8/float(key.split('to')[-1])))[0]
-                fomd[key]=numpy.sum(inter_selindd['abs_smth_scl'][inds])
+            inter_selindd['abs_smth_scl']=inter_selindd['abs_smth']/numpy.nanmax(inter_selindd['abs_smth'])
+            fomd['abs_hasnan']=np.isnan(inter_selindd['abs_smth']).any()
+            fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth'])
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[1]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
+                fomd[key]=numpy.nansum(inter_selindd['abs_smth_scl'][inds])
             for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
                 fomd['0<='+sig_str+'<=1']=check_inrange(inter_selindd[sigkey])
-        dx=[inter_selindd['wl'][1]-inter_selindd['wl'][0]]
-        dx+=[(inter_selindd['wl'][idx+1]-inter_selindd['wl'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
-        dx+=[inter_selindd['wl'][-1]-inter_selindd['wl'][-2]]
-        dx=numpy.array(dx) 
-        fomd['max_abs2ndderiv']=numpy.max(savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2))
+                         
+            dx=[inter_selindd['E'][1]-inter_selindd['E'][0]]
+            dx+=[(inter_selindd['E'][idx+1]-inter_selindd['E'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+            dx+=[inter_selindd['E'][-1]-inter_selindd['E'][-2]]
+            dx=numpy.array(dx) 
+            inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
+            
+            for typ in self.params['analysis_types']:
+                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth']*inter_selindd['E'])**self.tauc_pow[typ]
+                inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
+                fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+        
         return fomd,inter_rawlend,inter_selindd
         
 #    
-class Analysis__BG_DA(Analysis_Master_inter):
+class Analysis__BG(Analysis_Master_inter):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.analysis_name='Analysis__BG_DA'
-        self.dfltparams=dict([('max_num_knots',8),('lower_wl',385),('upper_wl',950),\
+        self.analysis_name='Analysis__BG'
+        self.dfltparams=dict([('num_knots',8),('lower_wl',385),('upper_wl',950),\
             ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),\
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
             ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
-            ('max_merge_differentialTP',0.02),('min_knotdist',0.05),('min_diff',0.1),('min_numpeaks',1),\
-            ('delta_1stderiv',-1),('max_absolute_2ndderiv',0),('window_length',9),('polyorder',4),('analysis_types',['DA'])])
-        self.maxbgspersmp=4
+            ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
+            ('abs_minallowedslope',-1),('max_absolute_2ndderiv',0),('analysis_types',['DA']),\
+            ('maxbgspersmp',4),('chkoutput_types',['DA'])])
+#        CHANGE DEFAULT PARAMETERS TO DA AND IA
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
         self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
         self.optionalkeys=[]
         self.requiredparams=[]
-        self.fom_chkqualitynames=['DA-bg_repr']
-        self.histfomnames=['minslope']
-    
+        self.fom_chkqualitynames=[bgtyp+'_bg_exists' for bgtyp in self.params['chkoutput_types']]
+        self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
+        
+        self.plotparams=dict({}, plot__1={'x_axis':'E'})
+        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
+        
+        
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
+        colormap_under_color='(0.,0.,0.)')
+        
+        
+        
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'analysis_of_ana'
         
     def processnewparams(self):
-        self.fomnames=[item for sublist in [[x+'-abs_expl_'+y,x+'-bg_'+y,x+'-bgcode_'+y,x+'-bg_repr',x+'-code'+y+'-only']\
-                             for x in ['DA'] for y in [str(idx) for idx in xrange(self.maxbgspersmp)] if x in self.params['analysis_types']]\
+        self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_code'+'0'+'_only']\
+                             for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
                              for item in sublist]
+#    return default params if the new params are incorrect check outputtypes is subset of analtypes
+#                              requeired analysis n [An__TR,An__DR]
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
@@ -339,9 +374,9 @@ class Analysis__BG_DA(Analysis_Master_inter):
 
     def check_output(self, critfracnan=0.5):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fom_chkqualitynames)
-        numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_smth_scl'])
+        numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_hasnan'])
         return fracnan/fracnan_abs>critfracnan, \
-        '%d samples, %.2f fraction of total samples have NaN in the absorption spectra' %(numnan, fracnan)
+        '%d samples, %.2f fraction of total samples with no NaN in absorption have calculable band gaps' %(numnan, fracnan)
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
@@ -354,20 +389,18 @@ class Analysis__BG_DA(Analysis_Master_inter):
             Afiled=filed['Afiled']
             Afn=Afiled['fn']
             rawlend={}
-            #self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)#this is how you read all raw data but not sure that's necessary for BG calculation
-            #rawlend=readbinary_selinds(os.path.join(expdatfolder, fn+'.dat'), filed['nkeys'], zipclass=zipclass)#, keyinds=filed['keyinds']#this is how you read
-            Adataarr=self.readdata(os.path.join(destfolder, Afn), filed['nkeys'], None, num_header_lines=Afiled['num_header_lines'], zipclass=None)#the inter_data cannot be zipped because it is from the active ana, inds=None will return all inds
-            datadict={}
+#            print filed.keys(),filed['nkeys']
+            Adataarr=self.readdata(os.path.join(destfolder, Afn), Afiled['nkeys'], None, num_header_lines=Afiled['num_header_lines'], zipclass=None)#the inter_data cannot be zipped because it is from the active ana, inds=None will return all inds
             for k, v in zip(Afiled['keys'], Adataarr):
-                datadict[k]=v
-            fomdict,linfitd,selindd=self.fomd_rawlend_interlend(datadict)#use datadict as the argument or use the necessary keys like 'wl' amd 'abs_smth_scl'
+                rawlend[k]=v
+#            print rawlend.keys()
+            fomdict,linfitd,selindd=self.fomd_rawlend_interlend(rawlend)#use datadict as the argument or use the necessary keys like 'wl' amd 'abs_smth_scl'
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
                 self.fomdlist+=[fomdict]
             if destfolder is None:
                 continue
                 
-            continue #SANTOH - I AM JUST PUTTING THIS HERE TO TEST THAT WE CAN MAKE IT THIS FAR. THE BELOW LOGIC USES 'rawlend' WHICH DOESN'T EXIST ANYMORE SO THAT NEEDS TO BE CHANGED
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
@@ -380,21 +413,18 @@ class Analysis__BG_DA(Analysis_Master_inter):
                 kl=saveinterdata(p, selindd, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]), filed['sample_no'])
 
-            if len(linfitd.keys())>0:
-                fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnp)
-                kl=saveinterdata(p, linfitd, savetxt=False)
-                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]), filed['sample_no'])
+#            if len(linfitd.keys())>0:
+#                print linfitd
+#                fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
+#                p=os.path.join(destfolder,fnp)
+#                kl=saveinterdata(p, linfitd, savetxt=False)
+##                linfitd has values that are scalars and arrays and this is a problem at   x=numpy.float32([interd[kv] for kv in keys]) on line 453 in saveinterdata
+#                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]), filed['sample_no'])
+#
 
-        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         if destfolder is None:
             return
-        fnf='%s__%s.csv' %(anak,'qualityfoms')
-        qualitycsvfilstr=createcsvfilstr(self.fomdlist, self.quality_foms, intfomkeys=['runint','plate_id'])#, fn=fnf)
-        p=os.path.join(destfolder,fnf)
-        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
-        self.multirunfiledict['misc_files'][fnf]=\
-            '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.quality_foms), totnumheadlines, len(self.fomdlist))
+
             
         for histfom in self.histfomnames:   
             fnhist='%s__%s.png' %(anak,histfom)
@@ -402,37 +432,21 @@ class Analysis__BG_DA(Analysis_Master_inter):
             savefomhist(p,self.fomdlist, histfom)
             self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
         
-    def fomd_rawlend_interlend(self, inter_rawlend):
+    def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
         fomd={}
-        inter_selind['rawselectinds']=numpy.where(numpy.logical_and(inter_rawlend['wl']>self.params['lower_wl'],inter_rawlend['wl']<self.params['upper_wl']))[0]
-        for key in inter_rawlend.keys():
-            inter_selindd[key]=inter_rawlend[key][inter_selind['rawselectinds']]
-        inter_selindd['E']=1239.8/inter_selindd['wl']
-        fomd,inter_selind_linfit=runuvvis(inter_selindd,self.params)
-        return fomd,inter_linfit,inter_selindd
-
+#        print rawlend.keys()
+        inter_selindd['rawselectinds']=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
+#        print inter_selindd['rawselectinds']
         
-        
-        
-
-if 0:
-    c=Analysis__TR_UVVIS()
-    p_exp=r'\\htejcap.caltech.edu\share\home\processes\experiment\temp\20151016.160701.testuvissmall\20151016.160701.pck'
-    p_ana=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\testuvis'
-    expd=readexpasdict(p_exp)
-    usek='data'
-    techk='T_UVVIS'
-    typek='spectrum_files'
-    filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=None)
-    c.perform(p_ana, expdatfolder=os.path.split(p_exp)[0], writeinterdat=True, anak='ana__0')
-    print 'THESE FOM FILES WRITTEN'
-    for k, v in c.multirunfiledict.items():
-        print k, v
-    print 'THESE INTERMEDIATE DATA FILES WRITTEN'
-    for runk, runfiled in c.runfiledict.items():
-        print runk, runfiled
-    print 'THESE FOMs CALCULATED'
-    print c.fomdlist
-
+        for key in rawlend.keys():
+            if key!='rawselectinds':
+                inter_selindd[key]=rawlend[key][inter_selindd['rawselectinds']]
+        inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
+        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not np.isnan(fomd[x+'_bg_0']) else 0
+        minslope_fcn=lambda x: np.min(inter_linfitd[typ+'_slopes']) if typ+'_slopes' in inter_linfitd.keys() else np.NaN
+        for typ in self.params['analysis_types']:
+            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
+            fomd[typ+'_fit_minslope']=minslope_fcn(typ)
+        return fomd,inter_linfitd,inter_selindd
 
