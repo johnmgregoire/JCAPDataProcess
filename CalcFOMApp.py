@@ -543,7 +543,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.updateuserfomd(clear=True)
         self.anadict[anak]={}
         self.activeana=self.anadict[anak]
-        
+        if not checkbool:
+            self.activeana['check_output_message']=checkmsg
         for runk, typek, b in runk_typek_b:
             frunk='files_'+runk
             if not frunk in self.activeana.keys():

@@ -5,6 +5,7 @@ if __name__ == "__main__":
 
 from fcns_math import *
 from fcns_io import *
+from fcns_ui import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
 #from scipy.signal import savgol_filter
@@ -35,6 +36,31 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
         aaa
     return num_files_considered, filedlist2#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
 
+
+#def **************ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysisoptions=['Analysis__TR_UVVIS']):
+#    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk]) for anak, anav in anadict.iteritems()\
+#           if anak.startswith('ana__') and (anav['name'] in requiredanalysisoptions) and True in ['files_' in ftk for ftk in anav.keys()]]
+#
+#    
+#    #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
+#    ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk
+#    #this used to use [anak, ftk, typek, fnk] but anadict is not available in perform() so use filename because it is the same .ana so should be in same folder
+#    interfnks_filedlist=[\
+#          [{'fn':fnk, 'keys':tagandkeys.split(';')[1].split(','), 'num_header_lines':int(tagandkeys.split(';')[2])}\
+#            for anak, ftkl in anak_ftklist \
+#            for ftk in ftkl \
+#            for typek in ['inter_files', 'inter_rawlen_files']
+#            for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
+#                if ftk==('files_'+filed['run']) and int(tagandkeys.split(';')[4].strip())==filed['sample_no']\
+#          ]
+#        for filed in filedlist]
+#    
+#    #the keys anakeys__inter_file and anakeys__inter_rawlen_file assume there is only previous required analysis so this needs to be changed if combining multiple types of rpevious analysis
+#    filedlist=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
+#          for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
+#        
+#    return filedlist#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
+#    
     
 def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
     if techk!='T_UVVIS':
@@ -358,9 +384,19 @@ class Analysis__BG(Analysis_Master_inter):
         self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_code'+'0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
                              for item in sublist]
+<<<<<<< HEAD
 #    return default params if the new params are incorrect check outputtypes is subset of analtypes
 #                              requeired analysis n [An__TR,An__DR]
 
+=======
+        
+        #check self.params
+        if things_are_bad:
+            self.params=copy.copy(self.dfltparams)
+            idialog=messageDialog(self, 'You enetered ivnalide parameters. They are begin restored to defaults. Please try again.')
+            idialog.exec_()
+            
+>>>>>>> origin/master
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
               BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys,\
