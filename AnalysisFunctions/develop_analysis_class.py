@@ -36,31 +36,6 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
         aaa
     return num_files_considered, filedlist2#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
 
-
-#def **************ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysisoptions=['Analysis__TR_UVVIS']):
-#    anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk]) for anak, anav in anadict.iteritems()\
-#           if anak.startswith('ana__') and (anav['name'] in requiredanalysisoptions) and True in ['files_' in ftk for ftk in anav.keys()]]
-#
-#    
-#    #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
-#    ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk
-#    #this used to use [anak, ftk, typek, fnk] but anadict is not available in perform() so use filename because it is the same .ana so should be in same folder
-#    interfnks_filedlist=[\
-#          [{'fn':fnk, 'keys':tagandkeys.split(';')[1].split(','), 'num_header_lines':int(tagandkeys.split(';')[2])}\
-#            for anak, ftkl in anak_ftklist \
-#            for ftk in ftkl \
-#            for typek in ['inter_files', 'inter_rawlen_files']
-#            for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()\
-#                if ftk==('files_'+filed['run']) and int(tagandkeys.split(';')[4].strip())==filed['sample_no']\
-#          ]
-#        for filed in filedlist]
-#    
-#    #the keys anakeys__inter_file and anakeys__inter_rawlen_file assume there is only previous required analysis so this needs to be changed if combining multiple types of rpevious analysis
-#    filedlist=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
-#          for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
-#        
-#    return filedlist#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
-#    
     
 def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
     if techk!='T_UVVIS':
@@ -355,9 +330,10 @@ class Analysis__BG(Analysis_Master_inter):
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
             ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
             ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
-            ('abs_minallowedslope',-1),('max_absolute_2ndderiv',0),('analysis_types',['DA']),\
+            ('abs_minallowedslope',-1),('max_absolute_2ndderiv',0),('analysis_types',['DA','IA']),\
             ('maxbgspersmp',4),('chkoutput_types',['DA'])])
 #        CHANGE DEFAULT PARAMETERS TO DA AND IA
+
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
         self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
@@ -381,22 +357,20 @@ class Analysis__BG(Analysis_Master_inter):
         return 'analysis_of_ana'
         
     def processnewparams(self):
+        if not isinstance(self.params['analysis_types'],list):
+            self.params['analysis_types']=[','.join(self.params['analysis_types'])]
+        if not isinstance(self.params['chkoutput_types'],list):
+            self.params['chkoutput_types']=[','.join(self.params['chkoutput_types'])]
+        if np.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
+            self.params=copy.copy(self.dfltparams)
+            idialog=messageDialog(self, 'You enetered ivnalide parameters. They are being restored to defaults. Please try again.')
+            idialog.exec_()
+        
         self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_code'+'0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
                              for item in sublist]
-<<<<<<< HEAD
-#    return default params if the new params are incorrect check outputtypes is subset of analtypes
-#                              requeired analysis n [An__TR,An__DR]
 
-=======
-        
-        #check self.params
-        if things_are_bad:
-            self.params=copy.copy(self.dfltparams)
-            idialog=messageDialog(self, 'You enetered ivnalide parameters. They are begin restored to defaults. Please try again.')
-            idialog.exec_()
-            
->>>>>>> origin/master
+
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
               BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys,\
@@ -413,6 +387,12 @@ class Analysis__BG(Analysis_Master_inter):
         numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_hasnan'])
         return fracnan/fracnan_abs>critfracnan, \
         '%d samples, %.2f fraction of total samples with no NaN in absorption have calculable band gaps' %(numnan, fracnan)
+        
+    def savelinfitd(self,p,linfitd):
+        wstr='\r\n'.join([k+':'+str(np.round(linfitd[k],decimals=5)) if np.isscalar(linfitd[k]) else k+':'+','.join(['%.5f' % num for num in linfitd[k]]) 
+        for k in sorted(linfitd.keys())])
+        with open(p,'w') as ps:
+            ps.write(wstr)
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
@@ -449,14 +429,12 @@ class Analysis__BG(Analysis_Master_inter):
                 kl=saveinterdata(p, selindd, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(selindd[kl[0]]), filed['sample_no'])
 
-#            if len(linfitd.keys())>0:
-#                print linfitd
-#                fnp='%s__%s_linfitparams' %(anak, os.path.splitext(fn)[0])
-#                p=os.path.join(destfolder,fnp)
-#                kl=saveinterdata(p, linfitd, savetxt=False)
-##                linfitd has values that are scalars and arrays and this is a problem at   x=numpy.float32([interd[kv] for kv in keys]) on line 453 in saveinterdata
-#                self.runfiledict[filed['run']]['misc_files'][fnp]='%s;%s;%d;%d;%d' %('uvis_inter_linfitparams_dat_file', ','.join(kl), 1, len(linfitd[kl[0]]), filed['sample_no'])
-#
+            if len(linfitd.keys())>0:
+                print linfitd.keys()
+                fn_linfit='%s__%s' %(anak,'linfitparams.csv')
+                self.multirunfiledict['misc_files'][fn_linfit]='csv_linfitparams'+'_file;'
+                p=os.path.join(destfolder,fn_linfit)
+                self.savelinfitd(p,linfitd)
 
         if destfolder is None:
             return
@@ -470,14 +448,13 @@ class Analysis__BG(Analysis_Master_inter):
         
     def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
-        fomd={}
-#        print rawlend.keys()
         inter_selindd['rawselectinds']=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
 #        print inter_selindd['rawselectinds']
         
         for key in rawlend.keys():
             if key!='rawselectinds':
                 inter_selindd[key]=rawlend[key][inter_selindd['rawselectinds']]
+        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
         bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not np.isnan(fomd[x+'_bg_0']) else 0
         minslope_fcn=lambda x: np.min(inter_linfitd[typ+'_slopes']) if typ+'_slopes' in inter_linfitd.keys() else np.NaN

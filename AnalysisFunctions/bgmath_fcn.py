@@ -120,7 +120,7 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
         linfitd,fomd=calc_bandgap(tempparams,np.size(tempparams)/2,max_numbgs,min_allowedslope,\
         min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,merge_bgslopediff_percent,\
         min_TP_finseg_diff,min_bgfinalseglength)
-        data['linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
+        data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
     return [linfitd,fomd]
             
 def calc_bandgap(params,num_knots,max_numbgs,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
@@ -256,11 +256,7 @@ return len(np.where(np.logical_and((np.abs(data[typ+'_2ndderiv'])>=max_allowed_2
 
 
 def runuvvis(data,inputvars):
-#    Energy should be part of the initial intermediate data since this is needed for visualization
-    data['E']=1239.8/data['wl']
-#####
 
-    
     code0='Successful assignment of bandgap linear segment using simple rules'
     code1='Linear segment with a slope less than min_slope was found'
     code2='Succesful assignment of bandgap linear segment using a slightly higher slope at following segment criterion but bgdiff > min in current segment'
@@ -273,6 +269,7 @@ def runuvvis(data,inputvars):
     code8='NaNs were found in the absorption spectrum'
     code9='Linear fitting failed'
     fomd={};linfitd={}
+
     for bgtyp in inputvars['analysis_types']:
         if np.isnan(data[bgtyp]).any():
             fomd['bgcode_0']=8
@@ -290,7 +287,7 @@ def runuvvis(data,inputvars):
         merge_linsegslopediff_percent=inputvars['merge_linsegslopediff_percent'],maxtol=inputvars['maxtol'],\
         min_knotdist=inputvars['min_knotdist'],xorder='increasing',dispresult=False)
 #        fomd
-        for dct in [linfitd,fomd,data]:    
+        for dct in [linfitd,fomd]:    
             for key in dct.keys():
                 if bgtyp not in key:
                     dct[bgtyp+'_'+key]=dct.pop(key)
