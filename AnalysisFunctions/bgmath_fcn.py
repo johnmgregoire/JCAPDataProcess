@@ -269,7 +269,7 @@ def runuvvis(data,inputvars):
     code5='All Band gap lin segs deleted due to inability to identify background linear segment with sufficient difference in slope'
     code6='Final segment has slope higher than previous and explains bgdiff>min this check occurs only when no band gap has been found with other criteria above'
 #    There is a chance that you are underestimating band gaps
-    code7='Peaks were found in the mthd spectrum'
+    code7='Peaks were found in the absorption spectrum'
     code8='NaNs were found in the absorption spectrum'
     code9='Linear fitting failed'
     fomd={};linfitd={}
@@ -289,8 +289,8 @@ def runuvvis(data,inputvars):
         min_bgfinalseglength=inputvars['min_bgfinalseglength'],max_merge_differentialTP=inputvars['max_merge_differentialTP'],\
         merge_linsegslopediff_percent=inputvars['merge_linsegslopediff_percent'],maxtol=inputvars['maxtol'],\
         min_knotdist=inputvars['min_knotdist'],xorder='increasing',dispresult=False)
-
-        for dct in [linfitd,fomd]:    
+#        fomd
+        for dct in [linfitd,fomd,data]:    
             for key in dct.keys():
                 if bgtyp not in key:
                     dct[bgtyp+'_'+key]=dct.pop(key)
