@@ -119,12 +119,12 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
         tempparams=mergelinsegs(tempparams,num_knots,max_merge_differentialTP,merge_linsegslopediff_percent)
         linfitd,fomd=calc_bandgap(tempparams,np.size(tempparams)/2,max_numbgs,min_allowedslope,\
         min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,merge_bgslopediff_percent,\
-        min_TP_finseg_diff,min_bgfinalseglength)
-        data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
+        min_TP_finseg_diff,min_bgfinalseglength,bgtyp)
+        data['linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
     return [linfitd,fomd]
             
 def calc_bandgap(params,num_knots,max_numbgs,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
-min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglength):
+min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglength,bgtyp):
     if merge_bgslopediff_percent>1:
         merge_bgslopediff_percent=merge_bgslopediff_percent/100
     knots=params[1:num_knots+1]
@@ -234,8 +234,9 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
     fomd=dict([(lstk+'_'+str(idx),eval(lstk)[idx]) for lstk in ['bgknots_lower', \
     'bkgrdknots_lower', 'bg','abs_expl','bgcode'] for idx in xrange(min(len(bg),max_numbgs))])
 
-    linfitd=dict(dict([(lstk+'_'+str(idx),eval(lstk)[idx]) for lstk in ['bgknots_lower', \
-    'bkgrdknots_lower'] for idx in xrange(min(len(bg),max_numbgs))]),knots=knots,slopes=slopes,y0=params[0])
+    linfitd=dict([(lstk+'_'+str(idx),eval(lstk)[idx]) for lstk in ['bgknots_lower', \
+    'bkgrdknots_lower'] for idx in xrange(min(len(bg),max_numbgs))]+[('knots',knots),\
+    ('slopes',slopes),('y0',params[0])])
     if not np.isnan(abs_expl).all():
         x=np.argmax([fomd['abs_expl_'+str(idx)] for idx\
         in xrange(min(len(bg),max_numbgs)) if not np.isnan(fomd['abs_expl_'+str(idx)])])
@@ -268,17 +269,18 @@ def runuvvis(data,inputvars):
     code7='Peaks were found in the absorption spectrum'
     code8='NaNs were found in the absorption spectrum'
     code9='Linear fitting failed'
-    fomd={};linfitd={}
+    pfomd={};plinfitd={}
 
     for bgtyp in inputvars['analysis_types']:
+        pfomd[bgtyp]={};plinfitd[bgtyp]={}
         if np.isnan(data[bgtyp]).any():
-            fomd['bgcode_0']=8
+            pfomd[bgtyp]['bgcode_0']=8
             continue
 #Implementation of second round of filtering in cases where peaks exist is currently unsupported
         if identifypeaks(data,'abs',inputvars['abs_minallowedslope'],inputvars['max_absolute_2ndderiv']):
-            fomd['bgcode_0']=7
+            pfomd[bgtyp]['bgcode_0']=7
             continue
-        linfitd,fomd=fitresult(data,bgtyp,max_numbgs=inputvars['maxbgspersmp'],\
+        plinfitd[bgtyp],pfomd[bgtyp]=fitresult(data,bgtyp,max_numbgs=inputvars['maxbgspersmp'],\
         num_knots=inputvars['num_knots'],tol=inputvars['tol'],min_allowedslope=inputvars['min_allowedslope'],\
         min_bgTP_diff=inputvars['min_bgTP_diff'],min_bkgrdslope=inputvars['min_bkgrdslope'],\
         min_bgbkgrdslopediff=inputvars['min_bgbkgrdslopediff'],min_finseglength=inputvars['min_finseglength'],\
@@ -286,9 +288,9 @@ def runuvvis(data,inputvars):
         min_bgfinalseglength=inputvars['min_bgfinalseglength'],max_merge_differentialTP=inputvars['max_merge_differentialTP'],\
         merge_linsegslopediff_percent=inputvars['merge_linsegslopediff_percent'],maxtol=inputvars['maxtol'],\
         min_knotdist=inputvars['min_knotdist'],xorder='increasing',dispresult=False)
-#        fomd
-        for dct in [linfitd,fomd]:    
-            for key in dct.keys():
-                if bgtyp not in key:
-                    dct[bgtyp+'_'+key]=dct.pop(key)
+        
+    fomd=dict([(bgtyp+'_'+k,pfomd[bgtyp][k]) for bgtyp in pfomd.keys() for k in pfomd[bgtyp].keys()])
+    linfitd=dict([(bgtyp+'_'+k,plinfitd[bgtyp][k]) for bgtyp in plinfitd.keys() for k in plinfitd[bgtyp].keys()])
+    linfitd=dict(linfitd.items()+[(k+'_'+str(x),linfitd[k][idx]) for k in linfitd.keys() if k.split('_')[-1] in ['knots','slopes'] for idx,x in enumerate(xrange(len(linfitd[k])))])
+    [linfitd.pop(k) for k in linfitd.keys() if not np.isscalar(linfitd[k])]
     return linfitd,fomd
