@@ -130,7 +130,10 @@ class getexistingFilesFolders(QFileDialog):
         for i in inds:
             if i.column() == 0:
 #                print i.data().__class__.__name__
-                files.append(os.path.join(str(self.directory().absolutePath()),str(i.data())))
+                try:
+                    files.append(os.path.join(str(self.directory().absolutePath()),str(i.data().toString())))
+                except:
+                    files.append(os.path.join(str(self.directory().absolutePath()),str(i.data())))
         print files
         self.selectedFiles = [str(fn) for fn in files]
         self.hide()
