@@ -388,7 +388,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
         
         if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
             runp=tryprependpath(RUNFOLDERS, runp)
-        
+        filedeletedbool=False
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
             zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
@@ -396,14 +396,20 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
             if not k2.startswith('files_technique__'):
                 continue
             for k3, typed in techd.iteritems():
-                for fn, fileattrstr in typed.iteritems():
-                    if zipbool:
-                        with zipopenfcn(fn) as f:
-                            lines=f.readlines()
-                    else:
-                        p=os.path.join(runp, fn)
-                        with open(p,'r') as f:
-                            lines=f.readlines()
+                for fn, fileattrstr in typed.items():#here do not use iteritems since possible for entries to be deleted in the loop and cannot modify dictionary being iterated
+                    try:
+                        if zipbool:
+                            with zipopenfcn(fn) as f:
+                                lines=f.readlines()
+                        else:
+                            p=os.path.join(runp, fn)
+                            with open(p,'r') as f:
+                                lines=f.readlines()
+                    except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
+                        print 'ERROR: %s does not exist in folder %s, so it is being deletd from %s/%s/%s' %(fn, runp, k, k2, k3)
+                        del expfiledict[k][k2][k3][fn]
+                        filedeletedbool=True
+                        continue
                     if savefolder is None:
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
@@ -435,9 +441,32 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         expfiledict[k][k2][k3][fn]=s
         if zipbool:
             archive.close()
-
+    if filedeletedbool:
+        cleanupemptynesteddictionaries()
     return expfiledict
 
+def cleanup_empty_filed_in_expfiledict(expfiledict):
+    #delete 3rd level down, where there are no fielnames for a given file type
+    for k, rund in expfiledict.iteritems():
+        if not k.startswith('run__'):
+            continue
+        for k2, techd in rund.iteritems():
+            if not k2.startswith('files_technique__'):
+                continue
+            for k3 in techd.keys():
+                if len(techd[k3])==0:#there are no more filenames of this type
+                    del expfiledict[k][k2][k3]
+    #delete 2nd level down, where there are no file types for a given technique
+    for k, rund in expfiledict.iteritems():
+        if not k.startswith('run__'):
+            continue
+        for k2 in rund.keys():
+            if not k2.startswith('files_technique__'):
+                continue
+            if len(rund[k2])==0:#there are no more filenames of this type
+                del expfiledict[k][k2]
+    #stopping here, menaing that it is conceivable that a run__ block may not hav any files_technique__ which means that it does not have files and is a useless run
+    return expfiledict 
 def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     if keys is None:
         keys=sorted(interd.keys())
@@ -559,7 +588,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
 
     #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
     saveexpfiledict=copy.deepcopy(expfiledict)
-    if saverawdat:
+    if saverawdat:# if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line. 
         #folder=os.path.join(os.path.split(savep)[0], 'raw_binary')
         folder=os.path.split(savep)[0]
         if os.path.isdir(folder):
@@ -567,7 +596,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
                 os.remove(os.path.join(folder, fn))#cannot overwrite files because filename deduplication may be different from previous save
         else:
             os.mkdir(folder)
-        saverawdat_expfiledict(saveexpfiledict, folder)#the filename attributes get update here
+        saverawdat_expfiledict(saveexpfiledict, folder)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
     
     for rund in saveexpfiledict.itervalues():
         if isinstance(rund, dict) and 'run_path' in rund.keys():
