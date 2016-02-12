@@ -38,7 +38,7 @@ def d_nestedkeys(d, keylist):
 
 
 #plateid,code,sample,fom,xy,comp
-def extractplotdinfo(fomd, fomname, expfiledict, fomdlist_index0, fomdlist_index1, ellabels=['A', 'B', 'C', 'D']):
+def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdlist_index1):#, ellabels=['a', 'b', 'c', 'd']):
     d=fomd
     returnlist=[fomdlist_index0, fomdlist_index1]
     returnlist+=[d[k] for k in ['plate_id','code','sample_no', fomname]]
@@ -48,10 +48,10 @@ def extractplotdinfo(fomd, fomname, expfiledict, fomdlist_index0, fomdlist_index
         rund=expfiledict['run__%d' %d['runint']]
         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
         returnlist+=[[pmd[k] for k in ['x', 'y']]]
-        returnlist+=[[pmd[k] for k in ellabels]]
+        returnlist+=[[pmd[k] for k in pmkeys]]
     return returnlist
 
-def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, treefcns, anazipclass=None):
+def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None):
     anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
     for anak in anakl:
         anad=anafiledict[anak]
@@ -72,6 +72,11 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     l_fomdlist+=[fomdlist]
                     l_fomnames+=[keys+['anaint']]
                     l_csvheaderdict+=[csvheaderdict]
+                    if 'platemap_comp4plot_keylist' in anad.keys():
+                        pmkeys=anad['platemap_comp4plot_keylist'].split(',')
+                    else:
+                        pmkeys=['A', 'B', 'C', 'D']
+                    l_platemapkeys+=[pmkeys]
                     treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
 
 class legendformatwidget(QDialog):

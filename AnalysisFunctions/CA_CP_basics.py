@@ -150,14 +150,14 @@ class Analysis__Eave(Analysis__Iave):
 
 class Analysis__Etaave(Analysis_Master_inter, Analysis__Iave):#this order is improtant, i.e. get perform() from master and avefcn from Iave
     def __init__(self):
-        self.analysis_fcn_version='1'
+        self.analysis_fcn_version='2'# changed FOM label from E.V_ave to Eta.V_ave on 20160212
         self.dfltparams=dict([('duration_s', 2.), ('num_std_dev_outlier', 2.), ('num_pts_outlier_window', 999999), ('from_end', True)])
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Etaave'
         self.requiredkeys=['Ewe(V)', 't(s)']
         self.optionalkeys=[]
         self.requiredparams=['reference_e0', 'redox_couple_type']
-        self.fomnames=['E.V_ave']
+        self.fomnames=['Eta.V_ave']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
         self.plotparams['plot__1']['series__1']='Eta(V)'

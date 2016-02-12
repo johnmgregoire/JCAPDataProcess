@@ -149,7 +149,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
 class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999.}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999., 'platemap_comp4plot_keylist':'A,B,C,D'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FilterSmoothFromFile'
         self.requiredkeys=[]

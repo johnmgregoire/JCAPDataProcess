@@ -88,6 +88,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
+        self.l_platemap4keys=[]
+        
         self.repr_anaint_plots=1
         self.anafiledict={}
         self.expfiledict={}
@@ -146,9 +148,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
+        self.l_platemap4keys=[]
         
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
-        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass)
+        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass)
         
         self.updatefomdlist_plateruncode()
         
@@ -193,8 +196,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 print 'cannot find elements for ', str(rund['parameters']['plate_id'])
                 masterels=['A', 'B', 'C', 'D']
                 continue
-            if len(els)>4:
-                els=els[:4]
+#            if len(els)>4:
+#                els=els[:4]
             if masterels is None:
                 masterels=els
             elif masterels==els:
@@ -202,21 +205,24 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             elif set(masterels)==set(els):
                 idialog=messageDialog(self, 'Would you like to modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
                 if idialog.exec_():
-                    rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D']) for d in rund['platemapdlist']]
-                    lets=['A', 'B', 'C', 'D']
+                    rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D'], origE=d['E'], origF=d['F'], origG=d['G'], origH=d['H']) for d in rund['platemapdlist']]
+                    lets=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']# EFGH
                     for d in rund['platemapdlist']:
                         for let, el in zip(lets, masterels):
-                            d[let]=d['orig'+lets[els.index(el)]]
+                            d[let]=d['orig'+lets[els.index(el)]]#this allows plates with different permutations of the same set fo elements (as the first plate to be read here) to have their platemaps permuted to match.
                 else:
                     masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels and when plots are made they are just vs the platemap channels not the printed elements
-            else:
+            else:#this patholigcal case of having different sets of elements in the same exp/ana is not handled for >4 element prints
                 idialog=messageDialog(self, 'WARNING: %s has elements %s but elements %s were already loaded' %(runk,','.join(els), ','.join(masterels)))
                 idialog.exec_()
                 masterels=['A', 'B', 'C', 'D']
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
             self.ellabels=['A', 'B', 'C', 'D']
         else:#to get here evrythign has a platemap
-            self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
+            if len(masterels)<4:
+                self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
+            else:
+                self.ellabels=masterels
             self.remap_platemaplabels()
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
@@ -239,12 +245,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         
         
-    def remap_platemaplabels(self):
+    def remap_platemaplabels(self):#should work for up to 8 elements, only the length of ellables will be used
         for runk, rund in self.expfiledict.iteritems():
                 if not runk.startswith('run__'):
                     continue
                 for d in rund['platemapdlist']:
-                    for oldlet, el in zip(['A', 'B', 'C', 'D'], self.ellabels):
+                    for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
                         d[el]=d[oldlet]
                         
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
@@ -319,10 +325,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(self.l_fomdlist[0])>0:
                 self.l_fomnames=[['anaint', 'runint', 'plate_id', 'sample_no']]
                 self.l_csvheaderdict=[{}]
+                self.l_platemap4keys=[['A', 'B', 'C', 'D']]
             else:
                 self.l_fomdlist=[]
                 self.l_fomnames=[]
                 self.l_csvheaderdict=[]
+                self.l_platemap4keys=[]
             
         if inds is None:
             inds=range(len(self.l_fomdlist))
@@ -344,7 +352,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     rund=self.expfiledict['run__%d' %d['runint']]
                     pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
-                    for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D']:
+                    for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                         if not k in d.keys():
                             d[k]=pmd[k]
                             if not k in fomnames:
@@ -541,10 +549,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         l_usefombool=self.AnaExpFomTreeWidgetFcns.getusefombools()
         
         plotdinfo=[]
-        for fomdlist_index0, (usebool, fomdlist, fomnames) in enumerate(zip(l_usefombool, self.l_fomdlist, self.l_fomnames)):
+        for fomdlist_index0, (usebool, fomdlist, fomnames, platemapkeys) in enumerate(zip(l_usefombool, self.l_fomdlist, self.l_fomnames, self.l_platemap4keys)):#the pmkeys here provides custom comps calcualtion without reassigning any pm channels
             if not usebool or not fomname in fomnames:
                 continue
-            plotdinfo+=[extractplotdinfo(d, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1) for fomdlist_index1, d in enumerate(fomdlist) if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
+            plotdinfo+=[extractplotdinfo(d, platemapkeys, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1) for fomdlist_index1, d in enumerate(fomdlist) if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
         for count, k in enumerate(['fomdlist_index0','fomdlist_index1','plate_id','code','sample_no', 'fom', 'xy', 'comps']):
             self.fomplotd[k]=numpy.array(map(operator.itemgetter(count), plotdinfo))
         self.fomplotd['comps']=numpy.array([c/c.sum() for c in self.fomplotd['comps']])
@@ -827,10 +835,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if count==0:
                 helpme
         getval=lambda k:self.fomplotd[k][self.selectind]
-        lab=self.customlegendfcn(getval('sample_no'), self.ellabels, getval('comps'), getval('code'), getval('fom'))
+        lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
         
-
+    def getellabels_pm4keys(self, pmkeys):
+        ellabelinds=[['A', 'B', 'C', 'D', 'E', 'F', 'G'].index(pmk) for pmk in pmkeys]
+        return [self.ellabels[i] if i<len(self.ellabels) else 'X' for i in ellabelinds]#pmkeys should refer to element label indeces that exist but if not fill the X to softly notify the user that soemthig is wrong, i.e. not all the element labels were read from the database
     def plotxy(self, filed=None):#filed to plot from a  single file and must have key 'path' in addition to standard filed
         cbl=[\
         self.xplotchoiceComboBox, \
@@ -893,13 +903,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         
     def fillcomppermutations(self):
-        if self.ellabels==['A', 'B', 'C', 'D']:
+        if self.ellabels==['A', 'B', 'C', 'D']:#default to only using 4 elements , i.e. if more than that then they should have been ready correctly from database and are not enter-able here
             ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
             if not ans is None:
                 self.ellabels=[v.strip() for v in ans]
                 self.remap_platemaplabels()
         self.CompPlotOrderComboBox.clear()
-        for count, l in enumerate(itertools.permutations(self.ellabels, 4)):
+        if len(self.ellabels)==4:
+            els=self.ellabels
+        else:
+            els=['0', '1', '2', '3']# for when there are more than 4 elements from which 4-el selections will be made from the anadict['platemap_comp4plot_keylist'] and this permuation permutes that selection
+        for count, l in enumerate(itertools.permutations(els, 4)):
             self.CompPlotOrderComboBox.insertItem(count, ','.join(l))
         self.CompPlotOrderComboBox.setCurrentIndex(0)
         
@@ -913,6 +927,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.tabs__plateids=self.setup_TabWidget(self.tabs__plateids, newplateids, compbool=False)
         
         newcodes=sorted(list(set(self.fomplotd['code'])))
+        if len(newcodes)>1:#if more than 1 code make -1 an additional tab that plots all codes together
+            newcodes+=[-1]
         if self.tabs__codes!=newcodes:
             self.tabs__codes=self.setup_TabWidget(self.tabs__codes, newcodes, compbool=True)
         fom=self.fomplotd['fom']#this is just sample_no if 'comp.color'
@@ -1005,7 +1021,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]
   
         self.comppermuteinds=list([l for l in itertools.permutations([0, 1, 2, 3], 4)][self.CompPlotOrderComboBox.currentIndex()])
-        self.quatcompclass.ellabels=[self.ellabels[i] for i in self.comppermuteinds]
+        
+        pmkeys=self.l_platemap4keys[idtupsarr[0][0]]#get the first pmkeys and then check if the others are the same. this is just ABCD unless changed by platemap_comp4plot_keylist
+        pmkeys_consistent_bools=[self.l_platemap4keys[idtup[0]]==pmkeys for idtup in idtupsarr]
+        if False in pmkeys_consistent_bools:
+            idialog=messageDialog(self, 'Trying to plot FOMs from ana__ with different 4-element lists. Continue?')
+            if not idialog.exec_():
+                return
+            els=['X', 'X', 'X', 'X']
+            print 'Trying to plot FOMs from ana__ with different 4-element lists'
+        else:
+            els=self.getellabels_pm4keys(pmkeys)
+        self.quatcompclass.ellabels=[els[i] for i in self.comppermuteinds]
         
         self.select_circs_plotws=[(None, None)]*len(self.select_idtups)
         for val, plotw in zip(self.tabs__plateids, self.tabs__plotw_plate):
@@ -1024,7 +1051,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         
         for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp):
-            inds=numpy.where(code==val)[0]
+            if val<0:#tab for code -1 is to plot all codes together
+                inds=numpy.where(code>=0)[0]
+            else:
+                inds=numpy.where(code==val)[0]
             if self.compPlotMarkSelectionsCheckBox.isChecked():
                 c=numpy.float64([[1, 0, 0] if tuple(tupa) in self.select_idtups else [0, 0, 0] for tupa in idtupsarr[inds]])
                 sortinds_inds=numpy.argsort(c.sum(axis=1))#this sorting puts the "brightest" colors on top so any duplicate black compositions are plotted underneath
@@ -1176,7 +1206,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         tabi=self.compTabWidget.currentIndex()
         val=self.tabs__codes[tabi]
         plotw=self.tabs__plotw_comp[tabi]
-        inds=numpy.where((code==val)&numpy.logical_not(numpy.isnan(self.fomplotd['fom'])))[0]
+        inds=numpy.where(((val<0)|(code==val))&numpy.logical_not(numpy.isnan(self.fomplotd['fom'])))[0]
         
         x, y=self.fomplotd['xy'][inds].T
         comps=self.fomplotd['comps'][inds]
@@ -1191,7 +1221,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if compclick is None:
             return
         
-        permcomp=comps[:, self.comppermuteinds]
+        permcomp=comps[:, self.comppermuteinds]#this comps may be a custom selection of 4 platemap channels according to platemap_comp4plot_keylist, in which case the string permutation selection will not match this
         
         dist=numpy.array([(((c-compclick)**2).sum())**.5 for c in permcomp])
 

@@ -140,8 +140,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
-        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_analyzethenprocess_allsubspace]
-        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'Run Analysis and Process all Sub-Space options with same root name']
+        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, self.batch_analyzethenprocess_allsubspace]
+        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name','Run Analysis + Process all w/ same root name']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
             
@@ -402,6 +402,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if procclassind==-1:#filter from pck
                 filtername=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]#write the filter_path__runint while handy here to use later
                 self.analysisclass.filter_path__runint=dict([(int(runk.partition('__')[2]), self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+                
+                if '__' in filtername:
+                    self.analysisclass.params['platemap_comp4plot_keylist']=','.join(list(filtername.partition('__')[2]))
+                else:
+                    self.analysisclass.params['platemap_comp4plot_keylist']=self.analysisclass.dfltparams['platemap_comp4plot_keylist']
         else:
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             if selind==0:
@@ -576,6 +581,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             else:
                 self.activeana['parameters'][k]=str(v)
         
+        if 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
+            self.activeana['platemap_comp4plot_keylist']=self.activeana['parameters']['platemap_comp4plot_keylist']
+
         gentype=self.analysisclass.getgeneraltype()
         if 'process_fom' in gentype:
             if 'from_file' in gentype:
@@ -1184,6 +1192,36 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
         
         #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label
+        
+        
+    def batch_process_allsubspace(self):
+        anak=self.gethighestanak(getnextone=False)
+        selprocesslabel_original=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
+        selprocess_root=selprocesslabel_original.partition('__')[0]
+        if len(selprocess_root)==0:
+            print 'quitting batch process because FOM process function not iterable (must be "<root>__<indexstr>")'
+            return
+            
+        selprocesslabel_list=[str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0] for i in range(1, int(self.FOMProcessNamesComboBox.count())) if (str(self.FOMProcessNamesComboBox.itemText(i)).partition('__')[0])==selprocess_root]
+        for selprocesslabel in selprocesslabel_list:
+            matchbool=False
+            for i in range(1, int(self.FOMProcessNamesComboBox.count())):
+                matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
+                if matchbool:
+                    break
+            if not matchbool:
+                print 'skipping %s, probably because no appropriate fom_files found' %anak
+            self.FOMProcessNamesComboBox.setCurrentIndex(i)
+            self.getactiveanalysisclass()
+            self.analysisclass.params['select_ana']=anak
+            self.processeditedparams()#self.getactiveanalysisclass() run in here
+            anak_processed=self.gethighestanak(getnextone=True)
+            self.analyzedata()
+            if anak_processed!=self.gethighestanak(getnextone=False):
+                print 'quitting batch process because processing function did not successfully run'
+                return 
+        self.FOMProcessNamesComboBox.setCurrentIndex(0)
+        
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree
