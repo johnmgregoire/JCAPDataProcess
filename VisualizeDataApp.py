@@ -915,7 +915,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         newcodes=sorted(list(set(self.fomplotd['code'])))
         if self.tabs__codes!=newcodes:
             self.tabs__codes=self.setup_TabWidget(self.tabs__codes, newcodes, compbool=True)
-        fom=self.fomplotd['fom']
+        fom=self.fomplotd['fom']#this is just sample_no if 'comp.color'
         inds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
         fom=fom[inds]
         plate=self.fomplotd['plate_id'][inds]
@@ -925,7 +925,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'][inds],self.fomplotd['fomdlist_index1'][inds]]).T
 
-        if self.fomplotd['fomname']=='comp.color':
+        if len(inds)==0:
+            idialog=messageDialog(self, 'Nothing to plot, all FOMs probably NaN. Existing plots to remain unchanged.')
+            idialog.exec_()
+            return
+        elif self.fomplotd['fomname']=='comp.color':
             cols=QuaternaryPlotInstance.rgb_comp(comps)
             sm=None
         else:

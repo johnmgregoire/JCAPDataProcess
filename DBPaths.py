@@ -1,17 +1,17 @@
 
-PLATEFOLDERS=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/plate', 'J:/hte_jcap_app_proto/plate', \
-                       '//htejcap.caltech.edu/share/home/users/hte/platemaps', 'K:/users/hte/platemaps']
+PLATEFOLDERS=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\plate', r'J:\hte_jcap_app_proto\plate', \
+                       r'\\htejcap.caltech.edu\share\home\users\hte\platemaps', r'K:\users\hte\platemaps']
 
-RUNFOLDERS=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/run', 'J:/hte_jcap_app_proto/run']
+RUNFOLDERS=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\run', r'J:\hte_jcap_app_proto\run']
 
-EXPFOLDERS_J=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/experiment', 'J:/hte_jcap_app_proto/experiment']
+EXPFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\experiment', r'J:\hte_jcap_app_proto\experiment']
 
-EXPFOLDERS_K=['//htejcap.caltech.edu/share/home/processes/experiment', 'K:/processes/experiment']
+EXPFOLDERS_K=[r'\\htejcap.caltech.edu\share\home\processes\experiment', r'K:\processes\experiment']
 
-ANAFOLDERS_J=['//htejcap.caltech.edu/share/data/hte_jcap_app_proto/analysis', 'J:/hte_jcap_app_proto/analysis']
+ANAFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\analysis', r'J:\hte_jcap_app_proto\analysis']
 
-ANAFOLDERS_K=['//htejcap.caltech.edu/share/home/processes/analysis', 'K:/processes/analysis']
+ANAFOLDERS_K=[r'\\htejcap.caltech.edu\share\home\processes\analysis', r'K:\processes\analysis']
 
-FOMPROCESSFOLDERS=['//htejcap.caltech.edu/share/home/users/hte/platemaps/FilterSmoothMaps', 'K:/users/hte/platemaps/FilterSmoothMaps']
+FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\FilterSmoothMaps', r'K:\users\hte\platemaps\FilterSmoothMaps']
 
 PLATEMAPBACKUP=r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map'

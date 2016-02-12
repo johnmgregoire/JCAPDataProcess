@@ -503,8 +503,10 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
     return p
             
 def prepend_root_exp_path(p):
-    parentfoldtemp, subfold=os.path.split(p)
+    parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
     for parentfold in [tryprependpath(EXPFOLDERS_J, parentfoldtemp), tryprependpath(EXPFOLDERS_K, parentfoldtemp)]:
+        if len(parentfold)==0:
+            continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
             return os.path.join(parentfold, subfold)
         if subfold.count('.')>1:
