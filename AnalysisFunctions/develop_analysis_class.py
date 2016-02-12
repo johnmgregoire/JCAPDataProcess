@@ -256,16 +256,16 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
         refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate ref dictionary with raw-data-length arrays
         try:
-            refd['wavelength']=numpy.float32([\
+            refd['wl_fullrng']=numpy.float32([\
             self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
             for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
         except:
             raise ValueError('Number of data points in reference files do not match')
             
-        if not check_wl(refd['wavelength']):
+        if not check_wl(refd['wl_fullrng']):
             raise ValueError('Incompatible wavelengths in reference files')
         else:
-            refd['wavelength']=refd['wavelength'][0]
+            refd['wl_fullrng']=refd['wl_fullrng'][0]
         refd_all={}            
         for rktup, rk in refkeymap:
             refd_all[rk]=numpy.float32([\
@@ -290,7 +290,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                     refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
                     ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
                     num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
-                refd[filed['sample_no']]['wl']=refd['wl']
+                refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
             refd_fn=lambda sample_no:refd[sample_no]
 
         else:
@@ -301,6 +301,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
+            print fn, Rfn, expdatfolder
             Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[:,::-1]
             Rdataarr=self.readdata(os.path.join(expdatfolder, Rfn), Rfiled['nkeys'], Rfiled['keyinds'], num_header_lines=Rfiled['num_header_lines'], zipclass=zipclass)[:,::-1]
 #            print np.shape(Tdataarr),np.shape(Rdataarr)
@@ -348,7 +349,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #            print rk,numpy.shape(refd_all[rk])
             fig=plt.figure()
             for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wavelength'],sig,label=os.path.basename(fn))
+                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
             plt.legend()
             plt.draw()
             p=os.path.join(destfolder,fn_refimg)
@@ -360,7 +361,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
 #        print Tdataarr[0][0:5],Rdataarr[0][0:5],refd['wl'][0][0:5]
-        if not check_wl(numpy.array(numpy.s_[Tdataarr[0],Rdataarr[0],refd['wavelength']])):
+        if not check_wl(numpy.array(numpy.s_[Tdataarr[0],Rdataarr[0],refd['wl_fullrng']])):
             raise ValueError('Wavelength incompatibility between Tdata, Rdata and ref')
         inter_rawlend=copy.copy(refd)
         inter_selindd={}
@@ -377,11 +378,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_rawlend[anal_expr+'_fullrng']=inter_rawlend['T_fullrng']/(1.-inter_rawlend['R_fullrng'])
             inter_rawlend['1-T-R_fullrng']=1.-inter_rawlend['T'+'_fullrng']-inter_rawlend['R'+'_fullrng']
             inter_rawlend['abs'+'_fullrng']=-np.log(inter_rawlend[anal_expr+'_fullrng'])
-            inds=numpy.where(numpy.logical_and(inter_rawlend['wavelength']>self.params['lower_wl'],inter_rawlend['wavelength']<self.params['upper_wl']))[0]
-            for key in ['T','R',anal_expr,'abs','1-T-R','wavelength']:            
-                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wavelength'else zip([''],[''])[0]
+            inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
+            for key in ['T','R',anal_expr,'abs','1-T-R','wl']:            
+                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl' else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
-            inter_selindd['wl']=inter_selindd.pop('wavelength')
+                
             inter_selindd['E']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','R',anal_expr,'abs','1-T-R']:
@@ -994,12 +995,13 @@ class Analysis__BG(Analysis_Master_inter):
         
     def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
-        inter_selindd['rawselectinds']=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
+        inter_selindd['abs2bg_rawselectinds']=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
+#        inter_selindd['rawselectinds']=rawlend['rawselectinds'][inter_selindd['abs2bg_rawselectinds']]
 #        print inter_selindd['rawselectinds']
         
         for key in rawlend.keys():
             if key!='rawselectinds':
-                inter_selindd[key]=rawlend[key][inter_selindd['rawselectinds']]
+                inter_selindd[key]=rawlend[key][inter_selindd['abs2bg_rawselectinds']]
 #        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
 #        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not np.isnan(fomd[x+'_bg_0']) else 0
