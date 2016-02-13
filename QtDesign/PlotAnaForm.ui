@@ -450,7 +450,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>130</y>
+     <y>150</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -462,9 +462,9 @@ No(s):</string>
   <widget class="QLabel" name="label_10">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>170</y>
-     <width>91</width>
+     <x>810</x>
+     <y>200</y>
+     <width>51</width>
      <height>21</height>
     </rect>
    </property>
@@ -477,7 +477,7 @@ No(s):</string>
     <rect>
      <x>700</x>
      <y>20</y>
-     <width>111</width>
+     <width>211</width>
      <height>22</height>
     </rect>
    </property>
@@ -489,8 +489,8 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>90</y>
-     <width>91</width>
+     <y>130</y>
+     <width>61</width>
      <height>20</height>
     </rect>
    </property>
@@ -502,7 +502,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>20</y>
+     <y>70</y>
      <width>91</width>
      <height>22</height>
     </rect>
@@ -517,9 +517,9 @@ No(s):</string>
   <widget class="QLineEdit" name="belowrangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>110</y>
-     <width>91</width>
+     <x>880</x>
+     <y>130</y>
+     <width>31</width>
      <height>22</height>
     </rect>
    </property>
@@ -544,7 +544,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>0</y>
+     <y>50</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -556,9 +556,9 @@ No(s):</string>
   <widget class="QLineEdit" name="colormapLineEdit">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>190</y>
-     <width>91</width>
+     <x>860</x>
+     <y>200</y>
+     <width>51</width>
      <height>22</height>
     </rect>
    </property>
@@ -573,7 +573,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>150</y>
+     <y>170</y>
      <width>91</width>
      <height>22</height>
     </rect>
@@ -599,8 +599,8 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>50</y>
-     <width>91</width>
+     <y>105</y>
+     <width>61</width>
      <height>16</height>
     </rect>
    </property>
@@ -611,9 +611,9 @@ No(s):</string>
   <widget class="QLineEdit" name="aboverangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>70</y>
-     <width>91</width>
+     <x>880</x>
+     <y>100</y>
+     <width>31</width>
      <height>22</height>
     </rect>
    </property>
@@ -804,7 +804,7 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>10</y>
+     <y>60</y>
      <width>101</width>
      <height>23</height>
     </rect>
@@ -817,7 +817,7 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>70</y>
+     <y>120</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -831,7 +831,7 @@ on Comp.plots</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>40</y>
+     <y>90</y>
      <width>101</width>
      <height>23</height>
     </rect>
@@ -996,6 +996,35 @@ Rest of the string is the interger marker size.</string>
    <property name="text">
     <string>plate
 scatter:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="ellabelsDialog">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>30</y>
+     <width>101</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_17">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>10</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Element Labels</string>
    </property>
   </widget>
  </widget>

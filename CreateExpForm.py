@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Fri Oct 23 15:22:22 2015
+# Created: Sat Feb 13 13:54:58 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -94,10 +94,10 @@ class Ui_CreateExpDialog(object):
         self.ExpTextBrowser.setLineWrapMode(QtGui.QTextEdit.NoWrap)
         self.ExpTextBrowser.setObjectName(_fromUtf8("ExpTextBrowser"))
         self.SaveExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.SaveExpPushButton.setGeometry(QtCore.QRect(10, 430, 71, 21))
+        self.SaveExpPushButton.setGeometry(QtCore.QRect(80, 430, 61, 21))
         self.SaveExpPushButton.setObjectName(_fromUtf8("SaveExpPushButton"))
         self.ImportExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpPushButton.setGeometry(QtCore.QRect(290, 430, 81, 21))
+        self.ImportExpPushButton.setGeometry(QtCore.QRect(320, 430, 81, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
         self.FileSearchLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.FileSearchLineEdit.setGeometry(QtCore.QRect(860, 220, 171, 20))
@@ -172,7 +172,7 @@ class Ui_CreateExpDialog(object):
         self.label_19.setGeometry(QtCore.QRect(760, 370, 91, 16))
         self.label_19.setObjectName(_fromUtf8("label_19"))
         self.ClearExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ClearExpPushButton.setGeometry(QtCore.QRect(210, 430, 71, 21))
+        self.ClearExpPushButton.setGeometry(QtCore.QRect(250, 430, 71, 21))
         self.ClearExpPushButton.setObjectName(_fromUtf8("ClearExpPushButton"))
         self.BatchComboBox = QtGui.QComboBox(CreateExpDialog)
         self.BatchComboBox.setGeometry(QtCore.QRect(650, 300, 391, 22))
@@ -188,7 +188,7 @@ class Ui_CreateExpDialog(object):
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName(_fromUtf8("line_2"))
         self.ImportExpParamsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(380, 430, 121, 21))
+        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(400, 430, 101, 21))
         self.ImportExpParamsPushButton.setObjectName(_fromUtf8("ImportExpParamsPushButton"))
         self.SearchRunsPushButton = QtGui.QPushButton(CreateExpDialog)
         self.SearchRunsPushButton.setGeometry(QtCore.QRect(120, 40, 111, 21))
@@ -222,7 +222,7 @@ class Ui_CreateExpDialog(object):
         self.FileStartLineEdit.setGeometry(QtCore.QRect(860, 180, 171, 20))
         self.FileStartLineEdit.setObjectName(_fromUtf8("FileStartLineEdit"))
         self.SaveExpGoAnaPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.SaveExpGoAnaPushButton.setGeometry(QtCore.QRect(90, 430, 101, 21))
+        self.SaveExpGoAnaPushButton.setGeometry(QtCore.QRect(150, 430, 91, 21))
         self.SaveExpGoAnaPushButton.setObjectName(_fromUtf8("SaveExpGoAnaPushButton"))
         self.getplatemapCheckBox = QtGui.QCheckBox(CreateExpDialog)
         self.getplatemapCheckBox.setGeometry(QtCore.QRect(360, 40, 119, 31))
@@ -248,6 +248,10 @@ class Ui_CreateExpDialog(object):
         self.label_10 = QtGui.QLabel(CreateExpDialog)
         self.label_10.setGeometry(QtCore.QRect(680, 10, 171, 16))
         self.label_10.setObjectName(_fromUtf8("label_10"))
+        self.savebinaryCheckBox = QtGui.QCheckBox(CreateExpDialog)
+        self.savebinaryCheckBox.setGeometry(QtCore.QRect(10, 420, 70, 31))
+        self.savebinaryCheckBox.setChecked(True)
+        self.savebinaryCheckBox.setObjectName(_fromUtf8("savebinaryCheckBox"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -322,6 +326,8 @@ class Ui_CreateExpDialog(object):
 "After entry complete, you will be prompted for fom names", None, QtGui.QApplication.UnicodeUTF8))
         self.label_21.setText(QtGui.QApplication.translate("CreateExpDialog", "User-defined FOMs", None, QtGui.QApplication.UnicodeUTF8))
         self.label_10.setText(QtGui.QApplication.translate("CreateExpDialog", "Select tech+type to add/keep:", None, QtGui.QApplication.UnicodeUTF8))
+        self.savebinaryCheckBox.setText(QtGui.QApplication.translate("CreateExpDialog", "Save raw\n"
+"binary", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

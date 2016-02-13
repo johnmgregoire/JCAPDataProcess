@@ -1,6 +1,9 @@
 C:\Python27\Lib\site-packages\PyQt4>
 pyuic4 -x C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\QtDesign\CalcFOMForm.ui -o C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\CalcFOMForm.py
 
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMForm.py
+
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\VisualizeDataForm.py
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMForm.py

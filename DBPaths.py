@@ -15,3 +15,5 @@ ANAFOLDERS_K=[r'\\htejcap.caltech.edu\share\home\processes\analysis', r'K:\proce
 FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\FilterSmoothMaps', r'K:\users\hte\platemaps\FilterSmoothMaps']
 
 PLATEMAPBACKUP=r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map'
+
+MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY=800

@@ -369,9 +369,9 @@ def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled
                 anafiledict[anak]['files_multi_run'][typek][fn]=readcsvdict(os.path.join(anafolder, fn), fileattrd)
 
 
-def saverawdat_expfiledict(expfiledict, folder):
-    datastruct_expfiledict(expfiledict, savefolder=folder)
-def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsample=True):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
+def saverawdat_expfiledict(expfiledict, folder, saverawdat=True):
+    datastruct_expfiledict(expfiledict, savefolder=folder, saverawdat=saverawdat)
+def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsample=True, saverawdat=True):#savefolder will save binary arrays and also update the expfiledict to include num header lines and data rows
     if savefolder is None:
         convertstrvalstonum_nesteddict(expfiledict)
     if not savefolder is None:
@@ -400,17 +400,23 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                     try:
                         if zipbool:
                             with zipopenfcn(fn) as f:
-                                lines=f.readlines()
+                                if saverawdat:
+                                    lines=f.readlines()
+                                else:
+                                    lines=f.readlines(MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
                         else:
                             p=os.path.join(runp, fn)
                             with open(p,'r') as f:
-                                lines=f.readlines()
+                                if saverawdat:
+                                    lines=f.readlines()
+                                else:
+                                    lines=f.readlines(MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
                     except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
                         print 'ERROR: %s does not exist in folder %s, so it is being deletd from %s/%s/%s' %(fn, runp, k, k2, k3)
                         del expfiledict[k][k2][k3][fn]
                         filedeletedbool=True
                         continue
-                    if savefolder is None:
+                    if savefolder is None and saverawdat:#save raw data into the dictionary
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
                         if k3 in ['image_files']:#list here the types of files that should not be converted to binary
@@ -419,10 +425,11 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                             keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
                             keys=[kv.strip() for kv in keys]
                             filed=readfcn(os.path.splitext(fn), lines)
-                            x=numpy.float32([filed[kv] for kv in keys])
-                            with openfnc(fn) as f:
-                                x.tofile(f)
-                                #savefcn(filed, keys)***
+                            if saverawdat:
+                                x=numpy.float32([filed[kv] for kv in keys])
+                                with openfnc(fn) as f:
+                                    x.tofile(f)
+                                    #savefcn(filed, keys)***
                             if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
                                 first2attrs, garb, samplestr=fileattrstr.rpartition(';')
                                 s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
@@ -590,15 +597,15 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
 
     #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
     saveexpfiledict=copy.deepcopy(expfiledict)
-    if saverawdat:# if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line. 
-        #folder=os.path.join(os.path.split(savep)[0], 'raw_binary')
-        folder=os.path.split(savep)[0]
-        if os.path.isdir(folder):
-            for fn in os.listdir(folder):
-                os.remove(os.path.join(folder, fn))#cannot overwrite files because filename deduplication may be different from previous save
-        else:
-            os.mkdir(folder)
-        saverawdat_expfiledict(saveexpfiledict, folder)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
+    
+    folder=os.path.split(savep)[0]
+    if os.path.isdir(folder):
+        for fn in os.listdir(folder):
+            os.remove(os.path.join(folder, fn))#cannot overwrite files because filename deduplication may be different from previous save
+    else:
+        os.mkdir(folder)
+    # if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line. 
+    saverawdat_expfiledict(saveexpfiledict, folder, saverawdat=saverawdat)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
     
     for rund in saveexpfiledict.itervalues():
         if isinstance(rund, dict) and 'run_path' in rund.keys():
@@ -779,6 +786,9 @@ def readrcpfrommultipleruns(pathlist):
             with open(p, mode='r') as f:
                 lines=f.readlines()
             rcpfn=os.path.split(p)[1]
+        else:
+            print 'check if this is a valid file: ', p
+            continue
         if len(lines)==0:
             continue
         rcpd=readrcplines(lines)

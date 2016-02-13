@@ -164,6 +164,10 @@ class expDialog(QDialog, Ui_CreateExpDialog):
     def runbatchprocess(self):
         self.batchprocesses[self.BatchComboBox.currentIndex()]()
     def batchuvissingleplate(self):
+        
+        self.ExpTypeLineEdit.setText('uvis')
+        self.UserNameLineEdit.setText('uvis')
+        
         cb=self.PlateAttrMoreComboBox
         for i in range(int(cb.count())):
             if 'Sample' in str(cb.itemText(i)):
@@ -182,6 +186,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.editexp_addmeasurement()
         
         self.FileStartLineEdit.setText('')
+        
+        
     def batchechedark(self):
 
         self.techtypetreefcns.checkbysearchstr('spectrum', self.techtypetreefcns.typewidgetItem)
@@ -624,7 +630,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 rundone='.done'
             else:
                 rundone='.run'
-        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=exptype, runtodonesavep=runtodonesavep, savefolder=savefolder, erroruifcn=\
+        saverawdat=self.savebinaryCheckBox.isChecked()
+        saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=exptype, runtodonesavep=runtodonesavep, savefolder=savefolder, saverawdat=saverawdat, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))
         
         self.prevsaveexppath=exppath

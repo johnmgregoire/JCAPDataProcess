@@ -141,7 +141,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 self.anazipclass.close()
             self.anazipclass=anazipclass#when run from CalcFOMApp the .ana can't be in a .zip so make this the default anazipclass=None 
         self.clearvisuals()
-        summlines=sorted(['-'.join([anak, anad['description'] if 'description' in anad.keys() else '']) for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')])
+        get4elementsetstr=lambda anad: ''.join(self.getellabels_pm4keys(anad['platemap_comp4plot_keylist'].split(','))) if 'platemap_comp4plot_keylist' in anad.keys() else ''
+        summlines=sorted(['-'.join([anak, get4elementsetstr(anad), anad['description'] if 'description' in anad.keys() else '']) for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')])
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
         
@@ -252,7 +253,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 for d in rund['platemapdlist']:
                     for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
                         d[el]=d[oldlet]
-                        
+        self.ellabelsDialog.setText(','.join(self.ellabels))
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
@@ -839,7 +840,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
         
     def getellabels_pm4keys(self, pmkeys):
-        ellabelinds=[['A', 'B', 'C', 'D', 'E', 'F', 'G'].index(pmk) for pmk in pmkeys]
+        ellabelinds=[['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].index(pmk) for pmk in pmkeys]
         return [self.ellabels[i] if i<len(self.ellabels) else 'X' for i in ellabelinds]#pmkeys should refer to element label indeces that exist but if not fill the X to softly notify the user that soemthig is wrong, i.e. not all the element labels were read from the database
     def plotxy(self, filed=None):#filed to plot from a  single file and must have key 'path' in addition to standard filed
         cbl=[\
