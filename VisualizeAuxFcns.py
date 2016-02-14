@@ -51,8 +51,9 @@ def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdli
         returnlist+=[[pmd[k] for k in pmkeys]]
     return returnlist
 
-def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None):
-    anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
+def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None):
+    if anakl is None:
+        anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
     for anak in anakl:
         anad=anafiledict[anak]
         anaint=int(anak.partition('ana__')[2])
@@ -71,6 +72,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     fomdlist=[dict([(k, fomd[k][count]) for k in keys]+[('anaint', anaint)]) for count in range(len(fomd[keys[0]]))]
                     l_fomdlist+=[fomdlist]
                     l_fomnames+=[keys+['anaint']]
+                    csvheaderdict['anak']=anak
                     l_csvheaderdict+=[csvheaderdict]
                     if 'platemap_comp4plot_keylist' in anad.keys():
                         pmkeys=anad['platemap_comp4plot_keylist'].split(',')
@@ -195,7 +197,7 @@ class treeclass_anaexpfom():
         i=self.fomwidgetItem.childCount()
         if uncheckprevious:
             self.uncheckfoms()
-        fomlabel='%d' %i
+        fomlabel='CSV%d' %(i+1)
         mainitem=QTreeWidgetItem([fomlabel], 0)
         mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
         mainitem.setCheckState(0, Qt.Checked)
@@ -215,7 +217,7 @@ class treeclass_anaexpfom():
         
         self.fomwidgetItem.addChild(mainitem)
         
-        summlines=[str(self.summarybrowser.toPlainText())]
+        summlines=[str(self.summarybrowser.toPlainText())]#adds lines onto self.SummaryTextBrowser (where self is visdataDialog) and since analysis can be done on the fly fom csvs must come last in the summary browser
         summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
         self.summarybrowser.setText('\n'.join(summlines))
         
@@ -235,8 +237,12 @@ class treeclass_anaexpfom():
             self.nestedfill(d[k], mainitem, expparent=expparent)
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
-            
-        anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        
+        try:
+            sorttups=sorted([(int(k[len(laststartswith):]), k) for k in d.keys() if k.startswith(laststartswith)])
+            anakl=map(operator.itemgetter(1), sorttups) 
+        except:
+            anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem, expparent=expparent)

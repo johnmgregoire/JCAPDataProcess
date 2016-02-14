@@ -141,8 +141,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 self.anazipclass.close()
             self.anazipclass=anazipclass#when run from CalcFOMApp the .ana can't be in a .zip so make this the default anazipclass=None 
         self.clearvisuals()
-        get4elementsetstr=lambda anad: ''.join(self.getellabels_pm4keys(anad['platemap_comp4plot_keylist'].split(','))) if 'platemap_comp4plot_keylist' in anad.keys() else ''
-        summlines=sorted(['-'.join([anak, get4elementsetstr(anad), anad['description'] if 'description' in anad.keys() else '']) for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')])
+        summlines=['ANA:']
+        summlines+=['-'.join([anak, self.anafiledict[anak]['description'] if 'description' in self.anafiledict[anak].keys() else '']) for anak in self.sorted_ana_exp_keys()]
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         self.importexp(experiment_path=self.anafiledict['experiment_path'], fromana=True)
         
@@ -152,7 +152,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_platemap4keys=[]
         
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
-        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass)
+        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass, anakl=self.sorted_ana_exp_keys())
         
         self.updatefomdlist_plateruncode()
         
@@ -186,11 +186,20 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                      and 'plate_id' in rund['parameters'].keys()):
                 print 'critical info missing for ', runk
             if not 'platemapdlist' in rund.keys():
-                rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id']), \
+                pmlines, pmpath=get_lines_path_file(p=getplatemappath_plateid(str(rund['parameters']['plate_id']), \
                   erroruifcn=\
                   lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
-
-            
+                
+                if len(pmpath)==0:
+                    idialog=messageDialog(self, 'invalid platemap for %s' %rund['parameters']['plate_id'])
+                    idialog.exec_()
+                    rund['platemapdlist']=[]
+                else:
+                    rund['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)#path not used here because passing lines
+                    s=str(self.platemapfilenameDialog.text())
+                    ps=os.path.normpath(pmpath)
+                    if not ps in s:
+                        self.platemapfilenameDialog.setText(','.join([s, ps]).strip(','))
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             els=getelements_plateidstr(str(rund['parameters']['plate_id']))
             if els is None:
@@ -233,6 +242,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         if fromana:
             summlines=[str(self.SummaryTextBrowser.toPlainText())]
+            get4elementsetstr=lambda anad: ''.join(self.getellabels_pm4keys(anad['platemap_comp4plot_keylist'].split(','))) if 'platemap_comp4plot_keylist' in anad.keys() else ''
+            nonabcdsummlines=['-'.join([anak, get4elementsetstr(self.anafiledict[anak])]) for anak in self.sorted_ana_exp_keys()]
+            nonabcdsummlines=[l for l in nonabcdsummlines if not l.endswith('-')]#remove the regular ABCD ones
+            if len(nonabcdsummlines)>0:
+                summlines=['4-plot elements (if not ABCD):']+nonabcdsummlines+summlines
         else:
             self.clearvisuals()
             summlines=[]
@@ -241,11 +255,20 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.setupfilterchoices()
             self.updatefomplotchoices()
             self.fillxyoptions(clear=True)
-        
-        summlines+=sorted(['-'.join([runk, rund['description'] if 'description' in rund.keys() else '']) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
+        summlines+=['RUN:']
+        summlines+=['-'.join([runk, self.expfiledict[runk]['description'] if 'description' in self.expfiledict[runk].keys() else '']) for runk in self.sorted_ana_exp_keys(ana=False)]
+        summlines+=['FOM:']
         self.SummaryTextBrowser.setText('\n'.join(summlines))
         
-        
+    def sorted_ana_exp_keys(self, ana=True):
+        if ana:
+            anarun='ana__'
+            anaexpfiled=self.anafiledict
+        else:
+            anarun='run__'
+            anaexpfiled=self.expfiledict
+        sorttups=sorted([(int(k[len(anarun):]), k) for k in anaexpfiled.keys() if k.startswith(anarun)])
+        return map(operator.itemgetter(1), sorttups)
     def remap_platemaplabels(self):#should work for up to 8 elements, only the length of ellables will be used
         for runk, rund in self.expfiledict.iteritems():
                 if not runk.startswith('run__'):
@@ -598,8 +621,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
         
         self.stdcsvplotchoiceComboBox.insertItem(0, 'null')
+        #these 2 lines assemble a subset of the ;_ data structure entires based on if all the nec essary properties are there for being a "standard plot"
         tuplist=[(count, csvheaderdict) for count, csvheaderdict in enumerate(self.l_csvheaderdict) if 'plot_parameters' in csvheaderdict.keys() and 'plot__1' in csvheaderdict['plot_parameters'].keys()]
-        keys=['%d:%s:%s' %(count, k, csvheaderdict['plot_parameters'][k]['fom_name']) for count, csvheaderdict in tuplist for k in sorted(csvheaderdict['plot_parameters'].keys()) if k.startswith('plot__') and 'fom_name' in csvheaderdict['plot_parameters'][k].keys() and csvheaderdict['plot_parameters'][k]['fom_name'] in self.fomselectnames]
+        keys=['%d; %s; %s; %s' %(count+1, csvheaderdict['plot_parameters'][k]['fom_name'], csvheaderdict['anak'], k) for count, csvheaderdict in tuplist for k in sorted(csvheaderdict['plot_parameters'].keys()) if k.startswith('plot__') and 'fom_name' in csvheaderdict['plot_parameters'][k].keys() and csvheaderdict['plot_parameters'][k]['fom_name'] in self.fomselectnames]
         for count, s in enumerate(keys):
             self.stdcsvplotchoiceComboBox.insertItem(count+1, s)
 #            if len(keys)==0:#not sure of new plots will be created in this app
@@ -620,8 +644,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 for i in range(mainitem.childCount()):
                     mainitem.child(i).setCheckState(0, Qt.Checked)
             return
-        ind, plotk, fomname=s.split(':')
-        ind=int(ind)
+        #ind=int(self.stdcsvplotchoiceComboBox.currentIndex())-1#can not use current index because not all l_ things may have required standard plot options and some may have many
+        
+        ind, fomname, anak, plotk=s.split('; ')
+        ind=int(ind)-1
         #check only the rleevant plate_id and run in top treewidget
         dlist=self.l_fomdlist[ind]
         platelist=set(['%s' %d['plate_id'] for d in dlist if 'plate_id' in d.keys()])
@@ -1103,7 +1129,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         plotw.fig.canvas.draw()
         
     def compplot(self, plotw, comps, cols, sm):
-#        plotw.axes.cla()
+        plotw.axes.cla()#uncommented on 20160213, must be some issue with clearing for some plats
 #        plotw.cbax.cla()
         if len(cols)==0:
             return lambda x, y, ax: None
@@ -1248,7 +1274,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.tabs__plateids=self.setup_TabWidget(self.tabs__plateids, [-1], compbool=False)
         self.tabs__codes=self.setup_TabWidget(self.tabs__codes, [-1], compbool=True)
         
-        
+        self.ellabelsDialog.setText('')
+        self.platemapfilenameDialog.setText('')
 
         self.plotw_xy.axes.cla()
         self.plotw_xy.twaxes.cla()

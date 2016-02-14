@@ -658,19 +658,36 @@ def col_string(s):
     cc=colors.ColorConverter()
     return cc.to_rgb(s)
 
-def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None):
+def get_lines_path_file(p=None, erroruifcn=None):
     try:
         f=open(p, mode='r')
     except:
         if erroruifcn is None:
-            return []
+            return [], ''
         p=erroruifcn('bad platemap path')
         if len(p)==0:
-            return []
+            return [], ''
         f=open(p, mode='r')
 
     ls=f.readlines()
     f.close()
+    return ls, p
+def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None):
+    if lines is None:
+        try:
+            f=open(p, mode='r')
+        except:
+            if erroruifcn is None:
+                return []
+            p=erroruifcn('bad platemap path')
+            if len(p)==0:
+                return []
+            f=open(p, mode='r')
+
+        ls=f.readlines()
+        f.close()
+    else:
+        ls=lines
     if returnfiducials:
         s=ls[0].partition('=')[2].partition('mm')[0].strip()
         if not ',' in s[s.find('('):s.find(')')]: #needed because sometimes x,y in fiducials is comma delim and sometimes not

@@ -124,9 +124,9 @@
   <widget class="QTextBrowser" name="browser">
    <property name="geometry">
     <rect>
-     <x>920</x>
+     <x>930</x>
      <y>40</y>
-     <width>661</width>
+     <width>651</width>
      <height>171</height>
     </rect>
    </property>
@@ -383,7 +383,7 @@ No(s):</string>
     <rect>
      <x>700</x>
      <y>130</y>
-     <width>111</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
@@ -450,7 +450,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>150</y>
+     <y>90</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -463,13 +463,13 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>810</x>
-     <y>200</y>
+     <y>180</y>
      <width>51</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>colormap</string>
+    <string>colormap:</string>
    </property>
   </widget>
   <widget class="QComboBox" name="stdcsvplotchoiceComboBox">
@@ -485,24 +485,11 @@ No(s):</string>
     <string>Apply all other filteres in this section to only this run</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>820</x>
-     <y>130</y>
-     <width>61</width>
-     <height>20</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>below color</string>
-   </property>
-  </widget>
   <widget class="QLineEdit" name="compplotsizeLineEdit">
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>70</y>
+     <y>60</y>
      <width>91</width>
      <height>22</height>
     </rect>
@@ -517,9 +504,9 @@ No(s):</string>
   <widget class="QLineEdit" name="belowrangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>880</x>
-     <y>130</y>
-     <width>31</width>
+     <x>800</x>
+     <y>160</y>
+     <width>61</width>
      <height>22</height>
     </rect>
    </property>
@@ -544,7 +531,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>50</y>
+     <y>40</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -557,9 +544,9 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>200</y>
+     <y>181</y>
      <width>51</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -573,7 +560,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>170</y>
+     <y>110</y>
      <width>91</width>
      <height>22</height>
     </rect>
@@ -587,7 +574,7 @@ No(s):</string>
     <rect>
      <x>700</x>
      <y>150</y>
-     <width>111</width>
+     <width>91</width>
      <height>22</height>
     </rect>
    </property>
@@ -598,22 +585,23 @@ No(s):</string>
   <widget class="QLabel" name="label_12">
    <property name="geometry">
     <rect>
-     <x>820</x>
-     <y>105</y>
-     <width>61</width>
-     <height>16</height>
+     <x>810</x>
+     <y>130</y>
+     <width>101</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>above color</string>
+    <string>out of range colors
+   &lt; min       &gt; max</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="aboverangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>880</x>
-     <y>100</y>
-     <width>31</width>
+     <x>860</x>
+     <y>160</y>
+     <width>61</width>
      <height>22</height>
     </rect>
    </property>
@@ -804,7 +792,7 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>60</y>
+     <y>10</y>
      <width>101</width>
      <height>23</height>
     </rect>
@@ -817,7 +805,7 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>120</y>
+     <y>70</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -831,7 +819,7 @@ on Comp.plots</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>90</y>
+     <y>40</y>
      <width>101</width>
      <height>23</height>
     </rect>
@@ -970,7 +958,7 @@ x-y style</string>
   <widget class="QLineEdit" name="platescatterLineEdit">
    <property name="geometry">
     <rect>
-     <x>760</x>
+     <x>750</x>
      <y>180</y>
      <width>41</width>
      <height>22</height>
@@ -1002,7 +990,7 @@ scatter:</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>30</y>
+     <y>120</y>
      <width>101</width>
      <height>22</height>
     </rect>
@@ -1018,13 +1006,45 @@ scatter:</string>
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>10</y>
+     <y>100</y>
      <width>91</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
     <string>Element Labels</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_18">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>140</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>platemap filename</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="platemapfilenameDialog">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>160</y>
+     <width>101</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
  </widget>
