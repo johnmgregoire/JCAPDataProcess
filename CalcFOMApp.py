@@ -48,6 +48,10 @@ DEBUGMODE=False
 for ac in AnalysisClasses+FOMProcessClasses:
     ac.debugmode=DEBUGMODE
 
+GUIMODE=True #when running this program all the classes will default to True and then if writing a batch script, need to turn gui_mode_bool to False
+for ac in AnalysisClasses+FOMProcessClasses:
+    ac.gui_mode_bool=GUIMODE
+    
 class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
     def __init__(self, parent, dflt):
         super(SaveOptionsDialog, self).__init__(parent)
@@ -391,7 +395,6 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
             
-        
         self.getactiveanalysisclass()
     
     def getactiveanalysisclass(self):

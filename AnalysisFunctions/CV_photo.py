@@ -12,11 +12,14 @@ from Analysis_Master import *
 
 
 #this take a filedlist based on required keys in raw data and then finds samples where a required prior analysis was completed and encodes the path to the intermediate data in anadict
-def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysis='Analysis__Iphoto'):
+def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech='', gui_mode_bool=False):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk]) for anak, anav in anadict.iteritems()\
            if anak.startswith('ana__') and anav['name']==requiredanalysis and True in ['files_' in ftk for ftk in anav.keys()]]
 
-    
+    if len(tech)>0:
+        #if tech=None then don't filter by technique. also if techniuqe not in anad then technique qill not be matched and the ==2 below will require only 1 Iphoto in the existing .ana. 
+        #otherwise this will require techniques to match so that Iphoto on different techniques in the existing .ana won't cause an excess of matches that exceed the ==2 requirement
+        anak_ftklist=[(anak,ftkl) for anak, ftkl in anak_ftklist if (not 'technique' in anadict[anak].keys()) or anadict[anak]['technique']==tech]
     #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
     ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk
     #this used to use [anak, ftk, typek, fnk] but anadict is not available in perform() so use filename because it is the same .ana so should be in same folder
@@ -31,10 +34,13 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, require
         for filed in filedlist]
     
     #the keys anakeys__inter_file and anakeys__inter_rawlen_file assume there is only previous required analysis so this needs to be changed if combining multiple types of rpevious analysis
-    filedlist=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
+    filedlist2=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
           for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
-        
-    return filedlist#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
+    
+    if gui_mode_bool and len(filedlist2)==0 and len(anak_ftklist)>0:#the ==2 requirement was not met, which may mean that there was more than 1 Iphoto for that technique
+        print 'When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:' %(requiredanalysis, tech)
+        print [anak for anak, ftkl in anak_ftklist]
+    return filedlist2#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
 
 
 class Analysis__Pphotomax(Analysis_Master_inter):
@@ -77,7 +83,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
-        self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto')#this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
+        #this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
+        self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech=techk, gui_mode_bool=self.gui_mode_bool)
         
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist    
