@@ -12,3 +12,7 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui
 
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileSearchForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\FileSearchForm.py
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\SaveImagesForm.py
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesBatchForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\SaveImagesBatchForm.py

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SaveImagesDialog</class>
- <widget class="QDialog" name="SaveImagesDialog">
+ <class>SaveImagesBatchDialog</class>
+ <widget class="QDialog" name="SaveImagesBatchDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>579</width>
-    <height>408</height>
+    <height>442</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>410</x>
-     <y>360</y>
+     <y>400</y>
      <width>161</width>
      <height>32</height>
     </rect>
@@ -120,7 +120,7 @@ to .done</string>
    <property name="geometry">
     <rect>
      <x>285</x>
-     <y>380</y>
+     <y>381</y>
      <width>113</width>
      <height>20</height>
     </rect>
@@ -130,13 +130,31 @@ to .done</string>
    <property name="geometry">
     <rect>
      <x>290</x>
-     <y>360</y>
+     <y>350</y>
      <width>101</width>
-     <height>20</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Prepend to filename:</string>
+    <string>Prepend to filename, in
+addition to auto-prepend</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="plotstyleoverrideCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>360</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Override std plot plot options
+(colormap, fom range, etc.)</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
    </property>
   </widget>
  </widget>
@@ -145,7 +163,7 @@ to .done</string>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>SaveImagesDialog</receiver>
+   <receiver>SaveImagesBatchDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -161,7 +179,7 @@ to .done</string>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>SaveImagesDialog</receiver>
+   <receiver>SaveImagesBatchDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

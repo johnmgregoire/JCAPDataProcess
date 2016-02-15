@@ -1047,6 +1047,19 @@ scatter:</string>
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
+  <widget class="QPushButton" name="SaveStdFigsPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>190</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>BatchSave StdPlots</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

@@ -59,6 +59,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.addSample, self.addValuesSample), \
         (self.remSample, self.remValuesSample), \
         (self.SaveFigsPushButton, self.savefigs), \
+        (self.SaveStdFigsPushButton, self.save_all_std_plots), \
         ]
 
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -194,6 +195,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     idialog=messageDialog(self, 'invalid platemap for %s' %rund['parameters']['plate_id'])
                     idialog.exec_()
                     rund['platemapdlist']=[]
+                    return#just try to cancel things so user can open file again
                 else:
                     rund['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)#path not used here because passing lines
                     s=str(self.platemapfilenameDialog.text())
@@ -611,6 +613,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def updatefomplotchoices(self):
         self.fomplotchoiceComboBox.clear()
         self.stdcsvplotchoiceComboBox.clear()
+        self.numStdPlots=0
         self.fomselectnames=sorted(list(set([nam for fomnames in self.l_fomnames for nam in fomnames])))
         if len(self.fomselectnames)==0:
             return
@@ -626,6 +629,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         keys=['%d; %s; %s; %s' %(count+1, csvheaderdict['plot_parameters'][k]['fom_name'], csvheaderdict['anak'], k) for count, csvheaderdict in tuplist for k in sorted(csvheaderdict['plot_parameters'].keys()) if k.startswith('plot__') and 'fom_name' in csvheaderdict['plot_parameters'][k].keys() and csvheaderdict['plot_parameters'][k]['fom_name'] in self.fomselectnames]
         for count, s in enumerate(keys):
             self.stdcsvplotchoiceComboBox.insertItem(count+1, s)
+            self.numStdPlots+=1
 #            if len(keys)==0:#not sure of new plots will be created in this app
 #                count=-1
 #                newk='new plot__1'
@@ -637,7 +641,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
 
     
-    def plot_preparestandardplot(self, plotbool=True):
+    def plot_preparestandardplot(self, plotbool=True, loadstyleoptions=True):
         s=str(self.stdcsvplotchoiceComboBox.currentText())
         if s=='null':
             for mainitem in self.widgetItems_pl_ru_te_ty_co[:2]:
@@ -665,12 +669,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if not d['fom_name'] in fomnames:
             return
         self.fomplotchoiceComboBox.setCurrentIndex(fomnames.index(d['fom_name']))
-        for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
-            if not k in d.keys():
-                continue
-            le.setText(d[k])
-        if 'colormap_min_value' in d.keys() and 'colormap_max_value' in d.keys():
-            self.vminmaxLineEdit.setText('%s,%s' %(d['colormap_min_value'], d['colormap_max_value']))
+        if loadstyleoptions:
+            for k, le in [('colormap', self.colormapLineEdit), ('colormap_over_color', self.aboverangecolLineEdit), ('colormap_under_color', self.belowrangecolLineEdit)]:
+                if not k in d.keys():
+                    continue
+                le.setText(d[k])
+            if 'colormap_min_value' in d.keys() and 'colormap_max_value' in d.keys():
+                self.vminmaxLineEdit.setText('%s,%s' %(d['colormap_min_value'], d['colormap_max_value']))
         if plotbool:
             self.filterandplotfomdata(plotbool=True)
             
@@ -1326,7 +1331,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
         self.sampleLineEdit.setText('%d' %self.fomplotd['sample_no'][self.selectind])
     
-    #***selectind is of the fomplotd arrays. add or remove is only if found in fomplotd, when adding to spreadsheet use (plate,sample,run,ana) as index
+    #selectind is of the fomplotd arrays. add or remove is only if found in fomplotd, when adding to spreadsheet use (plate,sample,run,ana) as index
     def addrem_select_fomplotdinds(self, remove=False, fomplotdind=None, smplist=None, xy=None, comp=None):#only 1 of index, smplist, xy, comp should be not None
         selectinds=[]
         if not fomplotdind is None:
@@ -1450,7 +1455,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
         
-    def savefigs(self):
+    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False):
         cbl=[\
                 self.xplotchoiceComboBox, \
                 self.yplotchoiceComboBox, \
@@ -1472,11 +1477,44 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp)]
         print [(bool(mainitem.child(i).checkState(0)), str(val), str(mainitem.child(i).text(0)).strip()) for i in range(mainitem.childCount())]
 
-        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=self.plotw_xy, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots)
-        idialog.exec_()
-        if idialog.newanapath:
-            self.importana(p=idialog.newanapath)
+
+        xyplotw=None if save_all_std_bool else self.plotw_xy 
+        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots)
         
+        anaklist_activeplots=[self.l_csvheaderdict[i0]['anak'] for i0 in self.fomplotd['fomdlist_index0']]
+        if len(set(anaklist_activeplots))==1:# if all the FOMs in active plot are from the same ana__ then use that as prepend string ni filenames of images
+            idialog.prependfilenameLineEdit.setText(anaklist_activeplots[0]+'-')
+        if save_all_std_bool:
+            if not batchidialog is None:
+                idialog.updateoptionsfrombatchidialog(batchidialog, lastbatchiteration=lastbatchiteration)
+            idialog.ExitRoutine()
+            if idialog.newanapath and lastbatchiteration:
+                self.importana(p=idialog.newanapath)
+        else:
+            idialog.exec_()
+            if idialog.newanapath:
+                self.importana(p=idialog.newanapath)
+    
+    def save_all_std_plots(self):#***
+
+        comboind_strlist=[]
+        for i in range(1, self.numStdPlots+1):
+            self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
+            comboind_strlist+=[(i, str(self.stdcsvplotchoiceComboBox.currentText()))]
+        if len(comboind_strlist)==0:
+            print 'No standard plots found - nothing saved'
+            return
+        batchidialog=saveimagesbatchDialog(self, comboind_strlist)
+        batchidialog.exec_()
+        loadstyleoptions= not batchidialog.plotstyleoverrideCheckBox.isChecked()
+        
+        cbinds=batchidialog.selectcomboboxinds
+        for i in cbinds:
+            self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
+            self.plot_preparestandardplot(loadstyleoptions=loadstyleoptions)
+        
+            self.savefigs(save_all_std_bool=True, batchidialog=batchidialog, lastbatchiteration=(i==cbinds[-1]))#for std plots all foms will be from same ana__  and prepend str will be filled in automatically
+
 if __name__ == "__main__":
     class MainMenu(QMainWindow):
         def __init__(self, previousmm, execute=True, **kwargs):

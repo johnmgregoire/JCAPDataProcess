@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Sat Feb 13 23:32:44 2016
+# Created: Mon Feb 15 10:37:55 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -288,6 +288,9 @@ class Ui_VisDataDialog(object):
         self.platemapfilenameDialog.setText(_fromUtf8(""))
         self.platemapfilenameDialog.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.platemapfilenameDialog.setObjectName(_fromUtf8("platemapfilenameDialog"))
+        self.SaveStdFigsPushButton = QtGui.QPushButton(VisDataDialog)
+        self.SaveStdFigsPushButton.setGeometry(QtCore.QRect(10, 190, 101, 23))
+        self.SaveStdFigsPushButton.setObjectName(_fromUtf8("SaveStdFigsPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -364,6 +367,7 @@ class Ui_VisDataDialog(object):
         self.label_17.setText(QtGui.QApplication.translate("VisDataDialog", "Element Labels", None, QtGui.QApplication.UnicodeUTF8))
         self.label_18.setText(QtGui.QApplication.translate("VisDataDialog", "platemap filename", None, QtGui.QApplication.UnicodeUTF8))
         self.platemapfilenameDialog.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveStdFigsPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "BatchSave StdPlots", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

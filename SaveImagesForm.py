@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesForm.ui'
 #
-# Created: Mon Sep 21 14:02:14 2015
+# Created: Sun Feb 14 15:02:10 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,7 +19,7 @@ class Ui_SaveImagesDialog(object):
         SaveImagesDialog.setObjectName(_fromUtf8("SaveImagesDialog"))
         SaveImagesDialog.resize(579, 408)
         self.buttonBox = QtGui.QDialogButtonBox(SaveImagesDialog)
-        self.buttonBox.setGeometry(QtCore.QRect(230, 360, 341, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(410, 360, 161, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
@@ -35,13 +35,23 @@ class Ui_SaveImagesDialog(object):
         self.FilesTreeWidget.header().setCascadingSectionResizes(False)
         self.FilesTreeWidget.header().setStretchLastSection(True)
         self.overwriteCheckBox = QtGui.QCheckBox(SaveImagesDialog)
-        self.overwriteCheckBox.setGeometry(QtCore.QRect(30, 370, 101, 21))
+        self.overwriteCheckBox.setGeometry(QtCore.QRect(10, 370, 101, 31))
         self.overwriteCheckBox.setChecked(True)
         self.overwriteCheckBox.setObjectName(_fromUtf8("overwriteCheckBox"))
         self.doneCheckBox = QtGui.QCheckBox(SaveImagesDialog)
-        self.doneCheckBox.setGeometry(QtCore.QRect(140, 370, 101, 21))
+        self.doneCheckBox.setGeometry(QtCore.QRect(120, 370, 81, 31))
         self.doneCheckBox.setChecked(False)
         self.doneCheckBox.setObjectName(_fromUtf8("doneCheckBox"))
+        self.epsCheckBox = QtGui.QCheckBox(SaveImagesDialog)
+        self.epsCheckBox.setGeometry(QtCore.QRect(215, 370, 71, 31))
+        self.epsCheckBox.setChecked(True)
+        self.epsCheckBox.setObjectName(_fromUtf8("epsCheckBox"))
+        self.prependfilenameLineEdit = QtGui.QLineEdit(SaveImagesDialog)
+        self.prependfilenameLineEdit.setGeometry(QtCore.QRect(285, 380, 113, 20))
+        self.prependfilenameLineEdit.setObjectName(_fromUtf8("prependfilenameLineEdit"))
+        self.label = QtGui.QLabel(SaveImagesDialog)
+        self.label.setGeometry(QtCore.QRect(290, 360, 101, 20))
+        self.label.setObjectName(_fromUtf8("label"))
 
         self.retranslateUi(SaveImagesDialog)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), SaveImagesDialog.accept)
@@ -54,6 +64,9 @@ class Ui_SaveImagesDialog(object):
 "with same name", None, QtGui.QApplication.UnicodeUTF8))
         self.doneCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "convert .run \n"
 "to .done", None, QtGui.QApplication.UnicodeUTF8))
+        self.epsCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "also save\n"
+".eps", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("SaveImagesDialog", "Prepend to filename:", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

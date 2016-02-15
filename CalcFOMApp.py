@@ -584,7 +584,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             else:
                 self.activeana['parameters'][k]=str(v)
         
-        if 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
+        #the A,B,C,D order is editable as a analysisclass paramete and if it is not the nontrivial case, bump it up to an ana__ key for ease in finding in visualization
+        if 'parameters' in self.activeana.keys() and 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
             self.activeana['platemap_comp4plot_keylist']=self.activeana['parameters']['platemap_comp4plot_keylist']
 
         gentype=self.analysisclass.getgeneraltype()

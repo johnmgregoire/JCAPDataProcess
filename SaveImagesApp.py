@@ -24,6 +24,7 @@ from fcns_io import *
 from fcns_ui import *
 #from VisualizeAuxFcns import *
 from SaveImagesForm import Ui_SaveImagesDialog
+from SaveImagesBatchForm import Ui_SaveImagesBatchDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
@@ -115,15 +116,32 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
     def filterchars(self, s):
         valid_chars = "-_.%s%s" % (string.ascii_letters, string.digits)
         return ''.join([c for c in s if c in valid_chars])
+    
+    def updateoptionsfrombatchidialog(self, batchidialog, lastbatchiteration=False):
+        prependstr=self.filterchars(str(batchidialog.prependfilenameLineEdit.text()))
+        self.prependfilenameLineEdit.setText(prependstr+str(self.prependfilenameLineEdit.text()))
+        
+        self.overwriteCheckBox.setChecked(batchidialog.overwriteCheckBox.isChecked())
+        self.epsCheckBox.setChecked(batchidialog.epsCheckBox.isChecked())
+        
+        
+        if lastbatchiteration:#only want to convert to done on last image being batch-saved
+            self.doneCheckBox.setChecked(batchidialog.doneCheckBox.isChecked())
+        
     def ExitRoutine(self):
         overbool=self.overwriteCheckBox.isChecked()
+        prependstr=self.filterchars(str(self.prependfilenameLineEdit.text()))
         lines=[]
         for d in self.widget_plow_dlist:
             if not bool(d['item'].checkState(0)):
                 continue
             pngfn, garb, pngattr=str(d['item'].text(0)).partition(': ')
+            pngfn=prependstr+pngfn
             existfns=os.listdir(self.anafolder)
-            for fn, a in [(pngfn, pngattr), (pngfn.replace('png', 'eps'), pngattr.replace('png', 'eps'))]:
+            fn_attr_list=[(pngfn, pngattr)]
+            if self.epsCheckBox.isChecked():
+                fn_attr_list+=[(pngfn.replace('png', 'eps'), pngattr.replace('png', 'eps'))]
+            for fn, a in fn_attr_list:
                 if (fn in existfns) and not overbool:
                     i=2
                     fnorig=fn
@@ -158,3 +176,27 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 f.write(anafilestr)
 
 
+
+
+class saveimagesbatchDialog(QDialog, Ui_SaveImagesBatchDialog):
+    def __init__(self, parent, comboind_strlist):
+        super(saveimagesbatchDialog, self).__init__(parent)
+        self.setupUi(self)
+        
+        self.parent=parent
+
+        QObject.connect(self.buttonBox,SIGNAL("accepted()"),self.ExitRoutine)
+    
+        self.widgetTopLevelItems={}
+        self.comboind_strlist=comboind_strlist
+        for comboind, k in self.comboind_strlist:
+            mainitem=QTreeWidgetItem([k], 0)
+            mainitem.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
+            mainitem.setCheckState(0, Qt.Checked)
+            self.FilesTreeWidget.addTopLevelItem(mainitem)
+            self.widgetTopLevelItems[k]={}
+            self.widgetTopLevelItems[k]['item']=mainitem
+            self.widgetTopLevelItems[k]['comboind']=comboind
+
+    def ExitRoutine(self):
+        self.selectcomboboxinds=sorted([d['comboind'] for d in self.widgetTopLevelItems.values() if bool(d['item'].checkState(0))])
