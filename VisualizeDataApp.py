@@ -220,10 +220,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 idialog=messageDialog(self, 'Would you like to modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
                 if idialog.exec_():
                     rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D'], origE=d['E'], origF=d['F'], origG=d['G'], origH=d['H']) for d in rund['platemapdlist']]
-                    lets=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']# EFGH
+                    channelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:max(4, len(masterels))]
+                    rund['platemapdlist']=[d.update(dict([('orig'+k, d[k]) for k in channelsused])) for d in rund['platemapdlist']]
                     for d in rund['platemapdlist']:
-                        for let, el in zip(lets, masterels):
-                            d[let]=d['orig'+lets[els.index(el)]]#this allows plates with different permutations of the same set fo elements (as the first plate to be read here) to have their platemaps permuted to match.
+                        for let, el in zip(channelsused, masterels):
+                            d[let]=d['orig'+channelsused[els.index(el)]]#this allows plates with different permutations of the same set fo elements (as the first plate to be read here) to have their platemaps permuted to match.
                 else:
                     masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels and when plots are made they are just vs the platemap channels not the printed elements
             else:#this patholigcal case of having different sets of elements in the same exp/ana is not handled for >4 element prints
@@ -383,7 +384,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     rund=self.expfiledict['run__%d' %d['runint']]
                     try:
                         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
-                        for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                        for k in self.ellabels+['code', 'x', 'y']+['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:max(4, len(self.ellabels))]:#use A B C D and more if more elements printed
                             if not k in d.keys():
                                 d[k]=pmd[k]
                                 if not k in fomnames:
