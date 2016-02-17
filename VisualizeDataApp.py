@@ -24,6 +24,7 @@ from fcns_ui import *
 from VisualizeAuxFcns import *
 from VisualizeDataForm import Ui_VisDataDialog
 from SaveImagesApp import *
+from LoadCSVApp import loadcsvDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
@@ -60,6 +61,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.remSample, self.remValuesSample), \
         (self.SaveFigsPushButton, self.savefigs), \
         (self.SaveStdFigsPushButton, self.save_all_std_plots), \
+        (self.LoadCsvPushButton, self.loadcsv), \
         ]
 
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -100,7 +102,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         self.ellabels=['A', 'B', 'C', 'D']
         
-        
+        self.expfolder=''
         self.clearfomplotd()
     def clearfomplotd(self):
         self.fomplotd=dict({},fomdlist_index0=[], fomdlist_index1=[], plate_id=[], code=[],sample_no=[], fom=[], xy=[], comp=[], fomname='')
@@ -198,10 +200,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     return#just try to cancel things so user can open file again
                 else:
                     rund['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)#path not used here because passing lines
-                    s=str(self.platemapfilenameDialog.text())
+                    s=str(self.platemapfilenameLineEdit.text())
                     ps=os.path.normpath(pmpath)
                     if not ps in s:
-                        self.platemapfilenameDialog.setText(','.join([s, ps]).strip(','))
+                        self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             els=getelements_plateidstr(str(rund['parameters']['plate_id']))
             if els is None:
@@ -278,16 +280,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 for d in rund['platemapdlist']:
                     for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
                         d[el]=d[oldlet]
-        self.ellabelsDialog.setText(','.join(self.ellabels))
+        self.ellabelsLineEdit.setText(','.join(self.ellabels))
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
         if folderpath is None or len(folderpath)==0:
             return
-        
+        self.ellabels=['A', 'B', 'C', 'D']
         if platemappath is None:
             plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
-
+            els=getelements_plateidstr(plateidstr)
+            if not els is None:
+                self.ellabels=els
             platemappath=getplatemappath_plateid(plateidstr, \
                 erroruifcn=\
             lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, plateidstr)))
@@ -310,7 +314,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
         self.expfiledict['run__1']['parameters']={}
         self.expfiledict['run__1']['parameters']['plate_id']=0
-        self.ellabels=['A', 'B', 'C', 'D']
+        
         self.anafolder=''
         
         self.anafiledict={}
@@ -377,12 +381,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     d['code']=-1
                 if not (d['runint']==0 or (not 'sample_no' in d.keys()) or d['sample_no']<=0):
                     rund=self.expfiledict['run__%d' %d['runint']]
-                    pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
-                    for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
-                        if not k in d.keys():
-                            d[k]=pmd[k]
-                            if not k in fomnames:
-                                fomnames+=[k]
+                    try:
+                        pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
+                        for k in self.ellabels+['code', 'x', 'y', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                            if not k in d.keys():
+                                d[k]=pmd[k]
+                                if not k in fomnames:
+                                    fomnames+=[k]
+                    except:
+                        idialog=messageDialog(self, 'Platemap not valid '+checkmsg)
+                        idialog.exec_()
+                        return
     
     def fillxyoptions(self, clear=False):
         
@@ -519,12 +528,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         temp=[str(mainitem.child(i).text(0)).strip().partition('__')[2] for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         if len(temp)==0:
             return
-        te=temp[0]
+        te=temp[0]#only the first tech checked
         mainitem=self.widgetItems_pl_ru_te_ty_co[3]
         temp=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         if len(temp)==0:
             return
-        ty=temp[0]
+        ty=temp[0]#only the first type checked
         self.analysisclass.getapplicablefilenames(self.expfiledict, '', te, ty)#empty "data usek" string will not filter and then filter by the first checked technique and type
 
         if self.SelectTreeFileFilterTopLevelItem is None:
@@ -547,6 +556,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist+=[self.analysisclass.fomdlist]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[self.analysisclass.fomnames]
         self.l_csvheaderdict+=[self.analysisclass.csvheaderdict]#this contains default plot info
+        self.l_csvheaderdict[-1]['anak']='ana__onthefly'
+        self.l_platemap4keys+=[['A', 'B', 'C', 'D']]
         #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         #self.l_usefombool+=[True]
         self.updatefomdlist_plateruncode(inds=[-1])
@@ -554,6 +565,68 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.setupfilterchoices()
         self.updatefomplotchoices()
         self.fillxyoptions()
+    def gethighestrunk(self, getnextone=False):
+        kfcn=lambda i:'run__%d' %i
+        i=1
+        while kfcn(i) in self.expfiledict.keys():
+            i+=1
+        if getnextone:
+            runk=kfcn(i)
+        else:
+            runk=kfcn(i-1)
+            if not runk in self.expfiledict.keys():
+                return None
+        return runk
+        
+    def loadcsv(self):#***
+    
+#        runk=self.gethighestrunk()
+#        if not runk is None:
+            
+        newrunk=self.gethighestrunk(getnextone=True)#create a new run, maybe wouldn't need to if somethign already loaded but usually thsi will be used to load only .csv so need to create a run for toehr mechanics to work
+        
+        pmpath=str(self.platemapfilenameLineEdit.text()).split(',')[-1]#last used platemap or empty if non loaded
+        
+        idialog=loadcsvDialog(self, ellabels=self.ellabels, platemappath=pmpath, csvstartpath=self.expfolder, runk=newrunk)
+        if not idialog.exec_():
+            return
+        if idialog.error:
+            return
+        self.ellabels=idialog.ellabels
+        if not 'exp_version' in self.expfiledict.keys():
+            self.expfiledict['exp_version']=0
+        
+        self.expfiledict[newrunk]=copy.deepcopy(idialog.rund)
+        s=str(self.platemapfilenameLineEdit.text())
+        ps=str(idialog.platemapLineEdit.text())
+        if not ps in s:
+            self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
+                        
+        fomnames=copy.copy(idialog.fomnames)
+        self.expfiledict[newrunk]['run_path']=idialog.csvpath
+        self.expfiledict[newrunk]['run_use']='usercsv'
+        self.expfiledict[newrunk]['files_technique__usercsv']={}
+        self.expfiledict[newrunk]['files_technique__usercsv']['csv_files']={}
+        self.expfiledict[newrunk]['files_technique__usercsv']['csv_files'][os.path.split(idialog.csvpath)[1]]=copy.deepcopy(idialog.fileattrd)
+        
+        self.l_fomdlist+=[copy.deepcopy(idialog.fomdlist)]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
+        self.l_fomnames+=[copy.copy(idialog.fomnames)]
+        self.l_csvheaderdict+=[{}]
+        self.l_csvheaderdict[-1]['anak']='ana__onthefly'
+        self.l_platemap4keys+=[['A', 'B', 'C', 'D']]
+        #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
+        
+        if self.ellabels==['A', 'B', 'C', 'D']:#If default ellabels give option for user to enter new ones. otherwise assume thigns already loaded and use existing ellabels
+            self.fillcomppermutations()
+        else:
+            self.remap_platemaplabels()
+        if newrunk=='run__1':
+            self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)#might erase things that already exist
+        self.updatefomdlist_plateruncode()#inds=[-1])
+        self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1], uncheckprevious=True)
+        self.setupfilterchoices()
+        self.updatefomplotchoices()
+        self.fillxyoptions()#clear=True
         
     def filterandplotfomdata(self, plotbool=True):
         self.clearfomplotd()
@@ -1279,8 +1352,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.tabs__plateids=self.setup_TabWidget(self.tabs__plateids, [-1], compbool=False)
         self.tabs__codes=self.setup_TabWidget(self.tabs__codes, [-1], compbool=True)
         
-        self.ellabelsDialog.setText('')
-        self.platemapfilenameDialog.setText('')
+        self.ellabelsLineEdit.setText('')
+        self.platemapfilenameLineEdit.setText('')
 
         self.plotw_xy.axes.cla()
         self.plotw_xy.twaxes.cla()
@@ -1495,8 +1568,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if idialog.newanapath:
                 self.importana(p=idialog.newanapath)
     
-    def save_all_std_plots(self):#***
-
+    def save_all_std_plots(self):
         comboind_strlist=[]
         for i in range(1, self.numStdPlots+1):
             self.stdcsvplotchoiceComboBox.setCurrentIndex(i)

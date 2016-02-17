@@ -233,6 +233,13 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
 def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
     d={}
     arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
+    
+    if not 'keys' in fileattrd.keys():
+        with open(p, mode='r') as f:
+            lines=f.readlines()
+            ks=lines[fileattrd['num_header_lines']-1].split(',')
+            ks=[k.strip() for k in ks]
+            fileattrd['keys']=ks
     for k, a in zip(fileattrd['keys'], arr):
         if '.' in a[0] or 'NaN' in a:
             d[k]=numpy.float32(a)

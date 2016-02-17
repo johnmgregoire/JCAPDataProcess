@@ -16,3 +16,5 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\FileSearchForm.u
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\SaveImagesForm.py
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesBatchForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\SaveImagesBatchForm.py
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\LoadCSVForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\LoadCSVForm.py

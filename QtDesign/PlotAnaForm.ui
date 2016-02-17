@@ -150,7 +150,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Select Data Folder</string>
+    <string>Open OnTheFly Dir</string>
    </property>
   </widget>
   <widget class="QPushButton" name="AnaPushButton">
@@ -183,9 +183,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>100</y>
+     <y>90</y>
      <width>101</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -779,13 +779,14 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>130</y>
+     <y>110</y>
      <width>101</width>
-     <height>23</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Create file filter</string>
+    <string>Create file filter
+(for OnTheFly)</string>
    </property>
   </widget>
   <widget class="QPushButton" name="UpdateFiltersPushButton">
@@ -901,7 +902,7 @@ x-y style</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>160</y>
+     <y>180</y>
      <width>101</width>
      <height>23</height>
     </rect>
@@ -986,7 +987,7 @@ Rest of the string is the interger marker size.</string>
 scatter:</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="ellabelsDialog">
+  <widget class="QLineEdit" name="ellabelsLineEdit">
    <property name="geometry">
     <rect>
      <x>580</x>
@@ -1028,7 +1029,7 @@ scatter:</string>
     <string>platemap filename</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="platemapfilenameDialog">
+  <widget class="QLineEdit" name="platemapfilenameLineEdit">
    <property name="geometry">
     <rect>
      <x>580</x>
@@ -1051,13 +1052,26 @@ scatter:</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>190</y>
+     <y>210</y>
      <width>101</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string>BatchSave StdPlots</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="LoadCsvPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>150</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Load .csv</string>
    </property>
   </widget>
  </widget>

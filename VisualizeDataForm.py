@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Mon Feb 15 10:37:55 2016
+# Created: Tue Feb 16 13:40:03 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -71,7 +71,7 @@ class Ui_VisDataDialog(object):
         self.ExpPushButton.setGeometry(QtCore.QRect(10, 40, 91, 23))
         self.ExpPushButton.setObjectName(_fromUtf8("ExpPushButton"))
         self.UpdateFolderPushButton = QtGui.QPushButton(VisDataDialog)
-        self.UpdateFolderPushButton.setGeometry(QtCore.QRect(10, 100, 101, 23))
+        self.UpdateFolderPushButton.setGeometry(QtCore.QRect(10, 90, 101, 21))
         self.UpdateFolderPushButton.setObjectName(_fromUtf8("UpdateFolderPushButton"))
         self.OnFlyAnaClassComboBox = QtGui.QComboBox(VisDataDialog)
         self.OnFlyAnaClassComboBox.setGeometry(QtCore.QRect(0, 270, 111, 22))
@@ -216,7 +216,7 @@ class Ui_VisDataDialog(object):
         self.textBrowser_fomhist.setGeometry(QtCore.QRect(320, 190, 371, 221))
         self.textBrowser_fomhist.setObjectName(_fromUtf8("textBrowser_fomhist"))
         self.FilenameFilterPushButton = QtGui.QPushButton(VisDataDialog)
-        self.FilenameFilterPushButton.setGeometry(QtCore.QRect(10, 130, 101, 23))
+        self.FilenameFilterPushButton.setGeometry(QtCore.QRect(10, 110, 101, 31))
         self.FilenameFilterPushButton.setObjectName(_fromUtf8("FilenameFilterPushButton"))
         self.UpdateFiltersPushButton = QtGui.QPushButton(VisDataDialog)
         self.UpdateFiltersPushButton.setGeometry(QtCore.QRect(580, 10, 101, 23))
@@ -249,7 +249,7 @@ class Ui_VisDataDialog(object):
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
         self.line.setObjectName(_fromUtf8("line"))
         self.SaveFigsPushButton = QtGui.QPushButton(VisDataDialog)
-        self.SaveFigsPushButton.setGeometry(QtCore.QRect(10, 160, 101, 23))
+        self.SaveFigsPushButton.setGeometry(QtCore.QRect(10, 180, 101, 23))
         self.SaveFigsPushButton.setObjectName(_fromUtf8("SaveFigsPushButton"))
         self.SummaryTextBrowser = QtGui.QTextBrowser(VisDataDialog)
         self.SummaryTextBrowser.setGeometry(QtCore.QRect(120, 10, 241, 171))
@@ -273,24 +273,27 @@ class Ui_VisDataDialog(object):
         self.label_16 = QtGui.QLabel(VisDataDialog)
         self.label_16.setGeometry(QtCore.QRect(710, 180, 51, 21))
         self.label_16.setObjectName(_fromUtf8("label_16"))
-        self.ellabelsDialog = QtGui.QLineEdit(VisDataDialog)
-        self.ellabelsDialog.setGeometry(QtCore.QRect(580, 120, 101, 22))
-        self.ellabelsDialog.setText(_fromUtf8(""))
-        self.ellabelsDialog.setObjectName(_fromUtf8("ellabelsDialog"))
+        self.ellabelsLineEdit = QtGui.QLineEdit(VisDataDialog)
+        self.ellabelsLineEdit.setGeometry(QtCore.QRect(580, 120, 101, 22))
+        self.ellabelsLineEdit.setText(_fromUtf8(""))
+        self.ellabelsLineEdit.setObjectName(_fromUtf8("ellabelsLineEdit"))
         self.label_17 = QtGui.QLabel(VisDataDialog)
         self.label_17.setGeometry(QtCore.QRect(580, 100, 91, 21))
         self.label_17.setObjectName(_fromUtf8("label_17"))
         self.label_18 = QtGui.QLabel(VisDataDialog)
         self.label_18.setGeometry(QtCore.QRect(580, 140, 91, 21))
         self.label_18.setObjectName(_fromUtf8("label_18"))
-        self.platemapfilenameDialog = QtGui.QLineEdit(VisDataDialog)
-        self.platemapfilenameDialog.setGeometry(QtCore.QRect(580, 160, 101, 22))
-        self.platemapfilenameDialog.setText(_fromUtf8(""))
-        self.platemapfilenameDialog.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.platemapfilenameDialog.setObjectName(_fromUtf8("platemapfilenameDialog"))
+        self.platemapfilenameLineEdit = QtGui.QLineEdit(VisDataDialog)
+        self.platemapfilenameLineEdit.setGeometry(QtCore.QRect(580, 160, 101, 22))
+        self.platemapfilenameLineEdit.setText(_fromUtf8(""))
+        self.platemapfilenameLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.platemapfilenameLineEdit.setObjectName(_fromUtf8("platemapfilenameLineEdit"))
         self.SaveStdFigsPushButton = QtGui.QPushButton(VisDataDialog)
-        self.SaveStdFigsPushButton.setGeometry(QtCore.QRect(10, 190, 101, 23))
+        self.SaveStdFigsPushButton.setGeometry(QtCore.QRect(10, 210, 101, 23))
         self.SaveStdFigsPushButton.setObjectName(_fromUtf8("SaveStdFigsPushButton"))
+        self.LoadCsvPushButton = QtGui.QPushButton(VisDataDialog)
+        self.LoadCsvPushButton.setGeometry(QtCore.QRect(10, 150, 101, 21))
+        self.LoadCsvPushButton.setObjectName(_fromUtf8("LoadCsvPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -301,7 +304,7 @@ class Ui_VisDataDialog(object):
         VisDataDialog.setWindowTitle(QtGui.QApplication.translate("VisDataDialog", "Dialog", None, QtGui.QApplication.UnicodeUTF8))
         self.plateTabWidget.setTabText(self.plateTabWidget.indexOf(self.tab), QtGui.QApplication.translate("VisDataDialog", "Tab 1", None, QtGui.QApplication.UnicodeUTF8))
         self.compTabWidget.setTabText(self.compTabWidget.indexOf(self.tab_2), QtGui.QApplication.translate("VisDataDialog", "Tab 1", None, QtGui.QApplication.UnicodeUTF8))
-        self.FolderPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Select Data Folder", None, QtGui.QApplication.UnicodeUTF8))
+        self.FolderPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Open OnTheFly Dir", None, QtGui.QApplication.UnicodeUTF8))
         self.AnaPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Open ANA", None, QtGui.QApplication.UnicodeUTF8))
         self.ExpPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Open EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.UpdateFolderPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "^  update  ^", None, QtGui.QApplication.UnicodeUTF8))
@@ -348,7 +351,8 @@ class Ui_VisDataDialog(object):
         self.customxylegendPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "customize\n"
 "x-y legend", None, QtGui.QApplication.UnicodeUTF8))
         self.overlayselectCheckBox.setText(QtGui.QApplication.translate("VisDataDialog", "x-y overlay", None, QtGui.QApplication.UnicodeUTF8))
-        self.FilenameFilterPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Create file filter", None, QtGui.QApplication.UnicodeUTF8))
+        self.FilenameFilterPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Create file filter\n"
+"(for OnTheFly)", None, QtGui.QApplication.UnicodeUTF8))
         self.UpdateFiltersPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "update plots+filters", None, QtGui.QApplication.UnicodeUTF8))
         self.compPlotMarkSelectionsCheckBox.setText(QtGui.QApplication.translate("VisDataDialog", "Mark selections\n"
 "on Comp.plots", None, QtGui.QApplication.UnicodeUTF8))
@@ -363,11 +367,12 @@ class Ui_VisDataDialog(object):
         self.platescatterLineEdit.setText(QtGui.QApplication.translate("VisDataDialog", "s70", None, QtGui.QApplication.UnicodeUTF8))
         self.label_16.setText(QtGui.QApplication.translate("VisDataDialog", "plate\n"
 "scatter:", None, QtGui.QApplication.UnicodeUTF8))
-        self.ellabelsDialog.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.ellabelsLineEdit.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.label_17.setText(QtGui.QApplication.translate("VisDataDialog", "Element Labels", None, QtGui.QApplication.UnicodeUTF8))
         self.label_18.setText(QtGui.QApplication.translate("VisDataDialog", "platemap filename", None, QtGui.QApplication.UnicodeUTF8))
-        self.platemapfilenameDialog.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.platemapfilenameLineEdit.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveStdFigsPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "BatchSave StdPlots", None, QtGui.QApplication.UnicodeUTF8))
+        self.LoadCsvPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Load .csv", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":
