@@ -37,7 +37,7 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
     return num_files_considered, filedlist2#inside of each dict in this list is a 'Afiled' with key 'fn'. That file in the analysis folder is an intermediate data arr whose column 'Akeyind' is the absorption array
 
     
-def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
+def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all', gui_mode_bool=False):
     if techk!='T_UVVIS':
         return 0, [], {}
     
@@ -53,6 +53,8 @@ def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
         if len(filedlist)==0:
+            if gui_mode_bool :
+                print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'TRgetapplicablefilenames')
             return 0, [], {}
         refdict__filedlist[k]=filedlist
     num_files_considered, Tfiledlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
@@ -235,7 +237,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                                  
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
-              TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'])
+              TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'], gui_mode_bool=self.gui_mode_bool)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
 

@@ -1322,3 +1322,4 @@ if __name__ == "__main__":
     form.show()
     form.setFocus()
     mainapp.exec_()
+#form.calcui.expfiledict
