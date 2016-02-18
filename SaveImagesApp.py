@@ -33,7 +33,7 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
 class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
-    def __init__(self, parent, anafolder, fomname, plateid_dict_list=[], code_dict_list=[], histplow=None, xyplotw=None, x_y_righty=['x', 'y', ''], repr_anaint_plots=1):
+    def __init__(self, parent, anafolder, fomname, plateid_dict_list=[], code_dict_list=[], histplow=None, xyplotw=None, x_y_righty=['x', 'y', ''], repr_anaint_plots=1, filenamesearchlist=None):
         super(saveimagesDialog, self).__init__(parent)
         self.setupUi(self)
         
@@ -75,11 +75,14 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         for widgk, val_dict_list in zip(self.widgetkeys[0:2], [self.plateid_dict_list, self.code_dict_list]):
             mainitem=self.widgetTopLevelItems[widgk]
             for (k, d) in val_dict_list:
-                s=self.filterchars('%s__%s-%s.png' %(widgk, k, self.fomname))
-                s+=': python_visualizer_png_image'
+                filen=self.filterchars('%s__%s-%s.png' %(widgk, k, self.fomname))
+                s=filen+': python_visualizer_png_image'
                 item=QTreeWidgetItem([s], 0)
                 item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.Checked if d['checked'] else Qt.Unchecked)
+                if filenamesearchlist is None:
+                    item.setCheckState(0, Qt.Checked if d['checked'] else Qt.Unchecked)
+                else:
+                    item.setCheckState(0, Qt.Checked if True in [searchstr in filen for searchstr in filenamesearchlist] else Qt.Unchecked)
                 mainitem.addChild(item)
                 d['item']=item
                 self.widget_plow_dlist+=[d]
@@ -88,11 +91,14 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 continue
             mainitem=self.widgetTopLevelItems[widgk]
             d={'plotw':plotw}
-            s=self.filterchars('%s__%s.png' %(widgk, lab))
-            s+=': python_visualizer_png_image'
+            filen=self.filterchars('%s__%s.png' %(widgk, lab))
+            s=filen+': python_visualizer_png_image'
             item=QTreeWidgetItem([s], 0)
             item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(0, Qt.Unchecked)
+            if filenamesearchlist is None:
+                item.setCheckState(0, Qt.Unchecked)
+            else:
+                item.setCheckState(0, Qt.Checked if True in [searchstr in filen for searchstr in filenamesearchlist] else Qt.Unchecked)
             mainitem.addChild(item)
             d['item']=item
             self.widget_plow_dlist+=[d]

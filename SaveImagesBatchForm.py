@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesBatchForm.ui'
 #
-# Created: Sun Feb 14 23:20:32 2016
+# Created: Thu Feb 18 09:44:07 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_SaveImagesBatchDialog(object):
     def setupUi(self, SaveImagesBatchDialog):
         SaveImagesBatchDialog.setObjectName(_fromUtf8("SaveImagesBatchDialog"))
-        SaveImagesBatchDialog.resize(579, 442)
+        SaveImagesBatchDialog.resize(579, 455)
         self.buttonBox = QtGui.QDialogButtonBox(SaveImagesBatchDialog)
         self.buttonBox.setGeometry(QtCore.QRect(410, 400, 161, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
@@ -56,6 +56,12 @@ class Ui_SaveImagesBatchDialog(object):
         self.plotstyleoverrideCheckBox.setGeometry(QtCore.QRect(410, 360, 161, 31))
         self.plotstyleoverrideCheckBox.setChecked(False)
         self.plotstyleoverrideCheckBox.setObjectName(_fromUtf8("plotstyleoverrideCheckBox"))
+        self.filenamesearchLineEdit = QtGui.QLineEdit(SaveImagesBatchDialog)
+        self.filenamesearchLineEdit.setGeometry(QtCore.QRect(140, 420, 261, 20))
+        self.filenamesearchLineEdit.setObjectName(_fromUtf8("filenamesearchLineEdit"))
+        self.label_2 = QtGui.QLabel(SaveImagesBatchDialog)
+        self.label_2.setGeometry(QtCore.QRect(10, 410, 131, 31))
+        self.label_2.setObjectName(_fromUtf8("label_2"))
 
         self.retranslateUi(SaveImagesBatchDialog)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), SaveImagesBatchDialog.accept)
@@ -74,6 +80,9 @@ class Ui_SaveImagesBatchDialog(object):
 "addition to auto-prepend", None, QtGui.QApplication.UnicodeUTF8))
         self.plotstyleoverrideCheckBox.setText(QtGui.QApplication.translate("SaveImagesBatchDialog", "Override std plot plot options\n"
 "(colormap, fom range, etc.)", None, QtGui.QApplication.UnicodeUTF8))
+        self.filenamesearchLineEdit.setText(QtGui.QApplication.translate("SaveImagesBatchDialog", "plate_id__, code__", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("SaveImagesBatchDialog", "filename search strings for \n"
+"selecting images to save", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

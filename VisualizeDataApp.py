@@ -1529,7 +1529,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
         
-    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False):
+    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=None):
         cbl=[\
                 self.xplotchoiceComboBox, \
                 self.yplotchoiceComboBox, \
@@ -1553,7 +1553,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
 
         xyplotw=None if save_all_std_bool else self.plotw_xy 
-        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots)
+        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots, filenamesearchlist=filenamesearchlist)
         
         anaklist_activeplots=[self.l_csvheaderdict[i0]['anak'] for i0 in self.fomplotd['fomdlist_index0']]
         if len(set(anaklist_activeplots))==1:# if all the FOMs in active plot are from the same ana__ then use that as prepend string ni filenames of images
@@ -1585,8 +1585,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for i in cbinds:
             self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
             self.plot_preparestandardplot(loadstyleoptions=loadstyleoptions)
-        
-            self.savefigs(save_all_std_bool=True, batchidialog=batchidialog, lastbatchiteration=(i==cbinds[-1]))#for std plots all foms will be from same ana__  and prepend str will be filled in automatically
+            filenamesearchlist=str(batchidialog.filenamesearchLineEdit.text()).split(',')
+            filenamesearchlist=[s.strip() for s in filenamesearchlist if len(s.strip())>0]
+            filenamesearchlist=None if len(filenamesearchlist)==0 else filenamesearchlist
+            self.savefigs(save_all_std_bool=True, batchidialog=batchidialog, filenamesearchlist=filenamesearchlist, lastbatchiteration=(i==cbinds[-1]))#for std plots all foms will be from same ana__  and prepend str will be filled in automatically
 
 if __name__ == "__main__":
     class MainMenu(QMainWindow):
@@ -1598,7 +1600,10 @@ if __name__ == "__main__":
 #            self.visui.plotfom()
             if execute:
                 self.visui.exec_()
-    os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
+    try:
+        os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
+    except:
+        pass
     mainapp=QApplication(sys.argv)
     form=MainMenu(None)
     form.show()
