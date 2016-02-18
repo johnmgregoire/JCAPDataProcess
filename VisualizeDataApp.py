@@ -244,11 +244,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
             self.ellabels=['A', 'B', 'C', 'D']
         else:#to get here evrythign has a platemap
-            if len(masterels)<4:
-                self.ellabels=masterels+['A', 'B', 'C', 'D'][len(masterels):]#allows for <4 elements
-            else:
-                self.ellabels=masterels
-            self.remap_platemaplabels()
+            self.remap_platemaplabels(newellabels=masterels)
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
@@ -285,7 +281,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             anaexpfiled=self.expfiledict
         sorttups=sorted([(int(k[len(anarun):]), k) for k in anaexpfiled.keys() if k.startswith(anarun)])
         return map(operator.itemgetter(1), sorttups)
-    def remap_platemaplabels(self):#should work for up to 8 elements, only the length of ellables will be used
+    def remap_platemaplabels(self, newellabels=None):#should work for up to 8 elements, only the length of ellables will be used
+        if not newellabels is None:
+            if len(newellabels)<4:
+                self.ellabels=newellabels+['A', 'B', 'C', 'D'][len(newellabels):]#allows for <4 elements
+            else:
+                self.ellabels=newellabels
+                
         for runk, rund in self.expfiledict.iteritems():
                 if not runk.startswith('run__'):
                     continue
@@ -302,17 +304,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if platemappath is None:
             plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
             els=getelements_plateidstr(plateidstr)
-            if not els is None:
-                self.ellabels=els
             platemappath=getplatemappath_plateid(plateidstr, \
                 erroruifcn=\
             lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, plateidstr)))
         if platemappath is None or platemappath=='':
             return
-            
-        self.expfolder=folderpath
-        self.platemappath=platemappath#this is self. but probably not necessary because not used elsehwere after being read below
         
+        self.clearfomplotd()
+        self.clearvisuals()
+        
+        self.expfolder=folderpath
+       
         self.lastmodtime=0
         
         self.expfiledict={}
@@ -320,12 +322,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict['run__1']={}
         self.expfiledict['run__1']['run_path']=self.expfolder
         self.expfiledict['run__1']['run_use']='onthefly'
-        self.expfiledict['run__1']['platemapdlist']=readsingleplatemaptxt(self.platemappath)
+        self.expfiledict['run__1']['platemapdlist']=readsingleplatemaptxt(platemappath)
         self.expfiledict['run__1']['platemapsamples']=[d['sample_no'] for d in self.expfiledict['run__1']['platemapdlist']]
         self.expfiledict['run__1']['files_technique__onthefly']={}
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
         self.expfiledict['run__1']['parameters']={}
         self.expfiledict['run__1']['parameters']['plate_id']=0
+        
+        self.platemapfilenameLineEdit.setText(os.path.normpath(platemappath))
+        self.remap_platemaplabels(newellabels=els)#if els weren't found the argument will be None so ellables will still be the default from earlier in this function and the remap wont' do anything to a standard platemap
         
         self.anafolder=''
         
@@ -342,8 +347,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomplotchoices()
         self.fillxyoptions(clear=True)
         
-        self.clearfomplotd()
-        self.clearvisuals()
+        
         
     def updateontheflydata(self):
         #this treates all files in the folder the same and by doing so assumes each file is a measurement on s asample. this could read a .csv fom file but it would be sample_no=nan and would not be ported to self.fomdlist. that is tricky and could be done but not necessary if "on-the-fly" is used for a raw data stream.
@@ -397,11 +401,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
                         for k in self.ellabels+['code', 'x', 'y']+['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:max(4, len(self.ellabels))]:#use A B C D and more if more elements printed
                             if not k in d.keys():
+                                #print kTODO
                                 d[k]=pmd[k]
+                                
                                 if not k in fomnames:
                                     fomnames+=[k]
                     except:
-                        idialog=messageDialog(self, 'Platemap not valid '+checkmsg)
+                        idialog=messageDialog(self, 'Platemap not valid ')
                         idialog.exec_()
                         return
     
@@ -622,7 +628,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomdlist+=[copy.deepcopy(idialog.fomdlist)]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[copy.copy(idialog.fomnames)]
         self.l_csvheaderdict+=[{}]
-        self.l_csvheaderdict[-1]['anak']='ana__onthefly'
+        self.l_csvheaderdict[-1]['anak']='ana__loadcsv'
         self.l_platemap4keys+=[['A', 'B', 'C', 'D']]
         #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         

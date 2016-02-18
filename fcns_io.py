@@ -162,7 +162,7 @@ def getarrs_filed(p, filed, selcolinds=None, trydat=True, zipclass=None):
         zipclass=gen_zipclass(p)
         closezip=bool(zipclass)
     if trydat:
-        pdat=p+'.dat'
+        pdat=p if p.endswith('.dat') else (p+'.dat')
         if os.path.isfile(pdat) or (zipclass and zipclass.fn_in_archive(pdat)):
             ans=readbinary_selinds(pdat, len(filed['keys']), keyinds=selcolinds, zipclass=zipclass)
             if closezip:
