@@ -62,6 +62,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.SaveFigsPushButton, self.savefigs), \
         (self.SaveStdFigsPushButton, self.save_all_std_plots), \
         (self.LoadCsvPushButton, self.loadcsv), \
+        (self.ClearPushButton, self.clearall), \
+        (self.RaiseErrorPushButton, self.raiseerror), \
         ]
 
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -88,6 +90,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             
         self.plotwsetup()
         
+        
+        self.clearall()
+    
+    def raiseerror(self):
+        raiseerror
+        
+    def clearall(self):
         self.l_fomdlist=[]
         self.l_fomnames=[]
         self.l_csvheaderdict=[]
@@ -104,6 +113,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         self.expfolder=''
         self.clearfomplotd()
+        self.clearvisuals()
     def clearfomplotd(self):
         self.fomplotd=dict({},fomdlist_index0=[], fomdlist_index1=[], plate_id=[], code=[],sample_no=[], fom=[], xy=[], comp=[], fomname='')
         self.select_idtups=[]
@@ -156,7 +166,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
         readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass, anakl=self.sorted_ana_exp_keys())
-        
+        self.expanafilenameLineEdit.setText(os.path.normpath(self.anafolder))
         self.updatefomdlist_plateruncode()
         
         self.setupfilterchoices()
@@ -255,6 +265,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         else:
             self.clearvisuals()
             summlines=[]
+            self.expanafilenameLineEdit.setText(os.path.normpath(self.expfolder))
             self.updatefomdlist_plateruncode(createnewfromexp=True)
             self.AnaExpFomTreeWidgetFcns.appendFom(self.l_fomnames[-1], self.l_csvheaderdict[-1])
             self.setupfilterchoices()
@@ -579,16 +590,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 return None
         return runk
         
-    def loadcsv(self):#***
+    def loadcsv(self):
     
-#        runk=self.gethighestrunk()
-#        if not runk is None:
-            
         newrunk=self.gethighestrunk(getnextone=True)#create a new run, maybe wouldn't need to if somethign already loaded but usually thsi will be used to load only .csv so need to create a run for toehr mechanics to work
         
         pmpath=str(self.platemapfilenameLineEdit.text()).split(',')[-1]#last used platemap or empty if non loaded
         
         idialog=loadcsvDialog(self, ellabels=self.ellabels, platemappath=pmpath, csvstartpath=self.expfolder, runk=newrunk)
+        if idialog.error:
+            return
         if not idialog.exec_():
             return
         if idialog.error:
@@ -607,8 +617,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict[newrunk]['run_path']=idialog.csvpath
         self.expfiledict[newrunk]['run_use']='usercsv'
         self.expfiledict[newrunk]['files_technique__usercsv']={}
-        self.expfiledict[newrunk]['files_technique__usercsv']['csv_files']={}
-        self.expfiledict[newrunk]['files_technique__usercsv']['csv_files'][os.path.split(idialog.csvpath)[1]]=copy.deepcopy(idialog.fileattrd)
+        self.expfiledict[newrunk]['files_technique__usercsv']['csv_files']=copy.deepcopy(idialog.runfilesdict)
         
         self.l_fomdlist+=[copy.deepcopy(idialog.fomdlist)]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[copy.copy(idialog.fomnames)]
@@ -1347,6 +1356,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.browser.setText('')
         self.fomstatsTextBrowser.setText('')
         self.SummaryTextBrowser.setText('')
+        self.expanafilenameLineEdit.setText('')
         for plotw in self.tabs__plotw_plate+self.tabs__plotw_comp:
             plotw.axes.cla()
             plotw.fig.canvas.draw()
