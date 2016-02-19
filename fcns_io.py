@@ -315,9 +315,14 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None):
         print l.split('\t')
         print map(float, l.split('\t')) 
         raise
-    for k, arr in zip(d['column_headings'], numpy.float32(z).T):
-        d[k]=arr
-    d['num_data_rows']=len(arr)
+    if len(z)==0:#no data
+        nrows=0
+    else:
+        for k, arr in zip(d['column_headings'], numpy.float32(z).T):
+            d[k]=arr
+        nrows=len(arr)
+    
+    d['num_data_rows']=nrows
     d['path']=path
     if not mtime_path_fcn is None:
         d['mtime']=mtime_path_fcn(path)
@@ -419,11 +424,11 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                 else:
                                     lines=f.readlines(MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
                     except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
-                        print 'ERROR: %s does not exist in folder %s, so it is being deletd from %s/%s/%s' %(fn, runp, k, k2, k3)
+                        print 'ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
                         del expfiledict[k][k2][k3][fn]
                         filedeletedbool=True
                         continue
-                    if savefolder is None and saverawdat:#save raw data into the dictionary
+                    if savefolder is None and saverawdat:#save raw data into the dictionary. empty files allowed here but not below
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
                         if k3 in ['image_files']:#list here the types of files that should not be converted to binary
@@ -432,6 +437,11 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                             keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
                             keys=[kv.strip() for kv in keys]
                             filed=readfcn(os.path.splitext(fn), lines)
+                            if filed['num_data_rows']==0:#no data in file
+                                print 'ERROR: %s in folder %s has no data, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
+                                del expfiledict[k][k2][k3][fn]
+                                filedeletedbool=True
+                                continue
                             if saverawdat:
                                 x=numpy.float32([filed[kv] for kv in keys])
                                 with openfnc(fn) as f:
@@ -1147,12 +1157,16 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
     column_headings=[x for i, x in enumerate(column_headings) if i not in skipinds]
     myfloatfcn=lambda s:(len(s.strip())==0 and (float('NaN'),) or (float(s.strip()),))[0]#this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
     z=[map(myfloatfcn, [x for i, x in enumerate(l.split(delim)) if i not in skipinds]) for l in lines[firstdatalineind:]]
-    for k, arr in zip(column_headings, numpy.float32(z).T):
-        d[k]=arr
     
+    if len(z)==0:#NO DATA!
+        nrows=0
+    else:
+        for k, arr in zip(column_headings, numpy.float32(z).T):
+            d[k]=arr
+        nrows=len(arr)
     if addparams:
         d['num_header_lines']=firstdatalineind
-        d['num_data_rows']=len(arr)
+        d['num_data_rows']=nrows
         for l in lines[:firstdatalineind]:
             if '=' in l:
                 c='='
