@@ -95,8 +95,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         
         
-        self.batchprocesses=[self.batchuvissingleplate, self.batchechedark, self.batchechewavelengths]
-        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark', 'Add eche runs by wavelength label']
+        self.batchprocesses=[self.batchuvissingleplate_norefdata, self.batchuvissingleplate, self.batchechedark, self.batchechewavelengths]
+        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter uvis into data including refs, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark', 'Add eche runs by wavelength label']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
         #These are the filter criteria controls
@@ -174,6 +174,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 cb.setCurrentIndex(i)
                 break
         self.RunTypeLineEdit.setText('data')
+        self.FileStartLineEdit.setText('')
         self.editexp_addmeasurement()
         cb.setCurrentIndex(0)
         
@@ -187,6 +188,33 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         self.FileStartLineEdit.setText('')
         
+    def batchuvissingleplate_norefdata(self):
+        
+        self.ExpTypeLineEdit.setText('uvis')
+        self.UserNameLineEdit.setText('uvis')
+        
+        cb=self.PlateAttrMoreComboBox
+        for i in range(int(cb.count())):
+            if 'Sample' in str(cb.itemText(i)):
+                cb.setCurrentIndex(i)
+                break
+        self.RunTypeLineEdit.setText('data')
+        self.FileStartLineEdit.setText('')
+        self.FileNotStartLineEdit.setText('0_')
+        self.editexp_addmeasurement()
+        cb.setCurrentIndex(0)
+        
+        self.FileNotStartLineEdit.setText('')
+        
+        self.RunTypeLineEdit.setText('ref_dark')
+        self.FileStartLineEdit.setText('0_-1_')
+        self.editexp_addmeasurement()
+        
+        self.RunTypeLineEdit.setText('ref_light')
+        self.FileStartLineEdit.setText('0_1_')
+        self.editexp_addmeasurement()
+        
+        self.FileStartLineEdit.setText('')
         
     def batchechedark(self):
 
@@ -487,10 +515,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
     def createFileSearchfilterfcn(self):
         s=str(self.FileSearchLineEdit.text()).strip()
         ss=str(self.FileStartLineEdit.text()).strip()
-        if len(s)==0 and len(ss)==0:
+        nss=str(self.FileNotStartLineEdit.text()).strip()
+        if len(s)==0 and len(ss)==0 and len(nss)==0:
             return lambda fd:True
-        else:
+        elif len(nss)==0:
             return lambda fd:s in fd['fn'] and fd['fn'].startswith(ss)
+        else:#nss not empty string so can check using not logic
+            return lambda fd:s in fd['fn'] and fd['fn'].startswith(ss) and not fd['fn'].startswith(nss)
     
     def editexpparams(self, item, column):
         self.editparams(self.ExpTreeWidget, item=item, column=column)

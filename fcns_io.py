@@ -1135,7 +1135,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         d['num_header_lines']=firstdatalineind
         d['num_data_rows']=len(lines)-firstdatalineind
         if smp is None:
-            d['sample_no']=numpy.nan
+            d['sample_no']=0#numpy.nan
         else:
             d['sample_no']=smp
         return smp, d

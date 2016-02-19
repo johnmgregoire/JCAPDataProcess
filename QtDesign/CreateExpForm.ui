@@ -78,7 +78,7 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>30</y>
+     <y>20</y>
      <width>81</width>
      <height>22</height>
     </rect>
@@ -91,7 +91,7 @@
    <property name="geometry">
     <rect>
      <x>950</x>
-     <y>30</y>
+     <y>20</y>
      <width>21</width>
      <height>16</height>
     </rect>
@@ -109,7 +109,7 @@
    <property name="geometry">
     <rect>
      <x>970</x>
-     <y>30</y>
+     <y>20</y>
      <width>62</width>
      <height>22</height>
     </rect>
@@ -134,7 +134,7 @@
    <property name="geometry">
     <rect>
      <x>970</x>
-     <y>60</y>
+     <y>40</y>
      <width>62</width>
      <height>22</height>
     </rect>
@@ -159,7 +159,7 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>60</y>
+     <y>40</y>
      <width>81</width>
      <height>22</height>
     </rect>
@@ -169,7 +169,7 @@
    <property name="geometry">
     <rect>
      <x>950</x>
-     <y>60</y>
+     <y>40</y>
      <width>21</width>
      <height>16</height>
     </rect>
@@ -187,7 +187,7 @@
    <property name="geometry">
     <rect>
      <x>970</x>
-     <y>90</y>
+     <y>60</y>
      <width>62</width>
      <height>22</height>
     </rect>
@@ -212,7 +212,7 @@
    <property name="geometry">
     <rect>
      <x>950</x>
-     <y>90</y>
+     <y>60</y>
      <width>21</width>
      <height>16</height>
     </rect>
@@ -230,7 +230,7 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>90</y>
+     <y>60</y>
      <width>81</width>
      <height>22</height>
     </rect>
@@ -240,9 +240,9 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>10</y>
+     <y>0</y>
      <width>181</width>
-     <height>16</height>
+     <height>20</height>
     </rect>
    </property>
    <property name="text">
@@ -317,7 +317,7 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>220</y>
+     <y>180</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -331,9 +331,9 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>200</y>
+     <y>160</y>
      <width>171</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -344,7 +344,7 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>140</y>
+     <y>100</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -360,9 +360,9 @@
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>120</y>
+     <y>80</y>
      <width>171</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -415,7 +415,7 @@ If the same filename appears in multiple runs, this sets the priorty for which i
      <x>860</x>
      <y>240</y>
      <width>171</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -806,9 +806,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>160</y>
+     <y>120</y>
      <width>171</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -819,7 +819,7 @@ If the same filename appears in multiple runs, this sets the priorty for which i
    <property name="geometry">
     <rect>
      <x>860</x>
-     <y>180</y>
+     <y>140</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -954,6 +954,35 @@ binary</string>
    </property>
    <property name="checked">
     <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="FileNotStartLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>220</y>
+     <width>171</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This should be a single sample number of comma-deliminated list of numbers from the platemap file</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_14">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>200</y>
+     <width>171</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Require filename to NOT startwith:</string>
    </property>
   </widget>
  </widget>
