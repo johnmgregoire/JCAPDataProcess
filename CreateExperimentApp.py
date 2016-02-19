@@ -606,7 +606,14 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             if len(s)==0:
                 s=dfltstr
             self.expparamstuplist+=[(k+': '+s , [])]
-        
+        plateidstemp=[d['plateidstr'] if 'plateidstr' in d.keys() else None for dlist in self.expdlist_use.itervalues() for d in dlist]
+        if None in plateidstemp:
+            idialog=messageDialog(self, 'WARNING: plate_id missing for at least 1 run')
+            idialog.exec_()
+        plateids=sorted(list(set([id for id in plateidstemp if not id is None])))
+        if len(plateids)>0:
+            plateidsstr=','.join(plateids)
+            self.expparamstuplist+=[('plate_ids: '+plateidsstr, [])]
         self.ExpTreeWidgetFcns.filltreeexp(self.expdlist_use, self.expparamstuplist)
         self.updateexpobjects_tree()
     
