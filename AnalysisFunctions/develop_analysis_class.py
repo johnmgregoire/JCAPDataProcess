@@ -474,16 +474,16 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         refkeymap=[(('ref_dark', 'DR_UVVIS'), 'DRdark'), (('ref_light', 'DR_UVVIS'), 'DRlight')]
         refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate dictionary with raw-data-length arrays
         try:
-            refd['wavelength']=numpy.float32([\
+            refd['wl_fullrng']=numpy.float32([\
             self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
             for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
         except:
             raise ValueError('Number of data points in reference files do not match')
             
-        if not check_wl(refd['wavelength']):
+        if not check_wl(refd['wl_fullrng']):
             raise ValueError('Incompatible wavelengths in reference files')
         else:
-            refd['wavelength']=refd['wavelength'][0]
+            refd['wl_fullrng']=refd['wl_fullrng'][0]
             
         refd_all={}            
         for rktup, rk in refkeymap:
@@ -509,7 +509,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                     refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
                     ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
                     num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
-                refd[filed['sample_no']]['wl']=refd['wl']
+                refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
             refd_fn=lambda sample_no:refd[sample_no]
 
         else:
@@ -561,7 +561,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
 #            print rk,numpy.shape(refd_all[rk])
             fig=plt.figure()
             for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wavelength'],sig,label=os.path.basename(fn))
+                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
             plt.legend()
             plt.draw()
             p=os.path.join(destfolder,fn_refimg)
@@ -573,7 +573,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         if DRdataarr.shape[1]!=refd['DRdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
 #        print DRdataarr[0][0:5],refd['wl'][0][0:5]
-        if not check_wl(numpy.array(numpy.s_[DRdataarr[0],refd['wavelength']])):
+        if not check_wl(numpy.array(numpy.s_[DRdataarr[0],refd['wl_fullrng']])):
             raise ValueError('Wavelength incompatibility between DRdata and ref')
         inter_rawlend=copy.copy(refd)
         inter_selindd={}
@@ -585,11 +585,11 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             inter_rawlend['DR_av-signal']=DRdataarr[1+self.params['exclinitcols']:DRdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['DR_fullrng']=(inter_rawlend['DR_av-signal']-refd['DRdark'])/(refd['DRlight']-refd['DRdark'])
             inter_rawlend['abs'+'_fullrng']=(1.-inter_rawlend['DR_fullrng'])**2./(2.*inter_rawlend['DR_fullrng'])
-            inds=numpy.where(numpy.logical_and(inter_rawlend['wavelength']>self.params['lower_wl'],inter_rawlend['wavelength']<self.params['upper_wl']))[0]
-            for key in ['DR','wavelength','abs']:            
-                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wavelength'else zip([''],[''])[0]
+            inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
+            for key in ['DR','wl','abs']:            
+                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
-            inter_selindd['wl']=inter_selindd.pop('wavelength')
+
             inter_selindd['E']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['DR','abs']:
@@ -677,16 +677,16 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight')]
         refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate dictionary with raw-data-length arrays
         try:
-            refd['wavelength']=numpy.float32([\
+            refd['wl_fullrng']=numpy.float32([\
             self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
             for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
         except:
             raise ValueError('Number of data points in reference files do not match')
             
-        if not check_wl(refd['wavelength']):
+        if not check_wl(refd['wl_fullrng']):
             raise ValueError('Incompatible wavelengths in reference files')
         else:
-            refd['wavelength']=refd['wavelength'][0]
+            refd['wl_fullrng']=refd['wl_fullrng'][0]
         
         refd_all={}            
         for rktup, rk in refkeymap:
@@ -711,7 +711,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                     refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
                     ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
                     num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
-                refd[filed['sample_no']]['wl']=refd['wl']
+                refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
             refd_fn=lambda sample_no:refd[sample_no]
 
         else:
@@ -763,7 +763,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 #            print rk,numpy.shape(refd_all[rk])
             fig=plt.figure()
             for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wavelength'],sig,label=os.path.basename(fn))
+                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
             plt.legend()
             plt.draw()
             p=os.path.join(destfolder,fn_refimg)
@@ -775,7 +775,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         if Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
             return [('testfom', numpy.nan)], {}, {}
 #        print DRdataarr[0][0:5],refd['wl'][0][0:5]
-        if not check_wl(numpy.array(numpy.s_[Tdataarr[0],refd['wavelength']])):
+        if not check_wl(numpy.array(numpy.s_[Tdataarr[0],refd['wl_fullrng']])):
             raise ValueError('Wavelength incompatibility between Tdata and ref')
         inter_rawlend=copy.copy(refd)
 #        print np.shape(inter_rawlend['wavelength'])
@@ -788,12 +788,11 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
             inter_rawlend['abs'+'_fullrng']=-np.log(inter_rawlend['T_fullrng'])
-            inds=numpy.where(numpy.logical_and(inter_rawlend['wavelength']>self.params['lower_wl'],inter_rawlend['wavelength']<self.params['upper_wl']))[0]
-            for key in ['T','abs','wavelength']:            
-                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wavelength'else zip([''],[''])[0]
+            inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
+            for key in ['T','abs','wl']:            
+                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
         
-            inter_selindd['wl']=inter_selindd.pop('wavelength')
 #            print np.shape(inter_selindd['wl'])
             inter_selindd['E']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
