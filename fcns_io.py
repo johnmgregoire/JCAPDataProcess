@@ -466,7 +466,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
         if zipbool:
             archive.close()
     if filedeletedbool:
-        cleanupemptynesteddictionaries()
+        cleanup_empty_filed_in_expfiledict(expfiledict)
     return expfiledict
 
 def cleanup_empty_filed_in_expfiledict(expfiledict):

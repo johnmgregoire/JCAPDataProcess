@@ -566,12 +566,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
         
         self.activeana['plot_parameters']=self.analysisclass.plotparams
+        plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
+        self.activeana['plate_ids']=plateidsliststr
         le, desc=self.paramsdict_le_dflt['description']
         s=str(le.text()).strip()
         if not (len(s)==0 or 'null' in s):
             desc=s
         desc+='; run '+','.join('%d' %i for i in sorted(list(set([d['runint'] for d in self.analysisclass.fomdlist]))))
-        desc+='; plate_id '+','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
+        desc+='; plate_id '+plateidsliststr
         self.activeana['description']=desc
         le.setText('')#clear description to clear any user-entered comment
         if len(self.analysisclass.params)>0:
@@ -634,9 +636,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 s=dfltstr
             self.anadict[k]=s#this makes description just the last ana__ description
         
-        plateids=sorted(list(set(['%d' %rund['parameters']['plate_id'] for rund in [v for k, v in self.expfiledict.iteritems() if k.startswith('run__')]])))
+        
+        #plateids=sorted(list(set(['%d' %rund['parameters']['plate_id'] for rund in [v for k, v in self.expfiledict.iteritems() if k.startswith('run__')]]))) #this old way of getting plate_ids will include plates for which analysis was not done
+        
         ananames=sorted(list(set([anad['name'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]])))
-        self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), ', '.join(plateids))
+        plateidsstrlist_list=[anad['plate_ids'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]]
+        plateidsstrlist=sorted(list(set([idstr for liststr in plateidsstrlist_list for idstr in liststr.split(',')])))
+        plateidsstr=','.join(plateidsstrlist)
+        self.anadict['plate_ids']=plateidsstr
+        self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), plateidsstr)
         self.AnaTreeWidgetFcns.filltree(self.anadict)
         
         self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
