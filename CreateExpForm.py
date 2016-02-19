@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Thu Feb 18 16:07:09 2016
+# Created: Fri Feb 19 13:21:26 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -259,6 +259,9 @@ class Ui_CreateExpDialog(object):
         self.label_14 = QtGui.QLabel(CreateExpDialog)
         self.label_14.setGeometry(QtCore.QRect(860, 200, 171, 21))
         self.label_14.setObjectName(_fromUtf8("label_14"))
+        self.RaiseErrorPushButton = QtGui.QPushButton(CreateExpDialog)
+        self.RaiseErrorPushButton.setGeometry(QtCore.QRect(1030, 0, 31, 23))
+        self.RaiseErrorPushButton.setObjectName(_fromUtf8("RaiseErrorPushButton"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -337,6 +340,7 @@ class Ui_CreateExpDialog(object):
 "binary", None, QtGui.QApplication.UnicodeUTF8))
         self.FileNotStartLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "This should be a single sample number of comma-deliminated list of numbers from the platemap file", None, QtGui.QApplication.UnicodeUTF8))
         self.label_14.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename to NOT startwith:", None, QtGui.QApplication.UnicodeUTF8))
+        self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

@@ -1586,12 +1586,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 self.importana(p=idialog.newanapath)
     
     def save_all_std_plots(self):
+        if 'copied' in os.path.split(self.anafolder)[1]:
+            idialog=messageDialog(self, 'Cannot batch-save plots on a .copied folder. Save a single plot first then batch.')
+            idialog.exec_()
+            return
         comboind_strlist=[]
         for i in range(1, self.numStdPlots+1):
             self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
             comboind_strlist+=[(i, str(self.stdcsvplotchoiceComboBox.currentText()))]
         if len(comboind_strlist)==0:
-            print 'No standard plots found - nothing saved'
+            idialog=messageDialog(self, 'No Standard plots found, nothing saved')
+            idialog.exec_()
             return
         batchidialog=saveimagesbatchDialog(self, comboind_strlist)
         batchidialog.exec_()

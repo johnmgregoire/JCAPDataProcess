@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesForm.ui'
 #
-# Created: Sun Feb 14 15:02:10 2016
+# Created: Fri Feb 19 13:21:15 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -62,7 +62,7 @@ class Ui_SaveImagesDialog(object):
         SaveImagesDialog.setWindowTitle(QtGui.QApplication.translate("SaveImagesDialog", "ChooseImagesToSave", None, QtGui.QApplication.UnicodeUTF8))
         self.overwriteCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "overwrite files\n"
 "with same name", None, QtGui.QApplication.UnicodeUTF8))
-        self.doneCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "convert .run \n"
+        self.doneCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "convert\n"
 "to .done", None, QtGui.QApplication.UnicodeUTF8))
         self.epsCheckBox.setText(QtGui.QApplication.translate("SaveImagesDialog", "also save\n"
 ".eps", None, QtGui.QApplication.UnicodeUTF8))

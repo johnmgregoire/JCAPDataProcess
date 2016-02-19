@@ -47,7 +47,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
             self.reject()
             return
         
-        fnl=[fn for fn in os.listdir(anafolder) if fn.endswith('.ana')]
+        fnl=[fn for fn in os.listdir(anafolder) if fn.endswith('.ana') and not fn.startswith('.')]
         if len(fnl)==0:
             idialog=messageDialog(self, 'Cannot save to ANA because no .ana in the folder')
             idialog.exec_()
@@ -132,18 +132,40 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         
         
         if lastbatchiteration:#only want to convert to done on last image being batch-saved
-            self.doneCheckBox.setChecked(batchidialog.doneCheckBox.isChecked())
+            self.doneCheckBox.setChecked(batchidialog.doneCheckBox.isChecked())#for batch save, images saved in place and then box check in the end if convert to .done chosen
         
     def ExitRoutine(self):
         overbool=self.overwriteCheckBox.isChecked()
         prependstr=self.filterchars(str(self.prependfilenameLineEdit.text()))
+        
+        startingwithcopiedbool='copied' in os.path.split(self.anafolder)[1]
+        if startingwithcopiedbool or self.doneCheckBox.isChecked():#must convert to .done if starting with .copied. allows .done to be edited which is bad practice
+            if not os.path.split(self.anafolder)[1].count('.')>1:
+                idialog=messageDialog(self, 'Cannot save because ANA folder has no extension')
+                idialog.exec_()
+                return
+            if startingwithcopiedbool:#if modiyfing a .copied then need a new time stamp
+                newanafn=timestampname()+'.ana'
+                newanafolder=self.anafolder.rpartition('.')[0][:-15]+newanafn[:-4]+'.done'
+                movebool=False
+                
+            else:
+                newanafolder=self.anafolder.rpartition('.')[0]+'.done'#this reapleces .run with .done but more generally .anything with .done
+                movebool=True
+                newanafn=self.anafn
+            saveana_tempfolder(None, self.anafolder, erroruifcn=None, skipana=True, anadict=None, movebool=movebool, savefolder=newanafolder)#move files if necessary but don't create .ana or .exp yet. Do this first so image files get put only into new folder
+            self.newanapath=os.path.join(newanafolder, newanafn)
+        else:#writing files and new ana into existing folder
+            newanafn=self.anafn
+            newanafolder=self.anafolder
+            
         lines=[]
         for d in self.widget_plow_dlist:
             if not bool(d['item'].checkState(0)):
                 continue
             pngfn, garb, pngattr=str(d['item'].text(0)).partition(': ')
             pngfn=prependstr+pngfn
-            existfns=os.listdir(self.anafolder)
+            existfns=os.listdir(newanafolder)
             fn_attr_list=[(pngfn, pngattr)]
             if self.epsCheckBox.isChecked():
                 fn_attr_list+=[(pngfn.replace('png', 'eps'), pngattr.replace('png', 'eps'))]
@@ -154,14 +176,17 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                     while fn in existfns:
                         fn=''.join([fnorig[:-4], '__%d' %i, fnorig[-4:]])
                         i+=1
-                savep=os.path.join(self.anafolder, fn)
+                savep=os.path.join(newanafolder, fn)
                 existfns+=[fn]
                 d['plotw'].fig.savefig(savep)
                 lines+=[(fn, a)]
         if len(lines)==0:
             return
-        p=os.path.join(self.anafolder, self.anafn)
-        anadict=readana(p, erroruifcn=None, stringvalues=True, returnzipclass=False)#cannot be a .zip
+
+        newp=os.path.join(newanafolder, newanafn)
+        oldp=os.path.join(self.anafolder, self.anafn)
+        
+        anadict=readana(oldp, erroruifcn=None, stringvalues=True, returnzipclass=False)#cannot be a .zip
         da=anadict['ana__%d' %self.repr_anaint_plots]
         if not 'files_multi_run' in da.keys():
             da['files_multi_run']={}
@@ -171,16 +196,8 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         d=df['image_files']
         for fn, a in lines:
             d[fn]=a#if fn exists and was overwritten this will jdo nothing or update the attrstr
-        anafilestr=strrep_filedict(anadict)
         
-        if self.doneCheckBox.isChecked() and os.path.split(self.anafolder)[1].count('.')>1:
-            newanafolder=self.anafolder.rpartition('.')[0]+'.done'
-            saveana_tempfolder(anafilestr, self.anafolder, erroruifcn=None, skipana=True, anadict=None, savefolder=newanafolder)
-            self.newanapath=os.path.join(newanafolder, self.anafn)
-        else:
-            with open(p, mode='w') as f:
-                f.write(anafilestr)
-
+        saveanafiles(newp, anadict=anadict, changeananame=True)#need to overwrite the name because may be a new anafolder/timestamp
 
 
 

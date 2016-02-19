@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Sat Feb 13 11:37:35 2016
+# Created: Fri Feb 19 13:21:33 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -122,7 +122,7 @@ class Ui_CalcFOMDialog(object):
         self.textBrowser_plate.setGeometry(QtCore.QRect(570, 530, 561, 341))
         self.textBrowser_plate.setObjectName(_fromUtf8("textBrowser_plate"))
         self.textBrowser_h = QtGui.QTextBrowser(CalcFOMDialog)
-        self.textBrowser_h.setGeometry(QtCore.QRect(760, 10, 371, 241))
+        self.textBrowser_h.setGeometry(QtCore.QRect(760, 20, 371, 231))
         self.textBrowser_h.setObjectName(_fromUtf8("textBrowser_h"))
         self.textBrowser_comp = QtGui.QTextBrowser(CalcFOMDialog)
         self.textBrowser_comp.setGeometry(QtCore.QRect(510, 250, 621, 281))
@@ -331,6 +331,9 @@ class Ui_CalcFOMDialog(object):
         self.autoplotCheckBox.setGeometry(QtCore.QRect(640, 20, 119, 20))
         self.autoplotCheckBox.setChecked(True)
         self.autoplotCheckBox.setObjectName(_fromUtf8("autoplotCheckBox"))
+        self.RaiseErrorPushButton = QtGui.QPushButton(CalcFOMDialog)
+        self.RaiseErrorPushButton.setGeometry(QtCore.QRect(1120, 0, 31, 21))
+        self.RaiseErrorPushButton.setObjectName(_fromUtf8("RaiseErrorPushButton"))
 
         self.retranslateUi(CalcFOMDialog)
         QtCore.QMetaObject.connectSlotsByName(CalcFOMDialog)
@@ -422,6 +425,7 @@ class Ui_CalcFOMDialog(object):
 "to generate Intermediate and FOM results", None, QtGui.QApplication.UnicodeUTF8))
         self.label_22.setText(QtGui.QApplication.translate("CalcFOMDialog", "Choose FOM post-process function:", None, QtGui.QApplication.UnicodeUTF8))
         self.autoplotCheckBox.setText(QtGui.QApplication.translate("CalcFOMDialog", "Auto plot ana__x", None, QtGui.QApplication.UnicodeUTF8))
+        self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

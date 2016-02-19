@@ -594,7 +594,7 @@ def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None,
 def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
     
     if runtodonesavep is None and savefolder is None:
-        timename=time.strftime('%Y%m%d.%H%M%S')
+        timename=timestampname()
         expfiledict['name']=timename
         Kfold=tryprependpath(EXPFOLDERS_K, '')#one of these better exist
         savep=os.path.join(os.path.join(os.path.join(Kfold, experiment_type), timename+rundone), timename+'.exp')
@@ -1263,8 +1263,10 @@ def getanadefaultfolder(erroruifcn=None):
         if erroruifcn is None:
             return ''
         return erroruifcn('')
-            
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', savefolder=None):
+
+def timestampname():
+    return time.strftime('%Y%m%d.%H%M%S')
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', movebool=True, savefolder=None):
     
     if srcfolder.endswith('.incomplete') and savefolder is None:
         rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
@@ -1274,7 +1276,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
             savefolder=srcfolder.rpartition('.')[0]+rundone#replace incomplete with run or done
         timename=os.path.split(srcfolder)[1].partition('.incomplete')[0]
     elif savefolder is None:
-        timename=time.strftime('%Y%m%d.%H%M%S')
+        timename=timestampname()
         savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+rundone)
     else:
         timename=os.path.split(savefolder)[1]
@@ -1297,25 +1299,45 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
 #            print 'Error renaming ', srcfolder
     if not os.path.isdir(savefolder):
         os.mkdir(savefolder)
-    for fn in os.listdir(srcfolder):
-        if skipana and fn.endswith('.ana'):
-            continue
-        shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-    try:
-        os.rmdir(srcfolder)
-    except:
-        print 'The old folder still exists due to a problem deleting it: ', srcfolder
+    
+    if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
+        for fn in os.listdir(srcfolder):
+            if fn.startswith('.'):
+                continue
+            if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
+                continue
+            if movebool:
+                shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+            else:
+                shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+        if movebool:
+            try:
+                os.rmdir(srcfolder)
+            except:
+                print 'The old folder still exists due to a problem deleting it: ', srcfolder
     savep=os.path.join(savefolder, '%s.ana' %timename)
-    with open(savep, mode='w') as f:
+    saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
+    return savefolder
+    
+def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
+    if changeananame and not anadict is None:
+        anadict['name']='.'.join(os.path.split(anapath)[1].split('.')[:2])
+    if anafilestr is None:
+        if anadict is None:
+            print 'nothing saved to ', anapath
+            return
+        anafilestr=strrep_filedict(anadict)
+    
+    with open(anapath, mode='w') as f:
         f.write(anafilestr)
     if anadict is None:
         return
     saveanadict=copy.deepcopy(anadict)
     convertstrvalstonum_nesteddict(saveanadict)
     convertfilekeystofiled(saveanadict)
-    with open(savep.replace('.ana', '.pck'), mode='w') as f:
+    with open(anapath.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
-    return savefolder
+        
 def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
     if not  ((p.endswith('ana') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):# if .zip only tests fo existence of .zip file
         if erroruifcn is None:

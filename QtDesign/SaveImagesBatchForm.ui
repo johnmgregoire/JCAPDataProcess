@@ -92,7 +92,7 @@ with same name</string>
     </rect>
    </property>
    <property name="text">
-    <string>convert .run 
+    <string>convert 
 to .done</string>
    </property>
    <property name="checked">

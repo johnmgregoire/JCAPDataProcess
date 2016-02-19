@@ -86,6 +86,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         (self.SaveExpPushButton, self.saveexp), \
         (self.SaveExpGoAnaPushButton, self.saveexpgoana), \
         (self.BatchPushButton, self.runbatchprocess), \
+        (self.RaiseErrorPushButton, self.raiseerror), \
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
         #        (self.EditParamsPushButton, self.editrunparams), \
@@ -126,7 +127,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.batchmode=False
         self.updateuserfomd(clear=True)
         
-    
+    def raiseerror(self):
+        raiseerror
+        
     def updateuserfomd(self, clear=False, batchkeys=None):
         if clear:
             self.userfomd={}

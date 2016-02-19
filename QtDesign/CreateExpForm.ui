@@ -985,6 +985,19 @@ binary</string>
     <string>Require filename to NOT startwith:</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="RaiseErrorPushButton">
+   <property name="geometry">
+    <rect>
+     <x>1030</x>
+     <y>0</y>
+     <width>31</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>err</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

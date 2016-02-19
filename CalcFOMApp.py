@@ -108,7 +108,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
         (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
         (self.UpdatePlotPushButton, self.plotwithcaution), \
-
+        (self.RaiseErrorPushButton, self.raiseerror), \
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
         for button, fcn in button_fcn:
@@ -158,7 +158,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.clearanalysis()
         self.updateuserfomd(clear=True)
         
-    
+    def raiseerror(self):
+        raiseerror
     def updateuserfomd(self, clear=False):
         if clear:
             self.userfomd={}

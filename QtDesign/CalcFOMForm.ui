@@ -329,9 +329,9 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
    <property name="geometry">
     <rect>
      <x>760</x>
-     <y>10</y>
+     <y>20</y>
      <width>371</width>
-     <height>241</height>
+     <height>231</height>
     </rect>
    </property>
   </widget>
@@ -1092,6 +1092,19 @@ to generate Intermediate and FOM results</string>
    </property>
    <property name="checked">
     <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="RaiseErrorPushButton">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>0</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>err</string>
    </property>
   </widget>
  </widget>
