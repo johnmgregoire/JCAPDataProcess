@@ -166,20 +166,23 @@ class expDialog(QDialog, Ui_CreateExpDialog):
 
     def runbatchprocess(self):
         self.batchprocesses[self.BatchComboBox.currentIndex()]()
-    def batchuvissingleplate(self):
+    def batchuvissingleplate(self):#uses cb filter for sample_no>0 but the only difference from other batch is to note use ref data, which has sample_no 0 so this is obselte until we see how to add sample_no that are not 0
         
         self.ExpTypeLineEdit.setText('uvis')
         self.UserNameLineEdit.setText('uvis')
         self.savebinaryCheckBox.setChecked(False)
-        cb=self.PlateAttrMoreComboBox
-        for i in range(int(cb.count())):
-            if 'Sample' in str(cb.itemText(i)):
-                cb.setCurrentIndex(i)
-                break
+#        cb=self.PlateAttrMoreComboBox
+#        for i in range(int(cb.count())):
+#            if 'Sample' in str(cb.itemText(i)):
+#                cb.setCurrentIndex(i)
+#                break
         self.RunTypeLineEdit.setText('data')
+        
+        self.FileNotStartLineEdit.setText('')
+        
         self.FileStartLineEdit.setText('')
         self.editexp_addmeasurement()
-        cb.setCurrentIndex(0)
+        #cb.setCurrentIndex(0)
         
         self.RunTypeLineEdit.setText('ref_dark')
         self.FileStartLineEdit.setText('0_-1_')

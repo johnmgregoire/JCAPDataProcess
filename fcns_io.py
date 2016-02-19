@@ -119,6 +119,8 @@ def removefiles(folder, fns):
 
 def getsamplenum_fnline(fnline):
     if fnline.count(';')==2:#the optional sample_no is after the 2nd ;
+        if fnline.startswith('0_'):
+            return 0
         return int(fnline.rpartition(';')[2].strip())
     else:
         return getsamplenum_fn(fnline)
@@ -126,6 +128,8 @@ def getsamplenum_fn(fn):
     if fn.startswith('Sample'):
         return int(fn.partition('Sample')[2].partition('_')[0])
     elif fn[0].isdigit():
+        if fn.startswith('0_'):
+            return 0
         return int(fn.partition('_')[0])
     else:
         print 'problem extracting sample number from ', fn
@@ -338,7 +342,7 @@ def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'an
     nestednumconvert(expfiledict)
 
 
-def createfileattrdict(fileattrstr):
+def createfileattrdict(fileattrstr, fn=''):
     fileattrstr=fileattrstr.replace(';;', ';') #201601 see that images_files has double ;  due to no column headings - not sure if this is corerect protocal but change it here to pick up the sample_no
     type_keys_heads_rows=fileattrstr.split(';')
     d={}
@@ -357,7 +361,10 @@ def createfileattrdict(fileattrstr):
     d['num_header_lines']=int(type_keys_heads_rows[2].strip())
     d['num_data_rows']=int(type_keys_heads_rows[3].strip())
     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
-        d['sample_no']=int(type_keys_heads_rows[-1].strip())
+        if fn.startswith('0_'):#to avoid issue with uvis data having sample_no for ref files
+            d['sample_no']=0
+        else:
+            d['sample_no']=int(type_keys_heads_rows[-1].strip())
     else:
         d['sample_no']=0#numpy.nan #this is top keep all sample_no as int instead of mixing int and float. this should not be confused with the 0 used as sample_no for uvvis ref spectra because by the time we get here the run_use has already been defined
     return d
@@ -370,7 +377,7 @@ def convertfilekeystofiled(exporanafiledict):
                 continue
             for k3, typed in techd.iteritems():
                 for fn, keystr in typed.iteritems():
-                    d=createfileattrdict(keystr)
+                    d=createfileattrdict(keystr, fn=fn)
                     exporanafiledict[k][k2][k3][fn]=d
 def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled already run on anafiledict
     for anak, anad in anafiledict.iteritems():
@@ -415,14 +422,14 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                 if saverawdat:
                                     lines=f.readlines()
                                 else:
-                                    lines=f.readlines(MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
+                                    lines=f.readlines()#MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
                         else:
                             p=os.path.join(runp, fn)
                             with open(p,'r') as f:
                                 if saverawdat:
                                     lines=f.readlines()
                                 else:
-                                    lines=f.readlines(MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
+                                    lines=f.readlines()#MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
                     except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
                         print 'ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
                         del expfiledict[k][k2][k3][fn]
@@ -449,7 +456,10 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                     #savefcn(filed, keys)***
                             if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
                                 first2attrs, garb, samplestr=fileattrstr.rpartition(';')
-                                s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
+                                if fn.startswith('0_'):#get rid of sample_no from ref data in uvis
+                                    s='%s;%d;%d' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'])
+                                else:
+                                    s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
                             elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
                                 s=fileattrstr
                             else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
@@ -1076,7 +1086,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
                 smp=eval(s)
             except:
                 smp=None
-        if smp is None:
+        if smp is None and not fn.startswith('0_'):
             smp=getsamplefromheader(path=path)
     #    if smp is None:
     #        return None, {}
