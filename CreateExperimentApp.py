@@ -167,7 +167,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         self.ExpTypeLineEdit.setText('uvis')
         self.UserNameLineEdit.setText('uvis')
-        
+        self.savebinaryCheckBox.setChecked(False)
         cb=self.PlateAttrMoreComboBox
         for i in range(int(cb.count())):
             if 'Sample' in str(cb.itemText(i)):
@@ -192,7 +192,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         self.ExpTypeLineEdit.setText('uvis')
         self.UserNameLineEdit.setText('uvis')
-        
+        self.savebinaryCheckBox.setChecked(False)
         cb=self.PlateAttrMoreComboBox
         for i in range(int(cb.count())):
             if 'Sample' in str(cb.itemText(i)):
