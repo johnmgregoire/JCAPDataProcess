@@ -16,7 +16,7 @@ FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\Filter
 
 PLATEMAPBACKUP=r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map'
 
-MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY=800
+
 
 #import os
 #[os.path.isdir(p) for p in ANAFOLDERS_K]

@@ -269,7 +269,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
         [createdict_tup(tup) for tup in tuplist])
     return d, headerdict
     
-def readechemtxt(path, mtime_path_fcn=None, lines=None):
+def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
             f=open(path, mode='r')
@@ -284,6 +284,8 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None):
     z=[]
     for count, l in enumerate(lines):
         if l.startswith('%'):
+            if not interpretheaderbool:
+                continue
             a, b, c=l.strip('%').strip().partition('=')
             a=a.strip()
             c=c.strip()
@@ -415,6 +417,21 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
             if not k2.startswith('files_technique__'):
                 continue
             for k3, typed in techd.iteritems():
+                #define functions by file and exp type to avoid having to find the function using each file label like "eche_gamry_txt_file"
+                if not saverawdat:
+                    if k3=='spectrum_files':#for eche and uvis
+                        numhead_numdata_fcn=lambda lines: get_numhead_numdata_smpoptfiles(lines)
+                        readlinesfcn=lambda f:f.readlines(50)#only need the first lines so read 50 bytes
+                    elif k3=='pstat_files':
+                        if 'eche' in expfiledict['experiment_type']:
+                            numhead_numdata_fcn=lambda lines: get_numhead_numdata_echetxtfiles(lines)
+                            readlinesfcn=lambda f:f.readlines()
+                        elif 'pets' in expfiledict['experiment_type']:
+                            numhead_numdata_fcn=lambda lines: get_numhead_numdata_petsdtafiles(lines)
+                            readlinesfcn=lambda f:f.readlines(1000)#only need the header so read
+                    else:
+                        print 'NO FILE READER AVAILABLE FOR FILE TYPE ', k3
+
                 for fn, fileattrstr in typed.items():#here do not use iteritems since possible for entries to be deleted in the loop and cannot modify dictionary being iterated
                     try:
                         if zipbool:
@@ -422,14 +439,14 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                 if saverawdat:
                                     lines=f.readlines()
                                 else:
-                                    lines=f.readlines()#MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
+                                    lines=readlinesfcn(f)
                         else:
                             p=os.path.join(runp, fn)
                             with open(p,'r') as f:
                                 if saverawdat:
                                     lines=f.readlines()
                                 else:
-                                    lines=f.readlines()#MAXNUMRAWDATAHEADERBYTES_FORWHENNOTSAVINGBINARY)
+                                    lines=readlinesfcn(f)
                     except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
                         print 'ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
                         del expfiledict[k][k2][k3][fn]
@@ -441,9 +458,12 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         if k3 in ['image_files']:#list here the types of files that should not be converted to binary
                             s=fileattrstr#no sample_no appended or any modifications made to file attr str  for image_files, etc.
                         else:
-                            keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
-                            keys=[kv.strip() for kv in keys]
-                            filed=readfcn(os.path.splitext(fn), lines)
+                            if saverawdat:
+                                keys=fileattrstr.partition(';')[2].partition(';')[0].split(',')
+                                keys=[kv.strip() for kv in keys]
+                                filed=readfcn(os.path.splitext(fn), lines)
+                            else:
+                                filed=numhead_numdata_fcn(lines)
                             if filed['num_data_rows']==0:#no data in file
                                 print 'ERROR: %s in folder %s has no data, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
                                 del expfiledict[k][k2][k3][fn]
@@ -1074,8 +1094,48 @@ def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcp
     return techset, typeset, rcpdlist, expparamstuplist, expdlist_use
 
 
+def get_numhead_numdata_smpoptfiles(lines):
+    a, b, numdata, numhead=lines[0].split('\t')
+    numdata=int(numdata)
+    numhead=int(numhead)+2
+    return {'num_header_lines': numhead,'num_data_rows': numdata}
 
+def get_numhead_numdata_echetxtfiles(lines):
+    numhead=map(operator.itemgetter(0),lines).count('%')
+    numdata=len(lines)-numhead
+    return {'num_header_lines': numhead,'num_data_rows': numdata}
+    
+def get_numhead_numdata_petsdtafiles(lines):
+    for count, l in enumerate(lines):
+        if l.startswith('CURVE\tTABLE\t'):
+            numdata=int(l.partition('CURVE\tTABLE\t')[2].strip())
+            break
+    numhead=count+3
+    return {'num_header_lines': numhead,'num_data_rows': numdata}
 
+def read_dta_pstat_file(path, lines=None, addparams=False):
+    if lines is None:
+        f=open(path, mode='r')
+        lines=f.readlines()
+        f.close()
+    filed=get_numhead_numdata_petsdtafiles(lines)
+    d={}
+    if addparams:
+        for k, v in filed:
+            d[k]=v
+    if filed['num_data_rows']==0:
+        return d
+    delim='\t'
+    allkeys=lines[filed['num_header_lines']-2].strip().split(delim)
+    skipinds=[i for i, k in enumerate(allkeys) if k in ['IERange', 'Over']]
+    keys=[k for i, k in enumerate(allkeys) if not i in skipinds]
+    myfloatfcn=lambda s:(len(s.strip())==0 and (float('NaN'),) or (float(s.strip()),))[0]#this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
+    z=[map(myfloatfcn, [x for i, x in enumerate(l.strip().split(delim)) if not i in skipinds]) for l in lines[filed['num_header_lines']:]]
+    
+    for k, arr in zip(keys, numpy.float32(z).T):
+        d[k]=arr
+    return  d
+    
 def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines=None, returnonlyattrdict=False): # can have raw data files with UV-vis or ECHE styles or a fom file with column headings as first line, in which case smp=None
     if returnsmp:
         smp=None
@@ -1192,6 +1252,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
     else:
         return d
 
+
 def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
     zipbool=runp.endswith('.zip')
     
@@ -1254,8 +1315,9 @@ def getheadattrs(path=None, filestr='', searchstrs=['Sample', 'Sample No', 'samp
     return ret
 
 readdatafiledict=dict([\
-    ('eche', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines) or smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
+    ('eche', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines, interpretheaderbool=False) or smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('uvis', lambda ext, lines:smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
+    ('pets', lambda ext, lines:read_dta_pstat_file('', lines=lines, addparams=True)), \
     ])
 
 def getanadefaultfolder(erroruifcn=None):
