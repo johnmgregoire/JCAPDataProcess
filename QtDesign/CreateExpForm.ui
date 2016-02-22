@@ -398,9 +398,9 @@
   <widget class="QLineEdit" name="RunPriorityLineEdit">
    <property name="geometry">
     <rect>
-     <x>860</x>
+     <x>510</x>
      <y>260</y>
-     <width>171</width>
+     <width>161</width>
      <height>20</height>
     </rect>
    </property>
@@ -412,7 +412,7 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QLabel" name="label_12">
    <property name="geometry">
     <rect>
-     <x>860</x>
+     <x>510</x>
      <y>240</y>
      <width>171</width>
      <height>21</height>
@@ -866,7 +866,7 @@ on RUN import</string>
    <property name="geometry">
     <rect>
      <x>510</x>
-     <y>220</y>
+     <y>190</y>
      <width>151</width>
      <height>20</height>
     </rect>
@@ -881,7 +881,7 @@ After entry complete, you will be prompted for fom names</string>
    <property name="geometry">
     <rect>
      <x>510</x>
-     <y>200</y>
+     <y>170</y>
      <width>141</width>
      <height>16</height>
     </rect>
@@ -996,6 +996,35 @@ binary</string>
    </property>
    <property name="text">
     <string>err</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_22">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>240</y>
+     <width>171</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Require filename to NOT contaih:</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="FileNotSearchLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>860</x>
+     <y>260</y>
+     <width>171</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This should be a single sample number of comma-deliminated list of numbers from the platemap file</string>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>

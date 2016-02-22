@@ -538,6 +538,7 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     return keys
 
 def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
+    #if (testfile and os.path.isfile(p)) or (testdir and os.path.isdir(p)):
     if os.path.isfile(p):
         return p
     p=p.strip(chr(47)).strip(chr(92))
@@ -589,7 +590,9 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
         return p
     return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
 
-#don't have a buuild runpath yet, presumably because don't need it if all data is convereted to .dat and exists in same folder as .exp
+def buildrunpath(runp):
+    #if user makes .exp with a folder on K or intr computer and this run_path is used but the file is gone opr path changed to ..copied, then should bepossible to find this run as a .zip on J but that is not attempted here
+    return tryprependpath(RUNFOLDERS, runp)
 
 def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
         
@@ -609,7 +612,7 @@ def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None,
     
     if runp is None:
         return None
-    runp_fullpath=tryprependpath(RUNFOLDERS, runp)
+    runp_fullpath=buildrunpath(runp)
     runzipclass=gen_zipclass(runp_fullpath)
     
     returnvalfcn=lambda val:(val, runzipclass) if returnzipclass else val

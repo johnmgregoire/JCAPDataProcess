@@ -520,14 +520,18 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         return lambda fd:fd['smp'] in smplist
     def createFileSearchfilterfcn(self):
         s=str(self.FileSearchLineEdit.text()).strip()
+        ns=str(self.FileNotSearchLineEdit.text()).strip()
         ss=str(self.FileStartLineEdit.text()).strip()
         nss=str(self.FileNotStartLineEdit.text()).strip()
-        if len(s)==0 and len(ss)==0 and len(nss)==0:
+        if len(s)==0 and len(ss)==0 and len(ns)==0 and len(nss)==0:
             return lambda fd:True
-        elif len(nss)==0:
+        elif  len(ns)==0 and len(nss)==0:
             return lambda fd:s in fd['fn'] and fd['fn'].startswith(ss)
-        else:#nss not empty string so can check using not logic
-            return lambda fd:s in fd['fn'] and fd['fn'].startswith(ss) and not fd['fn'].startswith(nss)
+        else:#ns or nss not zero so checking is more complicated becauase these are onyl valid if their length is >0
+            return lambda fd:(s in fd['fn']) and \
+                                      fd['fn'].startswith(ss) and \
+                                      (len(ns)==0 or not ns in fd['fn']) and\
+                                      (len(nss)==0 or not fd['fn'].startswith(nss))
     
     def editexpparams(self, item, column):
         self.editparams(self.ExpTreeWidget, item=item, column=column)

@@ -250,53 +250,100 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fom_chkqualitynames)
         return fracnan>critfracnan, \
         '%d samples, %.2f fraction of total samples have NaN in the absorption spectra in the wavelength range %.2f to %.2f' %(numnan, fracnan,self.params['chkoutput_wlrange'][0],self.params['chkoutput_wlrange'][1])
+    
+    def setuprefdata(self, refkeymap, static_ref_fnd, anak='', destfolder=None):
+        #All filed , T, R and ref, prepared for file reading here
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
-        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
-        self.multirunfiledict['misc_files']={}
-        self.fomdlist=[]
-        refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
         refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate ref dictionary with raw-data-length arrays
-        try:
-            refd['wl_fullrng']=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
-            for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
-        except:
-            raise ValueError('Number of data points in reference files do not match')
-            
-        if not check_wl(refd['wl_fullrng']):
-            raise ValueError('Incompatible wavelengths in reference files')
-        else:
-            refd['wl_fullrng']=refd['wl_fullrng'][0]
         refd_all={}            
-        for rktup, rk in refkeymap:
-            refd_all[rk]=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
-            for filed in self.refdict__filedlist[rktup]])
-                        
+        for count, (rktup, rk) in enumerate(refkeymap):
+            #ref3d first index is files, second index is data column, e.g. wavelength, signal1, and 3rd index is data point
+            refdat3d=[filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1] for filed in self.refdict__filedlist[rktup]]
+            
+            if count==0:
+                refd['wl_fullrng']=refdat3d[0][0]
+            #only check the new wl arrays, if everythign is good refd['wl_fullrng'] does not need to be update, refdat2d[0] is the wl for each file
+            if (not numpy.all(numpy.array([len(refdat2d[0]) for refdat2d in refdat3d])==len(refd['wl_fullrng'])))\
+                or not check_wl(numpy.array([refd['wl_fullrng']]+[refdat2d[0] for refdat2d in refdat3d])):
+                if self.debugmode:
+                    raise ValueError('Incompatible wavelengths in reference files')
+                return True, None
+            #all data arrays will be the same length because if not, the wl length check above would fail, refdat2d[1:] takes all columns except wl
+            refd_all[rk]=numpy.float32([refdat2d[1:].mean(axis=0) for refdat2d in refdat3d])#this mean is over the signal1,2,3 so that each refd_all[rk] has first index of ref filed so it is indexed the same as self.refdict__filedlist[rktup] (second index is data ooint)
+
         if self.params['reffilesmode']=='static':
-            ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0)),\
-            ('Rdark',lambda x:numpy.min(x,axis=0)),('Rlight',lambda x:numpy.max(x,axis=0))])
+            
             for rktup, rk in refkeymap:
-                refd[rk]=ref_fnd[rk](refd_all[rk])[::-1]
-            refd_fn=lambda sample_no:refd
+                refd[rk]=static_ref_fnd[rk](refd_all[rk])
+            refd_fn=lambda sample_no: refd
             
             #this trivial function costs no time and for nontrivial on-the-fly ref calculations, define a fcn with the same name
         elif self.params['reffilesmode']=='time':
             for filed in self.filedlist:            
                 refd[filed['sample_no']]={}
-                smp_time=int(filed['fn'].split('_')[-1].split('.')[0])
+                smp_time_fcn=lambda fd: int(fd['fn'].split('_')[-1].split('.')[0])
+                smp_time=smp_time_fcn(filed)
                 for rktup,rk in refkeymap:
-                    reffiled_fnlist=[(ref_filed,ref_filed['fn']) for ref_filed in self.refdict__filedlist[rktup]]
-                    ref_filed_sel=reffiled_fnlist[np.argmin([abs(int(fn.split('_')[-1].split('.')[0])-smp_time) for ref_filed,fn in reffiled_fnlist])][0]
-                    refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
-                    ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
-                    num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
+                    ref_time_arr=numpy.array([smp_time_fcn(ref_filed) for ref_filed in self.refdict__filedlist[rktup]])
+                    refd[filed['sample_no']][rk]=refd_all[rk][numpy.argmin((ref_time_arr-smp_time)**2)]
                 refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
             refd_fn=lambda sample_no:refd[sample_no]
-
         else:
+            if self.debugmode:
+                raise ValueError('invalid reffilesmode')
+            return True, None
+            
+        if not destfolder is None:
+            for rktup,rk in refkeymap:
+                fn_refimg='%s__%s.png' %(anak,rk)
+    #            print rk,numpy.shape(refd_all[rk])
+                fig=plt.figure()
+                for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
+                    plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
+                plt.legend()
+                plt.draw()
+                p=os.path.join(destfolder,fn_refimg)
+                plt.savefig(p,dpi=300)
+                plt.close(fig)
+                self.multirunfiledict['misc_files'][fn_refimg]='img_ref_file;'
+            
+        return False, refd_fn
+        
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#TODO propogate , expfiledict=None
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
+        self.multirunfiledict['misc_files']={}
+        
+        self.fomdlist=[]
+        refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight'), (('ref_dark', 'R_UVVIS'), 'Rdark'), (('ref_light', 'R_UVVIS'), 'Rlight')]
+        
+        static_ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0)),\
+            ('Rdark',lambda x:numpy.min(x,axis=0)),('Rlight',lambda x:numpy.max(x,axis=0))])
+            
+
+   
+        for filed in [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]]:
+            #'keyinds is ordered the same as required_keys and then optinoal_keys, but not anymore for ref data
+            filed['keyinds']=[0]+filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']]#update the keyinds to keep zero index, which is the wl, and then select other columns
+            if len(filed['keyinds'])==1:#only wavelength left so need to abort analysis
+                if self.debugmode:
+                    raise ValueError('select ref columns resulted in no remaining Signals')
+                self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+                return
+        
+        closeziplist=self.prepare_filedlist(\
+            [d for filed in self.filedlist for d in [filed, filed['Rfiled']]]+\
+            [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]], \
+                expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')#combine the filed, Rfiled, etc. together in 1 list so that any runzips are only opened once
+        
+        referror, refd_fn=self.setuprefdata(refkeymap,  static_ref_fnd, anak=anak, destfolder=destfolder)
+        if referror:
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+            for zc in closeziplist:
+                zc.close()
             return
+    
+        ####filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]         , expfiledict=None
+
         
         for filed in self.filedlist:
             fn=filed['fn']
@@ -304,8 +351,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
             print fn, Rfn, expdatfolder
-            Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[:,::-1]
-            Rdataarr=self.readdata(os.path.join(expdatfolder, Rfn), Rfiled['nkeys'], Rfiled['keyinds'], num_header_lines=Rfiled['num_header_lines'], zipclass=zipclass)[:,::-1]
+            Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
+            Rdataarr=Rfiled['readfcn'](*Rfiled['readfcn_args'], **Rfiled['readfcn_kwargs'])[:,::-1]
 #            print np.shape(Tdataarr),np.shape(Rdataarr)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
@@ -328,6 +375,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         
+        for zc in closeziplist:
+            zc.close()
+            
         if destfolder is None:#dont' do anything with quality items if output not being saved
             return
         
@@ -346,18 +396,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             savefomhist(p,self.fomdlist, histfom)
             self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
         
-        for rktup,rk in refkeymap:
-            fn_refimg='%s__%s.png' %(anak,rk)
-#            print rk,numpy.shape(refd_all[rk])
-            fig=plt.figure()
-            for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
-            plt.legend()
-            plt.draw()
-            p=os.path.join(destfolder,fn_refimg)
-            plt.savefig(p,dpi=300)
-            plt.close(fig)
-            self.multirunfiledict['misc_files'][fn_refimg]='img_ref_file;'
+
 
     def fomd_rawlend_interlend(self, Tdataarr, Rdataarr, refd):
         if Tdataarr.shape[1]!=Rdataarr.shape[1] or Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
@@ -467,57 +506,40 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         return self.filedlist
         
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
         refkeymap=[(('ref_dark', 'DR_UVVIS'), 'DRdark'), (('ref_light', 'DR_UVVIS'), 'DRlight')]
-        refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate dictionary with raw-data-length arrays
-        try:
-            refd['wl_fullrng']=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
-            for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
-        except:
-            raise ValueError('Number of data points in reference files do not match')
-            
-        if not check_wl(refd['wl_fullrng']):
-            raise ValueError('Incompatible wavelengths in reference files')
-        else:
-            refd['wl_fullrng']=refd['wl_fullrng'][0]
-            
-        refd_all={}            
-        for rktup, rk in refkeymap:
-            refd_all[rk]=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
-            for filed in self.refdict__filedlist[rktup]])
-                
-                
-        if self.params['reffilesmode']=='static':
-            ref_fnd=dict([('DRdark',lambda x:numpy.min(x,axis=0)),('DRlight',lambda x:numpy.max(x,axis=0))])
-            for rktup, rk in refkeymap:
-                refd[rk]=ref_fnd[rk](refd_all[rk])[::-1]
-            refd_fn=lambda fn:refd
-            #this trivial function costs no time and for nontrivial on-the-fly ref calculations, define a fcn with the same name
-            
-        elif self.params['reffilesmode']=='time':
-            for filed in self.filedlist:            
-                refd[filed['sample_no']]={}
-                smp_time=int(filed['fn'].split('_')[-1].split('.')[0])
-                for rktup,rk in refkeymap:
-                    reffiled_fnlist=[(ref_filed,ref_filed['fn']) for ref_filed in self.refdict__filedlist[rktup]]
-                    ref_filed_sel=reffiled_fnlist[np.argmin([abs(int(fn.split('_')[-1].split('.')[0])-smp_time) for ref_filed,fn in reffiled_fnlist])][0]
-                    refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
-                    ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
-                    num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
-                refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
-            refd_fn=lambda sample_no:refd[sample_no]
+        
+        static_ref_fnd=dict([('DRdark',lambda x:numpy.min(x,axis=0)),('DRlight',lambda x:numpy.max(x,axis=0))])
 
-        else:
+   
+        for filed in [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]]:
+            #'keyinds is ordered the same as required_keys and then optinoal_keys, but not anymore for ref data
+            filed['keyinds']=[0]+filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']]#update the keyinds to keep zero index, which is the wl, and then select other columns
+            if len(filed['keyinds'])==1:#only wavelength left so need to abort analysis
+                if self.debugmode:
+                    raise ValueError('select ref columns resulted in no remaining Signals')
+                self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+                return
+        
+        closeziplist=self.prepare_filedlist(\
+            [d for filed in self.filedlist for d in [filed, filed['Rfiled']]]+\
+            [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]], \
+                expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')#combine the filed, Rfiled, etc. together in 1 list so that any runzips are only opened once
+        
+        referror, refd_fn=self.setuprefdata(refkeymap,  static_ref_fnd, anak=anak, destfolder=destfolder)
+        if referror:
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+            for zc in closeziplist:
+                zc.close()
             return
+        
         
         for filed in self.filedlist:
             fn=filed['fn']
-            DRdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[:,::-1]
+            DRdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
 #            print np.shape(DRdataar)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(DRdataarr,refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
@@ -538,7 +560,9 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-        
+        for zc in closeziplist:
+            zc.close()
+            
         if destfolder is None:#dont' do anything with quality items if output not being saved
             return
         
@@ -555,19 +579,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             p=os.path.join(destfolder,fnhist)        
             savefomhist(p,self.fomdlist, histfom)
             self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
-        
-        for rktup,rk in refkeymap:
-            fn_refimg='%s__%s.png' %(anak,rk)
-#            print rk,numpy.shape(refd_all[rk])
-            fig=plt.figure()
-            for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
-            plt.legend()
-            plt.draw()
-            p=os.path.join(destfolder,fn_refimg)
-            plt.savefig(p,dpi=300)
-            plt.close(fig)
-            self.multirunfiledict['misc_files'][fn_refimg]='img_ref_file;'
+
 
     def fomd_rawlend_interlend(self, DRdataarr, refd):
         if DRdataarr.shape[1]!=refd['DRdark'].shape[0]:
@@ -670,56 +682,41 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]
         refkeymap=[(('ref_dark', 'T_UVVIS'), 'Tdark'), (('ref_light', 'T_UVVIS'), 'Tlight')]
-        refd={}#refd will be a dictionary with 4 keys that makes a good start for the intermediate dictionary with raw-data-length arrays
-        try:
-            refd['wl_fullrng']=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], [filed['keyinds'][0]], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[0] \
-            for rktup,rk in refkeymap for filed in self.refdict__filedlist[rktup]])[:,::-1]
-        except:
-            raise ValueError('Number of data points in reference files do not match')
-            
-        if not check_wl(refd['wl_fullrng']):
-            raise ValueError('Incompatible wavelengths in reference files')
-        else:
-            refd['wl_fullrng']=refd['wl_fullrng'][0]
         
-        refd_all={}            
-        for rktup, rk in refkeymap:
-            refd_all[rk]=numpy.float32([\
-            self.readdata(os.path.join(expdatfolder, filed['fn']), filed['nkeys'], filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']], num_header_lines=filed['num_header_lines'], zipclass=zipclass).mean(axis=0) \
-            for filed in self.refdict__filedlist[rktup]])        
         
-        if self.params['reffilesmode']=='static':
-            ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0))])
-            for rktup, rk in refkeymap:
-                refd[rk]=ref_fnd[rk](refd_all[rk])[::-1]
-            refd_fn=lambda sample_no:refd
-            
-            #this trivial function costs no time and for nontrivial on-the-fly ref calculations, define a fcn with the same name
-        elif self.params['reffilesmode']=='time':
-            for filed in self.filedlist:            
-                refd[filed['sample_no']]={}
-                smp_time=int(filed['fn'].split('_')[-1].split('.')[0])
-                for rktup,rk in refkeymap:
-                    reffiled_fnlist=[(ref_filed,ref_filed['fn']) for ref_filed in self.refdict__filedlist[rktup]]
-                    ref_filed_sel=reffiled_fnlist[np.argmin([abs(int(fn.split('_')[-1].split('.')[0])-smp_time) for ref_filed,fn in reffiled_fnlist])][0]
-                    refd[filed['sample_no']][rk]=self.readdata(os.path.join(expdatfolder, ref_filed_sel['fn'], ref_filed_sel['nkeys'], \
-                    ref_filed_sel['keyinds'][1+self.params['exclinitcols']:len(ref_filed_sel['keyinds'])-self.params['exclfincols']],\
-                    num_header_lines=ref_filed_sel['num_header_lines'], zipclass=zipclass).mean(axis=0))[::-1]
-                refd[filed['sample_no']]['wl_fullrng']=refd['wl_fullrng']
-            refd_fn=lambda sample_no:refd[sample_no]
+        
+        static_ref_fnd=dict([('Tdark',lambda x:numpy.min(x,axis=0)),('Tlight',lambda x:numpy.max(x,axis=0))])
 
-        else:
+   
+        for filed in [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]]:
+            #'keyinds is ordered the same as required_keys and then optinoal_keys, but not anymore for ref data
+            filed['keyinds']=[0]+filed['keyinds'][1+self.params['exclinitcols']:len(filed['keyinds'])-self.params['exclfincols']]#update the keyinds to keep zero index, which is the wl, and then select other columns
+            if len(filed['keyinds'])==1:#only wavelength left so need to abort analysis
+                if self.debugmode:
+                    raise ValueError('select ref columns resulted in no remaining Signals')
+                self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+                return
+        
+        closeziplist=self.prepare_filedlist(\
+            [d for filed in self.filedlist for d in [filed, filed['Rfiled']]]+\
+            [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]], \
+                expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')#combine the filed, Rfiled, etc. together in 1 list so that any runzips are only opened once
+        
+        referror, refd_fn=self.setuprefdata(refkeymap,  static_ref_fnd, anak=anak, destfolder=destfolder)
+        if referror:
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, createdummyfomdlist=True)
+            for zc in closeziplist:
+                zc.close()
             return
         
         for filed in self.filedlist:
             fn=filed['fn']
-            Tdataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)[:,::-1]
+            Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
 #            print np.shape(DRdataar)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
@@ -740,7 +737,9 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-        
+        for zc in closeziplist:
+            zc.close()
+
         if destfolder is None:#dont' do anything with quality items if output not being saved
             return
         
@@ -758,18 +757,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             savefomhist(p,self.fomdlist, histfom)
             self.multirunfiledict['misc_files'][fnhist]='hist_fom_file;'
         
-        for rktup,rk in refkeymap:
-            fn_refimg='%s__%s.png' %(anak,rk)
-#            print rk,numpy.shape(refd_all[rk])
-            fig=plt.figure()
-            for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
-            plt.legend()
-            plt.draw()
-            p=os.path.join(destfolder,fn_refimg)
-            plt.savefig(p,dpi=300)
-            plt.close(fig)
-            self.multirunfiledict['misc_files'][fn_refimg]='img_ref_file;'
+
 
     def fomd_rawlend_interlend(self, Tdataarr, refd):
         if Tdataarr.shape[1]!=refd['Tdark'].shape[0]:
@@ -936,7 +924,8 @@ class Analysis__BG(Analysis_Master_inter):
         with open(p,'w') as ps:
             ps.write(wstr)
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
+        
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         self.multirunfiledict['misc_files']={}
         self.fomdlist=[]     

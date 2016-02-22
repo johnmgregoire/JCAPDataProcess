@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Fri Feb 19 13:21:26 2016
+# Created: Mon Feb 22 10:50:51 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -119,10 +119,10 @@ class Ui_CreateExpDialog(object):
         self.label_11.setGeometry(QtCore.QRect(550, 400, 91, 16))
         self.label_11.setObjectName(_fromUtf8("label_11"))
         self.RunPriorityLineEdit = QtGui.QLineEdit(CreateExpDialog)
-        self.RunPriorityLineEdit.setGeometry(QtCore.QRect(860, 260, 171, 20))
+        self.RunPriorityLineEdit.setGeometry(QtCore.QRect(510, 260, 161, 20))
         self.RunPriorityLineEdit.setObjectName(_fromUtf8("RunPriorityLineEdit"))
         self.label_12 = QtGui.QLabel(CreateExpDialog)
-        self.label_12.setGeometry(QtCore.QRect(860, 240, 171, 21))
+        self.label_12.setGeometry(QtCore.QRect(510, 240, 171, 21))
         self.label_12.setObjectName(_fromUtf8("label_12"))
         self.RunTypeLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.RunTypeLineEdit.setGeometry(QtCore.QRect(560, 120, 91, 20))
@@ -229,10 +229,10 @@ class Ui_CreateExpDialog(object):
         self.getplatemapCheckBox.setChecked(True)
         self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
         self.UserFOMLineEdit = QtGui.QLineEdit(CreateExpDialog)
-        self.UserFOMLineEdit.setGeometry(QtCore.QRect(510, 220, 151, 20))
+        self.UserFOMLineEdit.setGeometry(QtCore.QRect(510, 190, 151, 20))
         self.UserFOMLineEdit.setObjectName(_fromUtf8("UserFOMLineEdit"))
         self.label_21 = QtGui.QLabel(CreateExpDialog)
-        self.label_21.setGeometry(QtCore.QRect(510, 200, 141, 16))
+        self.label_21.setGeometry(QtCore.QRect(510, 170, 141, 16))
         self.label_21.setObjectName(_fromUtf8("label_21"))
         self.TechTypeTreeWidget = QtGui.QTreeWidget(CreateExpDialog)
         self.TechTypeTreeWidget.setGeometry(QtCore.QRect(680, 30, 171, 251))
@@ -262,6 +262,13 @@ class Ui_CreateExpDialog(object):
         self.RaiseErrorPushButton = QtGui.QPushButton(CreateExpDialog)
         self.RaiseErrorPushButton.setGeometry(QtCore.QRect(1030, 0, 31, 23))
         self.RaiseErrorPushButton.setObjectName(_fromUtf8("RaiseErrorPushButton"))
+        self.label_22 = QtGui.QLabel(CreateExpDialog)
+        self.label_22.setGeometry(QtCore.QRect(860, 240, 171, 21))
+        self.label_22.setObjectName(_fromUtf8("label_22"))
+        self.FileNotSearchLineEdit = QtGui.QLineEdit(CreateExpDialog)
+        self.FileNotSearchLineEdit.setGeometry(QtCore.QRect(860, 260, 171, 20))
+        self.FileNotSearchLineEdit.setText(_fromUtf8(""))
+        self.FileNotSearchLineEdit.setObjectName(_fromUtf8("FileNotSearchLineEdit"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -341,6 +348,8 @@ class Ui_CreateExpDialog(object):
         self.FileNotStartLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "This should be a single sample number of comma-deliminated list of numbers from the platemap file", None, QtGui.QApplication.UnicodeUTF8))
         self.label_14.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename to NOT startwith:", None, QtGui.QApplication.UnicodeUTF8))
         self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_22.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename to NOT contaih:", None, QtGui.QApplication.UnicodeUTF8))
+        self.FileNotSearchLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "This should be a single sample number of comma-deliminated list of numbers from the platemap file", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

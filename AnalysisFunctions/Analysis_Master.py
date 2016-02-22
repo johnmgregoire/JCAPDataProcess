@@ -89,6 +89,50 @@ class Analysis_Master_nointer():
             self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
         else:
             self.runfiledict={}
+    
+    def prepare_filedlist(self, filedlist, expfiledict, expdatfolder=None, expfolderzipclass=None, fnk='fn'):
+        #for every dict in filedlist, updates by reference to add keys readfcn and readfcn_args that can be called to get the data arr for that file, for zip or folder, .dat or ascii
+        #some similarities to buildrunpath_selectfile but since trying to batch prepare things can't use this file-by-file approach
+        #[d.update([('AAA', 5)]) for d in filedlist]
+        #return []
+        closeziplist=[]
+        runk_or_none=None
+        if (not expfolderzipclass) or (not expdatfolder is None):# and not os.path.isdir(expdatfolder)):#if zipclass is an open .zip then don't need the path, but if not and expdat folder provided but is not absolute path, make it an absolute path
+            expdatfolder=prepend_root_exp_path(expdatfolder)
+        if expfolderzipclass is None and expdatfolder is None:#read all from runfolders
+            runk_or_none=[d['run'] for d in filedlist]
+        elif expfolderzipclass is None:
+            expfolderzipclass=gen_zipclass(expdatfolder)
+            if bool(expfolderzipclass):
+                closeziplist+=[expfolderzipclass]#close this at the end of perform only if it was created here
+                
+        if runk_or_none is None:
+            #first an exp folde r(not zip) and then an exp zip are handled for raw .dat file. if the .dat file exists then d.update returns None and otherwise the runk is put fofr further processing below
+            if not bool(expfolderzipclass):
+                expfns=os.listdir(expdatfolder)
+                runk_or_none=[\
+                  d.update([('readfcn', readbinary_selinds), ('readfcn_args', (os.path.join(expdatfolder, d[fnk]+'.dat'), d['nkeys'])), ('readfcn_kwargs', {'keyinds':d['keyinds'], 'zipclass':False})])\
+                      if (d[fnk]+'.dat') in expfns else d['run'] for d in filedlist]
+            else:
+                runk_or_none=[\
+                  d.update([('readfcn', readbinary_selinds), ('readfcn_args', (os.path.join(expdatfolder, d[fnk]+'.dat'), d['nkeys'])), ('readfcn_kwargs', {'keyinds':d['keyinds'], 'zipclass':expfolderzipclass})])\
+                      if expfolderzipclass.fn_in_archive(d[fnk]+'.dat') else d['run'] for d in filedlist]
+        
+        runstoopen=list(set([runk for runk in runk_or_none if not runk is None]))
+        for runk in runstoopen:
+            runp=expfiledict[runk]['run_path']
+            runp=buildrunpath(runp)
+            runzipclass=gen_zipclass(runp)
+            if bool(runzipclass):
+                pathjoinfcn=lambda fn:fn
+                closeziplist+=[runzipclass]#don't leave runzipclass open after perform finished
+            else:
+                pathjoinfcn=lambda fn:os.path.join(runp, fn)
+            [\
+              d.update([('readfcn', readtxt_selectcolumns), ('readfcn_args', (pathjoinfcn(d[fnk]), )), ('readfcn_kwargs', {'num_header_lines':d['num_header_lines'], 'selcolinds':d['keyinds'], 'zipclass':runzipclass, 'delim':None})])\
+                for rk, d in zip(runk_or_none, filedlist) if rk==runk]
+        
+        return closeziplist
     def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
         if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
             p=prepend_root_exp_path(p)
@@ -125,8 +169,9 @@ class Analysis_Master_nointer():
         if appendtofomdlist:
             self.fomdlist=[dict(d, **userd) for d, userd in zip(self.fomdlist, userfomdlist)]#adds user foms to fomdlist dicts but the corresponding keys are NOT in self.fomnames
         return sorted(strkeys), sorted(floatkeys), userfomdlist
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, expfiledict=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
         self.initfiledicts()
+        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
         self.fomdlist=[]
         for filed in self.filedlist:
 #            if numpy.isnan(filed['sample_no']):
@@ -135,7 +180,7 @@ class Analysis_Master_nointer():
 #                continue
             fn=filed['fn']
             try:
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
                 fomtuplist=self.fomtuplist_dataarr(dataarr, filed)
             except:
                 if self.debugmode:
@@ -145,8 +190,12 @@ class Analysis_Master_nointer():
             self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             #writeinterdat
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-    def writefom(self, destfolder, anak, anauserfomd={}, fn=None, strkeys_fomdlist=[]):#self.fomnames assumed to be float
-        
+        for zc in closeziplist:
+            zc.close()
+
+    def writefom(self, destfolder, anak, anauserfomd={}, fn=None, strkeys_fomdlist=[], createdummyfomdlist=False):#self.fomnames assumed to be float, createdummyfomdlist is for writing all NaN and aborting analysis
+        if createdummyfomdlist:
+            self.fomdlist=[dict([(k, numpy.nan) for k in self.fomnames], sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2])) for filed in self.filedlist]
         strkeys, floatkeys, userfomdlist=self.genuserfomdlist(anauserfomd)
         
         if fn is None:
@@ -163,8 +212,9 @@ class Analysis_Master_nointer():
         self.multirunfiledict['fom_files'][fn]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
+        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
         self.fomdlist=[]
         for filed in self.filedlist:
             if numpy.isnan(filed['sample_no']):
@@ -173,7 +223,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 continue
             fn=filed['fn']
             try:
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
                 fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
             except:
                 if self.debugmode:
@@ -195,6 +245,8 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
+        for zc in closeziplist:
+            zc.close()
 
 #class Analysis_Master_onlyfom(Analysis_Master_nointer):
 #    def __init__(self):

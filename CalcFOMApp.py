@@ -232,7 +232,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def importexp(self, expfiledict=None, exppath=None, expzipclass=None, anadict=None):
         if expfiledict is None:
-            exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
+            if exppath is None:
+                exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(exppath)==0:
                 return
             expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
@@ -527,7 +528,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         anak=self.gethighestanak(getnextone=True)
         #try:
         if 1:
-            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, anauserfomd=self.userfomd)
+            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, expfiledict=self.expfiledict, anauserfomd=self.userfomd)
 #        except:
 #            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
 #            if not idialog.exec_():
@@ -1323,9 +1324,14 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', **kwargs)
+            #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160221.123408.run\20160221.123408.exp')
+            #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
+            #TRdata:
+            #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
+            #self.calcui.analyzedata()
             if execute:
                 self.calcui.exec_()
-    os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
+    #os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
     mainapp=QApplication(sys.argv)
     form=MainMenu(None)
     form.show()

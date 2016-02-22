@@ -231,7 +231,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if idialog.exec_():
                     rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D'], origE=d['E'], origF=d['F'], origG=d['G'], origH=d['H']) for d in rund['platemapdlist']]
                     channelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:max(4, len(masterels))]
-                    rund['platemapdlist']=[d.update(dict([('orig'+k, d[k]) for k in channelsused])) for d in rund['platemapdlist']]
+                    for d in rund['platemapdlist']:
+                        d.update([('orig'+k, d[k]) for k in channelsused])
                     for d in rund['platemapdlist']:
                         for let, el in zip(channelsused, masterels):
                             d[let]=d['orig'+channelsused[els.index(el)]]#this allows plates with different permutations of the same set fo elements (as the first plate to be read here) to have their platemaps permuted to match.
@@ -570,7 +571,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         #rawd=readbinaryarrasdict(keys)
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
 
-        self.analysisclass.perform(None, expdatfolder=self.expfolder, anak='', zipclass=self.expzipclass)
+        self.analysisclass.perform(None, expdatfolder=self.expfolder, anak='', zipclass=self.expzipclass, expfiledict=self.expfiledict)
         self.l_fomdlist+=[self.analysisclass.fomdlist]#on-the-fly analysis gets appended to the list of dictionaries, but since opening ana cleans these lists, the l_ structures will start with ana csvs.
         self.l_fomnames+=[self.analysisclass.fomnames]
         self.l_csvheaderdict+=[self.analysisclass.csvheaderdict]#this contains default plot info

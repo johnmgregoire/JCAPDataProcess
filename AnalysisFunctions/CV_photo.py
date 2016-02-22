@@ -89,9 +89,10 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist    
         
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
-        #self.multirunfiledict['misc_files']={}
+        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
+
         self.fomdlist=[]
         for filed in self.filedlist:
             datadict={}
@@ -100,14 +101,14 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     raiseTEMP
                 continue
             fn=filed['fn']
-            # print 'sample_no is ', filed['sample_no']
+
             try:
                 #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
-                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
+                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
                 for k, v in zip(self.requiredkeys, dataarr):
                     datadict[k]=v
                 for interfiled in [filed['ana__inter_filed'], filed['ana__inter_rawlen_filed']]:
-                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder
+                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data 
                     for k, v in zip(interfiled['keys'], tempdataarr):
                         datadict[k]=v
                 fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
@@ -140,7 +141,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 self.runfiledict[filed['run']]['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
             
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-        
+        for zc in closeziplist:
+            zc.close()
     def fomtuplist_rawlend_interlend(self, datadict, paramd):
         d=datadict
         interd={}
