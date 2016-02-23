@@ -838,11 +838,16 @@ def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True
                 dv.pop(kv)
     return d
 
-def readrcpfrommultipleruns(pathlist):
+def readrcpfrommultipleruns(pathlist, rcpdictadditions=None):
+
+                
+    if rcpdictadditions is None:
+        rcpdictadditions=[[] for p in pathlist]
+                
     techset=set([])
     typeset=set([])
     rcpdlist=[]
-    for p in pathlist:
+    for p, tupl in zip(pathlist, rcpdictadditions):
         remstr=None
 
         if p.endswith('.zip'):
@@ -867,9 +872,10 @@ def readrcpfrommultipleruns(pathlist):
                     remstr=f.read()
             else:
                 remstr=''
-        rcpd=readrcplines(lines)
         if len(remstr)>0:
-            addremstr_rcpd(rcpd, remstr)
+            tupl+=rcpdtuple_remstr(remstr)
+        rcpd=readrcplines(lines, prepend_rcp_rupl=tupl)
+        
         techset=techset.union(set(rcpd['techlist']))
         typeset=typeset.union(set(rcpd['typelist']))
         rcpd['run_path']=p
@@ -881,10 +887,10 @@ def readrcpfrommultipleruns(pathlist):
         rcpdlist+=[rcpd]
     return techset, typeset, rcpdlist
 
-def addremstr_rcpd(rcpd, remstr):
+def rcpdtuple_remstr(remstr):
     remdlist=eval(remstr.strip())
-    for count, remd in enumerate(remdlist):
-        rcpd['rcptuplist']=[('run_comment__%d:' %(count+1), [('%s: %s' %(k, str(v)), []) for k, v in remd.iteritems()])]+rcpd['rcptuplist']
+    tupl=[('run_comment__%d:' %(count+1), [('%s: %s' %(k, str(v)), []) for k, v in remd.iteritems()]) for count, remd in enumerate(remdlist) if not '(type new note here)' in remd.values()]
+    return tupl
 def rcplines_folder(foldp):
     fns=[fn for fn in os.listdir(foldp) if fn.endswith('.rcp')]
     if len(fns)!=1:
@@ -932,8 +938,8 @@ def readrcp(p):
     lines=f.readlines()
     f.close()
     return readrcplines(lines)
-def readrcplines(lines):
-    rcptuplist=[]
+def readrcplines(lines, prepend_rcp_rupl=[]):
+    rcptuplist=prepend_rcp_rupl#start this tuplist off with prepend items not in the .rcp, which must be done here because when the index strucutrues are built in interpretrcptuplist the rcptuplist and rcpd should be considered read-only
     lines=[l for l in lines if len(l.strip())>0]
     while len(lines)>0:
         rcptuplist+=[createnestparamtup(lines)]

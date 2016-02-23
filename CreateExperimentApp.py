@@ -353,10 +353,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 idialog.exec_()
                 return
 
-        techset, typeset, rcpdlist=readrcpfrommultipleruns(pathlist)
-        if not rcpdictadditions is None:
-            for rcpd, tupl in zip(rcpdlist, rcpdictadditions):
-                rcpd['rcptuplist']=tupl+rcpd['rcptuplist']
+        techset, typeset, rcpdlist=readrcpfrommultipleruns(pathlist, rcpdictadditions=rcpdictadditions)
+
         self.techlist=list(set(self.techlist).union(techset))
         self.typelist=list(set(self.typelist).union(typeset))
         self.rcpdlist+=rcpdlist
