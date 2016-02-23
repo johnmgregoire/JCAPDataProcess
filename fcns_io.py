@@ -843,8 +843,10 @@ def readrcpfrommultipleruns(pathlist):
     typeset=set([])
     rcpdlist=[]
     for p in pathlist:
+        remstr=None
+
         if p.endswith('.zip'):
-            rcpfn, lines=rcplines_zip(p)
+            rcpfn, lines, remstr=rcplines_zip(p)
         elif os.path.isdir(p):
             rcpfn, lines=rcplines_folder(p)
             if rcpfn is None:
@@ -852,13 +854,22 @@ def readrcpfrommultipleruns(pathlist):
         elif p.endswith('.rcp'):
             with open(p, mode='r') as f:
                 lines=f.readlines()
-            rcpfn=os.path.split(p)[1]
+            p, rcpfn=os.path.split(p)
         else:
             print 'check if this is a valid file: ', p
             continue
         if len(lines)==0:
             continue
+        if remstr is None:
+            fns=[fn for fn in os.listdir(p) if fn.endswith('.rem')]
+            if len(fns)>0:
+                with open(os.path.join(p, fns[0]), mode='r') as f:
+                    remstr=f.read()
+            else:
+                remstr=''
         rcpd=readrcplines(lines)
+        if len(remstr)>0:
+            addremstr_rcpd(rcpd, remstr)
         techset=techset.union(set(rcpd['techlist']))
         typeset=typeset.union(set(rcpd['typelist']))
         rcpd['run_path']=p
@@ -870,6 +881,10 @@ def readrcpfrommultipleruns(pathlist):
         rcpdlist+=[rcpd]
     return techset, typeset, rcpdlist
 
+def addremstr_rcpd(rcpd, remstr):
+    remdlist=eval(remstr.strip())
+    for count, remd in enumerate(remdlist):
+        rcpd['rcptuplist']=[('run_comment__%d:' %(count+1), [('%s: %s' %(k, str(v)), []) for k, v in remd.iteritems()])]+rcpd['rcptuplist']
 def rcplines_folder(foldp):
     fns=[fn for fn in os.listdir(foldp) if fn.endswith('.rcp')]
     if len(fns)!=1:
@@ -885,12 +900,21 @@ def rcplines_zip(zipp):
     archive = zipfile.ZipFile(zipp, 'r')
     fns=[fn for fn in archive.namelist() if fn.endswith('.rcp')]
     if len(fns)!=1:
-        return []
+        return '', [], ''
     rcpfn=fns[0]
     f=archive.open(rcpfn)
     lines=f.readlines()
+    f.close()
+    fns=[fn for fn in archive.namelist() if fn.endswith('.rem')]
+    
+    if len(fns)>0:#only use 1st file, which can take an aribtrary number of comments
+        f=archive.open(fns[0])
+        remstr=f.read()
+        f.close()
+    else:
+        remstr=''
     archive.close()
-    return rcpfn, lines
+    return rcpfn, lines, remstr
 
 indent='    '
 getnumspaces=lambda a:len(a) - len(a.lstrip(' '))

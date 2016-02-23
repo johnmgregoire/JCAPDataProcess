@@ -103,8 +103,9 @@ class runsfrominfoDialog(QDialog, Ui_RunsFromInfoDialog):
 #        item.setText(column,''.join([ans, keepstr]))
         
     def ExitRoutine(self):
-    
-        self.runpaths=[self.infofiled['runs'][str(item.text(0)).strip().strip(':')]['path'] for item in self.runditems if bool(item.checkState(0))]
+        rundlist=[self.infofiled['runs'][str(item.text(0)).strip().strip(':')] for item in self.runditems if bool(item.checkState(0))]
+        self.runpaths=[d['path'] for d in rundlist]
+        self.rcpdictadditions=[[('run_quality: %s' %d['quality'], [])] if 'quality' in d else [] for d in rundlist]#this is the fileline, nested filelines list format of rcpd
 
 if __name__ == "__main__":
     class MainMenu(QMainWindow):

@@ -318,9 +318,12 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             idialog=messageDialog(self, 'Some or all run paths not found')
             if not idialog.exec_():
                 return
+        
+        rcpdictadditions=[tupl for tupl, p in zip(idialog.rcpdictadditions, pathlist) if len(p)>0]
         pathlist=[p for p in pathlist if len(p)>0]
+        
         if len(pathlist)>0:
-            self.importruns(pathlist=pathlist)
+            self.importruns(pathlist=pathlist, rcpdictadditions=rcpdictadditions)
     
     def importruns_folder(self):
         folderp=str(mygetdir(parent=self, xpath=self.defaultrcppath,markstr='Folder containing .rcp or set of .zip' ))
@@ -339,7 +342,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.importruns(pathlist=pathlist)
         
         
-    def importruns(self, pathlist=None, startfolder=None):
+    def importruns(self, pathlist=None, startfolder=None, rcpdictadditions=None):
         if pathlist is None:
             if startfolder is None:
                 startfolder=self.defaultrcppath
@@ -349,8 +352,11 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 idialog=messageDialog(self, 'Need to select only .zip')
                 idialog.exec_()
                 return
-        print pathlist
+
         techset, typeset, rcpdlist=readrcpfrommultipleruns(pathlist)
+        if not rcpdictadditions is None:
+            for rcpd, tupl in zip(rcpdlist, rcpdictadditions):
+                rcpd['rcptuplist']=tupl+rcpd['rcptuplist']
         self.techlist=list(set(self.techlist).union(techset))
         self.typelist=list(set(self.typelist).union(typeset))
         self.rcpdlist+=rcpdlist
