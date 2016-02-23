@@ -13,6 +13,7 @@ def savgol_filter(x, y, z, delta=0, deriv=0):
     return x
 from bgmath_fcn import *
 import matplotlib.pyplot as plt
+plt.ioff()
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk and 'inter_files' in anav[ftk].keys()]) for anak, anav in anadict.iteritems()\
@@ -24,7 +25,7 @@ def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
         for anak, ftkl in anak_ftklist \
         for ftk in ftkl \
         for fnk, tagandkeys in anadict[anak][ftk]['inter_files'].iteritems()\
-        if 'abs_smth_refadj_scl' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys\
+        if 'abs_smth_refadj_scl' in tagandkeys and 'uvis_inter_interlen_file' in tagandkeys and not '_bg' in tagandkeys\
         ]
     if len(Afiledlist)==0:
         return 0, []
@@ -298,9 +299,14 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 fn_refimg='%s__%s.png' %(anak,rk)
     #            print rk,numpy.shape(refd_all[rk])
                 fig=plt.figure()
+                ax=fig.add_subplot(111)
                 for sig,fn in zip(refd_all[rk],[filed['fn'] for filed in self.refdict__filedlist[rktup]]):
-                    plt.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
-                plt.legend()
+                    ax.plot(refd['wl_fullrng'],sig,label=os.path.basename(fn))
+
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0, box.width * 0.7, box.height])
+# Put a legend to the right of the current axis
+                ax.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize=8)
                 plt.draw()
                 p=os.path.join(destfolder,fn_refimg)
                 plt.savefig(p,dpi=300)
@@ -525,7 +531,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 return
         
         closeziplist=self.prepare_filedlist(\
-            [d for filed in self.filedlist for d in [filed, filed['Rfiled']]]+\
+            [filed for filed in self.filedlist]+\
             [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]], \
                 expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')#combine the filed, Rfiled, etc. together in 1 list so that any runzips are only opened once
         
@@ -703,7 +709,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 return
         
         closeziplist=self.prepare_filedlist(\
-            [d for filed in self.filedlist for d in [filed, filed['Rfiled']]]+\
+            [filed for filed in self.filedlist]+\
             [fd for rktup,rk in refkeymap for fd in self.refdict__filedlist[rktup]], \
                 expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')#combine the filed, Rfiled, etc. together in 1 list so that any runzips are only opened once
         
@@ -814,6 +820,8 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
                 fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
+
+        
         return fomd,inter_rawlend,inter_selindd
 #    
 class Analysis__BG(Analysis_Master_inter):
@@ -891,12 +899,13 @@ class Analysis__BG(Analysis_Master_inter):
 
     def check_output(self, critfracnan=0.5):
         tfracnan=0;tfracnan_abs=0;ostrl=[]
+        numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_hasnan_bg'])
+        tfracnan_abs+=fracnan_abs
         for nm in self.fom_chkqualitynames:
-            numnan, fracnan=stdcheckoutput(self.fomdlist, [nm])
-            numnan_abs,fracnan_abs=stdcheckoutput(self.fomdlist, ['abs_hasnan'])
+            numnan, fracnan=stdcheckoutput(self.fomdlist, [nm])            
             tfracnan+=fracnan
-            tfracnan_abs+=fracnan_abs
             ostrl.append('%d samples, %.2f fraction of total samples with no NaN in absorption have no %s band gaps; ' %(numnan, fracnan,nm))
+        tfracnan/=len(self.fom_chkqualitynames)            
         ostr=';'.join(ostrl)
         return tfracnan/tfracnan_abs>critfracnan, ostr
         
@@ -955,12 +964,6 @@ class Analysis__BG(Analysis_Master_inter):
             
             self.writefom(destfolder, anak, anauserfomd=anauserfomd)
    
-            if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnr)
-                kl=saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
-
             if 'rawselectinds' in selindd.keys():
                 fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
@@ -985,13 +988,13 @@ class Analysis__BG(Analysis_Master_inter):
         
     def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
-        inter_selindd['abs2bg_rawselectinds']=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
-#        inter_selindd['rawselectinds']=rawlend['rawselectinds'][inter_selindd['abs2bg_rawselectinds']]
+        abs2bg_inds=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
+        inter_selindd['rawselectinds']=rawlend['rawselectinds'][abs2bg_inds]
 #        print inter_selindd['rawselectinds']
         
         for key in rawlend.keys():
             if key!='rawselectinds':
-                inter_selindd[key]=rawlend[key][inter_selindd['abs2bg_rawselectinds']]
+                inter_selindd[key]=rawlend[key][abs2bg_inds]
 #        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
 #        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not np.isnan(fomd[x+'_bg_0']) else 0
@@ -1004,5 +1007,9 @@ class Analysis__BG(Analysis_Master_inter):
         for k in self.fomnames:
             if k not in fomd.keys():
                 fomd[k]=np.NaN
+        for key in inter_selindd.keys():
+            if key in rawlend.keys() and 'rawselectinds' not in key:
+                inter_selindd[key+'_bg']=inter_selindd.pop(key)
+        fomd['abs_hasnan_bg']=np.isnan(rawlend['abs_smth_refadj_scl']).any()
         return fomd,inter_linfitd,inter_selindd
 
