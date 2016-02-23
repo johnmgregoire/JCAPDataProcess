@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Mon Feb 22 10:50:51 2016
+# Created: Mon Feb 22 13:58:10 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,13 +19,13 @@ class Ui_CreateExpDialog(object):
         CreateExpDialog.setObjectName(_fromUtf8("CreateExpDialog"))
         CreateExpDialog.resize(1054, 818)
         self.AddMeasPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.AddMeasPushButton.setGeometry(QtCore.QRect(510, 10, 161, 21))
+        self.AddMeasPushButton.setGeometry(QtCore.QRect(520, 10, 151, 21))
         self.AddMeasPushButton.setObjectName(_fromUtf8("AddMeasPushButton"))
         self.FilterMeasPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.FilterMeasPushButton.setGeometry(QtCore.QRect(510, 40, 161, 21))
+        self.FilterMeasPushButton.setGeometry(QtCore.QRect(520, 40, 151, 21))
         self.FilterMeasPushButton.setObjectName(_fromUtf8("FilterMeasPushButton"))
         self.ImportRunsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportRunsPushButton.setGeometry(QtCore.QRect(10, 40, 101, 21))
+        self.ImportRunsPushButton.setGeometry(QtCore.QRect(110, 40, 81, 21))
         self.ImportRunsPushButton.setObjectName(_fromUtf8("ImportRunsPushButton"))
         self.FilterRunComboBox = QtGui.QComboBox(CreateExpDialog)
         self.FilterRunComboBox.setGeometry(QtCore.QRect(510, 90, 161, 22))
@@ -131,13 +131,13 @@ class Ui_CreateExpDialog(object):
         self.label_13.setGeometry(QtCore.QRect(510, 120, 51, 16))
         self.label_13.setObjectName(_fromUtf8("label_13"))
         self.RemoveRunsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.RemoveRunsPushButton.setGeometry(QtCore.QRect(240, 40, 111, 21))
+        self.RemoveRunsPushButton.setGeometry(QtCore.QRect(390, 40, 91, 21))
         self.RemoveRunsPushButton.setObjectName(_fromUtf8("RemoveRunsPushButton"))
         self.LastActionLineEdit = QtGui.QLineEdit(CreateExpDialog)
-        self.LastActionLineEdit.setGeometry(QtCore.QRect(80, 10, 411, 20))
+        self.LastActionLineEdit.setGeometry(QtCore.QRect(60, 10, 361, 20))
         self.LastActionLineEdit.setObjectName(_fromUtf8("LastActionLineEdit"))
         self.label_15 = QtGui.QLabel(CreateExpDialog)
-        self.label_15.setGeometry(QtCore.QRect(10, 10, 91, 16))
+        self.label_15.setGeometry(QtCore.QRect(0, 10, 71, 20))
         self.label_15.setObjectName(_fromUtf8("label_15"))
         self.ExpTypeLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.ExpTypeLineEdit.setGeometry(QtCore.QRect(620, 340, 51, 20))
@@ -191,7 +191,7 @@ class Ui_CreateExpDialog(object):
         self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(400, 430, 101, 21))
         self.ImportExpParamsPushButton.setObjectName(_fromUtf8("ImportExpParamsPushButton"))
         self.SearchRunsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.SearchRunsPushButton.setGeometry(QtCore.QRect(120, 40, 111, 21))
+        self.SearchRunsPushButton.setGeometry(QtCore.QRect(290, 40, 91, 21))
         self.SearchRunsPushButton.setObjectName(_fromUtf8("SearchRunsPushButton"))
         self.RunTreeWidget = QtGui.QTreeWidget(CreateExpDialog)
         self.RunTreeWidget.setGeometry(QtCore.QRect(10, 70, 491, 351))
@@ -225,7 +225,7 @@ class Ui_CreateExpDialog(object):
         self.SaveExpGoAnaPushButton.setGeometry(QtCore.QRect(150, 430, 91, 21))
         self.SaveExpGoAnaPushButton.setObjectName(_fromUtf8("SaveExpGoAnaPushButton"))
         self.getplatemapCheckBox = QtGui.QCheckBox(CreateExpDialog)
-        self.getplatemapCheckBox.setGeometry(QtCore.QRect(360, 40, 119, 31))
+        self.getplatemapCheckBox.setGeometry(QtCore.QRect(430, 10, 91, 31))
         self.getplatemapCheckBox.setChecked(True)
         self.getplatemapCheckBox.setObjectName(_fromUtf8("getplatemapCheckBox"))
         self.UserFOMLineEdit = QtGui.QLineEdit(CreateExpDialog)
@@ -269,6 +269,12 @@ class Ui_CreateExpDialog(object):
         self.FileNotSearchLineEdit.setGeometry(QtCore.QRect(860, 260, 171, 20))
         self.FileNotSearchLineEdit.setText(_fromUtf8(""))
         self.FileNotSearchLineEdit.setObjectName(_fromUtf8("FileNotSearchLineEdit"))
+        self.ImportRunInfoPushButton = QtGui.QPushButton(CreateExpDialog)
+        self.ImportRunInfoPushButton.setGeometry(QtCore.QRect(10, 40, 91, 21))
+        self.ImportRunInfoPushButton.setObjectName(_fromUtf8("ImportRunInfoPushButton"))
+        self.ImportRunFolderPushButton = QtGui.QPushButton(CreateExpDialog)
+        self.ImportRunFolderPushButton.setGeometry(QtCore.QRect(200, 40, 81, 21))
+        self.ImportRunFolderPushButton.setObjectName(_fromUtf8("ImportRunFolderPushButton"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -350,6 +356,10 @@ class Ui_CreateExpDialog(object):
         self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
         self.label_22.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename to NOT contaih:", None, QtGui.QApplication.UnicodeUTF8))
         self.FileNotSearchLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "This should be a single sample number of comma-deliminated list of numbers from the platemap file", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportRunInfoPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import multiple folders and/or .zip, each representing a RUN with a .rcp file", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportRunInfoPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import from .info", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportRunFolderPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import multiple folders and/or .zip, each representing a RUN with a .rcp file", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportRunFolderPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import Folder", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

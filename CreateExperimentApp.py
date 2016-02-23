@@ -25,6 +25,7 @@ from fcns_io import *
 from fcns_ui import *
 from CreateExpForm import Ui_CreateExpDialog
 from SaveButtonForm import Ui_SaveOptionsDialog
+from RunsFromInfoApp import runsfrominfoDialog
 from SearchFolderApp import *
 from DBPaths import *
 PyCodePath=os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
@@ -77,7 +78,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         button_fcn=[\
         (self.AddMeasPushButton, self.editexp_addmeasurement), \
         (self.FilterMeasPushButton, self.editexp_filtercriteria), \
+        (self.ImportRunFolderPushButton, self.importruns_folder), \
         (self.ImportRunsPushButton, self.importruns), \
+        (self.ImportRunInfoPushButton, self.importruns_info), \
         (self.SearchRunsPushButton, self.searchforruns), \
         (self.RemoveRunsPushButton, self.removeruns), \
         (self.ImportExpParamsPushButton, self.importexpparamsfile), \
@@ -305,19 +308,48 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.importruns(startfolder=idialog.openfolder)
         elif not idialog.openpathlist is None:
             self.importruns(pathlist=idialog.openpathlist)
+    
+    def importruns_info(self):
+        idialog=runsfrominfoDialog(parent=self, runtype=str(self.ExpTypeLineEdit.text()))
+        if not idialog.exec_():
+            return
+        pathlist=[buildrunpath(p) for p in idialog.runpaths]
+        if '' in pathlist:
+            idialog=messageDialog(self, 'Some or all run paths not found')
+            if not idialog.exec_():
+                return
+        pathlist=[p for p in pathlist if len(p)>0]
+        if len(pathlist)>0:
+            self.importruns(pathlist=pathlist)
+    
+    def importruns_folder(self):
+        folderp=str(mygetdir(parent=self, xpath=self.defaultrcppath,markstr='Folder containing .rcp or set of .zip' ))
+        if len(folderp)==0:
+            return
+        fns=os.listdir(folderp)
+        rcpfns=[fn for fn in fns if fn.endswith('.rcp')]
+        if len(rcpfns)==1:
+            pathlist=[folderp]
+        else:
+            pathlist=[os.path.join(folderp, fn) for fn in fns if fn.endswith('.zip')]
+            if len(pathlist)==0:
+                idialog=messageDialog(self, 'No .rcp or .zip found')
+                idialog.exec_()
+                return
+        self.importruns(pathlist=pathlist)
+        
         
     def importruns(self, pathlist=None, startfolder=None):
         if pathlist is None:
             if startfolder is None:
                 startfolder=self.defaultrcppath
-            gff=getexistingFilesFolders(self, 'Open RUNs: Select Folders and .zip or .rcp Files', startfolder)
-            gff.exec_()
-            pathlist=gff.filesSelected()
-            if not (isinstance(pathlist, list) and len(pathlist)>0 and len(pathlist[0])>0):
-                idialog=messageDialog(self, 'Need to select .zip and/or folder and press "Open"')
+            
+            pathlist=mygetopenfiles(parent=self, xpath=startfolder,markstr='.zip runs', filename='' )
+            if not (isinstance(pathlist, list) and len(pathlist)>0 and not (False in [p.endswith('.zip') for p in pathlist])):
+                idialog=messageDialog(self, 'Need to select only .zip')
                 idialog.exec_()
                 return
-        
+        print pathlist
         techset, typeset, rcpdlist=readrcpfrommultipleruns(pathlist)
         self.techlist=list(set(self.techlist).union(techset))
         self.typelist=list(set(self.typelist).union(typeset))

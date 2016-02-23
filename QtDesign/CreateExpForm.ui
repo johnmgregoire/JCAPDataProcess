@@ -16,9 +16,9 @@
   <widget class="QPushButton" name="AddMeasPushButton">
    <property name="geometry">
     <rect>
-     <x>510</x>
+     <x>520</x>
      <y>10</y>
-     <width>161</width>
+     <width>151</width>
      <height>21</height>
     </rect>
    </property>
@@ -32,9 +32,9 @@
   <widget class="QPushButton" name="FilterMeasPushButton">
    <property name="geometry">
     <rect>
-     <x>510</x>
+     <x>520</x>
      <y>40</y>
-     <width>161</width>
+     <width>151</width>
      <height>21</height>
     </rect>
    </property>
@@ -48,9 +48,9 @@
   <widget class="QPushButton" name="ImportRunsPushButton">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>110</x>
      <y>40</y>
-     <width>101</width>
+     <width>81</width>
      <height>21</height>
     </rect>
    </property>
@@ -454,9 +454,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QPushButton" name="RemoveRunsPushButton">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>390</x>
      <y>40</y>
-     <width>111</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
@@ -470,9 +470,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QLineEdit" name="LastActionLineEdit">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>60</x>
      <y>10</y>
-     <width>411</width>
+     <width>361</width>
      <height>20</height>
     </rect>
    </property>
@@ -486,10 +486,10 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QLabel" name="label_15">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>0</x>
      <y>10</y>
-     <width>91</width>
-     <height>16</height>
+     <width>71</width>
+     <height>20</height>
     </rect>
    </property>
    <property name="text">
@@ -717,9 +717,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QPushButton" name="SearchRunsPushButton">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>290</x>
      <y>40</y>
-     <width>111</width>
+     <width>91</width>
      <height>21</height>
     </rect>
    </property>
@@ -848,9 +848,9 @@ If the same filename appears in multiple runs, this sets the priorty for which i
   <widget class="QCheckBox" name="getplatemapCheckBox">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>40</y>
-     <width>119</width>
+     <x>430</x>
+     <y>10</y>
+     <width>91</width>
      <height>31</height>
     </rect>
    </property>
@@ -1025,6 +1025,38 @@ binary</string>
    </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ImportRunInfoPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Import multiple folders and/or .zip, each representing a RUN with a .rcp file</string>
+   </property>
+   <property name="text">
+    <string>Import from .info</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ImportRunFolderPushButton">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>40</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Import multiple folders and/or .zip, each representing a RUN with a .rcp file</string>
+   </property>
+   <property name="text">
+    <string>Import Folder</string>
    </property>
   </widget>
  </widget>

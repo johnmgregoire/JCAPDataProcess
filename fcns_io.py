@@ -981,7 +981,13 @@ def createdict_tup(nam_listtup):
         return k_vtup
     d=dict([createdict_tup(v) for v in nam_listtup[1]])
     return (k_vtup[0], d)
-        
+
+def filedict_lines(lines):
+    lines=[l for l in lines if len(l.strip())>0]
+    exptuplist=[]
+    while len(lines)>0:
+        exptuplist+=[createnestparamtup(lines)]
+    return dict([createdict_tup(tup) for tup in exptuplist])
 def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False, createfiledicts=True):#create both a list of rcpd but also a corresponding ...     - p can be a file path or a zip file path with a joined filename
     if not ((p.endswith('exp') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):#if .zip only tests if the zip file exists
         if erroruifcn is None:
@@ -1009,12 +1015,7 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
         else:
             with open(p, mode='r') as f:
                 lines=f.readlines()
-        lines=[l for l in lines if len(l.strip())>0]
-        exptuplist=[]
-        while len(lines)>0:
-            exptuplist+=[createnestparamtup(lines)]
-        expfiledict=dict(\
-        [createdict_tup(tup) for tup in exptuplist])
+        expfiledict=filedict_lines(lines)
         
         #these tiems would have been performed before saving .pck so only perform for .exp
         convertstrvalstonum_nesteddict(expfiledict)
