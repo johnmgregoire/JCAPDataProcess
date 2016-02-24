@@ -474,7 +474,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         ('mthd','DR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
-        #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
+        # "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
 #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
 #        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
         self.params=copy.copy(self.dfltparams)
@@ -484,8 +484,8 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
         self.processnewparams()
-        #TODO: update plotting defaults on both classes
-        self.plotparams=dict({}, plot__1={'x_axis':'E'})
+
+        self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']='abs_smth_refadj_scl'
 #        ,t_smth'#list of keys
@@ -493,17 +493,15 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='max_abs', colormap='jet', colormap_over_color='(0.5,0.,0.)',\
         colormap_under_color='(0.,0.,0.)')
         # also colormap_min_value,colormap_max_value
         
         self.fom_chkqualitynames=['abs_hasnan']
-#        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
         self.qualityfoms=['min_rescaled','max_rescaled','0<DR<1']
         self.histfomnames=['max_abs2ndderiv']
         self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
 
-#        should this be made self.multirunfomnames
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
