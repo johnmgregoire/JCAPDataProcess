@@ -863,6 +863,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not arr2d is None:
                     xyy[count]={}
                     xyy[count]['arr']=arr2d[0]
+                    xyy[count]['path']=os.path.join(self.anafolder, fn)
+                    xyy[count]['k']=k
                     if rawselbool:
                         xyy[count]['rawselectinds']=numpy.int32(arr2d[1])
         return xyy
@@ -900,7 +902,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not arr2d is None:
                     xyysubset[count]={}
                     xyysubset[count]['arr']=arr2d[0]
-
+                    xyysubset[count]['path']=p
+                    xyysubset[count]['k']=k
         return xyysubset
         
     def extractxydata(self, arrkeys, filed=None):
@@ -935,7 +938,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         selectpointdata=None
         i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
         anaint, runint, smp=[self.l_fomdlist[i0][i1][k] for k in ['anaint', 'runint', 'sample_no']]
-        print '%%',anaint, runint, smp#***
+
         if anaint==0 and runint==0:
             return None
         if anaint>0:
@@ -955,15 +958,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(xd['arr'])==len(yd['arr']):
                 plotdata[count]=[xd['arr'], yd['arr']]
                 continue
-            for draw, dint in [(xd, yd), (yd, xd)]:
-                if 'rawselectinds' in dint.keys() and len(draw['arr'])>(dint['rawselectinds'].max()):
+            for draw, dint in [(xd, yd), (yd, xd)]:#rawselectinds applied to the array deemed to be raw by not having rawselectinds. cannot plot 2 interlen things against each other
+                if 'rawselectinds' in dint.keys() and (not 'rawselectinds' in draw.keys()) and len(draw['arr'])>(dint['rawselectinds'].max()):
                     draw['arr']=draw['arr'][dint['rawselectinds']]
                     break
             if len(xd['arr'])==len(yd['arr']):
                 plotdata[count]=[xd['arr'], yd['arr']]
                 continue
             if count==0:
-                helpme
+                print len(xd['arr']), len(yd['arr'])
+                idialog=messageDialog(self, 'ERROR: %s and %s are length %d and %d after reading from \n%s\n%s' %(xd['k'], yd['k'], len(xd['arr']), len(yd['arr']), xd['path'], yd['path']))
+                idialog.exec_()
+                return None
         getval=lambda k:self.fomplotd[k][self.selectind]
         lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
