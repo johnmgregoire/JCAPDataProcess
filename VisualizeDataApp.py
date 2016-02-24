@@ -890,10 +890,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(fn_filed_keyind)>0:#ideally this is length 1 because if onlger that means foudn the same array multiple places and choosing the 1 found first
                 fn, filed, keyind=fn_filed_keyind[0]
                 selcolinds=[keyind]
-                arr2d=getarrs_filed(os.path.join(self.expfolder, fn), filed, selcolinds=selcolinds, zipclass=self.expzipclass)
+                ans=buildrunpath_selectfile(fn, self.expfolder, runp=rund['run_path'], expzipclass=self.expzipclass, returnzipclass=True)
+                if ans is None:
+                    continue
+                p, zipclass=ans
+                arr2d=getarrs_filed(p, filed, selcolinds=selcolinds, zipclass=zipclass)
+                if zipclass!=self.expzipclass:
+                    zipclass.close()
                 if not arr2d is None:
                     xyysubset[count]={}
                     xyysubset[count]['arr']=arr2d[0]
+
         return xyysubset
         
     def extractxydata(self, arrkeys, filed=None):
@@ -928,6 +935,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         selectpointdata=None
         i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
         anaint, runint, smp=[self.l_fomdlist[i0][i1][k] for k in ['anaint', 'runint', 'sample_no']]
+        print '%%',anaint, runint, smp#***
         if anaint==0 and runint==0:
             return None
         if anaint>0:
@@ -1171,21 +1179,21 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #            compstocolor=numpy.float64([comps for tupa, comps in idtupsarr if tuple(tupa) in self.select_idtups])
 
         
-        
-        for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp):
-            if val<0:#tab for code -1 is to plot all codes together
-                inds=numpy.where(code>=0)[0]
-            else:
-                inds=numpy.where(code==val)[0]
-            if self.compPlotMarkSelectionsCheckBox.isChecked():
-                c=numpy.float64([[1, 0, 0] if tuple(tupa) in self.select_idtups else [0, 0, 0] for tupa in idtupsarr[inds]])
-                sortinds_inds=numpy.argsort(c.sum(axis=1))#this sorting puts the "brightest" colors on top so any duplicate black compositions are plotted underneath
-                inds=inds[sortinds_inds]
-                c=c[sortinds_inds]
-                #compstocolor=numpy.float64([comps for tupa, comps in idtupsarr[inds] if tuple(tupa) in self.select_idtups])
-            else:
-                c=cols[inds]
-            plotw.toComp=self.compplot(plotw, comps[inds], c, sm)
+        if int(self.CompPlotTypeComboBox.currentIndex())>0:
+            for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp):
+                if val<0:#tab for code -1 is to plot all codes together
+                    inds=numpy.where(code>=0)[0]
+                else:
+                    inds=numpy.where(code==val)[0]
+                if self.compPlotMarkSelectionsCheckBox.isChecked():
+                    c=numpy.float64([[1, 0, 0] if tuple(tupa) in self.select_idtups else [0, 0, 0] for tupa in idtupsarr[inds]])
+                    sortinds_inds=numpy.argsort(c.sum(axis=1))#this sorting puts the "brightest" colors on top so any duplicate black compositions are plotted underneath
+                    inds=inds[sortinds_inds]
+                    c=c[sortinds_inds]
+                    #compstocolor=numpy.float64([comps for tupa, comps in idtupsarr[inds] if tuple(tupa) in self.select_idtups])
+                else:
+                    c=cols[inds]
+                plotw.toComp=self.compplot(plotw, comps[inds], c, sm)
         
         if len(idtupsarr)==0:
             self.repr_anaint_plots=1
