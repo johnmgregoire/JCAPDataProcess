@@ -367,14 +367,14 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             if destfolder is None:
                 continue
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 print rawlend.keys()
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
@@ -554,13 +554,13 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             if destfolder is None:
                 continue
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
@@ -731,13 +731,13 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             if destfolder is None:
                 continue
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt.dat' %(anak, os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('uvis_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
