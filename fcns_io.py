@@ -203,21 +203,23 @@ def readbinary_selinds(p, nkeys, keyinds=None, zipclass=None):
     else:
         return b[keyinds]
         
-def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float, zipclass=None):
-    closezip=False
-    if zipclass is None:
-        zipclass=gen_zipclass(p)
-        closezip=bool(zipclass)
+def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float, zipclass=None, lines=None):
+    if lines is None:
+        closezip=False
+        if zipclass is None:
+            zipclass=gen_zipclass(p)
+            closezip=bool(zipclass)
+            
+        if zipclass:
+            lines=zipclass.readlines(p)[num_header_lines:]
+        else:
+            with open(p, mode='r') as f:
+                lines=f.readlines()[num_header_lines:]
         
-    if zipclass:
-        lines=zipclass.readlines(p)[num_header_lines:]
+        if closezip:
+            zipclass.close()
     else:
-        with open(p, mode='r') as f:
-            lines=f.readlines()[num_header_lines:]
-    
-    if closezip:
-        zipclass.close()
-        
+        lines=lines[num_header_lines:]
     if delim is None:
         if lines[0].count(',')>lines[0].count('\t'):
             delim=','
@@ -233,6 +235,7 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
         fcn=itemgetter(*selcolinds)
     z=[map(floatintstr, fcn(l.strip().split(delim))) for l in lines if len(l.strip())>0]
     return numpy.array(z).T
+
 
 def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
     d={}
@@ -416,6 +419,20 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
         for k2, techd in rund.iteritems():
             if not k2.startswith('files_technique__'):
                 continue
+            if 'XRFS' in k2:
+                def openandreadlinesfcn(fn):
+                    if zipbool:
+                        with zipopenfcn(fn) as f:
+                            lines=f.readlines()
+                    else:
+                        p=os.path.join(runp, fn)
+                        with open(p,'r') as f:
+                            lines=f.readlines()
+                        #if not '\n' in fs:
+                            
+                    return lines
+                expfiledict[k][k2]=create_techd_for_xrfs_exp(techd, openandreadlinesfcn)#if zip then another ziplcass will be opened in here
+                continue
             for k3, typed in techd.iteritems():
                 #define functions by file and exp type to avoid having to find the function using each file label like "eche_gamry_txt_file"
                 if not saverawdat:
@@ -452,10 +469,10 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         del expfiledict[k][k2][k3][fn]
                         filedeletedbool=True
                         continue
-                    if savefolder is None and saverawdat:#save raw data into the dictionary. empty files allowed here but not below
+                    if savefolder is None and saverawdat:#save raw data into the dictionary. empty files allowed here but not below - not supported for all exp types
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        if k3 in ['image_files']:#list here the types of files that should not be converted to binary
+                        if k3 in ['image_files'] or k3.startswith('binary'):#list here the types of files that should not be converted to binary
                             s=fileattrstr#no sample_no appended or any modifications made to file attr str  for image_files, etc.
                         else:
                             if saverawdat:
@@ -473,21 +490,31 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                 x=numpy.float32([filed[kv] for kv in keys])
                                 with openfnc(fn) as f:
                                     x.tofile(f)
-                                    #savefcn(filed, keys)***
+                                    
                             if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
                                 first2attrs, garb, samplestr=fileattrstr.rpartition(';')
                                 if fn.startswith('0_'):#get rid of sample_no from ref data in uvis
                                     s='%s;%d;%d' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'])
                                 else:
                                     s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
-                            elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp
+                            elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp or a completed .rcp
                                 s=fileattrstr
-                            else:#probably read from .rcp and fileattrstr.count(';') is 1 and separates file_type and keys so take that and append headerlines and datarows
+                            elif fileattrstr.count(';')==1:#probably read from .rcp and fileattrstr contains file_type and keys so take that and append headerlines and datarows
                                 s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
                                 if trytoappendmissingsample:
                                     try:
                                         tempsmp=getsamplenum_fn(fn)
-                                        if not tempsmp>1:
+                                        if not tempsmp>0:
+                                            raise
+                                        s+=(';%d' %tempsmp)
+                                    except:
+                                        pass
+                            elif fileattrstr.count(';')==3:#file_type;keys;nhead;ndata but missing sample
+                                s=fileattrstr.strip()
+                                if trytoappendmissingsample:
+                                    try:
+                                        tempsmp=getsamplenum_fn(fn)
+                                        if not tempsmp>0:
                                             raise
                                         s+=(';%d' %tempsmp)
                                     except:
@@ -839,11 +866,9 @@ def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True
     return d
 
 def readrcpfrommultipleruns(pathlist, rcpdictadditions=None):
-
-                
     if rcpdictadditions is None:
         rcpdictadditions=[[] for p in pathlist]
-                
+
     techset=set([])
     typeset=set([])
     rcpdlist=[]
@@ -987,8 +1012,9 @@ def interpretrcptuplist(rcptuplist):
         for i0, (techstr, typfnslist) in rcptuplist_fns\
         for i1, (typestr, tuplist) in enumerate(typfnslist)\
         for i2, (fnline, garb) in enumerate(tuplist)\
-        if ':' in typestr and (fnline.startswith('Sample') or fnline[0].isdigit())\
-        ] # the " and (fnline.startswith('Sample') or fnline[0].isdigit()" is to validate expected eche and uvis files but should not be necessary moving forward.
+        ]
+        #if ':' in typestr and (fnline.startswith('Sample') or fnline[0].isdigit())\
+        #] # the " and (fnline.startswith('Sample') or fnline[0].isdigit()" is to validate expected eche and uvis files but should not be necessary moving forward.
 
 
     typelist=[d['type'] for d in filenamedlist]
@@ -1352,6 +1378,7 @@ readdatafiledict=dict([\
     ('eche', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines, interpretheaderbool=False) or smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('uvis', lambda ext, lines:smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('pets', lambda ext, lines:read_dta_pstat_file('', lines=lines, addparams=True)), \
+    ('xrfs', lambda ext, lines:None), \
     ])
 
 def getanadefaultfolder(erroruifcn=None):
@@ -1500,6 +1527,29 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
         if zipclass:
             zipclass.close()
         return anadict
+
+def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested
+    if not ('batch_summary_files' in techd.keys() and 'spectrum_files' in techd.keys() and len(techd['batch_summary_files'])==1):
+        return techd#assume all fileattr lines have file_type;keys;numhead;numdata and there's no way to get sample_no so just leave the techd along
+    batchcsv_fn, batchcsv_fileattrstr=techd['batch_summary_files'].items()[0]
+    if not ('Inte' in batchcsv_fileattrstr and 'StgLabel' in batchcsv_fileattrstr and batchcsv_fileattrstr.count(';')==3):
+        return techd
+    ft, keystr, numheadstr, numdatstr=batchcsv_fileattrstr.split(';')
+    nh=int(numheadstr.strip())
+    keys=keystr.split(',')
+    selcolinds=[keys.index('Inte'), keys.index('StgLabel')]
+    lines=openandreadlinesfcn(batchcsv_fn)
+    filelabs, stglabs=readtxt_selectcolumns('', selcolinds=selcolinds, delim='\t', num_header_lines=nh, lines=lines, floatintstr=str)
+    typed=techd['spectrum_files']
+    for fn, fileattrstr in typed.iteritems():
+        fnlab=fn.partition('_')[0]
+        if not fnlab in fnlabs:
+            continue
+        smpstr=stglabs[fnlabs.index(fnlab)]
+        typed[fn]='%s;%s' %(fileattrstr, smpstr)
+#p=r'K:\experiments\xrfs\rcp template\20160104-VCuMn-21964.done\long1.CSV'
+#ans=readtxt_selectcolumns(p, selcolinds=None, delim=',', num_header_lines=7, lines=[], floatintstr=str)
+
     
 #p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/eche.pck'
 #with open(p,mode='rb') as f:

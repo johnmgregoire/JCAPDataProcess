@@ -118,7 +118,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
         return True, \
         'No output check for Process FOM'
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#must have same arguments as regular AnaylsisClass
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
         for filed in self.filedlist:
             self.strkeys_fomdlist=[]

@@ -99,8 +99,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         
         
         
-        self.batchprocesses=[self.batchuvissingleplate_norefdata, self.batchuvissingleplate, self.batchechedark, self.batchechewavelengths]
-        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter uvis into data including refs, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark', 'Add eche runs by wavelength label']
+        self.batchprocesses=[self.batchuvissingleplate_norefdata, self.batchuvissingleplate, self.batchechedark, self.batchechewavelengths, self.batchxrfs]
+        batchdesc=['Filter uvis into data, ref_light, ref_dark', 'Filter uvis into data including refs, ref_light, ref_dark', 'Filter _DARK eche spectra as ref_dark', \
+         'Add eche runs by wavelength label', 'Process xrfs']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
         #These are the filter criteria controls
@@ -196,6 +197,19 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.editexp_addmeasurement()
         
         self.FileStartLineEdit.setText('')
+    
+    def batchxrfs(self):
+        self.ExpTypeLineEdit.setText('xrfs')
+        self.UserNameLineEdit.setText('xrfs')
+        self.savebinaryCheckBox.setChecked(False)
+
+        self.RunTypeLineEdit.setText('data')
+        
+        mainitem=self.techtypetreefcns.typewidgetItem
+        for i in range(mainitem.childCount()):
+            mainitem.child(i).setCheckState(0, Qt.Unchecked if 'binary' in str(mainitem.child(i).text(0)) else Qt.Checked)
+    
+        self.editexp_addmeasurement()
         
     def batchuvissingleplate_norefdata(self):
         
@@ -400,9 +414,11 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         for ind, (k, tl, treeitem) in enumerate([('tech', self.techlist, self.techtypetreefcns.techwidgetItem), ('type', self.typelist, self.techtypetreefcns.typewidgetItem)]):
             k_comments_tuplist=[]
             for t in tl:
-                smps=[fd['smp'] for d in self.rcpdlist for fd in d['filenamedlist'] if fd[k]==t]
-                k_comments_tuplist+=[(t, ['%d files' %len(smps),'Samples in\n[%d,%d]' %(min(smps), max(smps)), ])]
-
+                try:
+                    smps=[fd['smp'] for d in self.rcpdlist for fd in d['filenamedlist'] if fd[k]==t]
+                    k_comments_tuplist+=[(t, ['%d files' %len(smps),'Samples in\n[%d,%d]' %(min(smps), max(smps)), ])]
+                except:
+                    k_comments_tuplist+=[(t, ['%d files' %len(smps)])]
             self.techtypetreefcns.fillmainitem(k_comments_tuplist, treeitem)
             
         #fill run select comboboxs
