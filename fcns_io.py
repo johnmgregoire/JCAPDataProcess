@@ -20,8 +20,8 @@ are_paths_equivalent=lambda path1, path2:os.path.normcase(os.path.abspath(path1)
 
 def filterchars(s, valid_chars = "-_.%s%s" % (string.ascii_letters, string.digits)):
     return ''.join([c for c in s if c in valid_chars])
-        
-        
+
+
 def attemptnumericconversion(s, fcn=float):
     try:
         return fcn(s)
@@ -66,7 +66,7 @@ class ZipClass():#TODO: zipclass instances are kept open in a few places and clo
         with self.zipopenfcn(fn) as f:
             ans=numpy.frombuffer(f.read(), dtype=dtype)#if not in a .zip this file would need be opened as 'rb' but .zip doesn't have that option because maybe it reads bytes as default but i think converts them to string so if get an error reading a binary array from a .zip, this is suspect
         return ans
-        
+
 def gen_zipclass(p):
     if '.zip' in p:
         if not p.endswith('.zip'):
@@ -78,7 +78,7 @@ def gen_zipclass(p):
 
 def copyanafiles(src, dest):
     zipclass=gen_zipclass(src)
-    
+
     if zipclass:
         for fn in zipclass.archive.namelist():
             if fn.endswith('ana') or fn.endswith('pck'):
@@ -172,7 +172,7 @@ def getarrs_filed(p, filed, selcolinds=None, trydat=True, zipclass=None):
             if closezip:
                 zipclass.close()
             return ans
-                
+
     if not ((os.path.isfile(p) or (zipclass and zipclass.fn_in_archive(p)))):
         if closezip:
             zipclass.close()
@@ -187,35 +187,35 @@ def readbinary_selinds(p, nkeys, keyinds=None, zipclass=None):
     if zipclass is None:
         zipclass=gen_zipclass(p)
         closezip=bool(zipclass)
-        
+
     if zipclass:
         b=zipclass.readarr(p)
     else:
         with open(p, mode='rb') as f:
             b=numpy.fromfile(f,dtype='float32')
     b=b.reshape((nkeys,len(b)//nkeys))
-    
+
     if closezip:
         zipclass.close()
-        
+
     if keyinds is None:
         return b
     else:
         return b[keyinds]
-        
+
 def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, floatintstr=float, zipclass=None, lines=None):
     if lines is None:
         closezip=False
         if zipclass is None:
             zipclass=gen_zipclass(p)
             closezip=bool(zipclass)
-            
+
         if zipclass:
             lines=zipclass.readlines(p)[num_header_lines:]
         else:
             with open(p, mode='r') as f:
                 lines=f.readlines()[num_header_lines:]
-        
+
         if closezip:
             zipclass.close()
     else:
@@ -240,7 +240,7 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
 def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
     d={}
     arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
-    
+
     if not 'keys' in fileattrd.keys():
         with open(p, mode='r') as f:
             lines=f.readlines()
@@ -254,16 +254,16 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
             d[k]=numpy.int32(a)
         elif includestrvals:
             d[k]=a#a string array that is onlcude included if "requested" via includestrvals
-            
+
     if not returnheaderdict:
         return d
-    
+
     if zipclass:
         lines=zipclass.readlines(p)[:fileattrd['num_header_lines']]
     else:
         with open(p, mode='r') as f:
             lines=f.readlines()[:fileattrd['num_header_lines']]
-            
+
     lines=lines[1:-1]
     tuplist=[]
     while len(lines)>0:
@@ -271,7 +271,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
         headerdict=dict(\
         [createdict_tup(tup) for tup in tuplist])
     return d, headerdict
-    
+
 def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
@@ -322,7 +322,7 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
         print l
         print '\t' in l
         print l.split('\t')
-        print map(float, l.split('\t')) 
+        print map(float, l.split('\t'))
         raise
     if len(z)==0:#no data
         nrows=0
@@ -330,7 +330,7 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
         for k, arr in zip(d['column_headings'], numpy.float32(z).T):
             d[k]=arr
         nrows=len(arr)
-    
+
     d['num_data_rows']=nrows
     d['path']=path
     if not mtime_path_fcn is None:
@@ -361,7 +361,7 @@ def createfileattrdict(fileattrstr, fn=''):
         return d
     keys=type_keys_heads_rows[1].split(',')
     keys=[kv.strip() for kv in keys]
-    
+
     d['keys']=keys
     d['num_header_lines']=int(type_keys_heads_rows[2].strip())
     d['num_data_rows']=int(type_keys_heads_rows[3].strip())
@@ -401,15 +401,15 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
     if not savefolder is None:
         openfnc=lambda fn:open(os.path.join(savefolder, fn+'.dat'), mode='wb')
         #savefcn=lambda d, keys:numpy.float64([d[k] for k in keys]).tofile(f)
-    
-    readfcn=readdatafiledict[expfiledict['experiment_type']]    
+
+    readfcn=readdatafiledict[expfiledict['experiment_type']]
     for k, rund in expfiledict.iteritems():
         if not k.startswith('run__'):
             continue
         runp=rund['run_path']
 
         zipbool=runp.endswith('.zip')
-        
+
         if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
             runp=tryprependpath(RUNFOLDERS, runp)
         filedeletedbool=False
@@ -429,7 +429,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         with open(p,'r') as f:
                             lines=f.readlines()
                         #if not '\n' in fs:
-                            
+
                     return lines
                 expfiledict[k][k2]=create_techd_for_xrfs_exp(techd, openandreadlinesfcn)#if zip then another ziplcass will be opened in here
                 continue
@@ -490,7 +490,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                 x=numpy.float32([filed[kv] for kv in keys])
                                 with openfnc(fn) as f:
                                     x.tofile(f)
-                                    
+
                             if fileattrstr.count(';')==2:#valid sample_no in place and was there is .rcp file
                                 first2attrs, garb, samplestr=fileattrstr.rpartition(';')
                                 if fn.startswith('0_'):#get rid of sample_no from ref data in uvis
@@ -547,7 +547,7 @@ def cleanup_empty_filed_in_expfiledict(expfiledict):
             if len(rund[k2])==0:#there are no more filenames of this type
                 del expfiledict[k][k2]
     #stopping here, menaing that it is conceivable that a run__ block may not hav any files_technique__ which means that it does not have files and is a useless run
-    return expfiledict 
+    return expfiledict
 def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     if keys is None:
         keys=sorted(interd.keys())
@@ -583,7 +583,7 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
     if replaceslash:
         p=p.replace(chr(92),chr(47))
     return p
-            
+
 def prepend_root_exp_path(p):
     parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
     for parentfold in [tryprependpath(EXPFOLDERS_J, parentfoldtemp), tryprependpath(EXPFOLDERS_K, parentfoldtemp)]:
@@ -601,10 +601,10 @@ def prepend_root_exp_path(p):
 def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
-    
-    if not (os.path.isdir(p) or (os.path.isdir(os.path.split(p)[0]))):# and not os.path.relpath(p).startswith('..\\'))):
+
+    if (not os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) or not os.path.isabs(p):
         p=prepend_root_exp_path(p)
-    
+
     #from here down : turn an exp folder into an exp file
     if os.path.isfile(os.path.join(p, fn)):
         return os.path.join(p, fn)
@@ -622,9 +622,9 @@ def buildrunpath(runp):
     return tryprependpath(RUNFOLDERS, runp)
 
 def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
-        
+
     returnvalfcn=lambda val:(val, expzipclass) if returnzipclass else val
-    
+
     if expzipclass is None:
         expzipclass=gen_zipclass(expfolder_fullpath)
     if expzipclass:
@@ -636,14 +636,14 @@ def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None,
         return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
     if os.path.isfile(os.path.join(expfolder_fullpath, fn)):
         return returnvalfcn(os.path.join(expfolder_fullpath, fn))
-    
+
     if runp is None:
         return None
     runp_fullpath=buildrunpath(runp)
     runzipclass=gen_zipclass(runp_fullpath)
-    
+
     returnvalfcn=lambda val:(val, runzipclass) if returnzipclass else val
-    
+
     if runzipclass:
         if runzipclass.fn_in_archive(fn):
             return returnvalfcn(os.path.join(runp_fullpath, fn))
@@ -652,13 +652,13 @@ def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None,
     return None
 
 def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
-    
+
     if runtodonesavep is None and savefolder is None:
         timename=timestampname()
         expfiledict['name']=timename
         Kfold=tryprependpath(EXPFOLDERS_K, '')#one of these better exist
         savep=os.path.join(os.path.join(os.path.join(Kfold, experiment_type), timename+rundone), timename+'.exp')
-        
+
         if savep is None or not os.path.isdir(os.path.split(os.path.split(savep)[0])[0]):
             if erroruifcn is None:
                 return
@@ -672,24 +672,24 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
         savep=os.path.join(savefolder, os.path.split(savefolder)[1]+'.exp')
     folder=os.path.split(savep)[0]
 
-    #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))    
+    #saveexpfiledict=datastruct_expfiledict(copy.deepcopy(expfiledict))
     saveexpfiledict=copy.deepcopy(expfiledict)
-    
+
     folder=os.path.split(savep)[0]
     if os.path.isdir(folder):
         for fn in os.listdir(folder):
             os.remove(os.path.join(folder, fn))#cannot overwrite files because filename deduplication may be different from previous save
     else:
         os.mkdir(folder)
-    # if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line. 
+    # if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line.
     saverawdat_expfiledict(saveexpfiledict, folder, saverawdat=saverawdat)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
-    
+
     for rund in saveexpfiledict.itervalues():
         if isinstance(rund, dict) and 'run_path' in rund.keys():
             rp=rund['run_path']
             rp=compareprependpath(RUNFOLDERS, rp)
             rund['run_path']=rp
-            
+
     expfilestr=strrep_filedict(saveexpfiledict)
     with open(savep, mode='w') as f:
         f.write(expfilestr)
@@ -708,7 +708,7 @@ def strrep_filedict(filedict):
     dkeys=[k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k]
     dkeys+=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
     return ('\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])).strip()
-        
+
 def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     itemstr=indent*indentlevel+k
     if not isinstance(v, dict):
@@ -721,7 +721,7 @@ def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     dkeys+=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and 'files_' in nestk])
     return '\n'.join(sl+[strrep_filed_nesting(nestk, v[nestk], indentlevel=indentlevel+1) for nestk in dkeys])
 
-    
+
 def getarrfromkey(dlist, key):
     return numpy.array([d[key] for d in dlist])
 
@@ -799,7 +799,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None):
     if (not os.path.isfile(p)) and not erroruifcn is None:
         p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
     return p
-    
+
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
     fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
@@ -811,7 +811,7 @@ def getinfopath_plateid(plateidstr, erroruifcn=None):
     if (not os.path.isfile(p)):
         return None
     return p
-    
+
 def getelements_plateidstr(plateidstr):
     p=getinfopath_plateid(plateidstr)
     if p is None:
@@ -900,7 +900,7 @@ def readrcpfrommultipleruns(pathlist, rcpdictadditions=None):
         if len(remstr)>0:
             tupl+=rcpdtuple_remstr(remstr)
         rcpd=readrcplines(lines, prepend_rcp_rupl=tupl)
-        
+
         techset=techset.union(set(rcpd['techlist']))
         typeset=typeset.union(set(rcpd['typelist']))
         rcpd['run_path']=p
@@ -926,7 +926,7 @@ def rcplines_folder(foldp):
     lines=f.readlines()
     f.close()
     return rcpfn, lines
-    
+
 def rcplines_zip(zipp):
     archive = zipfile.ZipFile(zipp, 'r')
     fns=[fn for fn in archive.namelist() if fn.endswith('.rcp')]
@@ -937,7 +937,7 @@ def rcplines_zip(zipp):
     lines=f.readlines()
     f.close()
     fns=[fn for fn in archive.namelist() if fn.endswith('.rem')]
-    
+
     if len(fns)>0:#only use 1st file, which can take an aribtrary number of comments
         f=archive.open(fns[0])
         remstr=f.read()
@@ -956,7 +956,7 @@ def createnestparamtup(lines):
     while len(lines)>0 and getnumspaces(lines[0])>numspaces:
         tu=createnestparamtup(lines)
         subl+=[tu]
-    
+
     return (ln.lstrip(' '), subl)
 def readrcp(p):
     f=open(p, mode='r')
@@ -969,29 +969,29 @@ def readrcplines(lines, prepend_rcp_rupl=[]):
     while len(lines)>0:
         rcptuplist+=[createnestparamtup(lines)]
     return interpretrcptuplist(rcptuplist)
-    
+
 def interpretrcptuplist(rcptuplist):
 #    def fixfiletuplist(filetuplist):
-#        
+#
 #    for i0, tup in enumerate(rcptuplist):
 #        if tup[0].startswith('files_technique__'):
 #            rcptuplist[i0]=(tup[0], [(tup2[0], fixfiletuplist(tup2[1])) for tup2 in tup[1]])
-            
+
     rcptuplist_fns=[(i0, tup) for i0, tup in enumerate(rcptuplist) if tup[0].startswith('files_technique__')]
 
-    
+
     plateidstrtemp=[tup[0].partition(':')[2].strip() for tup in rcptuplist if tup[0].startswith('plate_id')]
     if len(plateidstrtemp)!=1:
         print 'ERROR FINDING PLATE ID IN .rcp FILE. ', plateidstrtemp
         raise 'ERROR FINDING PLATE ID IN .rcp FILE.'
     plateidstr=plateidstrtemp[0]
-    
-    
+
+
 
     #sort files assumes that filenames are 2-deep nested by technieuqwe and then by filetype. technique labels must begin with files_technique__ but type keys can be anything
     techlist=[tup[0].partition('files_technique__')[2].partition(':')[0] for i0, tup in rcptuplist_fns]
 
-    
+
 #    filenametuplist=[]
 #    for techstr, typfnslist in rcptuplist_fns:
 #        tech=techstr.partition('files_technique__')[2].partition(':')[0]
@@ -1001,7 +1001,7 @@ def interpretrcptuplist(rcptuplist):
 #                for fn, garb in tuplist:
 #                    if fn.partition('Sample')[2].partition('_')[0].isdigit():
 #                        filenametuplist+=[(tech, tp, int(fn.partition('Sample')[2].partition('_')[0]), fn)]
-    
+
     appendsampleifmissing=lambda sm, fnline: ((fnline.count(';')==1 and sm>0) and ('%s;%d' %(fnline, sm),) or (fnline,))[0]#append sample number if it is valid and was missing
     #!!!!! sample_no could be appended here using "appendsampleifmissing(sm, fnline)" but this filedictionary isn't used in creating the .exp. rcptuplist is used so the sample_no will only be in the .exp if it is in the .rcp.   getsamplenum_fnline will get the invalid sample numbers to but those shouldn't be used anywhere.
     makefndict=lambda pl, te, ty, sm, fnline, i0, i1, i2:dict([('plate', pl), ('tech', te), ('type', ty), ('smp', sm), ('fn', fnline), \
@@ -1022,7 +1022,7 @@ def interpretrcptuplist(rcptuplist):
     if 'pstat_files' in typelist:
         temp=typelist.pop(typelist.index('pstat_files'))
         typelist=[temp]+typelist
-        
+
     return dict([('plateidstr', plateidstr), ('rcptuplist', rcptuplist), ('techlist', techlist),('typelist', typelist), ('filenamedlist', filenamedlist)])
 #rcpd=readrcp('20150422.145113.done/20150422.145113.rcp')
 #rcpdlist=readrcpfrommultipleruns(['20150422.145113.done.zip', 'runfolder2'])
@@ -1058,7 +1058,7 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
             else:
                 return {}
     zipclass=gen_zipclass(p)
-    
+
     if p.endswith('.pck'):
         if zipclass:
             expfiledict=zipclass.loadpck(p)
@@ -1072,12 +1072,12 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
             with open(p, mode='r') as f:
                 lines=f.readlines()
         expfiledict=filedict_lines(lines)
-        
+
         #these tiems would have been performed before saving .pck so only perform for .exp
         convertstrvalstonum_nesteddict(expfiledict)
         if createfiledicts:
             convertfilekeystofiled(expfiledict)
-        
+
     else:
         if returnzipclass:
             return None, False
@@ -1087,7 +1087,7 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
             return None
     if includerawdata:
         expfiledict=datastruct_expfiledict(expfiledict)
-    
+
     if returnzipclass:
         return expfiledict, zipclass
     else:
@@ -1096,7 +1096,7 @@ def readexpasdict(p, includerawdata=False, erroruifcn=None, returnzipclass=False
         return expfiledict
 
 
-def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcpd but also a corresponding 
+def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcpd but also a corresponding
     zipclass=gen_zipclass(p)
 
     if zipclass:
@@ -1111,7 +1111,7 @@ def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcp
     expparamstuplist=[tup for tup in exptuplist if not tup[0].startswith('run__')]
     if only_expparamstuplist:
         return expparamstuplist
-        
+
     expruntuplists=[tup[1] for tup in exptuplist if tup[0].startswith('run__')]#loose the run__name but keep the things nested in there
     techset=set([])
     typeset=set([])
@@ -1127,7 +1127,7 @@ def readexpasrcpdlist(p, only_expparamstuplist=False):#create both a list of rcp
                 rcptuplist+=tup[1]
             else:
                 expleveltuplist+=[tup]
-            
+
         rcpd=interpretrcptuplist(rcptuplist)
         techset=techset.union(set(rcpd['techlist']))
         typeset=typeset.union(set(rcpd['typelist']))
@@ -1164,7 +1164,7 @@ def get_numhead_numdata_echetxtfiles(lines):
     numhead=map(operator.itemgetter(0),lines).count('%')
     numdata=len(lines)-numhead
     return {'num_header_lines': numhead,'num_data_rows': numdata}
-    
+
 def get_numhead_numdata_petsdtafiles(lines):
     for count, l in enumerate(lines):
         if l.startswith('CURVE\tTABLE\t'):
@@ -1191,11 +1191,11 @@ def read_dta_pstat_file(path, lines=None, addparams=False):
     keys=[k for i, k in enumerate(allkeys) if not i in skipinds]
     myfloatfcn=lambda s:(len(s.strip())==0 and (float('NaN'),) or (float(s.strip()),))[0]#this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
     z=[map(myfloatfcn, [x for i, x in enumerate(l.strip().split(delim)) if not i in skipinds]) for l in lines[filed['num_header_lines']:]]
-    
+
     for k, arr in zip(keys, numpy.float32(z).T):
         d[k]=arr
     return  d
-    
+
 def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines=None, returnonlyattrdict=False): # can have raw data files with UV-vis or ECHE styles or a fom file with column headings as first line, in which case smp=None
     if returnsmp:
         smp=None
@@ -1265,10 +1265,10 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
             return None, {}
         else:
             return {}
-    
+
     column_headings=chs.split(delim)
     column_headings=[s.strip() for s in column_headings]
-    
+
     if returnonlyattrdict:
         d={}
         d['keys']=column_headings
@@ -1281,13 +1281,13 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
         return smp, d
     d={}
     z=[]
-    
+
     skipcols=['Date', 'Time']
     skipinds=[i for i, col in enumerate(column_headings) if col in skipcols]
     column_headings=[x for i, x in enumerate(column_headings) if i not in skipinds]
     myfloatfcn=lambda s:(len(s.strip())==0 and (float('NaN'),) or (float(s.strip()),))[0]#this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
     z=[map(myfloatfcn, [x for i, x in enumerate(l.split(delim)) if i not in skipinds]) for l in lines[firstdatalineind:]]
-    
+
     if len(z)==0:#NO DATA!
         nrows=0
     else:
@@ -1306,7 +1306,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
                 continue
             k, garb, v=l.partition(c)
             d[k.strip().strip('%')]=attemptnumericconversion_tryintfloat(v.strip())
-            
+
     if returnsmp:
         return smp, d
     else:
@@ -1315,7 +1315,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
 
 def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
     zipbool=runp.endswith('.zip')
-    
+
     if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
         runp=tryprependpath(RUNFOLDERS, runp)
 
@@ -1336,7 +1336,7 @@ def applyfcn_txtfnlist_run(fcn, runp, fns, readbytes=1000):
     if zipbool:
         archive.close()
     return returnlist
-    
+
 def gettimefromheader(**kwargs):#use either path or filestr as kwargument path=None, filestr=''
     trylist=getheadattrs(searchstrs=['Epoch', 'Date and Time'], **kwargs)
     if not trylist[0] is None:
@@ -1350,14 +1350,14 @@ def gettimefromheader(**kwargs):#use either path or filestr as kwargument path=N
             return time.mktime(t)
         except:
             return None
-    
+
 def getsamplefromheader(**kwargs):#use either path or filestr as kwargument path=None, filestr=''
     trylist=getheadattrs(searchstrs=['Sample', 'Sample No', 'sample_no'], **kwargs)
     for v in trylist:
         if not v is None:
             return v
     return None
-    
+
 def getheadattrs(path=None, filestr='', searchstrs=['Sample', 'Sample No', 'sample_no'], readbytes=1000):
     if filestr is None:
         with open(path, mode='r') as f:
@@ -1384,9 +1384,9 @@ readdatafiledict=dict([\
 def getanadefaultfolder(erroruifcn=None):
 
     timename=time.strftime('%Y%m%d.%H%M%S')
-    
+
     folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), 'temp'), timename+'.incomplete')
-    
+
     try:
         if not os.path.isdir(folder):
             os.mkdir(folder)
@@ -1400,7 +1400,7 @@ def getanadefaultfolder(erroruifcn=None):
 def timestampname():
     return time.strftime('%Y%m%d.%H%M%S')
 def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', movebool=True, savefolder=None):
-    
+
     if srcfolder.endswith('.incomplete') and savefolder is None:
         rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
         if typefold=='temp':
@@ -1432,7 +1432,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
 #            print 'Error renaming ', srcfolder
     if not os.path.isdir(savefolder):
         os.mkdir(savefolder)
-    
+
     if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
         for fn in os.listdir(srcfolder):
             if fn.startswith('.'):
@@ -1451,7 +1451,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
     savep=os.path.join(savefolder, '%s.ana' %timename)
     saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
     return savefolder
-    
+
 def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
     if changeananame and not anadict is None:
         anadict['name']='.'.join(os.path.split(anapath)[1].split('.')[:2])
@@ -1460,7 +1460,7 @@ def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
             print 'nothing saved to ', anapath
             return
         anafilestr=strrep_filedict(anadict)
-    
+
     with open(anapath, mode='w') as f:
         f.write(anafilestr)
     if anadict is None:
@@ -1470,7 +1470,7 @@ def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
     convertfilekeystofiled(saveanadict)
     with open(anapath.replace('.ana', '.pck'), mode='w') as f:
         pickle.dump(saveanadict, f)
-        
+
 def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
     if not  ((p.endswith('ana') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):# if .zip only tests fo existence of .zip file
         if erroruifcn is None:
@@ -1499,7 +1499,7 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
             else:
                 return {}
     zipclass=gen_zipclass(p)
-    
+
     if p.endswith('pck'):
         if zipclass:
             anadict=zipclass.loadpck(p)
@@ -1550,7 +1550,7 @@ def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested
 #p=r'K:\experiments\xrfs\rcp template\20160104-VCuMn-21964.done\long1.CSV'
 #ans=readtxt_selectcolumns(p, selcolinds=None, delim=',', num_header_lines=7, lines=[], floatintstr=str)
 
-    
+
 #p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/eche.pck'
 #with open(p,mode='rb') as f:
 #    d=pickle.load(f)
@@ -1558,7 +1558,7 @@ def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested
 #keystr=d['run__1']['files_technique__CA6']['spectrum_files']['Sample765_x-46_y-42_Ni0Fe30Co0Ce20_CA6_TRANS0_20150422.145114.5.opt']
 #keys=keystr.split(',')
 #keys=[kv.strip() for kv in keys]
-#                        
+#
 #saverawdat_expfiledict(d, folder)
 #
 #p='//htejcap.caltech.edu/share/home/users/hte/demo_proto/experiment/eche/1/raw_binary/Sample765_x-46_y-42_Ni0Fe30Co0Ce20_CA6_TRANS0_20150422.145114.5.opt.dat'
