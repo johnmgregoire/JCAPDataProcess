@@ -59,7 +59,7 @@ def stdgetapplicablefomfiles(anadict, params={}):
     anak_list=[anak for anak, anav in anadict.iteritems()\
            if (anak==params['select_ana'].strip()) and ('files_multi_run' in anav.keys()) and ('fom_files' in anav['files_multi_run'].keys())]#only 1 anak allowed but still keep as list and below list could have multiple fom_files in the same ana__x
 
-    if 'select_fom_keys' in params.keys() and len(params['select_fom_keys'].strip('*'))>0:
+    if 'select_fom_keys' in params.keys() and not params['select_fom_keys'].startswith('ALL')>0:
         selkeyslist=params['select_fom_keys'].split(',')
         selkeyslist=[s.strip() for s in selkeyslist]
         keystestfcn=lambda tagandkeys: (True in [k in tagandkeys.split(';')[1].split(',') for k in selkeyslist]) and len(set(tagandkeys.split(';')[1].split(',')).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
@@ -84,7 +84,7 @@ def stdgetapplicablefomfiles(anadict, params={}):
 class Analysis_Master_FOM_Process(Analysis_Master_nointer):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*'}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis_Master_FOM_Process'
         self.requiredkeys=[]
@@ -149,7 +149,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
 class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999., 'platemap_comp4plot_keylist':'A,B,C,D'}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL','ignore_if_any_nan':0, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'nsig_remove_outliers':999., 'platemap_comp4plot_keylist':'A,B,C,D'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FilterSmoothFromFile'
         self.requiredkeys=[]
@@ -209,7 +209,7 @@ class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED
 class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'*', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__AveCompDuplicates'
         self.requiredkeys=[]
