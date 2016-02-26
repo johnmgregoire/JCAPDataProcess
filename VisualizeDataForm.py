@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Thu Feb 18 10:30:23 2016
+# Created: Thu Feb 25 22:21:55 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -196,7 +196,7 @@ class Ui_VisDataDialog(object):
         self.overlayselectCheckBox.setGeometry(QtCore.QRect(210, 360, 81, 17))
         self.overlayselectCheckBox.setObjectName(_fromUtf8("overlayselectCheckBox"))
         self.SelectTreeWidget = QtGui.QTreeWidget(VisDataDialog)
-        self.SelectTreeWidget.setGeometry(QtCore.QRect(370, 10, 201, 171))
+        self.SelectTreeWidget.setGeometry(QtCore.QRect(370, 30, 201, 171))
         self.SelectTreeWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.SelectTreeWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.SelectTreeWidget.setHeaderHidden(True)
@@ -219,13 +219,13 @@ class Ui_VisDataDialog(object):
         self.FilenameFilterPushButton.setGeometry(QtCore.QRect(10, 110, 101, 31))
         self.FilenameFilterPushButton.setObjectName(_fromUtf8("FilenameFilterPushButton"))
         self.UpdateFiltersPushButton = QtGui.QPushButton(VisDataDialog)
-        self.UpdateFiltersPushButton.setGeometry(QtCore.QRect(580, 10, 101, 23))
+        self.UpdateFiltersPushButton.setGeometry(QtCore.QRect(580, 30, 101, 23))
         self.UpdateFiltersPushButton.setObjectName(_fromUtf8("UpdateFiltersPushButton"))
         self.compPlotMarkSelectionsCheckBox = QtGui.QCheckBox(VisDataDialog)
-        self.compPlotMarkSelectionsCheckBox.setGeometry(QtCore.QRect(580, 70, 101, 31))
+        self.compPlotMarkSelectionsCheckBox.setGeometry(QtCore.QRect(580, 90, 101, 31))
         self.compPlotMarkSelectionsCheckBox.setObjectName(_fromUtf8("compPlotMarkSelectionsCheckBox"))
         self.UpdatePlotPushButton = QtGui.QPushButton(VisDataDialog)
-        self.UpdatePlotPushButton.setGeometry(QtCore.QRect(580, 40, 101, 23))
+        self.UpdatePlotPushButton.setGeometry(QtCore.QRect(580, 60, 101, 23))
         self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
         self.ontheflyPushButton = QtGui.QPushButton(VisDataDialog)
         self.ontheflyPushButton.setGeometry(QtCore.QRect(0, 260, 111, 21))
@@ -274,17 +274,17 @@ class Ui_VisDataDialog(object):
         self.label_16.setGeometry(QtCore.QRect(710, 180, 51, 21))
         self.label_16.setObjectName(_fromUtf8("label_16"))
         self.ellabelsLineEdit = QtGui.QLineEdit(VisDataDialog)
-        self.ellabelsLineEdit.setGeometry(QtCore.QRect(580, 120, 101, 22))
+        self.ellabelsLineEdit.setGeometry(QtCore.QRect(580, 140, 101, 22))
         self.ellabelsLineEdit.setText(_fromUtf8(""))
         self.ellabelsLineEdit.setObjectName(_fromUtf8("ellabelsLineEdit"))
         self.label_17 = QtGui.QLabel(VisDataDialog)
-        self.label_17.setGeometry(QtCore.QRect(580, 100, 91, 21))
+        self.label_17.setGeometry(QtCore.QRect(580, 120, 91, 21))
         self.label_17.setObjectName(_fromUtf8("label_17"))
         self.label_18 = QtGui.QLabel(VisDataDialog)
-        self.label_18.setGeometry(QtCore.QRect(580, 140, 91, 21))
+        self.label_18.setGeometry(QtCore.QRect(580, 160, 91, 21))
         self.label_18.setObjectName(_fromUtf8("label_18"))
         self.platemapfilenameLineEdit = QtGui.QLineEdit(VisDataDialog)
-        self.platemapfilenameLineEdit.setGeometry(QtCore.QRect(580, 160, 101, 22))
+        self.platemapfilenameLineEdit.setGeometry(QtCore.QRect(580, 180, 101, 22))
         self.platemapfilenameLineEdit.setText(_fromUtf8(""))
         self.platemapfilenameLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.platemapfilenameLineEdit.setObjectName(_fromUtf8("platemapfilenameLineEdit"))
@@ -305,6 +305,12 @@ class Ui_VisDataDialog(object):
         self.RaiseErrorPushButton = QtGui.QPushButton(VisDataDialog)
         self.RaiseErrorPushButton.setGeometry(QtCore.QRect(1570, 10, 31, 23))
         self.RaiseErrorPushButton.setObjectName(_fromUtf8("RaiseErrorPushButton"))
+        self.BatchComboBox = QtGui.QComboBox(VisDataDialog)
+        self.BatchComboBox.setGeometry(QtCore.QRect(430, 0, 251, 22))
+        self.BatchComboBox.setObjectName(_fromUtf8("BatchComboBox"))
+        self.BatchPushButton = QtGui.QPushButton(VisDataDialog)
+        self.BatchPushButton.setGeometry(QtCore.QRect(370, 0, 61, 21))
+        self.BatchPushButton.setObjectName(_fromUtf8("BatchPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -387,6 +393,9 @@ class Ui_VisDataDialog(object):
         self.expanafilenameLineEdit.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ClearPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Clear Data", None, QtGui.QApplication.UnicodeUTF8))
         self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
+        self.BatchComboBox.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
+        self.BatchPushButton.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None, QtGui.QApplication.UnicodeUTF8))
+        self.BatchPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Run Batch:", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

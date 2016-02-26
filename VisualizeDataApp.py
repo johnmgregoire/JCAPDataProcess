@@ -22,6 +22,7 @@ from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 from VisualizeAuxFcns import *
+from VisualizeBatchFcns import BatchFcnList, BatchDescList
 from VisualizeDataForm import Ui_VisDataDialog
 from SaveImagesApp import *
 from LoadCSVApp import loadcsvDialog
@@ -64,6 +65,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.LoadCsvPushButton, self.loadcsv), \
         (self.ClearPushButton, self.clearall), \
         (self.RaiseErrorPushButton, self.raiseerror), \
+        (self.BatchPushButton, self.runbatchprocess), \
         ]
 
         #(self.UndoExpPushButton, self.undoexpfile), \
@@ -88,13 +90,22 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for count, c in enumerate(AnalysisClasses):
             self.OnFlyAnaClassComboBox.insertItem(count, c.analysis_name)
             
+        self.batchprocesses=BatchFcnList
+        batchdesc=BatchDescList
+        for i, l in enumerate(batchdesc):
+            self.BatchComboBox.insertItem(i, l)
+            
         self.plotwsetup()
-        
         
         self.clearall()
     
     def raiseerror(self):
         raiseerror
+    
+    def runbatchprocess(self):
+        if self.batchprocesses[self.BatchComboBox.currentIndex()](self):
+            idialog=messageDialog(self, 'Error in batch process - aborted.')
+            idialog.exec_()
         
     def clearall(self):
         self.l_fomdlist=[]
@@ -515,6 +526,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             p, zipclass=ans
             
         filed=d_nestedkeys(d, keylist)
+        filed=copy.copy(filed)#to avoid zipclass being incorproated into exp or anafiledict
         filed['path']=p
         filed['zipclass']=zipclass
         self.plotxy(filed=filed)
