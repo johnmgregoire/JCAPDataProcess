@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Fri Feb 19 13:21:33 2016
+# Created: Thu Feb 25 21:41:22 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!

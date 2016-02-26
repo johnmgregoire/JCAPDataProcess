@@ -88,6 +88,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         (self.ClearExpPushButton, self.clearexp), \
         (self.SaveExpPushButton, self.saveexp), \
         (self.SaveExpGoAnaPushButton, self.saveexpgoana), \
+        (self.SaveExpGoVisPushButton, self.saveexpgovis), \
         (self.BatchPushButton, self.runbatchprocess), \
         (self.RaiseErrorPushButton, self.raiseerror), \
         ]
@@ -696,6 +697,13 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 rund['platemapdlist']=copy.copy(rcpdl[0]['platemapdlist'])
         self.parent.calcui_exec()
         self.hide()
+
+    def saveexpgovis(self):
+        saveexpfiledict, exppath=self.saveexp()
+        self.parent.visdataui.importexp(experiment_path=os.path.split(exppath)[0])
+        self.parent.visui_exec()
+        self.hide()
+        
     def saveexp(self):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
         if not 'experiment_type' in self.expfiledict.keys():

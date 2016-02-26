@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui'
 #
-# Created: Mon Feb 22 13:58:10 2016
+# Created: Thu Feb 25 21:41:52 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -97,7 +97,7 @@ class Ui_CreateExpDialog(object):
         self.SaveExpPushButton.setGeometry(QtCore.QRect(80, 430, 61, 21))
         self.SaveExpPushButton.setObjectName(_fromUtf8("SaveExpPushButton"))
         self.ImportExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpPushButton.setGeometry(QtCore.QRect(320, 430, 81, 21))
+        self.ImportExpPushButton.setGeometry(QtCore.QRect(400, 420, 51, 31))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
         self.FileSearchLineEdit = QtGui.QLineEdit(CreateExpDialog)
         self.FileSearchLineEdit.setGeometry(QtCore.QRect(860, 180, 171, 20))
@@ -172,7 +172,7 @@ class Ui_CreateExpDialog(object):
         self.label_19.setGeometry(QtCore.QRect(760, 370, 91, 16))
         self.label_19.setObjectName(_fromUtf8("label_19"))
         self.ClearExpPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ClearExpPushButton.setGeometry(QtCore.QRect(250, 430, 71, 21))
+        self.ClearExpPushButton.setGeometry(QtCore.QRect(360, 420, 41, 31))
         self.ClearExpPushButton.setObjectName(_fromUtf8("ClearExpPushButton"))
         self.BatchComboBox = QtGui.QComboBox(CreateExpDialog)
         self.BatchComboBox.setGeometry(QtCore.QRect(650, 300, 391, 22))
@@ -188,7 +188,7 @@ class Ui_CreateExpDialog(object):
         self.line_2.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_2.setObjectName(_fromUtf8("line_2"))
         self.ImportExpParamsPushButton = QtGui.QPushButton(CreateExpDialog)
-        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(400, 430, 101, 21))
+        self.ImportExpParamsPushButton.setGeometry(QtCore.QRect(450, 420, 61, 31))
         self.ImportExpParamsPushButton.setObjectName(_fromUtf8("ImportExpParamsPushButton"))
         self.SearchRunsPushButton = QtGui.QPushButton(CreateExpDialog)
         self.SearchRunsPushButton.setGeometry(QtCore.QRect(290, 40, 91, 21))
@@ -249,7 +249,7 @@ class Ui_CreateExpDialog(object):
         self.label_10.setGeometry(QtCore.QRect(680, 10, 171, 16))
         self.label_10.setObjectName(_fromUtf8("label_10"))
         self.savebinaryCheckBox = QtGui.QCheckBox(CreateExpDialog)
-        self.savebinaryCheckBox.setGeometry(QtCore.QRect(10, 420, 70, 31))
+        self.savebinaryCheckBox.setGeometry(QtCore.QRect(10, 420, 71, 31))
         self.savebinaryCheckBox.setChecked(True)
         self.savebinaryCheckBox.setObjectName(_fromUtf8("savebinaryCheckBox"))
         self.FileNotStartLineEdit = QtGui.QLineEdit(CreateExpDialog)
@@ -275,6 +275,9 @@ class Ui_CreateExpDialog(object):
         self.ImportRunFolderPushButton = QtGui.QPushButton(CreateExpDialog)
         self.ImportRunFolderPushButton.setGeometry(QtCore.QRect(200, 40, 81, 21))
         self.ImportRunFolderPushButton.setObjectName(_fromUtf8("ImportRunFolderPushButton"))
+        self.SaveExpGoVisPushButton = QtGui.QPushButton(CreateExpDialog)
+        self.SaveExpGoVisPushButton.setGeometry(QtCore.QRect(250, 430, 91, 21))
+        self.SaveExpGoVisPushButton.setObjectName(_fromUtf8("SaveExpGoVisPushButton"))
 
         self.retranslateUi(CreateExpDialog)
         QtCore.QMetaObject.connectSlotsByName(CreateExpDialog)
@@ -297,7 +300,8 @@ class Ui_CreateExpDialog(object):
         self.SaveExpPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "save .exp text file", None, QtGui.QApplication.UnicodeUTF8))
         self.SaveExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Save EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import a .exp file, which will clear any existing EXP and RUNs and create new RUNs from the EXP", None, QtGui.QApplication.UnicodeUTF8))
-        self.ImportExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import\n"
+"EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.FileSearchLineEdit.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "All raw data filenames regardless of type will be searched for this string.\n"
 " comma-deliminated strings will be searched separately with OR logic", None, QtGui.QApplication.UnicodeUTF8))
         self.label_8.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename to contain:", None, QtGui.QApplication.UnicodeUTF8))
@@ -329,12 +333,14 @@ class Ui_CreateExpDialog(object):
         self.AccessLineEdit.setText(QtGui.QApplication.translate("CreateExpDialog", "hte", None, QtGui.QApplication.UnicodeUTF8))
         self.label_19.setText(QtGui.QApplication.translate("CreateExpDialog", "EXP access:", None, QtGui.QApplication.UnicodeUTF8))
         self.ClearExpPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "save .exp text file", None, QtGui.QApplication.UnicodeUTF8))
-        self.ClearExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Clear EXP", None, QtGui.QApplication.UnicodeUTF8))
+        self.ClearExpPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Clear\n"
+"EXP", None, QtGui.QApplication.UnicodeUTF8))
         self.BatchComboBox.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
         self.BatchPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None, QtGui.QApplication.UnicodeUTF8))
         self.BatchPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Run Batch Process:", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportExpParamsPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Open a .exp file and use only the top-level params", None, QtGui.QApplication.UnicodeUTF8))
-        self.ImportExpParamsPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import EXP Params", None, QtGui.QApplication.UnicodeUTF8))
+        self.ImportExpParamsPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import EXP\n"
+"Params", None, QtGui.QApplication.UnicodeUTF8))
         self.SearchRunsPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import multiple folders and/or .zip, each representing a RUN with a .rcp file", None, QtGui.QApplication.UnicodeUTF8))
         self.SearchRunsPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Search for RUNs", None, QtGui.QApplication.UnicodeUTF8))
         self.label_20.setText(QtGui.QApplication.translate("CreateExpDialog", "Require filename start with:", None, QtGui.QApplication.UnicodeUTF8))
@@ -360,6 +366,8 @@ class Ui_CreateExpDialog(object):
         self.ImportRunInfoPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import from .info", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportRunFolderPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "Import multiple folders and/or .zip, each representing a RUN with a .rcp file", None, QtGui.QApplication.UnicodeUTF8))
         self.ImportRunFolderPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Import Folder", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveExpGoVisPushButton.setToolTip(QtGui.QApplication.translate("CreateExpDialog", "save .exp text file", None, QtGui.QApplication.UnicodeUTF8))
+        self.SaveExpGoVisPushButton.setText(QtGui.QApplication.translate("CreateExpDialog", "Save+GoToVis", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

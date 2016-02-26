@@ -602,7 +602,7 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
     
-    if not (os.path.isdir(p) or (os.path.isdir(os.path.split(p)[0]) and not os.path.relpath(p).startswith('..\\'))):
+    if not (os.path.isdir(p) or (os.path.isdir(os.path.split(p)[0]))):# and not os.path.relpath(p).startswith('..\\'))):
         p=prepend_root_exp_path(p)
     
     #from here down : turn an exp folder into an exp file
