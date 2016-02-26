@@ -1,6 +1,7 @@
+import os
 
 PLATEFOLDERS=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\plate', r'J:\hte_jcap_app_proto\plate', \
-                       r'\\htejcap.caltech.edu\share\home\users\hte\platemaps', r'K:\users\hte\platemaps']
+                       r'\\htejcap.caltech.edu\share\home\users\hte\platemaps', r'ERT',r'K:\users\hte\platemaps']
 
 RUNFOLDERS=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\run', r'J:\hte_jcap_app_proto\run']
 
@@ -17,6 +18,14 @@ FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\Filter
 PLATEMAPBACKUP=r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map'
 
 
+
+
+for l in [PLATEFOLDERS, RUNFOLDERS, EXPFOLDERS_J, EXPFOLDERS_K, ANAFOLDERS_J, ANAFOLDERS_K, FOMPROCESSFOLDERS]:
+    for i in range(len(l))[::-1]:
+        if not os.path.isdir(l[i]):
+            l.pop(i)
+    if len(l)==0:
+        print 'WARNING: some DBPaths have no remaining options'
 
 #import os
 #[os.path.isdir(p) for p in ANAFOLDERS_K]
