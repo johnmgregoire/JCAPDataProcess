@@ -8,9 +8,8 @@ from fcns_io import *
 from fcns_ui import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
-#from scipy.signal import savgol_filter
-def savgol_filter(x, y, z, delta=0, deriv=0):
-    return x
+from scipy.signal import savgol_filter
+
 from bgmath_fcn import *
 import matplotlib.pyplot as plt
 plt.ioff()
@@ -225,7 +224,10 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
     def processnewparams(self):
         self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
-
+        
+        if self.params['window_length'] %2!=1:
+            self.params['window_length']+=1
+            
         if np.array([str(x).strip()=='' for x in self.params.values()]).any():
             self.params=copy.copy(self.dfltparams)
             idialog=messageDialog(self, 'You enetered invalid parameters. They are being restored to defaults. Please try again.')
