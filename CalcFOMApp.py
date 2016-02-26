@@ -645,7 +645,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         plateidsstrlist_list=[anad['plate_ids'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]]
         plateidsstrlist=sorted(list(set([idstr for liststr in plateidsstrlist_list for idstr in liststr.split(',')])))
         plateidsstr=','.join(plateidsstrlist)
-        self.anadict['plate_ids']=plateidsstr
+        #self.anadict['plate_ids']=plateidsstr
         self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), plateidsstr)
         self.AnaTreeWidgetFcns.filltree(self.anadict)
         
