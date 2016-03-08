@@ -44,8 +44,14 @@ def linearfit(xdata,ydata,num_knots,min_knotdist,xorder,options,tol):
     locs=np.arange(1,num_knots+1)
     cons=({'type':'ineq','fun':lambda params: params[locs[0:-1]+1]*sign-(params[locs[0:-1]]*sign+min_knotdist)},\
     {'type':'eq','fun':lambda params: np.array([params[1],params[num_knots]])-np.array([xdata[0],xdata[-1]],)})
-    init_params=np.hstack((ydata[0],np.arange(xdata[0],xdata[-1]-10.**(-4),(xdata[-1]-xdata[0])/(num_knots-1.))\
-    ,np.ones(num_knots-1)*(ydata[-1]-ydata[0])/(xdata[-1]-xdata[0])))
+    init_x=np.arange(xdata[0],xdata[-1],(xdata[-1]-xdata[0])/((num_knots-1)))
+    if np.size(init_x)!=num_knots:
+        init_x=np.hstack((init_x,xdata[-1]))
+    else:
+        init_x[-1]=xdata[-1]
+    init_idxs=[np.argmin(np.abs(xdata-init_x[loc])) for loc in xrange(np.size(init_x))]
+    init_slopes=[(ydata[init_idxs[loc+1]]-ydata[init_idxs[loc]])/(xdata[init_idxs[loc+1]]-xdata[init_idxs[loc]]) for loc in xrange(0,len(init_idxs)-1)]
+    init_params=np.hstack((ydata[0],init_x,init_slopes))
     res = sp.optimize.minimize(residuals,init_params, args=(xdata,ydata),constraints=cons, method='SLSQP',options=options,tol=tol)
     return res
     
@@ -120,7 +126,7 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
         linfitd,fomd=calc_bandgap(tempparams,np.size(tempparams)/2,max_numbgs,min_allowedslope,\
         min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,merge_bgslopediff_percent,\
         min_TP_finseg_diff,min_bgfinalseglength,bgtyp)
-        data['linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
+        data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
     return [linfitd,fomd]
             
 def calc_bandgap(params,num_knots,max_numbgs,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
@@ -138,7 +144,7 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
     tot_segs=num_segments
     for i in np.arange(0,tot_segs-1):
         if slopes[i]<min_allowedslope:
-            num_segments=i+1
+            num_segments=i
             break
     if num_segments==tot_segs:
     
@@ -154,14 +160,7 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
                             bgknots_lower.extend([i])
                             abs_expl.extend([TPdiff])
                             bgcode.extend([0])
-                        else:            
-                            if slopes[i+1]-slopes[i]<merge_bgslopediff_percent*(slopes[i]):
-                                if i==num_segments-2 or (i!=num_segments-2 and slopes[i+2]<slopes[i+1]):
-                                    TPdiff=(knots[i+1]-knots[i])*slopes[i]
-                                    if TPdiff>=min_bgTP_diff:
-                                        bgknots_lower.extend([i])
-                                        abs_expl.extend([TPdiff])
-                                        bgcode.extend([2])
+
         if np.size(bgknots_lower)==0:
             j=num_segments-1
             if slopes[j]>slopes[j-1] and slopes[j]>0 and slopes[j-1]>min_bkgrdslope:
@@ -260,7 +259,7 @@ def runuvvis(data,inputvars):
 
     code0='Successful assignment of bandgap linear segment using simple rules'
     code1='Linear segment with a slope less than min_slope was found'
-    code2='Succesful assignment of bandgap linear segment using a slightly higher slope at following segment criterion but bgdiff > min in current segment'
+    code2='Succesful assignment of bandgap linear segment using a slightly higher slope at following segment criterion but bgdiff > min in current segment; exists only the older versions and is obsolete from 3/6/16'
     code3='No linear segment was observed for band gap'
     code4='Band gap linear segment(s) deleted due to inability to identify background linear segment with sufficient difference in slope'
     code5='All Band gap lin segs deleted due to inability to identify background linear segment with sufficient difference in slope'
@@ -291,6 +290,7 @@ def runuvvis(data,inputvars):
         
     fomd=dict([(bgtyp+'_'+k,pfomd[bgtyp][k]) for bgtyp in pfomd.keys() for k in pfomd[bgtyp].keys()])
     linfitd=dict([(bgtyp+'_'+k,plinfitd[bgtyp][k]) for bgtyp in plinfitd.keys() for k in plinfitd[bgtyp].keys()])
-    linfitd=dict(linfitd.items()+[(k+'_'+str(x),linfitd[k][idx]) for k in linfitd.keys() if k.split('_')[-1] in ['knots','slopes'] for idx,x in enumerate(xrange(len(linfitd[k])))])
+    linfitd=dict(linfitd.items()+[(k+'_'+str(x),linfitd[k][idx]) for k in linfitd.keys() if k.split('_')[-1] in ['knots','slopes'] \
+    for idx,x in enumerate(xrange(len(linfitd[k])))])
     [linfitd.pop(k) for k in linfitd.keys() if not np.isscalar(linfitd[k])]
     return linfitd,fomd
