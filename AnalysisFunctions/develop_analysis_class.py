@@ -14,6 +14,10 @@ from bgmath_fcn import *
 import matplotlib.pyplot as plt
 plt.ioff()
 
+
+#def savgol_filter(x,a,b,**kwargs):
+#    return x
+
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk and 'inter_files' in anav[ftk].keys()]) for anak, anav in anadict.iteritems()\
     if anak.startswith('ana__') and True in ['files_' in ftk for ftk in anav.keys()]]
@@ -185,7 +189,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), \
+        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
 #         "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
@@ -473,7 +477,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','DR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), \
+        ('mthd','DR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
         # "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
@@ -648,7 +652,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','T'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',9),('polyorder',4), \
+        ('mthd','T'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
         #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
@@ -829,29 +833,19 @@ class Analysis__BG(Analysis_Master_inter):
         self.analysis_fcn_version='1'
         self.analysis_name='Analysis__BG'
         self.dfltparams=dict([('num_knots',8),('lower_wl',385),('upper_wl',950),\
-            ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),\
-            ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',10),\
-            ('merge_linsegslopediff_percent',10),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
+            ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),\
+            ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',0),\
+            ('merge_linsegslopediff_percent',0),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
             ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
-            ('abs_minallowedslope',-1),('max_absolute_2ndderiv',0),('analysis_types',['DA','IA']),\
-            ('maxbgspersmp',4),('chkoutput_types',['DA','IA'])])
+            ('abs_minallowedslope',-10),('max_absolute_2ndderiv',350000),('analysis_types','DA,IA'),\
+            ('maxbgspersmp',4),('chkoutput_types','DA,IA')])
 
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
         self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
         self.optionalkeys=[]
         self.requiredparams=[]
-        self.fom_chkqualitynames=[bgtyp+'_bg_0' for bgtyp in self.params['chkoutput_types']]
-        self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
-        
-        self.plotparams=dict({}, plot__1={'x_axis':'E'})
-        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
-        self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
-        
-        
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
-        colormap_under_color='(0.,0.,0.)')
+
         
         
         
@@ -866,22 +860,34 @@ class Analysis__BG(Analysis_Master_inter):
     def processnewparams(self):
         if not isinstance(self.params['analysis_types'],list):
             try:
-                self.params['analysis_types']=[','.join(self.params['analysis_types'])]
+                self.params['analysis_types']=self.params['analysis_types'].split(',')
             except:
-                rtn_defaults
+                self.rtn_defaults
         
         if not isinstance(self.params['chkoutput_types'],list):
             try:
-                self.params['chkoutput_types']=[','.join(self.params['chkoutput_types'])]            
+                self.params['chkoutput_types']=self.params['chkoutput_types'].split(',')          
             except:
-                rtn_defaults
+                self.rtn_defaults
 
         if np.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
-            rtn_defaults
+            self.rtn_defaults
       
         self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_code'+'0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
                              for item in sublist]
+                                 
+        self.fom_chkqualitynames=[bgtyp+'_bg_0' for bgtyp in self.params['chkoutput_types']]
+        self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
+        
+        self.plotparams=dict({}, plot__1={'x_axis':'E'})
+        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
+        self.csvheaderdict={}
+        for idx in xrange(len(self.params['analysis_types'])):
+            self.csvheaderdict=dict(self.csvheaderdict, csv_version=str(idx+1), plot_parameters={})
+            self.csvheaderdict['plot_parameters']['plot__'+str(idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
 
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
@@ -989,11 +995,9 @@ class Analysis__BG(Analysis_Master_inter):
     def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
         abs2bg_inds=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
-        inter_selindd['rawselectinds']=rawlend['rawselectinds'][abs2bg_inds]
 #        print inter_selindd['rawselectinds']
         
         for key in rawlend.keys():
-            if key!='rawselectinds':
                 inter_selindd[key]=rawlend[key][abs2bg_inds]
 #        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
