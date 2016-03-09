@@ -8,15 +8,15 @@ from fcns_io import *
 from fcns_ui import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
-from scipy.signal import savgol_filter
+#from scipy.signal import savgol_filter
 
 from bgmath_fcn import *
 import matplotlib.pyplot as plt
 plt.ioff()
 
 
-#def savgol_filter(x,a,b,**kwargs):
-#    return x
+def savgol_filter(x,a,b,**kwargs):
+    return x
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk and 'inter_files' in anav[ftk].keys()]) for anak, anav in anadict.iteritems()\
