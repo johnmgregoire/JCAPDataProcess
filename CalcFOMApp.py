@@ -27,11 +27,11 @@ from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
-
 sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
+from import_scipy_foruvis import *
+
 from CA_CP_basics import *
 from CV_photo import *
-from develop_analysis_class import *
 from FOM_process_basics import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
