@@ -286,8 +286,12 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         elif self.params['reffilesmode']=='time':
             for filed in self.filedlist:            
                 refd[filed['sample_no']]={}
-                smp_time_fcn=lambda fd: int(fd['fn'].split('_')[-1].split('.')[0])
-                smp_time=smp_time_fcn(filed)
+                try:
+                    smp_time_fcn=lambda fd: int(fd['fn'].split('_')[-1].split('.')[0])
+                    smp_time=smp_time_fcn(filed)
+                except:
+                    smp_time_fcn=lambda fd: int(fd['fn'].split('_')[-2].split('.')[0])
+                    smp_time=smp_time_fcn(filed)
                 for rktup,rk in refkeymap:
                     ref_time_arr=numpy.array([smp_time_fcn(ref_filed) for ref_filed in self.refdict__filedlist[rktup]])
                     refd[filed['sample_no']][rk]=refd_all[rk][numpy.argmin((ref_time_arr-smp_time)**2)]
