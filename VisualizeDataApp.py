@@ -363,6 +363,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
     def updateontheflydata(self):
         #this treates all files in the folder the same and by doing so assumes each file is a measurement on s asample. this could read a .csv fom file but it would be sample_no=nan and would not be ported to self.fomdlist. that is tricky and could be done but not necessary if "on-the-fly" is used for a raw data stream.
+        try:
+            self.lastmodtime
+        except:
+            return
         self.lastmodtime, d_appended=createontheflyrundict(self.expfiledict, self.expfolder, lastmodtime=self.lastmodtime)
         self.setupfilterchoices()
         self.AnaExpFomTreeWidgetFcns.appendexpfiles(d_appended)
@@ -1001,7 +1005,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         tempplotdatatup=self.extractxydata(arrkeys, filed=filed)
         if tempplotdatatup is None:
             return 
-        plotdata, selectpointdata, plotattrd=tempplotdatatup
+        self.plotdata, self.selectpointdata, plotattrd=tempplotdatatup
         
         
         if not self.overlayselectCheckBox.isChecked():
@@ -1016,7 +1020,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.xyplotstyled['c']='b'
             
         somethingplotted=False
-        for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], plotdata, selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
+        for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], self.plotdata, self.selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
             if len(xarr)==0:
                 continue
             somethingplotted=True
