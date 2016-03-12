@@ -1472,7 +1472,7 @@ def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
         pickle.dump(saveanadict, f)
 
 def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
-    if not  ((p.endswith('ana') or p.endswith('pck')) and (os.path.exists(p) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):# if .zip only tests fo existence of .zip file
+    if not  (((p.endswith('ana') or p.endswith('pck')) and (os.path.exists(p)) or ('.zip' in p and os.path.exists(os.path.split(p)[0])) ) ):# if .zip only tests fo existence of .zip file
         if erroruifcn is None:
             if returnzipclass:
                 return {}, False
@@ -1499,7 +1499,14 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
             else:
                 return {}
     zipclass=gen_zipclass(p)
-
+    if zipclass and p.endswith('.zip'):#can get here with either a .zip path or a .zip joined with a filename. if .zip get the .ana
+        fnl=[fn for fn in zipclass.archive.namelist() if fn.endswith('.ana') and not fn.startswith('._')]
+        if len(fnl)==0:
+            if returnzipclass:
+                return {}, False
+            else:
+                return {}
+        p=os.path.join(p, fnl[0])
     if p.endswith('pck'):
         if zipclass:
             anadict=zipclass.loadpck(p)

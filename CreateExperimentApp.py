@@ -933,8 +933,7 @@ if __name__ == "__main__":
             #self.expui.importruns(pathlist=['20150422.145113.donex.zip'])
             #self.expui.importruns(pathlist=['uvis'])
             if execute:
-                self.expui.exec_()                
-    os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
+                self.expui.exec_()
     mainapp=QApplication(sys.argv)
     form=MainMenu(None)
     form.show()

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui'
 #
-# Created: Thu Feb 25 22:21:55 2016
+# Created: Fri Mar 11 22:03:11 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -65,10 +65,10 @@ class Ui_VisDataDialog(object):
         self.FolderPushButton.setGeometry(QtCore.QRect(10, 70, 101, 23))
         self.FolderPushButton.setObjectName(_fromUtf8("FolderPushButton"))
         self.AnaPushButton = QtGui.QPushButton(VisDataDialog)
-        self.AnaPushButton.setGeometry(QtCore.QRect(10, 10, 91, 23))
+        self.AnaPushButton.setGeometry(QtCore.QRect(10, 0, 91, 23))
         self.AnaPushButton.setObjectName(_fromUtf8("AnaPushButton"))
         self.ExpPushButton = QtGui.QPushButton(VisDataDialog)
-        self.ExpPushButton.setGeometry(QtCore.QRect(10, 40, 91, 23))
+        self.ExpPushButton.setGeometry(QtCore.QRect(10, 20, 91, 23))
         self.ExpPushButton.setObjectName(_fromUtf8("ExpPushButton"))
         self.UpdateFolderPushButton = QtGui.QPushButton(VisDataDialog)
         self.UpdateFolderPushButton.setGeometry(QtCore.QRect(10, 90, 101, 21))
@@ -295,7 +295,7 @@ class Ui_VisDataDialog(object):
         self.LoadCsvPushButton.setGeometry(QtCore.QRect(10, 150, 101, 21))
         self.LoadCsvPushButton.setObjectName(_fromUtf8("LoadCsvPushButton"))
         self.expanafilenameLineEdit = QtGui.QLineEdit(VisDataDialog)
-        self.expanafilenameLineEdit.setGeometry(QtCore.QRect(110, 5, 251, 21))
+        self.expanafilenameLineEdit.setGeometry(QtCore.QRect(100, 0, 251, 21))
         self.expanafilenameLineEdit.setText(_fromUtf8(""))
         self.expanafilenameLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.expanafilenameLineEdit.setObjectName(_fromUtf8("expanafilenameLineEdit"))
@@ -311,6 +311,9 @@ class Ui_VisDataDialog(object):
         self.BatchPushButton = QtGui.QPushButton(VisDataDialog)
         self.BatchPushButton.setGeometry(QtCore.QRect(370, 0, 61, 21))
         self.BatchPushButton.setObjectName(_fromUtf8("BatchPushButton"))
+        self.OpenInfoPushButton = QtGui.QPushButton(VisDataDialog)
+        self.OpenInfoPushButton.setGeometry(QtCore.QRect(10, 40, 91, 23))
+        self.OpenInfoPushButton.setObjectName(_fromUtf8("OpenInfoPushButton"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -396,6 +399,7 @@ class Ui_VisDataDialog(object):
         self.BatchComboBox.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
         self.BatchPushButton.setToolTip(QtGui.QApplication.translate("VisDataDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None, QtGui.QApplication.UnicodeUTF8))
         self.BatchPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Run Batch:", None, QtGui.QApplication.UnicodeUTF8))
+        self.OpenInfoPushButton.setText(QtGui.QApplication.translate("VisDataDialog", "Open via Search", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

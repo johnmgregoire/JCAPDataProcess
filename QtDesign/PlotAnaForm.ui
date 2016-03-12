@@ -157,7 +157,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>10</y>
+     <y>0</y>
      <width>91</width>
      <height>23</height>
     </rect>
@@ -170,7 +170,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>40</y>
+     <y>20</y>
      <width>91</width>
      <height>23</height>
     </rect>
@@ -1077,8 +1077,8 @@ scatter:</string>
   <widget class="QLineEdit" name="expanafilenameLineEdit">
    <property name="geometry">
     <rect>
-     <x>110</x>
-     <y>5</y>
+     <x>100</x>
+     <y>0</y>
      <width>251</width>
      <height>21</height>
     </rect>
@@ -1146,6 +1146,19 @@ scatter:</string>
    </property>
    <property name="text">
     <string>Run Batch:</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="OpenInfoPushButton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>91</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open via Search</string>
    </property>
   </widget>
  </widget>

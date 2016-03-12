@@ -6,8 +6,6 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\VisualizeDataForm.py
 
-pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMForm.py
-
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CreateExpForm.py
 
 
@@ -20,3 +18,5 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\SaveImagesBatchF
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\LoadCSVForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\LoadCSVForm.py
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\RunsFromInfoForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\RunsFromInfoForm.py
+
+pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\OpenFromInfoForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\OpenFromInfoForm.py

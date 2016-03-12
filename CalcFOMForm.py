@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui'
 #
-# Created: Thu Feb 25 21:41:22 2016
+# Created: Fri Mar 11 22:03:13 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,10 +19,10 @@ class Ui_CalcFOMDialog(object):
         CalcFOMDialog.setObjectName(_fromUtf8("CalcFOMDialog"))
         CalcFOMDialog.resize(1142, 882)
         self.BatchComboBox = QtGui.QComboBox(CalcFOMDialog)
-        self.BatchComboBox.setGeometry(QtCore.QRect(10, 70, 271, 22))
+        self.BatchComboBox.setGeometry(QtCore.QRect(10, 80, 271, 22))
         self.BatchComboBox.setObjectName(_fromUtf8("BatchComboBox"))
         self.BatchPushButton = QtGui.QPushButton(CalcFOMDialog)
-        self.BatchPushButton.setGeometry(QtCore.QRect(10, 50, 131, 21))
+        self.BatchPushButton.setGeometry(QtCore.QRect(10, 60, 131, 21))
         self.BatchPushButton.setObjectName(_fromUtf8("BatchPushButton"))
         self.gridLayoutWidget_3 = QtGui.QWidget(CalcFOMDialog)
         self.gridLayoutWidget_3.setGeometry(QtCore.QRect(10, 360, 261, 163))
@@ -113,7 +113,7 @@ class Ui_CalcFOMDialog(object):
         self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
         self.AnalysisGridLayout.addWidget(self.UpdatePlotPushButton, 4, 1, 1, 1)
         self.ImportExpPushButton = QtGui.QPushButton(CalcFOMDialog)
-        self.ImportExpPushButton.setGeometry(QtCore.QRect(80, 10, 81, 21))
+        self.ImportExpPushButton.setGeometry(QtCore.QRect(0, 30, 71, 21))
         self.ImportExpPushButton.setObjectName(_fromUtf8("ImportExpPushButton"))
         self.ImportAnaPushButton = QtGui.QPushButton(CalcFOMDialog)
         self.ImportAnaPushButton.setGeometry(QtCore.QRect(0, 10, 71, 21))
@@ -146,7 +146,7 @@ class Ui_CalcFOMDialog(object):
         self.line_3.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_3.setObjectName(_fromUtf8("line_3"))
         self.line_4 = QtGui.QFrame(CalcFOMDialog)
-        self.line_4.setGeometry(QtCore.QRect(0, 89, 281, 21))
+        self.line_4.setGeometry(QtCore.QRect(0, 99, 281, 21))
         self.line_4.setLineWidth(2)
         self.line_4.setFrameShape(QtGui.QFrame.HLine)
         self.line_4.setFrameShadow(QtGui.QFrame.Sunken)
@@ -290,13 +290,13 @@ class Ui_CalcFOMDialog(object):
         self.TechTypeRadioButton_10.setObjectName(_fromUtf8("TechTypeRadioButton_10"))
         self.TechTypeButtonGroup.addButton(self.TechTypeRadioButton_10)
         self.label_7 = QtGui.QLabel(CalcFOMDialog)
-        self.label_7.setGeometry(QtCore.QRect(10, 100, 267, 21))
+        self.label_7.setGeometry(QtCore.QRect(10, 110, 267, 21))
         self.label_7.setObjectName(_fromUtf8("label_7"))
         self.ExpRunUseComboBox = QtGui.QComboBox(CalcFOMDialog)
-        self.ExpRunUseComboBox.setGeometry(QtCore.QRect(0, 120, 267, 20))
+        self.ExpRunUseComboBox.setGeometry(QtCore.QRect(0, 130, 267, 20))
         self.ExpRunUseComboBox.setObjectName(_fromUtf8("ExpRunUseComboBox"))
         self.label_14 = QtGui.QLabel(CalcFOMDialog)
-        self.label_14.setGeometry(QtCore.QRect(10, 150, 265, 16))
+        self.label_14.setGeometry(QtCore.QRect(10, 150, 265, 21))
         self.label_14.setObjectName(_fromUtf8("label_14"))
         self.RunSelectTreeWidget = QtGui.QTreeWidget(CalcFOMDialog)
         self.RunSelectTreeWidget.setGeometry(QtCore.QRect(10, 170, 271, 181))
@@ -313,7 +313,7 @@ class Ui_CalcFOMDialog(object):
         self.UserFOMLineEdit.setGeometry(QtCore.QRect(290, 500, 211, 20))
         self.UserFOMLineEdit.setObjectName(_fromUtf8("UserFOMLineEdit"))
         self.line_5 = QtGui.QFrame(CalcFOMDialog)
-        self.line_5.setGeometry(QtCore.QRect(0, 30, 281, 21))
+        self.line_5.setGeometry(QtCore.QRect(0, 50, 281, 21))
         self.line_5.setLineWidth(2)
         self.line_5.setFrameShape(QtGui.QFrame.HLine)
         self.line_5.setFrameShadow(QtGui.QFrame.Sunken)
@@ -334,6 +334,14 @@ class Ui_CalcFOMDialog(object):
         self.RaiseErrorPushButton = QtGui.QPushButton(CalcFOMDialog)
         self.RaiseErrorPushButton.setGeometry(QtCore.QRect(1120, 0, 31, 21))
         self.RaiseErrorPushButton.setObjectName(_fromUtf8("RaiseErrorPushButton"))
+        self.OpenInfoPushButton = QtGui.QPushButton(CalcFOMDialog)
+        self.OpenInfoPushButton.setGeometry(QtCore.QRect(70, 10, 91, 21))
+        self.OpenInfoPushButton.setObjectName(_fromUtf8("OpenInfoPushButton"))
+        self.expfilenameLineEdit = QtGui.QLineEdit(CalcFOMDialog)
+        self.expfilenameLineEdit.setGeometry(QtCore.QRect(70, 30, 211, 21))
+        self.expfilenameLineEdit.setText(_fromUtf8(""))
+        self.expfilenameLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.expfilenameLineEdit.setObjectName(_fromUtf8("expfilenameLineEdit"))
 
         self.retranslateUi(CalcFOMDialog)
         QtCore.QMetaObject.connectSlotsByName(CalcFOMDialog)
@@ -426,6 +434,8 @@ class Ui_CalcFOMDialog(object):
         self.label_22.setText(QtGui.QApplication.translate("CalcFOMDialog", "Choose FOM post-process function:", None, QtGui.QApplication.UnicodeUTF8))
         self.autoplotCheckBox.setText(QtGui.QApplication.translate("CalcFOMDialog", "Auto plot ana__x", None, QtGui.QApplication.UnicodeUTF8))
         self.RaiseErrorPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "err", None, QtGui.QApplication.UnicodeUTF8))
+        self.OpenInfoPushButton.setText(QtGui.QApplication.translate("CalcFOMDialog", "Open via Search", None, QtGui.QApplication.UnicodeUTF8))
+        self.expfilenameLineEdit.setToolTip(QtGui.QApplication.translate("CalcFOMDialog", "Comment string to be included in EXP", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

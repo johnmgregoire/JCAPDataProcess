@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>70</y>
+     <y>80</y>
      <width>271</width>
      <height>22</height>
     </rect>
@@ -30,7 +30,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
+     <y>60</y>
      <width>131</width>
      <height>21</height>
     </rect>
@@ -286,9 +286,9 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
   <widget class="QPushButton" name="ImportExpPushButton">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>10</y>
-     <width>81</width>
+     <x>0</x>
+     <y>30</y>
+     <width>71</width>
      <height>21</height>
     </rect>
    </property>
@@ -397,7 +397,7 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>89</y>
+     <y>99</y>
      <width>281</width>
      <height>21</height>
     </rect>
@@ -934,7 +934,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>100</y>
+     <y>110</y>
      <width>267</width>
      <height>21</height>
     </rect>
@@ -947,7 +947,7 @@ to generate Intermediate and FOM results</string>
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>120</y>
+     <y>130</y>
      <width>267</width>
      <height>20</height>
     </rect>
@@ -964,7 +964,7 @@ can be performed</string>
      <x>10</x>
      <y>150</y>
      <width>265</width>
-     <height>16</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="text">
@@ -1026,7 +1026,7 @@ After entry complete, you will be prompted for fom names</string>
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>30</y>
+     <y>50</y>
      <width>281</width>
      <height>21</height>
     </rect>
@@ -1105,6 +1105,38 @@ to generate Intermediate and FOM results</string>
    </property>
    <property name="text">
     <string>err</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="OpenInfoPushButton">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>10</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open via Search</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="expfilenameLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>30</y>
+     <width>211</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Comment string to be included in EXP</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
  </widget>

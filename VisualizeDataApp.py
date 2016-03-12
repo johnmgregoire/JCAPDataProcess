@@ -29,7 +29,7 @@ from LoadCSVApp import loadcsvDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
-
+from OpenFromInfoApp import openfrominfoDialog
 from CalcFOMApp import AnalysisClasses
 
 
@@ -46,6 +46,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         button_fcn=[\
         (self.AnaPushButton, self.importana), \
         (self.ExpPushButton, self.importexp), \
+        (self.OpenInfoPushButton, self.importfrominfo), \
         (self.FolderPushButton, self.openontheflyfolder), \
         (self.UpdateFolderPushButton, self.updateontheflydata), \
         (self.FilenameFilterPushButton, self.createfilenamefilter), \
@@ -147,6 +148,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     
         self.SelectTreeFileFilterTopLevelItem.addChild(item)
     
+    def importfrominfo(self):
+        idialog=openfrominfoDialog(self, runtype='', exp=True, ana=True, run=False)
+        idialog.exec_()
+        if idialog.selecttype=='ana':
+            self.importana(p=idialog.selectpath)
+        if idialog.selecttype=='exp':
+            self.importexp(experiment_path=idialog.selectpath)
     def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None):
         if anafiledict is None or anafolder is None:
             if p is None:
@@ -154,7 +162,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(p)==0:
                 return
             self.anafiledict, anazipclass=readana(p, stringvalues=False, erroruifcn=None, returnzipclass=True)
-            self.anafolder=os.path.split(p)[0]
+            if p.endswith('.ana') or p.endswith('.pck'):
+                self.anafolder=os.path.split(p)[0]
+            else:
+                self.anafolder=p
             if self.anazipclass:
                 self.anazipclass.close()
             self.anazipclass=anazipclass
@@ -184,13 +195,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomplotchoices()
         self.fillxyoptions(clear=True)
 
-    def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file
+    def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
         if experiment_path is None:
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
             if exppath is None or len(exppath)==0:
                 return
         else:
-            exppath=buildexppath(experiment_path)
+            if experiment_path.endswith('.exp') or experiment_path.endswith('.pck'):
+                exppath=experiment_path
+            else:
+                exppath=buildexppath(experiment_path)
         expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
         if expfiledict is None:
             print 'Problem opening EXP'
@@ -1600,7 +1614,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
 
         xyplotw=None if save_all_std_bool else self.plotw_xy 
-        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots, filenamesearchlist=filenamesearchlist)
+        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots, selectsamplebrowser=self.browser, filenamesearchlist=filenamesearchlist)
         
         anaklist_activeplots=[self.l_csvheaderdict[i0]['anak'] for i0 in self.fomplotd['fomdlist_index0']]
         if len(set(anaklist_activeplots))==1:# if all the FOMs in active plot are from the same ana__ then use that as prepend string ni filenames of images
@@ -1652,10 +1666,7 @@ if __name__ == "__main__":
 #            self.visui.plotfom()
             if execute:
                 self.visui.exec_()
-    try:
-        os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
-    except:
-        pass
+
     mainapp=QApplication(sys.argv)
     form=MainMenu(None)
     form.show()

@@ -33,7 +33,7 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
 class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
-    def __init__(self, parent, anafolder, fomname, plateid_dict_list=[], code_dict_list=[], histplow=None, xyplotw=None, x_y_righty=['x', 'y', ''], repr_anaint_plots=1, filenamesearchlist=None):
+    def __init__(self, parent, anafolder, fomname, plateid_dict_list=[], code_dict_list=[], histplow=None, xyplotw=None, selectsamplebrowser=None, x_y_righty=['x', 'y', ''], repr_anaint_plots=1, filenamesearchlist=None):
         super(saveimagesDialog, self).__init__(parent)
         self.setupUi(self)
         
@@ -61,7 +61,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         QObject.connect(self.buttonBox,SIGNAL("accepted()"),self.ExitRoutine)
     
         self.widgetTopLevelItems={}
-        self.widgetkeys=['plate_id','code', 'xy', 'hist']
+        self.widgetkeys=['plate_id','code', 'xy', 'hist', 'select_samples_text']
         for k in self.widgetkeys:
             mainitem=QTreeWidgetItem([k], 0)
             self.FilesTreeWidget.addTopLevelItem(mainitem)
@@ -102,6 +102,26 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
             mainitem.addChild(item)
             d['item']=item
             self.widget_plow_dlist+=[d]
+        
+        self.selectsamplesname=fomname
+        self.widget_textbrowser_dlist=[d]
+        for widgk, browser, lab in zip(self.widgetkeys[4:5], [selectsamplebrowser], [self.selectsamplesname]):
+            if browser is None:
+                continue
+            mainitem=self.widgetTopLevelItems[widgk]
+            d={'browser':browser}
+            filen=self.filterchars('%s__%s.txt' %(widgk, lab))
+            s=filen+': python_visualizer_txt'
+            item=QTreeWidgetItem([s], 0)
+            item.setFlags(mainitem.flags() | Qt.ItemIsUserCheckable)
+            if filenamesearchlist is None:
+                item.setCheckState(0, Qt.Unchecked)
+            else:
+                item.setCheckState(0, Qt.Checked if True in [searchstr in filen for searchstr in filenamesearchlist] else Qt.Unchecked)
+            mainitem.addChild(item)
+            d['item']=item
+            self.widget_textbrowser_dlist+=[d]
+            
         self.newanapath=False
             
             
@@ -158,7 +178,8 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         else:#writing files and new ana into existing folder
             newanafn=self.anafn
             newanafolder=self.anafolder
-            
+        
+        #images here
         lines=[]
         for d in self.widget_plow_dlist:
             if not bool(d['item'].checkState(0)):
@@ -180,9 +201,34 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 existfns+=[fn]
                 d['plotw'].fig.savefig(savep)
                 lines+=[(fn, a)]
-        if len(lines)==0:
+        
+        #txt here
+        txtlines=[]
+        for d in self.widget_textbrowser_dlist:
+            if not bool(d['item'].checkState(0)):
+                continue
+            pngfn, garb, pngattr=str(d['item'].text(0)).partition(': ')
+            pngfn=prependstr+pngfn
+            existfns=os.listdir(newanafolder)
+            fn_attr_list=[(pngfn, pngattr)]
+            for fn, a in fn_attr_list:
+                if (fn in existfns) and not overbool:
+                    i=2
+                    fnorig=fn
+                    while fn in existfns:
+                        fn=''.join([fnorig[:-4], '__%d' %i, fnorig[-4:]])
+                        i+=1
+                savep=os.path.join(newanafolder, fn)
+                existfns+=[fn]
+                with open(savep, mode='w') as f:
+                    f.write(str(d['browser'].toPlainText()))
+                txtlines+=[(fn, a)]
+                
+                
+        if (len(lines)+len(txtlines))==0:
             return
-
+        
+        
         newp=os.path.join(newanafolder, newanafn)
         oldp=os.path.join(self.anafolder, self.anafn)
         
@@ -191,11 +237,18 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         if not 'files_multi_run' in da.keys():
             da['files_multi_run']={}
         df=da['files_multi_run']
-        if not 'image_files' in df.keys():
-            df['image_files']={}
-        d=df['image_files']
-        for fn, a in lines:
-            d[fn]=a#if fn exists and was overwritten this will jdo nothing or update the attrstr
+        if len(lines)>0:
+            if not 'image_files' in df.keys():
+                df['image_files']={}
+            d=df['image_files']
+            for fn, a in lines:
+                d[fn]=a#if fn exists and was overwritten this will jdo nothing or update the attrstr
+        if len(txtlines)>0:
+            if not 'txt_files' in df.keys():
+                df['txt_files']={}
+            d=df['txt_files']
+            for fn, a in txtlines:
+                d[fn]=a#if fn exists and was overwritten this will jdo nothing or update the attrstr
         
         saveanafiles(newp, anadict=anadict, changeananame=True)#need to overwrite the name because may be a new anafolder/timestamp
 

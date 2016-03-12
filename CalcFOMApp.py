@@ -32,6 +32,7 @@ from import_scipy_foruvis import *
 
 from CA_CP_basics import *
 from CV_photo import *
+from OpenFromInfoApp import openfrominfoDialog
 from FOM_process_basics import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
@@ -98,6 +99,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.BatchPushButton, self.runbatchprocess), \
         (self.ImportExpPushButton, self.importexp), \
         (self.ImportAnaPushButton, self.importana), \
+        (self.OpenInfoPushButton, self.importfrominfo), \
         (self.EditAnalysisParamsPushButton, self.editanalysisparams), \
         (self.AnalyzeDataPushButton, self.analyzedata), \
         (self.ViewResultPushButton, self.viewresult), \
@@ -236,6 +238,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(exppath)==0:
                 return
+            if not (exppath.endswith('.exp') or exppath.endswith('.pck') or not os.path.isabs(exppath)):
+                exppath=buildexppath(exppath)
             expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
             if expfiledict is None:
                 print 'Problem opening EXP'
@@ -276,7 +280,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         print 'active experiment_path is %s' %(self.anadict['experiment_path'])
         self.anadict['experiment_name']=self.expfiledict['name']
         self.fillexpoptions()
-    
+        self.expfilenameLineEdit.setText(self.exppath)
     def fillexpoptions(self):
         self.clearexp()
         
@@ -434,11 +438,20 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.ExpRunUseComboBox.clear()
         self.RunSelectTreeWidget.clear()
         self.plotd={}
+        self.expfilenameLineEdit.setText('')
     def runbatchprocess(self):
         self.batchprocesses[self.BatchComboBox.currentIndex()]()
 
-    def importana(self):
-        p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
+    def importfrominfo(self):
+        idialog=openfrominfoDialog(self, runtype='', exp=True, ana=False, run=False)
+        idialog.exec_()
+        if idialog.selecttype=='ana':
+            self.importana(p=idialog.selectpath)
+        if idialog.selecttype=='exp':
+            self.importexp(exppath=idialog.selectpath)
+    def importana(self, p=None):
+        if p is None:
+            p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
         if len(p)==0:
             return
         anadict=readana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
@@ -457,7 +470,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass, anadict=anadict)#clearanalysis happens here and anadcit is ported into self.anadict in the clearanalysis
         #self.anadict=anadict
-        anafolder=os.path.split(p)[0]
+        if p.endswith('.ana') or p.endswith('.pck'):
+            anafolder=os.path.split(p)[0]
+        else:
+            anafolder=p
+    
         copyanafiles(anafolder, self.tempanafolder)
         self.updateana()
         print self.anadict.keys()
