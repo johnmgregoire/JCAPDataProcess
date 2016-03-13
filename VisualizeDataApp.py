@@ -119,7 +119,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict={}
         self.expzipclass=None
         self.anazipclass=None
-        self.customlegendfcn=lambda sample, els, comp, code, fom: `sample`
+        self.customlegendfcn=lambda sample, els, comp, code, fom, xy: `sample`
         
         self.ellabels=['A', 'B', 'C', 'D']
         
@@ -1001,7 +1001,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 idialog.exec_()
                 return None
         getval=lambda k:self.fomplotd[k][self.selectind]
-        lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'))
+        lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'), getval('xy'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
         
     def getellabels_pm4keys(self, pmkeys):

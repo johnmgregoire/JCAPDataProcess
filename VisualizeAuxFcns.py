@@ -97,7 +97,7 @@ class legendformatwidget(QDialog):
         self.compfmtLineEdit.setText('%d')
         
         templab3=QLabel()
-        templab3.setText('legend contents, for example\n<sample>, <A><a><B><b><C><c><D><d>, <code>, <fom>')
+        templab3.setText('legend contents, for example\n<sample>, <A><a><B><b><C><c><D><d>, <code>, <fom>, <x>, <y>')
         self.legendLineEdit=QLineEdit()
         self.legendLineEdit.setText('<sample>')
         
@@ -129,16 +129,13 @@ class legendformatwidget(QDialog):
         compfmt=str(self.compfmtLineEdit.text())
         legendcmd=str(self.legendLineEdit.text())
         
-        def genlegtext(sample, els, comp, code, fom, fomfmt=fomfmt, compfmt=compfmt, legendcmd=legendcmd):
+        def genlegtext(sample, els, comp, code, fom, xy, fomfmt=fomfmt, compfmt=compfmt, legendcmd=legendcmd):
             legstr=legendcmd[:]
-            for count, (n, ss) in enumerate(zip((fom, sample, code), ('<fom>', '<sample>', '<code>'))):
+            for count, (n, ss, fmt) in enumerate(zip([fom, sample, code, xy[0], xy[1]], ['<fom>', '<sample>', '<code>', '<x>', '<y>'], [fomfmt, '%d', '%d', '%.2f', '%.2f'])):
                 if n is None:
                     legstr=legstr.replace(ss, '')
                     continue
-                if count==0:
-                    s=fomfmt %n
-                else:
-                    s='%d' %n
+                s=fmt %n
                 legstr=legstr.replace(ss, s)
             compusedandisnan=[numpy.isnan(c) for s, c in zip(['<a>', '<b>', '<c>', '<d>'], comp) if s in legstr]
             if len(compusedandisnan)>0 and not (True in compusedandisnan):# if list is empty then no compositions used in label so skip this. if there is a composition used in label then if e.g. the list is [True,False] skip because can't provide full compsotiion label but if [False,False] then proceed
