@@ -20,6 +20,10 @@ import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import pylab
 import pickle
+sys.path.append(os.path.join(os.getcwd(),'QtForms'))
+sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
+sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
@@ -28,7 +32,7 @@ from SaveButtonForm import Ui_SaveOptionsDialog
 from RunsFromInfoApp import runsfrominfoDialog
 from SearchFolderApp import *
 from DBPaths import *
-PyCodePath=os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
+
 
 from matplotlib.ticker import FuncFormatter
 from matplotlib.ticker import ScalarFormatter

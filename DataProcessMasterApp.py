@@ -5,6 +5,10 @@ import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+sys.path.append(os.path.join(os.getcwd(),'QtForms'))
+sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
+sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+
 from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
 from VisualizeDataApp import visdataDialog

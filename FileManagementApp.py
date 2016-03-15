@@ -20,9 +20,14 @@ import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import pylab
 import pickle
+sys.path.append(os.path.join(os.getcwd(),'QtForms'))
+sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
+sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
 #from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
+
+
 from FileManagementForm import Ui_FileManDialog
 from DBPaths import *
 

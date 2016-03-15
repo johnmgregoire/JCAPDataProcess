@@ -11,6 +11,11 @@ try:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 except ImportError:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+    
+sys.path.append(os.path.join(os.getcwd(),'QtForms'))
+sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
+sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+
 from matplotlib.figure import Figure
 import numpy.ma as ma
 import matplotlib.colors as colors
@@ -1644,7 +1649,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             idialog.exec_()
             return
         batchidialog=saveimagesbatchDialog(self, comboind_strlist)
-        batchidialog.exec_()
+        if not batchidialog.exec_():
+            return
         loadstyleoptions= not batchidialog.plotstyleoverrideCheckBox.isChecked()
         
         cbinds=batchidialog.selectcomboboxinds

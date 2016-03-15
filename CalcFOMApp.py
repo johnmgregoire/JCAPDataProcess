@@ -18,6 +18,13 @@ import matplotlib.cm as cm
 import matplotlib.mlab as mlab
 import pylab
 import pickle
+
+sys.path.append(os.path.join(os.getcwd(),'QtForms'))
+sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
+sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
+
+
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
@@ -27,7 +34,7 @@ from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
-sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
+
 from import_scipy_foruvis import *
 
 from CA_CP_basics import *
