@@ -199,6 +199,10 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
+        self.qualityfoms=['min_rescaled','max_rescaled','0<T<1','0<R<1','0<T+R<1']
+        self.fom_chkqualitynames=['abs_hasnan']
+        self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
+
         self.processnewparams()
         #TODO: update plotting defaults on both classes
         self.plotparams=dict({}, plot__1={'x_axis':'E'})
@@ -208,14 +212,6 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #        ,t_smth'#list of keys
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
-        colormap_under_color='(0.,0.,0.)')
-        # also colormap_min_value,colormap_max_value
-        
-        self.fom_chkqualitynames=['abs_hasnan']
-        self.qualityfoms=['min_rescaled','max_rescaled','0<T<1','0<R<1','0<T+R<1']
-        self.histfomnames=['max_abs2ndderiv']
         self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
 
 
@@ -239,6 +235,16 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             self.params['reffilesmode']='static'
             idialog=messageDialog(self, 'Pls use static or time as options for reffilesmode, resetting to static. Please try again for time option.')
             idialog.exec_()
+            
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        for idx,fom in enumerate(self.fomnames):
+            self.csvheaderdict['plot_parameters']['plot__'+str(idx+1)]=dict({}, fom_name=fom,\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.qualityfomcsvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        for idx,qfom in enumerate(self.qualityfoms):
+            self.qualityfomcsvheaderdict['plot_parameters']['plot__'+str(idx+1)]=dict({}, fom_name=qfom,\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+
                                  
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
@@ -400,7 +406,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #        qualitycsvfilstr=createcsvfilstr(self.fomdlist, self.qualityfoms, intfomkeys=['runint','plate_id']) if qualityfoms are not integers
         qualitycsvfilstr=createcsvfilstr(self.fomdlist, [], intfomkeys=['runint','plate_id']+self.qualityfoms)#, fn=fnf)
         p=os.path.join(destfolder,fnf)
-        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=dict({}, csv_version=self.qualityfomcsvheaderdict['csv_version']))
         self.multirunfiledict['misc_files'][fnf]=\
             '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.qualityfoms), totnumheadlines, len(self.fomdlist))
 
@@ -462,6 +468,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
+            fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
@@ -491,6 +498,9 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
+        self.fom_chkqualitynames=['abs_hasnan']
+        self.qualityfoms=['min_rescaled','max_rescaled','0<DR<1']
+        self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
         self.processnewparams()
 
         self.plotparams=dict({}, plot__1={})
@@ -500,14 +510,8 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
 #        self.plotparams['plot__1']['series__2']=','.join([fom for fom in self.fomnames if 'abs_' not in fom])
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='max_abs', colormap='jet', colormap_over_color='(0.5,0.,0.)',\
-        colormap_under_color='(0.,0.,0.)')
+
         # also colormap_min_value,colormap_max_value
-        
-        self.fom_chkqualitynames=['abs_hasnan']
-        self.qualityfoms=['min_rescaled','max_rescaled','0<DR<1']
-        self.histfomnames=['max_abs2ndderiv']
         self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
 
 
@@ -582,7 +586,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         #TODO: if quality foms are integers, append them to the intfomkeys and pass [] as 2nd argument
         qualitycsvfilstr=createcsvfilstr(self.fomdlist, self.qualityfoms, intfomkeys=['runint','plate_id'])#, fn=fnf)
         p=os.path.join(destfolder,fnf)
-        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=self.qualityfomcsvheaderdict)
         self.multirunfiledict['misc_files'][fnf]=\
             '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.qualityfoms), totnumheadlines, len(self.fomdlist))
 
@@ -640,7 +644,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
-            
+            fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
@@ -666,6 +670,9 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
+        self.fom_chkqualitynames=['abs_hasnan']
+        self.qualityfoms=['min_rescaled','max_rescaled','0<T<=1']
+        self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
         self.processnewparams()
         #TODO: update plotting defaults on both classes
         self.plotparams=dict({}, plot__1={'x_axis':'E'})
@@ -675,15 +682,10 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 #        self.plotparams['plot__1']['series__2']=','.join([fom for fom in self.fomnames if 'abs_' not in fom])
         #in 'plot__1' can have max_value__1,min_value__1,max_value__2,min_value__2
         #self.plotparams['plot__1']['series__2'] for right hand axis
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=','.join(self.fomnames), colormap='jet', colormap_over_color='(0.5,0.,0.)',\
-        colormap_under_color='(0.,0.,0.)')
+
         # also colormap_min_value,colormap_max_value
         
-        self.fom_chkqualitynames=['abs_hasnan']
-#        changed max_abs2ndderiv(nm^(-2)) to max_abs2ndderiv
-        self.qualityfoms=['min_rescaled','max_rescaled','0<T<=1']
-        self.histfomnames=['max_abs2ndderiv']
+
         self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
 
 #        should this be made self.multirunfomnames
@@ -759,7 +761,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         #TODO: if quality foms are integers, append them to the intfomkeys and pass [] as 2nd argument
         qualitycsvfilstr=createcsvfilstr(self.fomdlist, self.qualityfoms, intfomkeys=['runint','plate_id'])#, fn=fnf)
         p=os.path.join(destfolder,fnf)
-        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=dict({}, csv_version=self.csvheaderdict['csv_version']))
+        totnumheadlines=writecsv_smpfomd(p, qualitycsvfilstr, headerdict=self.qualityfomcsvheaderdict)
         self.multirunfiledict['misc_files'][fnf]=\
             '%s;%s;%d;%d' %('csv_fom_file', ','.join(['sample_no', 'runint', 'plate_id']+self.qualityfoms), totnumheadlines, len(self.fomdlist))
 
@@ -820,7 +822,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
-            
+            fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
@@ -832,8 +834,8 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 #    
 class Analysis__BG(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
         self.analysis_name='Analysis__BG'
+        self.analysis_fcn_version='1'
         self.dfltparams=dict([('num_knots',8),('lower_wl',385),('upper_wl',950),\
             ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),\
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',0),\
@@ -841,7 +843,10 @@ class Analysis__BG(Analysis_Master_inter):
             ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
             ('abs_minallowedslope',-10),('max_absolute_2ndderiv',350000),('analysis_types','DA,IA'),\
             ('maxbgspersmp',4),('chkoutput_types','DA,IA')])
-
+        try:
+            print self.csvheaderdict.keys()
+        except:
+            pass
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
         self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
@@ -875,7 +880,7 @@ class Analysis__BG(Analysis_Master_inter):
         if np.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
             self.rtn_defaults
       
-        self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_code'+'0'+'_only']\
+        self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_bgcode_repr',x+'_bgslope_repr',x+'_bkgrdslope_repr',x+'_code'+'0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
                              for item in sublist]
                                  
@@ -885,12 +890,19 @@ class Analysis__BG(Analysis_Master_inter):
         self.plotparams=dict({}, plot__1={'x_axis':'E'})
         self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
-        self.csvheaderdict={}
+        self.csvheaderdict={'csv_version':'1','plot_parameters':{}}
+        np_ana=5
         for idx in xrange(len(self.params['analysis_types'])):
-            self.csvheaderdict=dict(self.csvheaderdict, csv_version=str(idx+1), plot_parameters={})
-            self.csvheaderdict['plot_parameters']['plot__'+str(idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_0',\
             colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+2)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+3)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgcode_repr',\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+4)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgslope_repr',\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+5)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bkgrdslope_repr',\
+            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
