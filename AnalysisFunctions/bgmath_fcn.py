@@ -240,9 +240,13 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
         x=np.argmax([fomd['abs_expl_'+str(idx)] for idx\
         in xrange(min(len(bg),max_numbgs)) if not np.isnan(fomd['abs_expl_'+str(idx)])])
         fomd['bg_repr']=fomd['bg_'+str(x)]
+        fomd['bgslope_repr']=slopes[bgknots_lower[x]]
+        fomd['bkgrdslope_repr']=slopes[bkgrdknots_lower[x]]
         fomd['bgcode_repr']=fomd['bgcode_'+str(x)]
     else:
         fomd['bg_repr']=np.nan
+        fomd['bgslope_repr']=np.nan
+        fomd['bkgrdslope_repr']=np.nan
         fomd['bgcode_repr']=np.nan
     
     fomd['bgcode0_only']=fomd['bg_0'] if len(bg)==1 and fomd['bgcode_0']==0 else np.NaN
