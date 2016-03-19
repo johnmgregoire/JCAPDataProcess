@@ -821,8 +821,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         strarr=numpy.array(strarr)
         s='\n'.join(['\t'.join([v for v in a]) for a in strarr])
         self.fomstatsTextBrowser.setText(s)
-        
-        n, bins, patches = self.plotw_fomhist.axes.hist(fom, 20, normed=False, histtype='stepfilled')
+        if len(fom)>1:
+            n, bins, patches = self.plotw_fomhist.axes.hist(fom, 20, normed=False, histtype='stepfilled')
+
+            
         autotickformat(self.plotw_fomhist.axes, x=1, y=0)
         #self.plotw_fomhist.fig.setp(patches)
         self.plotw_fomhist.fig.canvas.draw()
