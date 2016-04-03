@@ -344,10 +344,11 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         if len(pathlist)>0:
             self.importruns(pathlist=pathlist, rcpdictadditions=rcpdictadditions)
     
-    def importruns_folder(self):
-        folderp=str(mygetdir(parent=self, xpath=self.defaultrcppath,markstr='Folder containing .rcp or set of .zip' ))
-        if len(folderp)==0:
-            return
+    def importruns_folder(self, folderp=None):
+        if folderp is None:
+            folderp=str(mygetdir(parent=self, xpath=self.defaultrcppath,markstr='Folder containing .rcp or set of .zip' ))
+            if len(folderp)==0:
+                return
         fns=os.listdir(folderp)
         rcpfns=[fn for fn in fns if fn.endswith('.rcp')]
         if len(rcpfns)==1:
@@ -394,7 +395,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
-                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
+                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
             else:
                 d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
@@ -708,40 +709,43 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.parent.visui_exec()
         self.hide()
         
-    def saveexp(self):
+    def saveexp(self, exptype=None, rundone=None):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params
         if not 'experiment_type' in self.expfiledict.keys():
             idialog=messageDialog(self, 'Aborting SAVE because no data in EXP')
             idialog.exec_()
             return
-        idialog=SaveOptionsDialog(self, self.expfiledict['experiment_type'])
-        idialog.exec_()
-        if not idialog.choice:
-            return
-        exptype=idialog.choice
-        if idialog.choice=='browse':
-            savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
-            if savefolder is None or len(savefolder)==0:
+        if exptype is None:
+            savefolder=None
+            idialog=SaveOptionsDialog(self, self.expfiledict['experiment_type'])
+            idialog.exec_()
+            if not idialog.choice:
                 return
+            exptype=idialog.choice
+            if idialog.choice=='browse':
+                savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving EXP')
+                if savefolder is None or len(savefolder)==0:
+                    return
         else:
             savefolder=None
             
         if len(self.expfilestr)==0 or not 'exp_version' in self.expfilestr:
             return
         runtodonesavep=None
-        if savefolder is None and not self.prevsaveexppath is None and os.path.split(self.prevsaveexppath)[0].endswith('run'):
-            idialog=messageDialog(self, 'convert the .run to a .done?')
-            if idialog.exec_():
-                rundone='.done'
-                runtodonesavep=self.prevsaveexppath
+        if rundone is None:
+            if savefolder is None and not self.prevsaveexppath is None and os.path.split(self.prevsaveexppath)[0].endswith('run'):
+                idialog=messageDialog(self, 'convert the .run to a .done?')
+                if idialog.exec_():
+                    rundone='.done'
+                    runtodonesavep=self.prevsaveexppath
+                else:
+                    rundone='.run'#will get a new timestamp
             else:
-                rundone='.run'#will get a new timestamp
-        else:
-            idialog=messageDialog(self, 'save as .done ?')
-            if idialog.exec_():
-                rundone='.done'
-            else:
-                rundone='.run'
+                idialog=messageDialog(self, 'save as .done ?')
+                if idialog.exec_():
+                    rundone='.done'
+                else:
+                    rundone='.run'
         saverawdat=self.savebinaryCheckBox.isChecked()
         saveexpfiledict, exppath = saveexp_txt_dat(self.expfiledict, rundone=rundone, experiment_type=exptype, runtodonesavep=runtodonesavep, savefolder=savefolder, saverawdat=saverawdat, erroruifcn=\
             lambda s:mygetsavefile(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select file for saving EXP', filename='%s.exp' %str(self.ExpNameLineEdit.text())))

@@ -537,6 +537,8 @@ def cleanup_empty_filed_in_expfiledict(expfiledict):
             for k3 in techd.keys():
                 if len(techd[k3])==0:#there are no more filenames of this type
                     del expfiledict[k][k2][k3]
+
+
     #delete 2nd level down, where there are no file types for a given technique
     for k, rund in expfiledict.iteritems():
         if not k.startswith('run__'):
@@ -546,8 +548,15 @@ def cleanup_empty_filed_in_expfiledict(expfiledict):
                 continue
             if len(rund[k2])==0:#there are no more filenames of this type
                 del expfiledict[k][k2]
+                searchstr=k2.partition('files_technique')[2]
+                for k2other in rund.keys():
+                    if searchstr in k2other:
+                        del expfiledict[k][k2other]
+#        filekeysleftinrun=[k_run for k_run in expfiledict[k].keys() if 'files_technique__' in k_run]
+#        if len(filekeysleftinrun)==0:
+#            del expfiledict[k]
     #stopping here, menaing that it is conceivable that a run__ block may not hav any files_technique__ which means that it does not have files and is a useless run
-    return expfiledict
+
 def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     if keys is None:
         keys=sorted(interd.keys())
