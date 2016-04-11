@@ -1383,6 +1383,7 @@ def getheadattrs(path=None, filestr='', searchstrs=['Sample', 'Sample No', 'samp
             ret+=[None]
     return ret
 
+#need interpretheaderbool on eche to get the column_headings?
 readdatafiledict=dict([\
     ('eche', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines, interpretheaderbool=False) or smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('uvis', lambda ext, lines:smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
@@ -1582,6 +1583,18 @@ def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested
 #    x=numpy.fromfile(f, dtype='float64')
 #x=x.reshape((2, 1024))
 #
-#datastruct_expfiledict(d)
-#datad=d['run__1']['files_technique__CA6']['spectrum_files']['Sample765_x-46_y-42_Ni0Fe30Co0Ce20_CA6_TRANS0_20150422.145114.5.opt']
-#x2=numpy.float64([datad[k] for k in keys])
+
+def get_data_rcp_dict__echerunfile(run_path, file_name):
+    if not run_path.endswith('.zip'):
+        run_path+='.zip'
+    runp=tryprependpath(RUNFOLDERS,run_path)
+    zc=ZipClass(runp)
+    rcpfn=[fn for fn in zc.archive.namelist() if fn.endswith('.rcp')][0]
+    rcplines=zc.readlines(rcpfn)
+    d=filedict_lines(rcplines)
+    #d['reference_vrhe']
+    datalines=zc.readlines(file_name)
+    datad=readechemtxt('', lines=datalines, interpretheaderbool=True)
+    for k, v in datad.iteritems():
+        d[k]=v
+    return d
