@@ -107,14 +107,14 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
     linfitd={}
     yoffset=-np.min(data[bgtyp])+0.03 if np.min(data[bgtyp])<0.03 else 0
     for maxiter in [1000,2000]:
-        res=linearfit(data['E'],data[bgtyp]+yoffset,num_knots,min_knotdist,xorder,{'maxiter':maxiter,'disp':dispresult},tol)
+        res=linearfit(data['hv'],data[bgtyp]+yoffset,num_knots,min_knotdist,xorder,{'maxiter':maxiter,'disp':dispresult},tol)
         if res.success:
             break
     if not res.success:
         maxiter=2000
         for i in xrange(int(np.log10(tol)),int(np.log10(maxtol))+1,-1):
             newtol=10.**i
-            res=linearfit(data['E'],data[bgtyp]+yoffset,num_knots,min_knotdist,xorder,{'maxiter':maxiter,'disp':dispresult},newtol)
+            res=linearfit(data['hv'],data[bgtyp]+yoffset,num_knots,min_knotdist,xorder,{'maxiter':maxiter,'disp':dispresult},newtol)
             if res.success:
                 break
     if not res.success:
@@ -126,7 +126,7 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
         linfitd,fomd=calc_bandgap(tempparams,np.size(tempparams)/2,max_numbgs,min_allowedslope,\
         min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,merge_bgslopediff_percent,\
         min_TP_finseg_diff,min_bgfinalseglength,bgtyp)
-        data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['E'])
+        data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['hv'])
     return [linfitd,fomd]
             
 def calc_bandgap(params,num_knots,max_numbgs,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
