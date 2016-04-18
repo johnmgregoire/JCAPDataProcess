@@ -5,6 +5,10 @@ Created on Tue Mar 08 18:15:13 2016
 @author: santosh
 """
 try:
+    import os,sys
+    cwd=os.getcwd()
+    print cwd
+    sys.path.append(cwd)
     from scipy.signal import savgol_filter
     from uvis_basics import *
 except:
