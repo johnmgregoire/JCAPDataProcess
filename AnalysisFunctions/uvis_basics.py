@@ -1,7 +1,9 @@
-import numpy, copy
+import numpy, copy,os,sys
 if __name__ == "__main__":
     import os, sys
     sys.path.append(os.path.split(os.getcwd())[0])
+
+sys.path.append(os.path.join(os.path.split(os.getcwd())[0],'AuxPrograms'))
 
 from fcns_math import *
 from fcns_io import *
@@ -67,7 +69,7 @@ def TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
     return num_files_considered, Tfiledlist, refdict__filedlist
     
     
-def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
+def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all',gui_mode_bool=False):
     if techk!='DR_UVVIS':
         return 0, [], {}
     
@@ -82,14 +84,17 @@ def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
+        print filedlist
         if len(filedlist)==0:
+            if gui_mode_bool :
+                print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'DRgetapplicablefilenames')
             return 0, [], {}
         refdict__filedlist[k]=filedlist
     num_files_considered, DRfiledlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
-
+    refdict__filedlist[k]=filedlist
     return num_files_considered, DRfiledlist, refdict__filedlist
     
-def Tgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all'):
+def Tgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], ref_run_selection='all',gui_mode_bool=False):
     if techk!='T_UVVIS':
         return 0, [], {}
     
@@ -104,7 +109,10 @@ def Tgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requ
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
+
         if len(filedlist)==0:
+            if gui_mode_bool :
+                print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'DRgetapplicablefilenames')
             return 0, [], {}
         refdict__filedlist[k]=filedlist
     num_files_considered, Tfiledlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=requiredkeys, optionalkeys=optionalkeys)
@@ -205,8 +213,8 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 
         self.processnewparams()
         #TODO: update plotting defaults on both classes
-        self.plotparams=dict({}, plot__1={'x_axis':'E'})
-        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams=dict({}, plot__1={'x_axis':'hv'})
+        self.plotparams['plot__1']['x_axis']='hv'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']='abs_smth_refadj,abs_smth_refadj_scl'
         self.plotparams['plot__1']['series__2']='abs_smth'
 #        ,t_smth'#list of keys
@@ -444,7 +452,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl' else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
                 
-            inter_selindd['E']=1239.8/inter_selindd['wl']
+            inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','R',anal_expr,'abs','1-T-R']:
                 inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
@@ -461,9 +469,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
                          
-            dx=[inter_selindd['E'][1]-inter_selindd['E'][0]]
-            dx+=[(inter_selindd['E'][idx+1]-inter_selindd['E'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
-            dx+=[inter_selindd['E'][-1]-inter_selindd['E'][-2]]
+            dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
+            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+            dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
@@ -471,7 +479,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             
             for typ in self.params['analysis_types']:
-                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
+                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
                 fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
@@ -504,7 +512,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.processnewparams()
 
         self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams['plot__1']['x_axis']='hv'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']='abs_smth_refadj_scl'
 #        ,t_smth'#list of keys
 #        self.plotparams['plot__1']['series__2']=','.join([fom for fom in self.fomnames if 'abs_' not in fom])
@@ -618,7 +626,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
 
-            inter_selindd['E']=1239.8/inter_selindd['wl']
+            inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['DR','abs']:
                 inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
@@ -637,16 +645,16 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             for sig_str,sigkey in zip(['DR'],['DR_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
 #            WHAT ARE THESE FOMS FOR
-            dx=[inter_selindd['E'][1]-inter_selindd['E'][0]]
-            dx+=[(inter_selindd['E'][idx+1]-inter_selindd['E'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
-            dx+=[inter_selindd['E'][-1]-inter_selindd['E'][-2]]
+            dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
+            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+            dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
-                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
+                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
                 fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
@@ -675,8 +683,8 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
         self.processnewparams()
         #TODO: update plotting defaults on both classes
-        self.plotparams=dict({}, plot__1={'x_axis':'E'})
-        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams=dict({}, plot__1={'x_axis':'hv'})
+        self.plotparams['plot__1']['x_axis']='hv'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']='abs_smth_refadj_scl'
 #        ,t_smth'#list of keys
 #        self.plotparams['plot__1']['series__2']=','.join([fom for fom in self.fomnames if 'abs_' not in fom])
@@ -796,7 +804,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
         
 #            print np.shape(inter_selindd['wl'])
-            inter_selindd['E']=1239.8/inter_selindd['wl']
+            inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','abs']:
                 inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
@@ -815,16 +823,16 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             for sig_str,sigkey in zip(['T'],['T_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
                          
-            dx=[inter_selindd['E'][1]-inter_selindd['E'][0]]
-            dx+=[(inter_selindd['E'][idx+1]-inter_selindd['E'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
-            dx+=[inter_selindd['E'][-1]-inter_selindd['E'][-2]]
+            dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
+            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+            dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
             inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
             inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
-                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['E'])**self.tauc_pow[typ]
+                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
                 fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
@@ -887,8 +895,8 @@ class Analysis__BG(Analysis_Master_inter):
         self.fom_chkqualitynames=[bgtyp+'_bg_0' for bgtyp in self.params['chkoutput_types']]
         self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
         
-        self.plotparams=dict({}, plot__1={'x_axis':'E'})
-        self.plotparams['plot__1']['x_axis']='E'#this is a single key from raw or inter data
+        self.plotparams=dict({}, plot__1={'x_axis':'hv'})
+        self.plotparams['plot__1']['x_axis']='hv'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
         self.csvheaderdict={'csv_version':'1','plot_parameters':{}}
         np_ana=5
@@ -1008,7 +1016,7 @@ class Analysis__BG(Analysis_Master_inter):
         
     def fomd_rawlend_interlend(self, rawlend):
         inter_selindd={}
-        abs2bg_inds=numpy.where(numpy.logical_and(rawlend['E']<1239.8/self.params['lower_wl'],rawlend['E']>1239.8/self.params['upper_wl']))[0]
+        abs2bg_inds=numpy.where(numpy.logical_and(rawlend['hv']<1239.8/self.params['lower_wl'],rawlend['hv']>1239.8/self.params['upper_wl']))[0]
 #        print inter_selindd['rawselectinds']
         
         for key in rawlend.keys():
