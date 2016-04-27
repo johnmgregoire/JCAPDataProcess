@@ -11,12 +11,21 @@ from fcns_ui import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
 from scipy.signal import savgol_filter
-
 from bgmath_fcn import *
 import matplotlib.pyplot as plt
 plt.ioff()
 
-
+def handlenan_svagol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0,replacenan_value=0.1):
+    nans=numpy.isnan(d_arr)    
+    xarr=numpy.arange(len(d_arr))
+    if len(nans)>1:
+        d_arr[nans]=numpy.interp(xarr[nans],xarr[~nans],d_arr[~nans])
+    try:
+        return savgol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0)
+    except:
+        nans=numpy.isnan(d_arr)    
+        d_arr[nans]=replacenan_value
+        return savgol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0)    
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk and 'inter_files' in anav[ftk].keys()]) for anak, anav in anadict.iteritems()\
@@ -194,7 +203,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
     def __init__(self):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
-        self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
+        self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
@@ -234,7 +243,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         if self.params['window_length'] %2!=1:
             self.params['window_length']+=1
             
-        if np.array([str(x).strip()=='' for x in self.params.values()]).any():
+        if numpy.array([str(x).strip()=='' for x in self.params.values()]).any():
             self.params=copy.copy(self.dfltparams)
             idialog=messageDialog(self, 'You enetered invalid parameters. They are being restored to defaults. Please try again.')
             idialog.exec_()
@@ -381,7 +390,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             print fn, Rfn, expdatfolder
             Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
             Rdataarr=Rfiled['readfcn'](*Rfiled['readfcn_args'], **Rfiled['readfcn_kwargs'])[:,::-1]
-#            print np.shape(Tdataarr),np.shape(Rdataarr)
+#            print numpy.shape(Tdataarr),numpy.shape(Rdataarr)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, Rdataarr, refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -446,7 +455,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_rawlend['R_fullrng']=(inter_rawlend['R_av-signal']-refd['Rdark'])/(refd['Rlight']-refd['Rdark'])
             inter_rawlend[anal_expr+'_fullrng']=inter_rawlend['T_fullrng']/(1.-inter_rawlend['R_fullrng'])
             inter_rawlend['1-T-R_fullrng']=1.-inter_rawlend['T'+'_fullrng']-inter_rawlend['R'+'_fullrng']
-            inter_rawlend['abs'+'_fullrng']=-np.log(inter_rawlend[anal_expr+'_fullrng'])
+            inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend[anal_expr+'_fullrng'])
             inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
             for key in ['T','R',anal_expr,'abs','1-T-R','wl']:            
                 keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl' else zip([''],['_fullrng'])[0]
@@ -455,13 +464,13 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','R',anal_expr,'abs','1-T-R']:
-                inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd[anal_expr+'_smth'+'_refadj']=refadjust(inter_selindd[anal_expr+'_smth'], \
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
             inter_selindd['abs_smth_refadj']=-numpy.log(inter_selindd[anal_expr+'_smth_refadj'])
             inter_selindd['abs_smth_refadj_scl']=inter_selindd['abs_smth_refadj']/numpy.nanmax(inter_selindd['abs_smth_refadj'])
             chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
-            fomd['abs_hasnan']=np.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
+            fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
             for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[1]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
@@ -473,15 +482,19 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+                if len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0 or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])>0:
+                    print len(numpy.where(numpy.isnan(inter_selindd[typ]))[0])
+                    print len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
+                    print inter_selindd[typ]
+                    fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
         return fomd,inter_rawlend,inter_selindd
         
@@ -564,7 +577,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         for filed in self.filedlist:
             fn=filed['fn']
             DRdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
-#            print np.shape(DRdataar)
+#            print numpy.shape(DRdataar)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(DRdataarr,refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -629,14 +642,14 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['DR','abs']:
-                inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
 
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd['DR'+'_smth'+'_refadj']=refadjust(inter_selindd['DR'+'_smth'],\
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
             inter_selindd['abs'+'_smth_refadj']=(1.-inter_selindd['DR'+'_smth_refadj'])**2./(2.*inter_selindd['DR'+'_smth_refadj'])
             inter_selindd['abs_smth_refadj_scl']=inter_selindd['abs_smth_refadj']/numpy.nanmax(inter_selindd['abs_smth_refadj'])
             chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
-            fomd['abs_hasnan']=np.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
+            fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
             for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
@@ -649,14 +662,14 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+                fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
         return fomd,inter_rawlend,inter_selindd
         
@@ -665,7 +678,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
     def __init__(self):
         self.analysis_fcn_version='1'
       #TODO int, float, str or dict types and in dict the options are float, int, str  
-        self.dfltparams=dict([('lower_wl',385),('upper_wl',950),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
+        self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','T'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
         ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
         
@@ -739,7 +752,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         for filed in self.filedlist:
             fn=filed['fn']
             Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
-#            print np.shape(DRdataar)
+#            print numpy.shape(DRdataar)
             fomdict,rawlend,interlend=self.fomd_rawlend_interlend(Tdataarr, refd_fn(filed['sample_no']))
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 fomdict=dict(fomdict, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))
@@ -788,7 +801,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         if not check_wl(numpy.array(numpy.s_[Tdataarr[0],refd['wl_fullrng']])):
             raise ValueError('Wavelength incompatibility between Tdata and ref')
         inter_rawlend=copy.copy(refd)
-#        print np.shape(inter_rawlend['wavelength'])
+#        print numpy.shape(inter_rawlend['wavelength'])
         inter_selindd={}
         fomd={}
         if self.params['exclinitcols']+self.params['exclfincols']>=Tdataarr.shape[1]:
@@ -797,24 +810,24 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
         else:
             inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
-            inter_rawlend['abs'+'_fullrng']=-np.log(inter_rawlend['T_fullrng'])
+            inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend['T_fullrng'])
             inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
             for key in ['T','abs','wl']:            
                 keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],['_fullrng'])[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
         
-#            print np.shape(inter_selindd['wl'])
+#            print numpy.shape(inter_selindd['wl'])
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','abs']:
-                inter_selindd[sigtype+'_smth']=savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
 
 
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd['abs'+'_smth'+'_refadj']=refadjust(inter_selindd['abs'+'_smth'],\
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
             inter_selindd['abs_smth_refadj_scl']=inter_selindd['abs_smth_refadj']/numpy.nanmax(inter_selindd['abs_smth_refadj'])
             chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
-            fomd['abs_hasnan']=np.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
+            fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
             for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
@@ -827,14 +840,14 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=np.min(savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+                fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
 
         
@@ -844,7 +857,7 @@ class Analysis__BG(Analysis_Master_inter):
     def __init__(self):
         self.analysis_name='Analysis__BG'
         self.analysis_fcn_version='1'
-        self.dfltparams=dict([('num_knots',8),('lower_wl',385),('upper_wl',950),\
+        self.dfltparams=dict([('num_knots',8),('lower_wl',390),('upper_wl',940),\
             ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),\
             ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',0),\
             ('merge_linsegslopediff_percent',0),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
@@ -885,7 +898,7 @@ class Analysis__BG(Analysis_Master_inter):
             except:
                 self.rtn_defaults
 
-        if np.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
+        if numpy.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
             self.rtn_defaults
       
         self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_bgcode_repr',x+'_bgslope_repr',x+'_bkgrdslope_repr',x+'_code'+'0'+'_only']\
@@ -942,19 +955,19 @@ class Analysis__BG(Analysis_Master_inter):
         rdlmtr='\r\n'
         cdlmtr=','
         for typ in self.params['analysis_types']:            
-            maxknots[typ]=np.max(np.array([int(k.split('_')[-1]) for linfitd in self.linfitdlist for k,v in linfitd.items() if typ+'_'+'knots' in k]))+1
-            maxbgs[typ]=np.max(np.array([int(k.split('_')[-1] )for linfitd in self.linfitdlist for k,v in linfitd.items() if typ+'_'+'bgknots_lower' in k]))+1
+            maxknots[typ]=numpy.max(numpy.array([int(k.split('_')[-1]) for linfitd in self.linfitdlist for k,v in linfitd.items() if typ+'_'+'knots' in k]))+1
+            maxbgs[typ]=numpy.max(numpy.array([int(k.split('_')[-1] )for linfitd in self.linfitdlist for k,v in linfitd.items() if typ+'_'+'bgknots_lower' in k]))+1
             reqkeys+=[typ+'_'+'knots_'+str(x) for x in xrange(maxknots[typ])]
             reqkeys+=[typ+'_'+'slopes_'+str(x) for x in xrange(maxknots[typ]-1)]
             reqkeys+=[typ+'_'+'bgknots_lower_'+str(x) for x in xrange(maxbgs[typ])]
             reqkeys+=[typ+'_'+'bkgrdknots_lower_'+str(x) for x in xrange(maxbgs[typ])]
         wstr=''        
         for idx,linfitd in enumerate(self.linfitdlist):
-            linfitd=dict(linfitd.items()+[(rk,np.NaN) for rk in reqkeys if rk not in linfitd.keys()])
+            linfitd=dict(linfitd.items()+[(rk,numpy.NaN) for rk in reqkeys if rk not in linfitd.keys()])
             if idx==0:
                 wstr+=cdlmtr.join(['sample_no']+[k for k in sorted(linfitd.keys()) if k!='sample_no'])+rdlmtr
             wstr+=str(linfitd['sample_no'])+cdlmtr
-            wstr+=cdlmtr.join([str(np.round(linfitd[k],decimals=4)) for k in sorted(linfitd.keys()) if k!='sample_no'])
+            wstr+=cdlmtr.join([str(numpy.round(linfitd[k],decimals=4)) for k in sorted(linfitd.keys()) if k!='sample_no'])
             wstr+=rdlmtr
         wstr.rstrip(rdlmtr)
         wstr=wstr.replace('nan','NaN')
@@ -1023,8 +1036,8 @@ class Analysis__BG(Analysis_Master_inter):
                 inter_selindd[key]=rawlend[key][abs2bg_inds]
 #        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
-#        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not np.isnan(fomd[x+'_bg_0']) else 0
-        minslope_fcn=lambda x: np.nanmin(x) if x!=[] else np.NaN
+#        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not numpy.isnan(fomd[x+'_bg_0']) else 0
+        minslope_fcn=lambda x: numpy.nanmin(x) if x!=[] else numpy.NaN
         for typ in self.params['analysis_types']:
 #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
             temparr=[v for k,v in inter_linfitd.items() if typ+'_slopes' in k]
@@ -1032,10 +1045,10 @@ class Analysis__BG(Analysis_Master_inter):
         print fomd.keys()
         for k in self.fomnames:
             if k not in fomd.keys():
-                fomd[k]=np.NaN
+                fomd[k]=numpy.NaN
         for key in inter_selindd.keys():
             if key in rawlend.keys() and 'rawselectinds' not in key:
                 inter_selindd[key+'_bg']=inter_selindd.pop(key)
-        fomd['abs_hasnan_bg']=np.isnan(rawlend['abs_smth_refadj_scl']).any()
+        fomd['abs_hasnan_bg']=numpy.isnan(rawlend['abs_smth_refadj_scl']).any()
         return fomd,inter_linfitd,inter_selindd
 
