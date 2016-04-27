@@ -1,28 +1,30 @@
-import time, string
-import os, os.path, shutil
+import string
+#import time
+import os, os.path#, shutil
 import sys
 import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import operator
 import matplotlib
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 try:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 except ImportError:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import numpy.ma as ma
+#from matplotlib.figure import Figure
+#import numpy.ma as ma
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import pylab
-import pickle
+#import matplotlib.mlab as mlab
+#import pylab
+#import pickle
 
-sys.path.append(os.path.join(os.getcwd(),'QtForms'))
-sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
-sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
-sys.path.append(os.path.join(os.getcwd(),'AnalysisFunctions'))
+projectpath=os.path.split(os.path.abspath(__file__))[0]
+sys.path.append(os.path.join(projectpath,'QtForms'))
+sys.path.append(os.path.join(projectpath,'AuxPrograms'))
+sys.path.append(os.path.join(projectpath,'OtherApps'))
+sys.path.append(os.path.join(projectpath,'AnalysisFunctions'))
 
 
 from fcns_math import *
@@ -35,12 +37,12 @@ from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
-from import_scipy_foruvis import *
 
 from CA_CP_basics import *
 from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
 from FOM_process_basics import *
+from uvis_basics import *
 
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
@@ -675,15 +677,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
         
-    def viewresult(self, anasavefolder=None):
+    def viewresult(self, anasavefolder=None, show=True):
         if anasavefolder is None:
             anasavefolder=self.tempanafolder
         d=copy.deepcopy(self.anadict)
         convertfilekeystofiled(d)
         #importfomintoanadict(d)
         self.parent.visdataui.importana(anafiledict=d, anafolder=anasavefolder)
-        self.hide()
-        self.parent.visdataui.show()
+        if show:
+            self.hide()
+            self.parent.visdataui.show()
     def saveview(self):
         anasavefolder=self.saveana(dontclearyet=True)
         self.viewresult(anasavefolder=anasavefolder)#just hide+show so shouldn't get hung here
@@ -743,33 +746,39 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
 
-    def saveana(self, dontclearyet=False):
+ 
+    def saveana(self, dontclearyet=False, anatype=None, rundone=None):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if not 'ana_version' in self.anafilestr:
             idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
             idialog.exec_()
             return
-            
-        idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
-        idialog.exec_()
-        if not idialog.choice:
-            return
-        
-        if idialog.choice=='browse':
-            savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
-            if savefolder is None or len(savefolder)==0:
+        if anatype is None:
+            savefolder=None
+            idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
+            idialog.exec_()
+            if not idialog.choice:
                 return
-            rundone=''#rundone not used if user browses for folder
+            anatype=idialog.choice
+            if idialog.choice=='browse':
+                savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
+                if savefolder is None or len(savefolder)==0:
+                    return
+                rundone=''#rundone not used if user browses for folder
         else:
             savefolder=None
-            idialog2=messageDialog(self, 'save as .done ?')
-            if idialog2.exec_():
+            
+        if len(self.anafilestr)==0 or not 'ana_version' in self.anafilestr:
+            return
+
+        if rundone is None:
+            idialog=messageDialog(self, 'save as .done ?')
+            if idialog.exec_():
                 rundone='.done'
             else:
                 rundone='.run'
-        
-         
-        anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=idialog.choice, anadict=self.anadict, savefolder=savefolder, rundone=rundone, erroruifcn=\
+
+        anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=anatype, anadict=self.anadict, savefolder=savefolder, rundone=rundone, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
         
         if not dontclearyet:

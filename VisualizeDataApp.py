@@ -12,9 +12,10 @@ try:
 except ImportError:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
     
-sys.path.append(os.path.join(os.getcwd(),'QtForms'))
-sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
-sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+projectpath=os.path.split(os.path.abspath(__file__))[0]
+sys.path.append(os.path.join(projectpath,'QtForms'))
+sys.path.append(os.path.join(projectpath,'AuxPrograms'))
+sys.path.append(os.path.join(projectpath,'OtherApps'))
 
 from matplotlib.figure import Figure
 import numpy.ma as ma
@@ -1597,7 +1598,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
         
-    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=None):
+    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=None, justreturndialog=False):
         cbl=[\
                 self.xplotchoiceComboBox, \
                 self.yplotchoiceComboBox, \
@@ -1621,12 +1622,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
 
         xyplotw=None if save_all_std_bool else self.plotw_xy 
-        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots, selectsamplebrowser=self.browser, filenamesearchlist=filenamesearchlist)
+        idialog=saveimagesDialog(self, self.anafolder, self.fomplotd['fomname'], plateid_dict_list=plateid_dict_list, code_dict_list=code_dict_list, \
+                                           histplow=self.plotw_fomhist, xyplotw=xyplotw, x_y_righty=x_y_righty, repr_anaint_plots=self.repr_anaint_plots, \
+                                           selectsamplebrowser=self.browser, filenamesearchlist=filenamesearchlist)
         
         anaklist_activeplots=[self.l_csvheaderdict[i0]['anak'] for i0 in self.fomplotd['fomdlist_index0']]
         if len(set(anaklist_activeplots))==1:# if all the FOMs in active plot are from the same ana__ then use that as prepend string ni filenames of images
             idialog.prependfilenameLineEdit.setText(anaklist_activeplots[0]+'-')
-        if save_all_std_bool:
+        if justreturndialog:
+            return idialog
+        elif save_all_std_bool:
             if not batchidialog is None:
                 idialog.updateoptionsfrombatchidialog(batchidialog, lastbatchiteration=lastbatchiteration)
             idialog.ExitRoutine()
@@ -1637,22 +1642,23 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if idialog.newanapath:
                 self.importana(p=idialog.newanapath)
     
-    def save_all_std_plots(self):
+    def save_all_std_plots(self, batchidialog=None):
         if 'copied' in os.path.split(self.anafolder)[1]:
             idialog=messageDialog(self, 'Cannot batch-save plots on a .copied folder. Save a single plot first then batch.')
             idialog.exec_()
             return
-        comboind_strlist=[]
-        for i in range(1, self.numStdPlots+1):
-            self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
-            comboind_strlist+=[(i, str(self.stdcsvplotchoiceComboBox.currentText()))]
-        if len(comboind_strlist)==0:
-            idialog=messageDialog(self, 'No Standard plots found, nothing saved')
-            idialog.exec_()
-            return
-        batchidialog=saveimagesbatchDialog(self, comboind_strlist)
-        if not batchidialog.exec_():
-            return
+        if batchidialog is None:
+            comboind_strlist=[]
+            for i in range(1, self.numStdPlots+1):
+                self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
+                comboind_strlist+=[(i, str(self.stdcsvplotchoiceComboBox.currentText()))]
+            if len(comboind_strlist)==0:
+                idialog=messageDialog(self, 'No Standard plots found, nothing saved')
+                idialog.exec_()
+                return
+            batchidialog=saveimagesbatchDialog(self, comboind_strlist)
+            if not batchidialog.exec_():
+                return
         loadstyleoptions= not batchidialog.plotstyleoverrideCheckBox.isChecked()
         
         cbinds=batchidialog.selectcomboboxinds
