@@ -1,6 +1,6 @@
 #cd C:\Python27\Lib\site-packages\PyQt4
 #pyuic4 -x C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\QtDesign\CreateExpForm.ui -o C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM\CreateExpForm.py
-import time
+#import time
 import os, os.path
 import sys
 import numpy
@@ -8,21 +8,22 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import operator
 import matplotlib
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-except ImportError:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import numpy.ma as ma
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import pylab
-import pickle
-sys.path.append(os.path.join(os.getcwd(),'QtForms'))
-sys.path.append(os.path.join(os.getcwd(),'AuxPrograms'))
-sys.path.append(os.path.join(os.getcwd(),'OtherApps'))
+#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#try:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#except ImportError:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#from matplotlib.figure import Figure
+#import numpy.ma as ma
+#import matplotlib.colors as colors
+#import matplotlib.cm as cm
+#import matplotlib.mlab as mlab
+#import pylab
+#import pickle
+projectpath=os.path.split(os.path.abspath(__file__))[0]
+sys.path.append(os.path.join(projectpath,'QtForms'))
+sys.path.append(os.path.join(projectpath,'AuxPrograms'))
+sys.path.append(os.path.join(projectpath,'OtherApps'))
 
 from fcns_math import *
 from fcns_io import *
@@ -34,8 +35,8 @@ from SearchFolderApp import *
 from DBPaths import *
 
 
-from matplotlib.ticker import FuncFormatter
-from matplotlib.ticker import ScalarFormatter
+#from matplotlib.ticker import FuncFormatter
+#from matplotlib.ticker import ScalarFormatter
 
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
@@ -349,16 +350,19 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             folderp=str(mygetdir(parent=self, xpath=self.defaultrcppath,markstr='Folder containing .rcp or set of .zip' ))
             if len(folderp)==0:
                 return
-        fns=os.listdir(folderp)
-        rcpfns=[fn for fn in fns if fn.endswith('.rcp')]
-        if len(rcpfns)==1:
+        if folderp.endswith('.zip'):
             pathlist=[folderp]
         else:
-            pathlist=[os.path.join(folderp, fn) for fn in fns if fn.endswith('.zip')]
-            if len(pathlist)==0:
-                idialog=messageDialog(self, 'No .rcp or .zip found')
-                idialog.exec_()
-                return
+            fns=os.listdir(folderp)
+            rcpfns=[fn for fn in fns if fn.endswith('.rcp')]
+            if len(rcpfns)==1:
+                pathlist=[folderp]
+            else:
+                pathlist=[os.path.join(folderp, fn) for fn in fns if fn.endswith('.zip')]
+                if len(pathlist)==0:
+                    idialog=messageDialog(self, 'No .rcp or .zip found')
+                    idialog.exec_()
+                    return
         self.importruns(pathlist=pathlist)
         
         
