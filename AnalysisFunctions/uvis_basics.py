@@ -1,6 +1,5 @@
 import numpy, copy,os,sys
 if __name__ == "__main__":
-    import os, sys
     sys.path.append(os.path.split(os.getcwd())[0])
 
 sys.path.append(os.path.join(os.path.split(os.getcwd())[0],'AuxPrograms'))
@@ -93,7 +92,7 @@ def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
-        print filedlist
+        #print filedlist
         if len(filedlist)==0:
             if gui_mode_bool :
                 print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'DRgetapplicablefilenames')
@@ -387,7 +386,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
-            print fn, Rfn, expdatfolder
+            #print fn, Rfn, expdatfolder
             Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
             Rdataarr=Rfiled['readfcn'](*Rfiled['readfcn_args'], **Rfiled['readfcn_kwargs'])[:,::-1]
 #            print numpy.shape(Tdataarr),numpy.shape(Rdataarr)
@@ -400,7 +399,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
-                print rawlend.keys()
+                #print rawlend.keys()
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
@@ -491,9 +490,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
                 if len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0 or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])>0:
-                    print len(numpy.where(numpy.isnan(inter_selindd[typ]))[0])
-                    print len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
-                    print inter_selindd[typ]
+#                    print len(numpy.where(numpy.isnan(inter_selindd[typ]))[0])
+#                    print len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
+#                    print inter_selindd[typ]
                     fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
         return fomd,inter_rawlend,inter_selindd
@@ -864,10 +863,10 @@ class Analysis__BG(Analysis_Master_inter):
             ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
             ('abs_minallowedslope',-10),('max_absolute_2ndderiv',350000),('analysis_types','DA,IA'),\
             ('maxbgspersmp',4),('chkoutput_types','DA,IA')])
-        try:
-            print self.csvheaderdict.keys()
-        except:
-            pass
+#        try:
+#            print self.csvheaderdict.keys()
+#        except:
+#            pass
         self.params=copy.copy(self.dfltparams)
         self.processnewparams()
         self.requiredkeys=[]#required keys aren't needed for selecting applicable files because the requiremenets for inter_files will be sufficient. Only put requireded_keys that are need in the analysis and these required_keys are of the raw data not inter_data
@@ -1042,7 +1041,7 @@ class Analysis__BG(Analysis_Master_inter):
 #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
             temparr=[v for k,v in inter_linfitd.items() if typ+'_slopes' in k]
             fomd[typ+'_fit_minslope']=minslope_fcn(temparr)
-        print fomd.keys()
+        #print fomd.keys()
         for k in self.fomnames:
             if k not in fomd.keys():
                 fomd[k]=numpy.NaN

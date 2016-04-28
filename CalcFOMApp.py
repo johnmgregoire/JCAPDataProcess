@@ -8,10 +8,10 @@ from PyQt4.QtGui import *
 import operator
 import matplotlib
 #from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-except ImportError:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#try:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#except ImportError:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 #from matplotlib.figure import Figure
 #import numpy.ma as ma
 import matplotlib.colors as colors
@@ -90,11 +90,15 @@ class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
         self.close()
         
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
-    def __init__(self, parent=None, title='', folderpath=None):
+    def __init__(self, parent=None, title='', folderpath=None, guimode=GUIMODE):
         super(calcfomDialog, self).__init__(parent)
         self.setupUi(self)
         
         self.parent=parent
+        self.guimode=guimode
+        if guimode!=GUIMODE:
+            for ac in AnalysisClasses+FOMProcessClasses:
+                ac.gui_mode_bool=guimode
 #        self.echem30=echem30axesWidget()
 #        self.echem30.show()
         self.plotillumkey=None
@@ -544,9 +548,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         checkbool, checkmsg=self.analysisclass.check_input()
         if not checkbool:
-            idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
-            if not idialog.exec_():
-                return
+            if self.guimode:
+                idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
+                if not idialog.exec_():
+                    return
+            else:
+                return checkmsg
         #rawd=readbinaryarrasdict(keys)
         #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
         expdatfolder=self.expfolder
@@ -565,16 +572,22 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         killana=False
         if len(runk_typek_b)==0:
             killana=True
+            checkmsg='no analysis output'
         else:
             checkbool, checkmsg=self.analysisclass.check_output()
             if not checkbool:
-                idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
-                if not idialog.exec_():
+                if self.guimode:
+                    idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
+                    if not idialog.exec_():
+                        killana=True
+                else:
                     killana=True
+                if killana:
                     removefiles(self.tempanafolder, [k for d in \
-                        ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
+                            ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
+                
         if killana:
-            return #anadict not been modified yet
+            return checkmsg#anadict not been modified yet
         
         self.updateuserfomd(clear=True)
         self.anadict[anak]={}
@@ -654,7 +667,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plot_preparestandardplot(plotbool=False)
         if self.autoplotCheckBox.isChecked():
             self.plot_generatedata(plotbool=True)
-
+        return False#false means no error
 
         
     def updateana(self):

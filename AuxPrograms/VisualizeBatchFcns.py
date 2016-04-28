@@ -1,17 +1,19 @@
-import time
-import os, os.path, shutil
-import sys
-import numpy
+#import time
+#import shutil
+import os, os.path
+#import sys
+#import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import operator
-import pylab
+#import operator
+#import pylab
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 
 
-
+def batch_plotuvisrefs_R(self):
+    return batch_plotuvisrefs(self, tech='R_UVVIS')
 
 
 def batch_plotuvisrefs(self, tech='T_UVVIS'):
@@ -23,7 +25,7 @@ def batch_plotuvisrefs(self, tech='T_UVVIS'):
     self.xyplotstyled=dict({}, marker='.', ms=0, c='b', ls='-', lw=0.5)
     runkl=[runk for runk in self.sorted_ana_exp_keys(ana=False) if 'run_use' in self.expfiledict[runk].keys() and self.expfiledict[runk]['run_use']=='ref_light']
     for runk in runkl:
-        self.overlayselectCheckBox.setChecked(True)
+        
         filetupl=[tup for td in [techd for techk, techd in self.expfiledict[runk].iteritems() if tech in techk] for tup in td['spectrum_files'].items()]
         for fn, filed in filetupl:
             ans=buildrunpath_selectfile(fn, self.expfolder, runp=self.expfiledict[runk]['run_path'], expzipclass=self.expzipclass, returnzipclass=True)
@@ -34,6 +36,7 @@ def batch_plotuvisrefs(self, tech='T_UVVIS'):
             filed['path']=p
             filed['zipclass']=zipclass
             self.plotxy(filed=filed)
+            self.overlayselectCheckBox.setChecked(True)
         
     self.xyplotstyled=dict({}, marker='.', ms=0, c='b', ls=':', lw=0.5)
     runkl=[runk for runk in self.sorted_ana_exp_keys(ana=False) if 'run_use' in self.expfiledict[runk].keys() and self.expfiledict[runk]['run_use']=='ref_dark']
@@ -67,5 +70,5 @@ def choosexyykeys(self, xyykeys):
     return False
         
 
-BatchFcnList=[batch_plotuvisrefs]
-BatchDescList=['Plot T ref_dark and ref_light']
+BatchFcnList=[batch_plotuvisrefs, batch_plotuvisrefs_R]
+BatchDescList=['Plot T ref_dark and ref_light', 'Plot R ref_dark and ref_light']

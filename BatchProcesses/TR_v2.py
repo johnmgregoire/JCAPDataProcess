@@ -12,9 +12,9 @@ sys.path.append(os.path.join(projectroot,'OtherApps'))
 from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
 from VisualizeDataApp import visdataDialog
-from CombineFomApp import combinefomDialog
-from FileSearchApp import filesearchDialog
-from FileManagementApp import filemanDialog
+#from CombineFomApp import combinefomDialog
+#from FileSearchApp import filesearchDialog
+#from FileManagementApp import filemanDialog
 from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
@@ -25,7 +25,7 @@ class MainMenu(QMainWindow):
         super(MainMenu, self).__init__(None)
         self.setWindowTitle('HTE Experiment and FOM Data Processing')
         self.expui=expDialog(self, title='Create/Edit an Experiment')
-        self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
+        self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', guimode=False)
         self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
 
 mainapp=QApplication(sys.argv)
@@ -96,7 +96,7 @@ def batch_pvdbool(fn):
         lines=f.readlines()
     infofiled=filedict_lines(lines)
     
-    methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in infofiled.iteritems() if k3.startswith('method')]
+    methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in v2.iteritems() if k3.startswith('method')]
     return '', ('PVD' in methods, )
     
 def batch_exp(fn, expui=expui):
@@ -131,9 +131,9 @@ def batch_exp(fn, expui=expui):
     
 def select_ana_fcn(calcui, analabel):
     cb=calcui.AnalysisNamesComboBox
-    print cb.count()
+    #print cb.count()
     for i in range(1, int(cb.count())):
-        print (str(cb.itemText(i)).partition('(')[0].partition('__')[2])
+        #print (str(cb.itemText(i)).partition('(')[0].partition('__')[2])
         if (str(cb.itemText(i)).partition('(')[0].partition('__')[2])==analabel:
             cb.setCurrentIndex(i)
             calcui.getactiveanalysisclass()
@@ -143,7 +143,7 @@ def select_ana_fcn(calcui, analabel):
 for batchcount, batchline in enumerate(batchlines):
     expbool=False
     if forceexp or not 'exp_path' in batchline:
-        rawfn=getbatchlinepath(batchline)
+        rawfn=getbatchlinepath(batchline, key='T_path')
         logstr, tupbool=batch_exp(rawfn)
         updatelog(batchcount, logstr)
         if not tupbool:#error so False passed or empty tuple
@@ -151,6 +151,8 @@ for batchcount, batchline in enumerate(batchlines):
         expfiledict, exppath=tupbool
         updatelog(batchcount, 'exp_path: %s' %exppath)
         expbool=True
+    elif getpvdbool:
+        rawfn=getbatchlinepath(batchline, key='T_path')
         
     if getpvdbool:
         logstr, tupbool=batch_pvdbool(rawfn)
@@ -173,17 +175,21 @@ for batchcount, batchline in enumerate(batchlines):
         else:
             exppath=getbatchlinepath(batchline, key='exp_path')
             calcui.importexp(exppath=exppath)#relative path ok
-    
+        calcui.autoplotCheckBox.setChecked(False)
         for analabel in ['TR_UVVIS', 'BG']:#TODO: for BG run on the ana
             if not select_ana_fcn(calcui, analabel):
                 if skiponerror:
                     updatelog(batchcount, 'ERROR-Analysis %s not available' %analabel)
                     continue
                 else:
-                    #calcui.exec_()
                     raiseerror
-            calcui.analyzedata()
-
+            calcuierror=calcui.analyzedata()#return False if ok otherwise stringh error message
+            if calcuierror:
+                if skiponerror:
+                    updatelog(batchcount, 'ERROR-%s' %calcuierror)
+                    continue
+                else:
+                    raiseerror
         anasavefolder=calcui.saveana(dontclearyet=True, anatype=anadestchoice, rundone='.run')
         calcui.viewresult(anasavefolder=anasavefolder, show=False)
         updatelog(batchcount, 'ana_path: %s' %anasavefolder)
@@ -200,25 +206,40 @@ for batchcount, batchline in enumerate(batchlines):
         else:
             raiseerror
         
-        comboind_strlist=[]
-        for i in range(1, visdataui.numStdPlots+1):
-            visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(i)
-            comboind_strlist+=[(i, str(visdataui.stdcsvplotchoiceComboBox.currentText()))]
+    comboind_strlist=[]
+    for i in range(1, visdataui.numStdPlots+1):
+        visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(i)
+        comboind_strlist+=[(i, str(visdataui.stdcsvplotchoiceComboBox.currentText()))]
 
-        for tech in ['T_UVVIS', 'R_UVVIS']:
-            batch_plotuvisrefs(visdataui, tech=tech)
-            idialog=visdataui.savefigs(save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=['xy'], justreturndialog=True)
-            idialog.doneCheckBox.setChecked(False)
-            idialog.ExitRoutine()
-            if idialog.newanapath:
-                visdataui.importana(p=idialog.newanapath)
-        batchidialog=saveimagesbatchDialog(None, comboind_strlist)
-        
-        fnsearchle='plate_id__'
-        if not pvdbool:#if VPD bool then don't save composition plots
-            fnsearchle+=',code__'
-        batchidialog.filenamesearchLineEdit.setText()
-        batchidialog.ExitRoutine()
-        visdataui.save_all_std_plots(batchidialog=batchidialog)
-        updatelog(batchcount, 'images saved')
-        #TODO: svae version of FOM plots with 1.6 to 2.6 eV range
+    for tech in ['T_UVVIS', 'R_UVVIS']:
+        batch_plotuvisrefs(visdataui, tech=tech)
+        idialog=visdataui.savefigs(save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=[['xy']], justreturndialog=True, prependstr=tech)
+        idialog.doneCheckBox.setChecked(False)
+        idialog.ExitRoutine()
+        if idialog.newanapath:
+            visdataui.importana(p=idialog.newanapath)
+    batchidialog=saveimagesbatchDialog(None, comboind_strlist)
+    
+    fnsearchle='plate_id__'
+    if not pvdbool:#if PVD bool then don't save composition plots
+        fnsearchle+=',code__'
+    batchidialog.filenamesearchLineEdit.setText(fnsearchle)
+    batchidialog.ExitRoutine()
+    visdataui.save_all_std_plots(batchidialog=batchidialog)
+    
+    #save version of FOM plots with 1.6 to 2.6 eV range
+    visdataui.colormapLineEdit.setText('jet_r')
+    visdataui.vminmaxLineEdit.setText('1.6,2.6')
+    visdataui.belowrangecolLineEdit.setText('(1,0.5,0.5)')
+    visdataui.aboverangecolLineEdit.setText('(0.3,0,0.5)')
+    batchidialog.plotstyleoverrideCheckBox.setChecked(True)
+    batchidialog.prependfilenameLineEdit.setText('1.6to2.6')
+    fnsearchle='plate_id__&bg_repr'
+    if not pvdbool:#if PVD bool then don't save composition plots
+        fnsearchle+=',code__&bg_repr'
+    batchidialog.filenamesearchLineEdit.setText(fnsearchle)
+    batchidialog.doneCheckBox.setChecked(True)
+    batchidialog.ExitRoutine()
+    visdataui.save_all_std_plots(batchidialog=batchidialog)
+    updatelog(batchcount, 'images saved')
+    

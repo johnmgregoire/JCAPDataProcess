@@ -1,29 +1,29 @@
-import time, itertools
-import os, os.path, shutil
+import itertools
+import os, os.path
 import sys
 import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import operator
 import matplotlib
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-except ImportError:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#try:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#except ImportError:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
     
 projectpath=os.path.split(os.path.abspath(__file__))[0]
 sys.path.append(os.path.join(projectpath,'QtForms'))
 sys.path.append(os.path.join(projectpath,'AuxPrograms'))
 sys.path.append(os.path.join(projectpath,'OtherApps'))
 
-from matplotlib.figure import Figure
-import numpy.ma as ma
+#from matplotlib.figure import Figure
+#import numpy.ma as ma
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-import matplotlib.mlab as mlab
+#import matplotlib.mlab as mlab
 import pylab
-import pickle
+#import pickle
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
@@ -168,6 +168,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(p)==0:
                 return
             self.anafiledict, anazipclass=readana(p, stringvalues=False, erroruifcn=None, returnzipclass=True)
+            if len(self.anafiledict)==0:
+                idialog=messageDialog(self, 'Aborting import of ana - Failed to read \n%s' %p)
+                idialog.exec_()
+                return
             if p.endswith('.ana') or p.endswith('.pck'):
                 self.anafolder=os.path.split(p)[0]
             else:
@@ -1598,7 +1602,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return
         self.xyplotstyled=dict([(tup[0], v) for tup, v in zip(inputs, ans)])
         
-    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=None, justreturndialog=False):
+    def savefigs(self, save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=None, justreturndialog=False, prependstr=''):
         cbl=[\
                 self.xplotchoiceComboBox, \
                 self.yplotchoiceComboBox, \
@@ -1627,8 +1631,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                                            selectsamplebrowser=self.browser, filenamesearchlist=filenamesearchlist)
         
         anaklist_activeplots=[self.l_csvheaderdict[i0]['anak'] for i0 in self.fomplotd['fomdlist_index0']]
+        
         if len(set(anaklist_activeplots))==1:# if all the FOMs in active plot are from the same ana__ then use that as prepend string ni filenames of images
-            idialog.prependfilenameLineEdit.setText(anaklist_activeplots[0]+'-')
+            prependstr=anaklist_activeplots[0]+'-'+prependstr
+        idialog.prependfilenameLineEdit.setText(prependstr)
         if justreturndialog:
             return idialog
         elif save_all_std_bool:
@@ -1664,10 +1670,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         cbinds=batchidialog.selectcomboboxinds
         for i in cbinds:
             self.stdcsvplotchoiceComboBox.setCurrentIndex(i)
-            self.plot_preparestandardplot(loadstyleoptions=loadstyleoptions)
+            self.plot_preparestandardplot(loadstyleoptions=loadstyleoptions)# or logic for ,-delim and and logic within each or block with &-delim
             filenamesearchlist=str(batchidialog.filenamesearchLineEdit.text()).split(',')
-            filenamesearchlist=[s.strip() for s in filenamesearchlist if len(s.strip())>0]
-            filenamesearchlist=None if len(filenamesearchlist)==0 else filenamesearchlist
+            filenamesearchlist=[s.strip() for s in filenamesearchlist if (len(s.strip())>0) and s!='&']
+            if len(filenamesearchlist)==0:
+                filenamesearchlist=None
+            else:
+                filenamesearchlist=[[sv.strip() for sv in s.split('&') if len(sv.strip())>0] for s in filenamesearchlist if len(s.strip())>0]
             self.savefigs(save_all_std_bool=True, batchidialog=batchidialog, filenamesearchlist=filenamesearchlist, lastbatchiteration=(i==cbinds[-1]))#for std plots all foms will be from same ana__  and prepend str will be filled in automatically
 
 if __name__ == "__main__":
