@@ -14,16 +14,20 @@ from bgmath_fcn import *
 import matplotlib.pyplot as plt
 plt.ioff()
 
-def handlenan_svagol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0,replacenan_value=0.1):
+def handlenan_savgol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0,replacenan_value=0.1):
     nans=numpy.isnan(d_arr)    
     xarr=numpy.arange(len(d_arr))
-    if len(nans)>1:
+    if len(nans)>1 and len(nans)<len(d_arr):
         d_arr[nans]=numpy.interp(xarr[nans],xarr[~nans],d_arr[~nans])
+        naninds=numpy.where(numpy.isnan(d_arr))[0]
+        if len(naninds)>1:
+            d_arr[naninds]=numpy.array([numpy.nanmean(d_arr[max(0,nind-3):min(nind+3,len(d_arr))]) for nind in naninds])
     try:
         return savgol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0)
     except:
-        nans=numpy.isnan(d_arr)    
-        d_arr[nans]=replacenan_value
+        nans=numpy.isnan(d_arr)
+        if len(nans)>1:
+            d_arr[nans]=replacenan_value
         return savgol_filter(d_arr, window_length, polyorder, delta=1.0, deriv=0)    
 
 def BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], anadict=None):
@@ -92,7 +96,11 @@ def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
+<<<<<<< HEAD
+#        print filedlist
+=======
         #print filedlist
+>>>>>>> origin/master
         if len(filedlist)==0:
             if gui_mode_bool :
                 print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'DRgetapplicablefilenames')
@@ -386,7 +394,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
+<<<<<<< HEAD
+#            print fn, Rfn, expdatfolder
+=======
             #print fn, Rfn, expdatfolder
+>>>>>>> origin/master
             Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
             Rdataarr=Rfiled['readfcn'](*Rfiled['readfcn_args'], **Rfiled['readfcn_kwargs'])[:,::-1]
 #            print numpy.shape(Tdataarr),numpy.shape(Rdataarr)
@@ -399,7 +411,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
+<<<<<<< HEAD
+#                print rawlend.keys()
+=======
                 #print rawlend.keys()
+>>>>>>> origin/master
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
@@ -463,7 +479,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','R',anal_expr,'abs','1-T-R']:
-                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd[anal_expr+'_smth'+'_refadj']=refadjust(inter_selindd[anal_expr+'_smth'], \
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
             inter_selindd['abs_smth_refadj']=-numpy.log(inter_selindd[anal_expr+'_smth_refadj'])
@@ -481,19 +497,23 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
+<<<<<<< HEAD
+                fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+=======
                 if len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0 or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])>0:
 #                    print len(numpy.where(numpy.isnan(inter_selindd[typ]))[0])
 #                    print len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
 #                    print inter_selindd[typ]
                     fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+>>>>>>> origin/master
         
         return fomd,inter_rawlend,inter_selindd
         
@@ -641,7 +661,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['DR','abs']:
-                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
 
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd['DR'+'_smth'+'_refadj']=refadjust(inter_selindd['DR'+'_smth'],\
             self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
@@ -661,14 +681,14 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+                fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
         return fomd,inter_rawlend,inter_selindd
         
@@ -819,7 +839,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             inter_selindd['hv']=1239.8/inter_selindd['wl']
             inter_selindd['rawselectinds']=inds[bin_idxs]
             for sigtype in ['T','abs']:
-                inter_selindd[sigtype+'_smth']=handlenan_svagol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+                inter_selindd[sigtype+'_smth']=handlenan_savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
 
 
             fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd['abs'+'_smth'+'_refadj']=refadjust(inter_selindd['abs'+'_smth'],\
@@ -839,14 +859,14 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=handlenan_svagol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
+            inter_selindd['abs_1stderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
+            inter_selindd['abs_2ndderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
             fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
             fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
+                fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
         
 
         
@@ -1041,7 +1061,11 @@ class Analysis__BG(Analysis_Master_inter):
 #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
             temparr=[v for k,v in inter_linfitd.items() if typ+'_slopes' in k]
             fomd[typ+'_fit_minslope']=minslope_fcn(temparr)
+<<<<<<< HEAD
+#        print fomd.keys()
+=======
         #print fomd.keys()
+>>>>>>> origin/master
         for k in self.fomnames:
             if k not in fomd.keys():
                 fomd[k]=numpy.NaN
