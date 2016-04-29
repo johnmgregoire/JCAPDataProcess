@@ -38,7 +38,7 @@ class Prepare_Batch_UVIS():
                 T_runs=[]
                 R_runs=[]
             if len(T_runs)!=2 and len(R_runs)!=1:
-                print 'Expected one reference and one data folder for T-UVVIS and one folder for R-UVVIS for plateid: %s' %(plateidstr)
+                print 'Expected %s T-folders, %s R-folders for plateid: %s, found %s T-folders, %s R-folders' %(2,1,plateidstr,len(T_runs),len(R_runs))
                 tp=None
             else:
                 print T_runs
