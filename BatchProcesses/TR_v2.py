@@ -1,4 +1,4 @@
-skiponerror=False
+skiponerror=1
 batchfilepath=r'.batch'
 
 import sys, os
@@ -38,7 +38,7 @@ expui=form.expui
 calcui=form.calcui
 visdataui=form.visdataui
 
-batchfilepath=r'K:\users\gregoire\uvisbatchtest\batchfile.txt'
+batchfilepath=r'K:\users\sksuram\uvis_batchtests\batchtest2 - Copy.log'
 
 
 #T_path: <>; exp_path: <>; ana_path: <>
@@ -48,7 +48,7 @@ with open(batchfilepath, mode='r') as f:
 logfilepath=batchfilepath.rpartition('.')[0]+'.log'
 
 #runsrcfolder=tryprependpath(RUNFOLDERS, r'uvis\hte-uvis-02', testfile=False, testdir=True)
-runsrcfolder=tryprependpath(RUNFOLDERS, '', testfile=False, testdir=True)
+runsrcfolder=tryprependpath(RUNFOLDERS, '', testfile=False, testdir=True).rstrip(os.sep)
 
 #update these to uvis when ready to run for real
 expdestchoice=r'temp'
@@ -143,7 +143,7 @@ def select_ana_fcn(calcui, analabel):
 for batchcount, batchline in enumerate(batchlines):
     expbool=False
     if forceexp or not 'exp_path' in batchline:
-        rawfn=getbatchlinepath(batchline, key='T_path')
+        rawfn=getbatchlinepath(batchline, key='T_path').lstrip(os.sep)
         logstr, tupbool=batch_exp(rawfn)
         updatelog(batchcount, logstr)
         if not tupbool:#error so False passed or empty tuple
