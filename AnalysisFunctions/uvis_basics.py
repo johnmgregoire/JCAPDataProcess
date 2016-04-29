@@ -96,11 +96,8 @@ def DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, req
             runlist=ref_run_selection.split(',')
             runlist=[s.strip() for s in runlist]
             filedlist=[d for d in filedlist if d['run'] in runlist]
-<<<<<<< HEAD
 #        print filedlist
-=======
         #print filedlist
->>>>>>> origin/master
         if len(filedlist)==0:
             if gui_mode_bool :
                 print 'NO REFERENCE DATA AVAILABLE FOR %s in %s' %(k, 'DRgetapplicablefilenames')
@@ -394,11 +391,6 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
 #            print fn
             Rfiled=filed['Rfiled']
             Rfn=Rfiled['fn']
-<<<<<<< HEAD
-#            print fn, Rfn, expdatfolder
-=======
-            #print fn, Rfn, expdatfolder
->>>>>>> origin/master
             Tdataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])[:,::-1]
             Rdataarr=Rfiled['readfcn'](*Rfiled['readfcn_args'], **Rfiled['readfcn_kwargs'])[:,::-1]
 #            print numpy.shape(Tdataarr),numpy.shape(Rdataarr)
@@ -411,11 +403,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             if len(rawlend.keys())>0:
                 fnr='%s__%s_rawlen.txt' %(anak, os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
-<<<<<<< HEAD
-#                print rawlend.keys()
-=======
-                #print rawlend.keys()
->>>>>>> origin/master
+
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('uvis_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
 
@@ -505,16 +493,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             for typ in self.params['analysis_types']:
                 inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
                 inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-<<<<<<< HEAD
                 fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
-=======
                 if len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0 or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])>0:
-#                    print len(numpy.where(numpy.isnan(inter_selindd[typ]))[0])
-#                    print len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
-#                    print inter_selindd[typ]
-                    fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
->>>>>>> origin/master
-        
+                    fomd[typ+'_minslope']=numpy.min(handlenan_svagol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))        
         return fomd,inter_rawlend,inter_selindd
         
 
@@ -1061,11 +1042,6 @@ class Analysis__BG(Analysis_Master_inter):
 #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
             temparr=[v for k,v in inter_linfitd.items() if typ+'_slopes' in k]
             fomd[typ+'_fit_minslope']=minslope_fcn(temparr)
-<<<<<<< HEAD
-#        print fomd.keys()
-=======
-        #print fomd.keys()
->>>>>>> origin/master
         for k in self.fomnames:
             if k not in fomd.keys():
                 fomd[k]=numpy.NaN
