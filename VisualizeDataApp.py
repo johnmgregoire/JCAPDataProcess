@@ -939,7 +939,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     continue
                 p, zipclass=ans
                 arr2d=getarrs_filed(p, filed, selcolinds=selcolinds, zipclass=zipclass)
-                if zipclass!=self.expzipclass:
+                if zipclass and zipclass!=self.expzipclass:
                     zipclass.close()
                 if not arr2d is None:
                     xyysubset[count]={}
