@@ -56,6 +56,13 @@ def batch_plotuvisrefs(self, tech='T_UVVIS'):
     self.xyplotstyled=dict({}, marker='o', ms=5, c='b', ls='-', lw=0.7, right_marker='None', right_ms=3, right_ls=':', right_lw=0.7, select_ms=6, select_c='r', right_c='g')
     return False
     
+def batch_ramanavesetup(self):
+    if choosexyykeys(self, ['wavenumbers', 'spectrum_ave']):
+        return True
+    self.createfilenamefilter(filterstr='ave')
+    self.filterandplotfomdata()
+    self.addallsamples()
+    
 def choosexyykeys(self, xyykeys):
     cbl=[\
         self.xplotchoiceComboBox, \
@@ -70,5 +77,5 @@ def choosexyykeys(self, xyykeys):
     return False
         
 
-BatchFcnList=[batch_plotuvisrefs, batch_plotuvisrefs_R]
-BatchDescList=['Plot T ref_dark and ref_light', 'Plot R ref_dark and ref_light']
+BatchFcnList=[batch_plotuvisrefs, batch_plotuvisrefs_R, batch_ramanavesetup]
+BatchDescList=['Plot T ref_dark and ref_light', 'Plot R ref_dark and ref_light', 'Setup for Raman ave plotting']
