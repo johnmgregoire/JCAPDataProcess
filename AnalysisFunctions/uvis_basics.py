@@ -915,15 +915,15 @@ class Analysis__BG(Analysis_Master_inter):
         np_ana=5
         for idx in xrange(len(self.params['analysis_types'])):
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_0',\
-            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+2)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
-            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+3)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgcode_repr',\
-            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+4)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgslope_repr',\
-            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+5)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bkgrdslope_repr',\
-            colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
@@ -936,7 +936,7 @@ class Analysis__BG(Analysis_Master_inter):
     def check_input(self, critfracapplicable=0.9):
         fracapplicable=1.*len(self.filedlist)/self.num_files_considered
         return fracapplicable>critfracapplicable, \
-        '%d files, %.2f of those available, do not meet requirements' %(len(self.filedlist)-self.num_files_considered, 1.-fracapplicable)
+        '%d files, %.2f fraction of those available, do not meet requirements' %(len(self.filedlist)-self.num_files_considered, 1.-fracapplicable)
 
     def check_output(self, critfracnan=0.5):
         tfracnan=0;tfracnan_abs=0;ostrl=[]
@@ -1034,6 +1034,11 @@ class Analysis__BG(Analysis_Master_inter):
         
         for key in rawlend.keys():
                 inter_selindd[key]=rawlend[key][abs2bg_inds]
+        
+        for typ in ['DA','IA','DF','IF']:
+            if typ in inter_selindd.keys():
+                inter_selindd[typ]=inter_selindd[typ]/(numpy.nanmax(inter_selindd[typ]))
+            
 #        print inter_selindd.keys()
         inter_linfitd,fomd=runuvvis(inter_selindd,self.params)                
 #        bgexists_fcn=lambda x: 1 if x+'_bg_0' in fomd.keys() and not numpy.isnan(fomd[x+'_bg_0']) else 0
