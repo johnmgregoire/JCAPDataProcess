@@ -126,7 +126,7 @@
     <rect>
      <x>930</x>
      <y>40</y>
-     <width>651</width>
+     <width>661</width>
      <height>171</height>
     </rect>
    </property>
@@ -219,7 +219,7 @@ data</string>
   <widget class="QLineEdit" name="compLineEdit">
    <property name="geometry">
     <rect>
-     <x>990</x>
+     <x>970</x>
      <y>10</y>
      <width>111</width>
      <height>20</height>
@@ -235,7 +235,7 @@ data</string>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>950</x>
+     <x>930</x>
      <y>0</y>
      <width>46</width>
      <height>31</height>
@@ -249,7 +249,7 @@ Comp:</string>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>1160</x>
+     <x>1130</x>
      <y>0</y>
      <width>46</width>
      <height>31</height>
@@ -263,7 +263,7 @@ Posn:</string>
   <widget class="QLineEdit" name="xyLineEdit">
    <property name="geometry">
     <rect>
-     <x>1200</x>
+     <x>1170</x>
      <y>10</y>
      <width>111</width>
      <height>20</height>
@@ -276,7 +276,7 @@ Posn:</string>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>1370</x>
+     <x>1330</x>
      <y>0</y>
      <width>46</width>
      <height>31</height>
@@ -290,7 +290,7 @@ No(s):</string>
   <widget class="QLineEdit" name="sampleLineEdit">
    <property name="geometry">
     <rect>
-     <x>1410</x>
+     <x>1370</x>
      <y>10</y>
      <width>111</width>
      <height>20</height>
@@ -303,7 +303,7 @@ No(s):</string>
   <widget class="QPushButton" name="addComp">
    <property name="geometry">
     <rect>
-     <x>1100</x>
+     <x>1080</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -316,7 +316,7 @@ No(s):</string>
   <widget class="QPushButton" name="remComp">
    <property name="geometry">
     <rect>
-     <x>1120</x>
+     <x>1100</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -329,7 +329,7 @@ No(s):</string>
   <widget class="QPushButton" name="remxy">
    <property name="geometry">
     <rect>
-     <x>1330</x>
+     <x>1300</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -342,7 +342,7 @@ No(s):</string>
   <widget class="QPushButton" name="addxy">
    <property name="geometry">
     <rect>
-     <x>1310</x>
+     <x>1280</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -355,7 +355,7 @@ No(s):</string>
   <widget class="QPushButton" name="remSample">
    <property name="geometry">
     <rect>
-     <x>1540</x>
+     <x>1500</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -368,7 +368,7 @@ No(s):</string>
   <widget class="QPushButton" name="addSample">
    <property name="geometry">
     <rect>
-     <x>1520</x>
+     <x>1480</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -1159,6 +1159,32 @@ scatter:</string>
    </property>
    <property name="text">
     <string>Open via Search</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="saveudiPushButton">
+   <property name="geometry">
+    <rect>
+     <x>1530</x>
+     <y>20</y>
+     <width>41</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>-&gt;udi</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addallsamplesPushButton">
+   <property name="geometry">
+    <rect>
+     <x>1530</x>
+     <y>0</y>
+     <width>31</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>+all</string>
    </property>
   </widget>
  </widget>

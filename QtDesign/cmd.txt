@@ -4,7 +4,7 @@ pyuic4 -x C:\Users\Gregoire\Documents\PythonCode\JCAP\JCAPCreateExperimentAndFOM
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CalcFOMForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMForm.py
 
-pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\VisualizeDataForm.py
+pyuic "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\PlotAnaForm.ui" -o "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\VisualizeDataForm.py"
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\CreateExpForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\CreateExpForm.py
 

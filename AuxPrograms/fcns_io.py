@@ -1598,3 +1598,46 @@ def get_data_rcp_dict__echerunfile(run_path, file_name):
     for k, v in datad.iteritems():
         d[k]=v
     return d
+
+def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
+    metastrlist=[]
+    compstrlist=[]
+    depstrlist=[]
+    countstrlist=[]
+    
+    els=udi_dict['ellabels']
+    elstr=','.join(els)
+    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y', 'Composition=%s' %(elstr)]
+    qcounts=udi_dict['Iarr']
+    metastrlist+=['N=%d' %len(qcounts)]
+    for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%d'), ('plate_id=', udi_dict['plate_id'], '%d')]:
+        depstrlist+=[lab+','.join([fmt %v for v in arr])]
+    
+
+    
+    for lab, carr in zip(els, udi_dict['comps'].T):
+
+        compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
+    
+    for i in range(len(qcounts)+1):
+        if i==0:
+            #countstrlist+=['Q=']
+            l='Q='
+            arr1=udi_dict['Q']
+        else:
+            #countstrlist+=['I%d=' %i]
+            l='I%d=' %i
+            arr1=qcounts[i-1]
+        countstrlist+=[l+','.join(['%.5e' %v for v in arr1])]
+
+    metastr='\n'.join(['// Metadata']+metastrlist)
+    depstr='\n'.join(['// Deposition data']+depstrlist)
+    compstr='\n'.join(['// Composition data']+compstrlist)
+    countstr='\n'.join(['//Integrated counts data']+countstrlist)
+
+    filestr='\n\n'.join([metastr, depstr, compstr, countstr])
+
+    f=open(p, mode='w')
+    f.write(filestr)
+    f.close()
+    

@@ -67,6 +67,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.remxy, self.remValuesXY), \
         (self.addSample, self.addValuesSample), \
         (self.remSample, self.remValuesSample), \
+        (self.addallsamplesPushButton, self.addallsamples), \
+        (self.saveudiPushButton, self.get_xy_plate_info_browsersamples), \
         (self.SaveFigsPushButton, self.savefigs), \
         (self.SaveStdFigsPushButton, self.save_all_std_plots), \
         (self.LoadCsvPushButton, self.loadcsv), \
@@ -137,18 +139,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.select_idtups=[]
         self.select_circs_plotws=[]
         self.browser.setText('')
-    def createfilenamefilter(self):
-        
-        ans=userinputcaller(self, inputs=[('filename search string', str, '')], title='Enter search string',  cancelallowed=True)
-        if ans is None or ans[0].strip()=='':
-            return
-        ans=ans[0].strip()
+    def createfilenamefilter(self, filterstr=None):
+        if filterstr is None:
+            ans=userinputcaller(self, inputs=[('filename search string', str, '')], title='Enter search string',  cancelallowed=True)
+            if ans is None or ans[0].strip()=='':
+                return
+            filterstr=ans[0].strip()
         
         if self.SelectTreeFileFilterTopLevelItem is None:
             self.SelectTreeFileFilterTopLevelItem=QTreeWidgetItem(['required filename str'], 0)
         self.SelectTreeWidget.addTopLevelItem(self.SelectTreeFileFilterTopLevelItem)
         
-        item=QTreeWidgetItem([ans], 0)
+        item=QTreeWidgetItem([filterstr], 0)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Checked)
     
@@ -939,7 +941,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     continue
                 p, zipclass=ans
                 arr2d=getarrs_filed(p, filed, selcolinds=selcolinds, zipclass=zipclass)
-                if zipclass!=self.expzipclass:
+                if zipclass and zipclass!=self.expzipclass:
                     zipclass.close()
                 if not arr2d is None:
                     xyysubset[count]={}
@@ -1015,6 +1017,114 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         getval=lambda k:self.fomplotd[k][self.selectind]
         lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'), getval('xy'))
         return plotdata, [[[], []], [[], []]], dict([('xylab', lab)])
+        
+    def getxydata_smplist(self, smplist, pltlist):#only xy, the right-y box is ignored. This can take any sample list and find available x,y data the same way that would happen by clicking on the sample. this is motivated by udiscoverit export
+        cbl=[\
+        self.xplotchoiceComboBox, \
+        self.yplotchoiceComboBox, \
+        ]
+        arrkeys=[str(cb.currentText()) for cb in cbl]
+        if arrkeys==(['None']*2):
+            return None
+        arrkeys+=[None]#dummy None for right-y 
+        
+        fominds_smps=[numpy.where((self.fomplotd['sample_no']==smp)&(self.fomplotd['plate_id']==plt))[0] for smp, plt in zip(smplist, pltlist)]
+        xyinfodlist=[]
+        for smp, fominds in zip(smplist, fominds_smps):
+            infod=None
+            for fomind in fominds:
+                self.selectind=fomind
+                i0, i1=(self.fomplotd['fomdlist_index0'][self.selectind], self.fomplotd['fomdlist_index1'][self.selectind])
+                anaint, runint, smp=[self.l_fomdlist[i0][i1][k] for k in ['anaint', 'runint', 'sample_no']]
+                
+                #this part copied from extractxydata
+                if anaint==0 and runint==0:
+                    continue
+                if anaint>0:
+                    xyydlist=self.extractxy_ana(arrkeys, anaint, runint, smp)
+                else:
+                    xyydlist=[None, None, None]
+                if runint>0:
+                    lefttogetinds=[count for count, (d, arrk) in enumerate(zip(xyydlist, arrkeys)) if d is None and not arrk=='None']
+                    if len(lefttogetinds)>0:
+                        xyysubset=self.extractxy_exp([arrkeys[i] for i in lefttogetinds], runint, smp)
+                        for i, d in zip(lefttogetinds, xyysubset):#d might stil be None at this points
+                            xyydlist[i]=d
+                if xyydlist[0] is None or xyydlist[1] is None:
+                    continue
+                infod={}
+                infod['x_name']=arrkeys[0]
+                infod['y_name']=arrkeys[1]
+                infod[infod['x_name']]=xyydlist[0]['arr']
+                infod[infod['y_name']]=xyydlist[1]['arr']
+                infod['comps']=self.fomplotd['comps'][self.selectind]
+                infod['xy']=self.fomplotd['xy'][self.selectind]
+                break
+            xyinfodlist+=[infod]
+        return xyinfodlist
+
+    def get_xy_plate_info_browsersamples(self, saveudibool=True):
+        browsestr=str(self.browser.toPlainText())
+        lines=browsestr.split('\n')
+        keys=lines[0].split('\t')
+        keys=[k.strip() for k in keys]
+        if not ('plate_id' in keys and 'sample_no' in keys):
+            messageDialog(self, 'aborting: broswer must have plate_id and sample_no columns').exec_()
+            return None
+        pi=keys.index('plate_id')
+        si=keys.index('sample_no')
+        
+        smplist=numpy.int32([l.split('\t')[si] for l in lines[1:]])
+        pltlist=numpy.int32([l.split('\t')[pi] for l in lines[1:]])
+        xyinfodlist=self.getxydata_smplist(smplist, pltlist)
+        if xyinfodlist is None or not (False in [d is None for d in xyinfodlist]):
+            messageDialog(self, 'aborting: select x and y keys with good data').exec_()
+            return None
+        xyinfodlist=[dict(d, sample_no=smp, plate_id=plt) for d, smp, plt in zip(xyinfodlist, smplist, pltlist) if not d is None]
+        if not saveudibool:
+            return xyinfodlist
+        udidict={}
+        for count, k in enumerate([xyinfodlist[0]['x_name'], xyinfodlist[0]['y_name']]):
+            arr2d=[d[k] for d in xyinfodlist]
+            if count==0:
+                prevlen=len(arr2d[0])
+            if False in [len(arr)==prevlen for arr in arr2d]:
+                messageDialog(self, 'aborting: not all arrays same length').exec_()
+                return
+            prevlen=len(arr2d[0])
+            arr2d=numpy.float32(arr2d)
+            if count==0:
+                distarr=[((arr-arr2d[0])**2).sum() for arr in arr2d]
+                if max(distarr)>0:
+                    if not messageDialog(self, 'Not all x arrays are identical. Continue and use mean?').exec_():
+                        return
+                udidict['Q']=arr2d.mean(axis=0)
+            else:
+                udidict['Iarr']=arr2d
+        for k in ['comps', 'xy', 'plate_id', 'sample_no']:
+            udidict[k]=numpy.float32([d[k] for d in xyinfodlist])
+
+        opts=[','.join(l) for l in itertools.combinations(self.ellabels, 3)]
+        highest3stdtups=sorted([(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))])[-3:]
+        print opts
+        print [(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))]
+        print highest3stdtups
+        elinds=sorted([i for stddev, i in highest3stdtups])#has to eb sorted because that is how combinations does it
+        selectstr=','.join([self.ellabels[i] for i in elinds])
+        print selectstr
+        selectind=opts.index(selectstr)
+        lab='\n'.join(['%d: %s' %tup for tup in enumerate(opts)])
+        ans=userinputcaller(self, inputs=[(lab, int, `selectind`)], title='Enter option for 3 elements to use',  cancelallowed=True)
+        if ans is None or ans[0]<0 or ans[0]>=len(opts):
+            return
+        elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3)) if i==ans[0]][0]
+        udidict['ellabels']=[self.ellabels[i] for i in elinds]
+        udidict['comps']=udidict['comps'][:, elinds]
+        udidict['comps']=numpy.array([c/c.sum() for c in udidict['comps']])
+        p=mygetsavefile(parent=self, markstr='Select path for udi file')
+        if p is None or len(p)==0:
+            return
+        writeudifile(p, udidict)
         
     def getellabels_pm4keys(self, pmkeys):
         ellabelinds=[['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].index(pmk) for pmk in pmkeys]
@@ -1479,9 +1589,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.sampleLineEdit.setText('%d' %self.fomplotd['sample_no'][self.selectind])
     
     #selectind is of the fomplotd arrays. add or remove is only if found in fomplotd, when adding to spreadsheet use (plate,sample,run,ana) as index
-    def addrem_select_fomplotdinds(self, remove=False, fomplotdind=None, smplist=None, xy=None, comp=None):#only 1 of index, smplist, xy, comp should be not None
+    def addrem_select_fomplotdinds(self, remove=False, fomplotdind=None, smplist=None, xy=None, comp=None, select_fomplotd_inds=None):#only 1 of index, smplist, xy, comp should be not None
         selectinds=[]
-        if not fomplotdind is None:
+        if not select_fomplotd_inds is None:
+            selectinds=select_fomplotd_inds
+        elif not fomplotdind is None:
             selectinds=[fomplotdind]
         elif not smplist is None:
             selectinds=[count for count, smp in enumerate(self.fomplotd['sample_no']) if smp in smplist]
@@ -1593,6 +1705,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def remValuesXY(self):
         self.addValuesXY(remove=True)
     
+    def addallsamples(self):
+        self.addrem_select_fomplotdinds(select_fomplotd_inds=range(len(self.fomplotd['sample_no'])))#only 1 of index, smplist, xy, comp should be not None
+
     def getxystyle_user(self):
         inputs=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if not (k.startswith('right_') or k.startswith('select_'))]
         inputs+=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if k.startswith('select_')]
@@ -1684,6 +1799,15 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.visui=visdataDialog(self, title='Visualize ANA, EXP, RUN data', **kwargs)
+            
+            #test udi creation
+#            self.visui.openontheflyfolder(folderpath=r'K:\users\hte\Raman\30058\curated_EM_components_Sm2MnNiO6_type_30058')
+#            self.visui.BatchComboBox.setCurrentIndex(2)
+#            self.visui.runbatchprocess()
+            
+            #self.visui.get_xy_plate_info_browsersamples()
+            
+            
 #            p=r'\\htejcap.caltech.edu\share\home\processes\analysis\temp\20150909.230012.done\20150909.230012.ana'
 #            self.visui.importana(p=p)
 #            self.visui.plotfom()
