@@ -42,7 +42,7 @@ from CA_CP_basics import *
 from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
 from FOM_process_basics import *
-from uvis_basics import *
+from import_scipy_foruvis import *
 from eche_spectral import Analysis__SpectralPhoto
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
