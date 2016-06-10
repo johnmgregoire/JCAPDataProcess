@@ -11,6 +11,7 @@ def echeparsetech(s):
         s=s[:-1]
     return s
 def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, requiredkeys=[], optionalkeys=[], requiredparams=[]):
+    requiredparams=[(rp+techk) if rp.endswith('__') else rp for rp in requiredparams]
     requiredparams+=['plate_id']
     if runklist is None:
         runklist=expfiledict.keys()
@@ -35,6 +36,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
     filedlist=[dict(d, keyinds=d['reqkeyinds']+[k for k in d['optkeyinds'] if not k is None]) for d in filedlist]
 
     filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
+    filedlist=[dict(d, run_foms=expfiledict[d['run']]['run_foms'] if 'run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
     
     return num_files_considered, filedlist
 
@@ -148,7 +150,15 @@ class Analysis_Master_nointer():
     
     def genuserfomdlist(self, anauserfomd, appendtofomdlist=True):
         
-        userfomdlist=[dict([(k, v) for k, v in d['user_run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) if 'user_run_foms' in d.keys() else {} for d in self.filedlist]
+        #user_run_foms and run_foms shoudl not have any overlapping keys, if they are present their items will be appended and filtered for overlap with fom names and anauserfoms 
+        userfomdlist=[dict(\
+        [(k, v) for k, v in \
+            ((d['user_run_foms'].items() if 'user_run_foms' in d.keys() else []) \
+            +(d['run_foms'].items() if 'run_foms' in d.keys() else [])) \
+                            if not (k in self.fomnames or k in anauserfomd.keys())]\
+        ) for d in self.filedlist]
+        
+        userfomdlist=[dict([(k, v) for k, v in d['run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) if 'run_foms' in d.keys() else {} for d in self.filedlist]
         #if anything is str, then all will be str
         strkeys=set([k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)])
         floatkeys=list(set([k for d in userfomdlist for k in d.keys()]).difference(strkeys))

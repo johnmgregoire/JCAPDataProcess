@@ -43,10 +43,10 @@ from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
 from FOM_process_basics import *
 from uvis_basics import *
-
+from eche_spectral import Analysis__SpectralPhoto
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
-   Analysis__Pphotomax(), \
+   Analysis__Pphotomax(), Analysis__SpectralPhoto(), \
    Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS()\
     ]
 
@@ -159,8 +159,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
         
-        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, self.batch_analyzethenprocess_allsubspace]
-        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name','Run Analysis + Process all w/ same root name']
+        self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, \
+                                      self.batch_analyzethenprocess_allsubspace, self.batch_analyze_fcn_same_techclass]
+        batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name',\
+                         'Run Analysis + Process all w/ same root name', 'Run select Analysis on all similar techniques']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
             
@@ -591,6 +593,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.updateuserfomd(clear=True)
         self.anadict[anak]={}
+        
         self.activeana=self.anadict[anak]
         if not checkbool:
             self.activeana['check_output_message']=checkmsg
@@ -1281,6 +1284,36 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 print 'quitting batch process because processing function did not successfully run'
                 return 
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
+    
+    def batch_analyze_fcn_same_techclass(self):
+        #uses the presently-selected analysis name, file type and 1st 2 characters of techniuqe to run the analysis on all  tech,type that match
+        anname=self.analysisclass.analysis_name
+        
+        buttonstrings=[','.join([techv, typev]) for techv, typev in self.techk_typek if techv[:2]==self.techk[:2] and typev==self.typek]
+        for buttonstr in buttonstrings:
+            qlist=self.TechTypeButtonGroup.buttons()
+        
+            typetechfound=False
+            for button in qlist:
+                if str(button.text()).strip()==buttonstr:
+                    button.setChecked(True)
+                    typetechfound=True
+                    break
+            if not typetechfound:
+                print 'Skipped %s because could find it in the options list' %buttonstr
+                continue
+            self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
+            
+
+            cb=self.AnalysisNamesComboBox
+            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith(anname)]
+            if len(selind)==0:
+                print 'Skipped %s because the analysis option was not available' %buttonstr
+                continue
+            cb.setCurrentIndex(selind[0])
+            self.getactiveanalysisclass()
+            self.analyzedata()
+
         
 class treeclass_anadict():
     def __init__(self, tree):
@@ -1375,6 +1408,8 @@ if __name__ == "__main__":
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
             #self.calcui.analyzedata()
+            #self.calcui.importana(p=r'K:\processes\analysis\temp\20160609.121710.done\20160609.121710.ana')
+            #self.calcui.analyzedata()\\htejcap.caltech.edu\share\home\processes\experiment\temp\20160609.162218.done\20160609.162218.pck
             if execute:
                 self.calcui.exec_()
     #os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')

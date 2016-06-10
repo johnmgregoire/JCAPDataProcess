@@ -106,7 +106,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
             self.plotparams=copy.deepcopy(anadict[self.params['select_ana']]['plot_parameters'])
             
         self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)#has to be called filedlist tro work with other analysis fcns
-        #self.filedlist=[dict(d, user_run_foms={}) for d in self.filedlist]#has to be here because only place with access to expfiledict
+
         self.description='process %s' %self.params['select_ana']
         return self.filedlist
     

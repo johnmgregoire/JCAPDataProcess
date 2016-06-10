@@ -136,6 +136,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.FileSearchLineEdit
         self.batchmode=False
         self.updateuserfomd(clear=True)
+        self.run_foms_fcn=None#framework setup but not tested and 20160608 not used. run_foms_fcn(rcpdict_temp) takes the rcpdict from a run block and returns a dictionsary ofr run_fom keys with string values that will be included as a run_foms block in each run__ block in the exp
         
     def raiseerror(self):
         raiseerror
@@ -216,6 +217,27 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             mainitem.child(i).setCheckState(0, Qt.Unchecked if 'binary' in str(mainitem.child(i).text(0)) else Qt.Checked)
     
         self.editexp_addmeasurement()
+#    def batchrunfoms_multitoggle_leds(self):
+#        ans=userinputcaller(self, inputs=[('optimal power (mW)\nfor each toggle channel\n<leave blank to use rcp values>', str, ''), \
+#                                                    ('rcp key with the optical\npower values in mW\n<if this is also blank then no calibration>', str, 'illumination_intensity')\
+#                                                         ], title='enter the LED calibration info (mW of optical pwoer)',  cancelallowed=True)
+#        if ans is None:
+#            return
+#        if len(ans[0].strip())>0:
+#            mWvals=ans[0].strip().split(',')
+#            mWvals_rcpd=lambda rcpd:mWvals
+#        elif len(ans[1].strip())>0:
+#            mWrcpk=ans[1].strip()
+#            mWvals_rcpd=lambda rcpd:rcpd[mWrcpk].strip().split(',')
+#        else:
+#            mWvals_rcpd=lambda rcpd:None
+#        
+#        def run_foms_fcn(rcpd):
+#            
+#        
+#        
+#        self.run_foms_fcn=
+#        self.editexp_addmeasurement()
         
     def batchuvissingleplate_norefdata(self):
         
@@ -478,7 +500,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         inexpfcndict_previnexp_filter[1]=lambda filterresult: set.union
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: 1
         #rundesc=filterchars(str(self.RunDescLineEdit.text()).strip(), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
-        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd)#, rundesc=rundesc)
+        self.editexp(inexpfcndict_previnexp_filter, user_run_foms=self.userfomd, run_foms_fcn=self.run_foms_fcn)#, rundesc=rundesc)
         self.updateuserfomd(clear=True)
         #self.RunDescLineEdit.setText('')
     #filter:               N/A fail pass
@@ -491,7 +513,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #inexpfcndict_previnexp_filter[2]=lambda filterresult: abs(filterresult)
         self.editexp(inexpfcndict_previnexp_filter)
     
-    def editexp(self, inexpfcndict, user_run_foms={}):#, rundesc=''):
+    def editexp(self, inexpfcndict, user_run_foms={}, run_foms_fcn=None):#, rundesc=''):#for the user-specified data use, uses inexpfcndict to add or remove a file from the exp based on whether the fiel was not or was in the exp already. uses orderinds to define priority of evaluating the rcpdlist, the inexp and previnexp keys of the rcpd are the notable items being set here
         selrun=self.FilterRunComboBox.currentIndex()
         datause=str(self.RunTypeLineEdit.text()).strip()
         dus=set([datause])
@@ -530,7 +552,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.expparamsdict_le_dflt['description'][1]=newdflt
         
 
-        self.updateexp(datause, user_run_foms=user_run_foms)#, rundesc=rundesc)
+        self.updateexp(datause, user_run_foms=user_run_foms, run_foms_fcn=run_foms_fcn)#, rundesc=rundesc)
         
         numfiles=len(expfilelist)
         delnumfiles=numfiles-prevnumfiles
@@ -633,7 +655,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     echeparamactiondict[kv]['changefcn'](item, v, ans)
         item.setText(column,''.join([k, ans]))
 
-    def updateexp(self, datause, user_run_foms={}):#, rundesc=''):
+    def updateexp(self, datause, user_run_foms={}, run_foms_fcn=None):#, rundesc=''):
         #make expdlist_use a copy of rcpdlist but update each rcptuplist so that the files sections contain on "in exp" files
         #[tup for tup in rcpd['rcptuplist'] if not tup[0].startswith('files_technique__')], \
         
@@ -668,7 +690,12 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 if len(l0n)>0:
                     filetuplist+=[(k0, l0n)]
                     techlist+=[k0.partition('__')[2].strip().strip(':')]
+                    
             expd['rcptuplist']+=filetuplist
+            if not run_foms_fcn is None:
+                rcpdict_temp=dict([createdict_tup(tup) for tup in expd['rcptuplist']])
+                expd['run_foms']=run_foms_fcn(rcpdict_temp)
+            
 
         #params
         self.expparamstuplist=[('exp_version: 3',  [])]
@@ -864,6 +891,9 @@ class treeclass_dlist():
                     mainitem.addChild(item)
                 if 'user_run_foms' in d.keys() and len(d['user_run_foms'])>0:
                     self.nestedfill([('user_run_foms:', [(': '.join(kv), []) for kv in d['user_run_foms'].iteritems()])], mainitem)
+                if 'run_foms' in d.keys() and len(d['run_foms'])>0:
+                    self.nestedfill([('run_foms:', [(': '.join(kv), []) for kv in d['run_foms'].iteritems()])], mainitem)#assumes run_foms values are strings
+                    
                 self.nestedfill([('parameters:', [tup for tup in d[self.knf] if not tup[0].startswith('files_technique__')])], mainitem)
                 self.nestedfill([tup for tup in d[self.knf] if tup[0].startswith('files_technique__')], mainitem)
                 mainitem.setExpanded(False)
