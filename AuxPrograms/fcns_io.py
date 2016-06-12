@@ -7,6 +7,7 @@ import time
 import zipfile
 from operator import itemgetter
 from DBPaths import *
+from re import compile as regexcompile
 def myexpformat(x, pos):
     for ndigs in range(5):
         lab=(('%.'+'%d' %ndigs+'e') %x).replace('e+0','e').replace('e+','e').replace('e0','').replace('e-0','e-')
@@ -821,7 +822,7 @@ def getinfopath_plateid(plateidstr, erroruifcn=None):
         return None
     return p
 
-def getelements_plateidstr(plateidstr):
+def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False):
     p=getinfopath_plateid(plateidstr)
     if p is None:
         return None
@@ -831,7 +832,47 @@ def getelements_plateidstr(plateidstr):
     if not searchstr in filestr:
         return None
     s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
-    return s.split(',')
+    
+    els=s.split(',')
+    if multielementink_concentrationinfo_bool:
+        return els, get_multielementink_concentrationinfo(filestr, els)
+    return els
+    
+def get_multielementink_concentrationinfo(filestr, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
+
+    searchstr1='        concentration_elements: '
+    searchstr2='        concentration_values: '
+    if not (searchstr1 in filestr and searchstr2 in filestr):
+        return None
+    cels=filestr.partition(searchstr1)[2].partition('\n')[0].strip().split(',')
+    concstr=filestr.partition(searchstr2)[2].partition('\n')[0].strip().split(',')
+    conclist=[float(s) for s in concstr]
+    
+    cels=[cel.strip() for cel in cels]
+    cels_set=set(cels)
+    if len(cels_set)<len(cels) or True in [conclist[0]!=cv for cv in conclist]:#concentrations available where an element is used multiple times. or 1 of the concentrations is different from the rest
+        els_printchannels=[regexcompile("[A-Z][a-z]*").findall(el) for el in els]
+        els_tuplist=[(el, i, j) for i, l in enumerate(els_printchannels) for j, el in enumerate(l)]
+        cels_tuplist=[]
+        for cel in cels:
+            while len(els_tuplist)>0:
+                tup=els_tuplist.pop(0)
+                if tup[0]==cel:
+                    cels_tuplist+=[tup]
+                    break
+        if len(cels_tuplist)!=len(cels):
+            return True,  'could not find the concentration_elements in order in the elements list'
+        cels_set_ordered=[]
+        for cel, chanind, ind_elwithinchan in cels_tuplist:
+            if not cel in cels_set_ordered:
+                cels_set_ordered+=[cel]
+                
+        conc_el_chan=numpy.zeros((len(cels_set_ordered), cels_tuplist[-1][1]+1), dtype='float32')#tthe number of elements in the net composition space by the max ink channel
+        for (cel, chanind, ind_elwithinchan), conc in zip(cels_tuplist, conclist):
+            conc_el_chan[cels_set_ordered.index(cel), chanind]=conc
+        #for a given platemap sample with x being the 8-component vecotr of ink channel intensity, the unnormalized concentration of cels_set_ordered is conc_el_chan*x[:conc_el_chan.shape[0]]
+        return False, (cels_set_ordered, conc_el_chan)
+    return None
 
 def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
     p=getinfopath_plateid(plateidstr)

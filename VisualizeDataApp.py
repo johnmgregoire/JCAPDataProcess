@@ -103,7 +103,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         batchdesc=BatchDescList
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
-            
+        
+        self.inkjetconcentrationadjustment='ask_if_appropriate'#'ask_if_appropriate' for dialog, or False/True    
         self.plotwsetup()
         
         self.clearall()
@@ -207,6 +208,30 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.updatefomplotchoices()
         self.fillxyoptions(clear=True)
 
+    def process_multielementink(self, rund, errorbool, tupormessage, inkjetconcentrationadjustment='ask_if_appropriate'):
+        if errorbool:
+            if inkjetconcentrationadjustment=='ask_if_appropriate':#don't display error messgage if set to True for batch purposes
+                idialog=messageDialog(self, tupormessage)
+                idialog.exec_()
+            else:
+                print tupormessage
+            return False
+        
+        if inkjetconcentrationadjustment=='ask_if_appropriate':
+            idialog=messageDialog(self, 'Non standard ink deposition:\nShould platemap compositions be modified?')
+            if not idialog.exec_():
+                return False
+        cels_set_ordered, conc_el_chan=tupormessage#***
+        pmchans_cels=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[0]]
+        pmchans_zeroafter=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][conc_el_chan.shape[0]:]
+        inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]
+        #with this update the platemap is in units of concentration instead of fraction of printer channel loading
+        [d.update(\
+                    zip(pmchans_cels, (conc_el_chan*numpy.float32([d[k] for k in inkchannelsused])).sum(axis=1))+\
+                    zip(pmchans_zeroafter, [0]*len(pmchans_zeroafter)))\
+                              for d in rund['platemapdlist']]
+        return cels_set_ordered
+        
     def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
         if experiment_path is None:
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
@@ -229,6 +254,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.expzipclass.close()
         self.expzipclass=expzipclass
         masterels=None
+        inkjetconcentrationadjustment=self.inkjetconcentrationadjustment
         for runk, rund in self.expfiledict.iteritems():
             if not runk.startswith('run__'):
                continue
@@ -252,7 +278,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     if not ps in s:
                         self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
-            els=getelements_plateidstr(str(rund['parameters']['plate_id']))
+            multielementink_concentrationinfo_bool=bool(self.inkjetconcentrationadjustment)
+            ans=getelements_plateidstr(str(rund['parameters']['plate_id']), multielementink_concentrationinfo_bool=multielementink_concentrationinfo_bool)
+            if multielementink_concentrationinfo_bool:
+                els, tup_multielementink=ans
+                if not tup_multielementink is None:
+                    errorbool, tupormessage=tup_multielementink
+                    cels_set_ordered=self.process_multielementink(rund, errorbool, tupormessage, inkjetconcentrationadjustment=inkjetconcentrationadjustment)
+                    if cels_set_ordered:
+                        inkjetconcentrationadjustment=True#if asking and doing it then don't ask again this import
+                        els=cels_set_ordered
+            else:
+                els=ans
+
             if els is None:
                 print 'cannot find elements for ', str(rund['parameters']['plate_id'])
                 masterels=['A', 'B', 'C', 'D']
@@ -329,9 +367,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for runk, rund in self.expfiledict.iteritems():
                 if not runk.startswith('run__'):
                     continue
-                for d in rund['platemapdlist']:
-                    for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
-                        d[el]=d[oldlet]
+                [d.update(zip(self.ellabels,[d[k] for k in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']])) for d in rund['platemapdlist']]
+#                for d in rund['platemapdlist']:
+#                    for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
+#                        d[el]=d[oldlet]
         self.ellabelsLineEdit.setText(','.join(self.ellabels))
     def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
