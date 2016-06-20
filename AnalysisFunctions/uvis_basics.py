@@ -915,15 +915,15 @@ class Analysis__BG(Analysis_Master_inter):
         np_ana=5
         for idx in xrange(len(self.params['analysis_types'])):
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_0',\
-            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+2)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
-            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+3)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgcode_repr',\
-            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+4)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgslope_repr',\
-            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+5)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bkgrdslope_repr',\
-            colormap='jet_r', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
         self.num_files_considered, self.filedlist=\
