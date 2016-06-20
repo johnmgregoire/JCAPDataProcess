@@ -19,8 +19,8 @@ from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
-batchfolder=r'K:\users\sksuram\uvis_batchtests'
-batchinput_fn='batchtest6.txt'
+batchfolder=r'K:\users\sksuram\uvis_batchtests\plate_tests'
+batchinput_fn='batchtest5.txt'
 
 
 class MainMenu(QMainWindow):
@@ -56,8 +56,8 @@ logfilepath=batchfilepath.rpartition('.')[0]+'.log'
 runsrcfolder=tryprependpath(RUNFOLDERS, '', testfile=False, testdir=True).rstrip(os.sep)
 
 #update these to uvis when ready to run for real
-expdestchoice=r'temp'
-anadestchoice=r'temp'
+expdestchoice=r'uvis'
+anadestchoice=r'uvis'
 
 #use these to create .exp or .ana even if in batch file
 forceexp=False
@@ -245,7 +245,7 @@ for batchcount, batchline in enumerate(batchlines):
     if not pvdbool:#if PVD bool then don't save composition plots
         fnsearchle+=',code__&bg_repr'
     batchidialog.filenamesearchLineEdit.setText(fnsearchle)
-    batchidialog.doneCheckBox.setChecked(True)
+    batchidialog.doneCheckBox.setChecked(False)
     batchidialog.ExitRoutine()
     visdataui.save_all_std_plots(batchidialog=batchidialog)
     updatelog(batchcount, 'images saved')
