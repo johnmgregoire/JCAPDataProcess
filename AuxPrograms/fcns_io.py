@@ -338,6 +338,64 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
         d['mtime']=mtime_path_fcn(path)
     return d
 
+
+def readxrfbatchcsv(path, mtime_path_fcn=None, lines=None):
+    if lines is None:
+        try:#need to sometimes try twice so might as well try 3 times
+            f=open(path, mode='rU')
+        except:
+            try:
+                f=open(path, mode='rU')
+            except:
+                f=open(path, mode='rU')
+        lines=f.readlines()
+        f.close()
+    d={}
+    z=[]
+    for count, l in enumerate(lines):
+        if not l.startswith('Inte'):
+            continue
+        else:
+            break
+    rawheadings=(l[:-1] if l.endswith(',') else l).replace(' ', '').strip().split(',') # remove final comma if it exists
+    inds=[i for i, x in enumerate(rawheadings) if x in ['Inte', 'Wt%', 'At%', 'StgLabel']]
+    prefixes=[rawheadings[i] for i in inds]
+    xrfheadings=[prefixes[i]+'_'+x for i in range(len(inds)-1) for j, x in enumerate(rawheadings) if (j>=inds[i] and j<inds[i+1] and j not in prefixes)]
+    stgheadings=rawheadings[max(inds):]
+    d['column_headings']=xrfheadings+stgheadings # reformatted column_headings for uniqueness
+    d['num_header_lines']=count+1
+    if len(lines[count:])==0:
+        return {}
+    def tryfloat(x):
+        try:
+            return(float(x))
+        except:
+            return('NaN')
+    try:
+        z=[map(tryfloat, (l[:-1] if l.endswith(',') else l).replace(' ', '').replace('\x00', '').strip().split(',')) for l in lines[count+1:] if len(l.strip())>0]
+    except:
+        print l
+        print '\t' in l
+        print l.replace(' ', '').replace('\x00', '').strip().split(',')
+        print map(float, l.replace(' ', '').replace('\x00', '').strip().split(','))
+        raise
+    if len(z)==0:#no data
+        nrows=0
+    else:
+        for k, arr in zip(d['column_headings'], numpy.float32(z).T):
+            if (k not in ['Inte_Inte', 'Wt%_Wt%', 'At%_At%', '']):
+                d[k]=arr
+            else:
+                d['column_headings'].remove(k)
+        nrows=len(arr)
+
+    d['num_data_rows']=nrows
+    d['path']=path
+    if not mtime_path_fcn is None:
+        d['mtime']=mtime_path_fcn(path)
+    return d
+
+
 def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'analysis_type', 'name', 'description', 'created_by']):
     def nestednumconvert(d):
         for k, v in d.iteritems():
@@ -832,12 +890,12 @@ def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=Fa
     if not searchstr in filestr:
         return None
     s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
-    
+
     els=s.split(',')
     if multielementink_concentrationinfo_bool:
         return els, get_multielementink_concentrationinfo(filestr, els)
     return els
-    
+
 def get_multielementink_concentrationinfo(filestr, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
     searchstr1='        concentration_elements: '
@@ -847,7 +905,7 @@ def get_multielementink_concentrationinfo(filestr, els):#None if nothing to repo
     cels=filestr.partition(searchstr1)[2].partition('\n')[0].strip().split(',')
     concstr=filestr.partition(searchstr2)[2].partition('\n')[0].strip().split(',')
     conclist=[float(s) for s in concstr]
-    
+
     cels=[cel.strip() for cel in cels]
     cels_set=set(cels)
     if len(cels_set)<len(cels) or True in [conclist[0]!=cv for cv in conclist]:#concentrations available where an element is used multiple times. or 1 of the concentrations is different from the rest
@@ -866,7 +924,7 @@ def get_multielementink_concentrationinfo(filestr, els):#None if nothing to repo
         for cel, chanind, ind_elwithinchan in cels_tuplist:
             if not cel in cels_set_ordered:
                 cels_set_ordered+=[cel]
-                
+
         conc_el_chan=numpy.zeros((len(cels_set_ordered), cels_tuplist[-1][1]+1), dtype='float32')#tthe number of elements in the net composition space by the max ink channel
         for (cel, chanind, ind_elwithinchan), conc in zip(cels_tuplist, conclist):
             conc_el_chan[cels_set_ordered.index(cel), chanind]=conc
@@ -1645,7 +1703,7 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     compstrlist=[]
     depstrlist=[]
     countstrlist=[]
-    
+
     els=udi_dict['ellabels']
     elstr=','.join(els)
     metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y', 'Composition=%s' %(elstr)]
@@ -1653,13 +1711,13 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     metastrlist+=['N=%d' %len(qcounts)]
     for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%d'), ('plate_id=', udi_dict['plate_id'], '%d')]:
         depstrlist+=[lab+','.join([fmt %v for v in arr])]
-    
 
-    
+
+
     for lab, carr in zip(els, udi_dict['comps'].T):
 
         compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
-    
+
     for i in range(len(qcounts)+1):
         if i==0:
             #countstrlist+=['Q=']
@@ -1681,4 +1739,3 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     f=open(p, mode='w')
     f.write(filestr)
     f.close()
-    
