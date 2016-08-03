@@ -856,14 +856,23 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 class Analysis__BG(Analysis_Master_inter):
     def __init__(self):
         self.analysis_name='Analysis__BG'
-        self.analysis_fcn_version='1'
-        self.dfltparams=dict([('num_knots',8),('lower_wl',390),('upper_wl',940),\
-            ('tol',1e-06),('maxtol',1e-03),('min_allowedslope',-2),('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),\
-            ('min_bgbkgrdslopediff',0.2),('min_finseglength',0.1),('merge_bgslopediff_percent',0),\
-            ('merge_linsegslopediff_percent',0),('min_TP_finseg_diff',0.2),('min_bgfinalseglength',0.2),\
-            ('max_merge_differentialTP',0.02),('min_knotdist',0.05),\
-            ('abs_minallowedslope',-10),('max_absolute_2ndderiv',350000),('analysis_types','DA,IA'),\
-            ('maxbgspersmp',4),('chkoutput_types','DA,IA')])
+        self.analysis_fcn_version='1.1'
+        self.dfltparams=(
+                        dict([('lower_wl',390),('upper_wl',940), 
+                               #data params
+                              ('num_knots',8),('min_knotdist',0.05),('tol',1e-06),('maxtol',1e-03),
+                               #fitting params
+                              ('merge_linsegslopediff_percent',10.),('max_merge_differentialTP',10000.),
+                              #params for merging linsegs
+                              ('min_allowedslope',-2),('min_finseglength',0.1),
+                              #parameters before entering bg identification
+                              ('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),('min_bgbkgrdslopediff',0.2),('min_bgTP_finseg_diff',0.2),('min_bgfinalseglength',0.2),
+                              #params for bg and bkgrd
+                              ('analysis_types','DA,IA'),('maxbgspersmp',4),('chkoutput_types','DA,IA'),
+                              ('abs_minallowedslope',-numpy.inf),('max_absolute_2ndderiv',numpy.inf),('use_absderivs_forpeaks',False)
+                              #Params for using derivates of absorption spectrum to identify peaks
+                              ])
+                        )
 #        try:
 #            print self.csvheaderdict.keys()
 #        except:
