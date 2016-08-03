@@ -102,7 +102,7 @@ def mergelinsegs(params,num_knots,max_merge_differentialTP,merge_linsegslopediff
     
 #The block below creates data for each bg type and interacts with fitting, residual measurement functions to identify the best linear piecewise parameters which are then sent to calc_bandgap for bandgap calculations.
 def fitresult(data,bgtyp,max_numbgs,num_knots,tol,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
-min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff,min_bgfinalseglength,max_merge_differentialTP,\
+min_finseglength,min_bgTP_finseg_diff,min_bgfinalseglength,max_merge_differentialTP,\
 merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispresult=False):
     linfitd={}
     yoffset=-np.min(data[bgtyp])+0.03 if np.min(data[bgtyp])<0.03 else 0
@@ -124,15 +124,13 @@ merge_linsegslopediff_percent,maxtol,min_knotdist=0.05,xorder='increasing',dispr
         tempparams[0]-=yoffset
         tempparams=mergelinsegs(tempparams,num_knots,max_merge_differentialTP,merge_linsegslopediff_percent)
         linfitd,fomd=calc_bandgap(tempparams,np.size(tempparams)/2,max_numbgs,min_allowedslope,\
-        min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,merge_bgslopediff_percent,\
-        min_TP_finseg_diff,min_bgfinalseglength,bgtyp)
+        min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,min_finseglength,\
+        min_bgTP_finseg_diff,min_bgfinalseglength,bgtyp)
         data[bgtyp+'_linfit']=linpiecewise(np.concatenate(([linfitd['y0']],linfitd['knots'],linfitd['slopes']),axis=0),data['hv'])
     return [linfitd,fomd]
             
 def calc_bandgap(params,num_knots,max_numbgs,min_allowedslope,min_bgTP_diff,min_bkgrdslope,min_bgbkgrdslopediff,\
-min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglength,bgtyp):
-    if merge_bgslopediff_percent>1:
-        merge_bgslopediff_percent=merge_bgslopediff_percent/100
+min_finseglength,min_bgTP_finseg_diff ,min_bgfinalseglength,bgtyp):
     knots=params[1:num_knots+1]
     slopes=params[num_knots+1:2*num_knots]
     num_slopes=np.shape(slopes)[0]
@@ -151,7 +149,7 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
         for i in np.arange(1,num_segments-1):
     #        if 1 not in bgcode:
     #==============================================================================
-    #           TPdiff.extend([(knots[i+1]-knots[i])*slopes[i]])min_TP_finseg_diff 
+    #           TPdiff.extend([(knots[i+1]-knots[i])*slopes[i]])min_bgTP_finseg_diff 
     #==============================================================================
                 if slopes[i]>slopes[i-1] and slopes[i]>0 and slopes[i-1]>min_bkgrdslope:
                     TPdiff=(knots[i+1]-knots[i])*slopes[i]
@@ -165,7 +163,7 @@ min_finseglength,merge_bgslopediff_percent,min_TP_finseg_diff ,min_bgfinalseglen
             j=num_segments-1
             if slopes[j]>slopes[j-1] and slopes[j]>0 and slopes[j-1]>min_bkgrdslope:
               TPdiff=(knots[j+1]-knots[j])*slopes[j]
-              if TPdiff>=min_TP_finseg_diff and knots[j+1]-knots[j]>min_bgfinalseglength:
+              if TPdiff>=min_bgTP_finseg_diff and knots[j+1]-knots[j]>min_bgfinalseglength:
                   bgknots_lower.extend([j])
                   abs_expl.extend([TPdiff])
                   bgcode.extend([6])
@@ -269,7 +267,7 @@ def runuvvis(data,inputvars):
     code5='All Band gap lin segs deleted due to inability to identify background linear segment with sufficient difference in slope'
     code6='Final segment has slope higher than previous and explains bgdiff>min this check occurs only when no band gap has been found with other criteria above'
 #    There is a chance that you are underestimating band gaps
-    code7='Peaks were found in the absorption spectrum'
+    code7='Peaks were found'
     code8='NaNs were found in the absorption spectrum'
     code9='Linear fitting failed'
     pfomd={};plinfitd={}
@@ -280,14 +278,15 @@ def runuvvis(data,inputvars):
             pfomd[bgtyp]['bgcode_0']=8
             continue
 #Implementation of second round of filtering in cases where peaks exist is currently unsupported
-        if identifypeaks(data,'abs',inputvars['abs_minallowedslope'],inputvars['max_absolute_2ndderiv']):
-            pfomd[bgtyp]['bgcode_0']=7
-            continue
+        if inputvars['use_absderivs_forpeaks']:
+            if identifypeaks(data,'abs',inputvars['abs_minallowedslope'],inputvars['max_absolute_2ndderiv']):
+                pfomd[bgtyp]['bgcode_0']=7
+                continue
         plinfitd[bgtyp],pfomd[bgtyp]=fitresult(data,bgtyp,max_numbgs=inputvars['maxbgspersmp'],\
         num_knots=inputvars['num_knots'],tol=inputvars['tol'],min_allowedslope=inputvars['min_allowedslope'],\
         min_bgTP_diff=inputvars['min_bgTP_diff'],min_bkgrdslope=inputvars['min_bkgrdslope'],\
         min_bgbkgrdslopediff=inputvars['min_bgbkgrdslopediff'],min_finseglength=inputvars['min_finseglength'],\
-        merge_bgslopediff_percent=inputvars['merge_bgslopediff_percent'],min_TP_finseg_diff=inputvars['min_TP_finseg_diff'],\
+        min_bgTP_finseg_diff=inputvars['min_bgTP_finseg_diff'],\
         min_bgfinalseglength=inputvars['min_bgfinalseglength'],max_merge_differentialTP=inputvars['max_merge_differentialTP'],\
         merge_linsegslopediff_percent=inputvars['merge_linsegslopediff_percent'],maxtol=inputvars['maxtol'],\
         min_knotdist=inputvars['min_knotdist'],xorder='increasing',dispresult=False)
