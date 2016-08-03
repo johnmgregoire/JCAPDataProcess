@@ -19,8 +19,8 @@ from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
-batchfolder=r'K:\users\sksuram\uvis_batchtests\plate_tests'
-batchinput_fn='batchtest5.txt'
+batchfolder=r'K:\users\sksuram\uvis_batchtests'
+batchinput_fn='20160705.171153_batch_paulfnew2_InnerSpace.txt'
 
 
 class MainMenu(QMainWindow):
@@ -76,7 +76,7 @@ def updatelog(i, s):
         return
     
     if len(loglines[i].strip())>0:
-        lst=[loglines[i].strip()]
+        lst=[loglines[i].strip().split('\n')[0].split('\r')[0]]
     else:
         lst=[]
     lst+=[s]
@@ -202,51 +202,52 @@ for batchcount, batchline in enumerate(batchlines):
         updatelog(batchcount, 'ana_path: %s' %anasavefolder)
         anabool=True
     
-    if not anabool and 'ana_path' in batchline:#didn't calculate ana here but ened to load it
-        anapath=getbatchlinepath(batchline, key='ana_path')
-        visdataui.importana(p=anapath)
-    
-    if visdataui.numStdPlots==0:
-        if skiponerror:
-            updatelog(batchcount, 'ERROR- No standard plots in vis')
-            continue
-        else:
-            raiseerror
+    if anabool or 'images saved' not in batchline:
+        if not anabool and 'ana_path' in batchline:#didn't calculate ana here but ened to load it
+            anapath=getbatchlinepath(batchline, key='ana_path')
+            visdataui.importana(p=anapath)
         
-    comboind_strlist=[]
-    for i in range(1, visdataui.numStdPlots+1):
-        visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(i)
-        comboind_strlist+=[(i, str(visdataui.stdcsvplotchoiceComboBox.currentText()))]
-
-    for tech in ['T_UVVIS', 'R_UVVIS']:
-        batch_plotuvisrefs(visdataui, tech=tech)
-        idialog=visdataui.savefigs(save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=[['xy']], justreturndialog=True, prependstr=tech)
-        idialog.doneCheckBox.setChecked(False)
-        idialog.ExitRoutine()
-        if idialog.newanapath:
-            visdataui.importana(p=idialog.newanapath)
-    batchidialog=saveimagesbatchDialog(None, comboind_strlist)
+        if visdataui.numStdPlots==0:
+            if skiponerror:
+                updatelog(batchcount, 'ERROR- No standard plots in vis')
+                continue
+            else:
+                raiseerror
+            
+        comboind_strlist=[]
+        for i in range(1, visdataui.numStdPlots+1):
+            visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(i)
+            comboind_strlist+=[(i, str(visdataui.stdcsvplotchoiceComboBox.currentText()))]
     
-    fnsearchle='plate_id__'
-    if not pvdbool:#if PVD bool then don't save composition plots
-        fnsearchle+=',code__'
-    batchidialog.filenamesearchLineEdit.setText(fnsearchle)
-    batchidialog.ExitRoutine()
-    visdataui.save_all_std_plots(batchidialog=batchidialog)
-    
-    #save version of FOM plots with 1.6 to 2.6 eV range
-    visdataui.colormapLineEdit.setText('jet_r')
-    visdataui.vminmaxLineEdit.setText('1.6,2.6')
-    visdataui.belowrangecolLineEdit.setText('(1,0.5,0.5)')
-    visdataui.aboverangecolLineEdit.setText('(0.3,0,0.5)')
-    batchidialog.plotstyleoverrideCheckBox.setChecked(True)
-    batchidialog.prependfilenameLineEdit.setText('1.6to2.6')
-    fnsearchle='plate_id__&bg_repr'
-    if not pvdbool:#if PVD bool then don't save composition plots
-        fnsearchle+=',code__&bg_repr'
-    batchidialog.filenamesearchLineEdit.setText(fnsearchle)
-    batchidialog.doneCheckBox.setChecked(False)
-    batchidialog.ExitRoutine()
-    visdataui.save_all_std_plots(batchidialog=batchidialog)
-    updatelog(batchcount, 'images saved')
-    
+        for tech in ['T_UVVIS', 'R_UVVIS']:
+            batch_plotuvisrefs(visdataui, tech=tech)
+            idialog=visdataui.savefigs(save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=[['xy']], justreturndialog=True, prependstr=tech)
+            idialog.doneCheckBox.setChecked(False)
+            idialog.ExitRoutine()
+            if idialog.newanapath:
+                visdataui.importana(p=idialog.newanapath)
+        batchidialog=saveimagesbatchDialog(None, comboind_strlist)
+        
+        fnsearchle='plate_id__'
+        if not pvdbool:#if PVD bool then don't save composition plots
+            fnsearchle+=',code__'
+        batchidialog.filenamesearchLineEdit.setText(fnsearchle)
+        batchidialog.ExitRoutine()
+        visdataui.save_all_std_plots(batchidialog=batchidialog)
+        
+        #save version of FOM plots with 1.6 to 2.6 eV range
+        visdataui.colormapLineEdit.setText('jet_r')
+        visdataui.vminmaxLineEdit.setText('1.8,2.8')
+        visdataui.belowrangecolLineEdit.setText('(1,0.5,0.5)')
+        visdataui.aboverangecolLineEdit.setText('(0.3,0,0.5)')
+        batchidialog.plotstyleoverrideCheckBox.setChecked(True)
+        batchidialog.prependfilenameLineEdit.setText('1.6to2.6')
+        fnsearchle='plate_id__&bg_repr'
+        if not pvdbool:#if PVD bool then don't save composition plots
+            fnsearchle+=',code__&bg_repr'
+        batchidialog.filenamesearchLineEdit.setText(fnsearchle)
+        batchidialog.doneCheckBox.setChecked(False)
+        batchidialog.ExitRoutine()
+        visdataui.save_all_std_plots(batchidialog=batchidialog)
+        updatelog(batchcount, 'images saved')
+        
