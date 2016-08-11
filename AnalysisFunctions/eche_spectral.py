@@ -54,9 +54,9 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(filedlist, expfiledict, ana
                 
             elif (not False in [k in expfiledict[runk]['parameters'].keys() for k in ['illumination_wavelength', 'toggle_value_illumination', echemparamsk]])\
                  and 'toggle_value' in expfiledict[runk]['parameters'][echemparamsk].keys():
-                togvallist=expfiledict[runk]['parameters']['toggle_value_illumination'].strip()
+                togvallist=expfiledict[runk]['parameters']['toggle_value_illumination']
                 if isinstance(togvallist, str) and ',' in togvallist:
-                    togvals=[s.strip() for s in togvallist.split(',')]
+                    togvals=[s.strip() for s in togvallist.strip().split(',')]
                     tv=expfiledict[runk]['parameters'][echemparamsk]['toggle_value']
                     tv=tv.strip() if isinstance(tv, str) else ('%d' %tv)
                     toglistind=togvals.index(tv)

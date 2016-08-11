@@ -447,7 +447,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def updatefomdlist_plateruncode(self, inds=None, createnewfromexp=False):
         if createnewfromexp:
             runint_pl_techd=[(int(runk.partition('run__')[2]), rund['parameters']['plate_id'], techd) for runk, rund in [(runk, rund) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')] for techk, techd in rund.iteritems() if techk.startswith('files_technique__')]
-            runint_pl_smp=sorted(list(set([(runint, pl, filed['sample_no']) for runint, pl, techd in runint_pl_techd for typed in techd.itervalues() for filed in typed.itervalues() if filed['sample_no']>0])))
+            runint_pl_smp=sorted(list(set([(runint, pl, filed['sample_no']) for runint, pl, techd in runint_pl_techd for typed in techd.itervalues() for filed in typed.itervalues() if 'sample_no' in filed.keys() and filed['sample_no']>0])))
             self.l_fomdlist=[[dict({}, anaint=0, runint=runint, plate_id=pl, sample_no=smp) for runint, pl, smp in runint_pl_smp]]
             if len(self.l_fomdlist[0])>0:
                 self.l_fomnames=[['anaint', 'runint', 'plate_id', 'sample_no']]
@@ -543,6 +543,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     codes=[]
                     for filek in sorted(typed.keys()):
                         filed=typed[filek]
+                        if not 'sample_no' in filed.keys():
+                            continue
                         smp=filed['sample_no']
                         if numpy.isnan(smp) or not smp in rund['platemapsamples']:
                             codes+=[-1]#codes are intgeters so can't uses nan

@@ -473,10 +473,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         print anadict.keys()
         if not 'experiment_path' in anadict.keys():
             return
-        if anadict['ana_version']!='3':
-            idialog=messageDialog(self, '.ana version %s is different from present. continue?' %anadict['ana_version'])
-            if not idialog.exec_():
-                return
+#        if anadict['ana_version']!='3':
+#            idialog=messageDialog(self, '.ana version %s is different from present. continue?' %anadict['ana_version'])
+#            if not idialog.exec_():
+#                return
         exppath=buildexppath(anadict['experiment_path'])#this is the place an experiment folder is turned into an exp fiel path so for the rest of this App exppath is the path of the .exp file
         expfiledict, expzipclass=readexpasdict(exppath, includerawdata=False, returnzipclass=True)
         if len(expfiledict)==0:
@@ -684,10 +684,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         #plateids=sorted(list(set(['%d' %rund['parameters']['plate_id'] for rund in [v for k, v in self.expfiledict.iteritems() if k.startswith('run__')]]))) #this old way of getting plate_ids will include plates for which analysis was not done
         
         ananames=sorted(list(set([anad['name'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]])))
-        plateidsstrlist_list=[anad['plate_ids'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]]
+        plateidsstrlist_list=[anad['plate_ids'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')] if 'plate_ids' in anad.keys()]
         plateidsstrlist=sorted(list(set([idstr for liststr in plateidsstrlist_list for idstr in liststr.split(',')])))
         plateidsstr=','.join(plateidsstrlist)
         #self.anadict['plate_ids']=plateidsstr
+        
         self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), plateidsstr)
         self.AnaTreeWidgetFcns.filltree(self.anadict)
         
