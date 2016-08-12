@@ -273,6 +273,25 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
         [createdict_tup(tup) for tup in tuplist])
     return d, headerdict
 
+def get_xrfs_stds_csv(startswithstr='', searchstr='.csv', transkey='transition', nmolcpskey='nmol.CPS'):
+    
+    fold=tryprependpath(XRFSPROCESSFOLDERS, '', testfile=False, testdir=True)
+    if fold is None:
+        return None
+    csvfns=[fn for fn in os.listdir(fold) if fn.startswith(startswithstr) and searchstr in fn]
+    if len(csvfns)==0:
+        return None
+    csvfn=csvfns[0]
+    with open(os.path.join(fold, csvfn), mode='r') as f:
+        lines=f.readlines()
+    colheads=[sv.strip() for sv in lines[0].split(',')]
+    if not (transkey in colheads and nmolcpskey in colheads):
+        return None
+    inds=[colheads.index(transkey), colheads.index(nmolcpskey)]
+    arr=readtxt_selectcolumns('', selcolinds=inds, delim=',', num_header_lines=1, floatintstr=str, zipclass=None, lines=lines)
+    xrfs_stds_dict=dict([(trans.strip(), float(nmolcps.strip())) for trans, nmolcps in arr.T])
+    return xrfs_stds_dict, csvfn
+    
 def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times

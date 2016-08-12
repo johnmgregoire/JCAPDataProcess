@@ -9,7 +9,7 @@ def createcsvfilstr(fomdlist, fomkeys, intfomkeys=[], strfomkeys=[], fmt='%.5e')
     lines+=[','.join(['%d' %smp]+['%d' %d[nk] for nk in intfomkeys]+['%s' %d[nk] for nk in strfomkeys]+[fmt %n for n in fomarr])\
         for smp, d, fomarr in zip(smparr, fomdlist, fomarr_smps)\
         ]
-    s='\n'.join(lines).replace('nan', 'NaN')
+    s='\n'.join(lines).replace('nan', 'NaN').replace('inf', 'NaN')
     return s
 
 

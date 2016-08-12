@@ -47,18 +47,11 @@
     <rect>
      <x>10</x>
      <y>360</y>
-     <width>261</width>
+     <width>181</width>
      <height>163</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="4" column="0" colspan="2">
-     <widget class="QLabel" name="label_11">
-      <property name="text">
-       <string>Analysis description:</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QLabel" name="label_17">
       <property name="text">
@@ -148,6 +141,13 @@
        <string>Comment string to be included in EXP.
 If you modify the beginning with a&quot;&lt;comment&gt;;&quot; the 
 comment will remain as you change analysis options</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0" colspan="2">
+     <widget class="QLabel" name="label_11">
+      <property name="text">
+       <string>Analysis description:</string>
       </property>
      </widget>
     </item>
@@ -351,7 +351,7 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
      <x>276</x>
      <y>10</y>
      <width>20</width>
-     <height>511</height>
+     <height>351</height>
     </rect>
    </property>
    <property name="lineWidth">
@@ -412,9 +412,9 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
   <widget class="QComboBox" name="AnalysisNamesComboBox">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>200</x>
      <y>410</y>
-     <width>211</width>
+     <width>301</width>
      <height>22</height>
     </rect>
    </property>
@@ -426,9 +426,9 @@ to generate Intermediate and FOM results</string>
   <widget class="QLabel" name="label_20">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>208</x>
      <y>390</y>
-     <width>219</width>
+     <width>301</width>
      <height>21</height>
     </rect>
    </property>
@@ -1010,9 +1010,9 @@ can be performed</string>
   <widget class="QLineEdit" name="UserFOMLineEdit">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>200</x>
      <y>500</y>
-     <width>211</width>
+     <width>301</width>
      <height>20</height>
     </rect>
    </property>
@@ -1041,9 +1041,9 @@ After entry complete, you will be prompted for fom names</string>
   <widget class="QLabel" name="label_21">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>208</x>
      <y>480</y>
-     <width>219</width>
+     <width>301</width>
      <height>20</height>
     </rect>
    </property>
@@ -1054,9 +1054,9 @@ After entry complete, you will be prompted for fom names</string>
   <widget class="QComboBox" name="FOMProcessNamesComboBox">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>200</x>
      <y>450</y>
-     <width>211</width>
+     <width>301</width>
      <height>22</height>
     </rect>
    </property>
@@ -1068,9 +1068,9 @@ to generate Intermediate and FOM results</string>
   <widget class="QLabel" name="label_22">
    <property name="geometry">
     <rect>
-     <x>290</x>
+     <x>208</x>
      <y>430</y>
-     <width>219</width>
+     <width>301</width>
      <height>21</height>
     </rect>
    </property>
@@ -1139,6 +1139,86 @@ to generate Intermediate and FOM results</string>
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
+  <widget class="Line" name="line_6">
+   <property name="geometry">
+    <rect>
+     <x>189</x>
+     <y>360</y>
+     <width>16</width>
+     <height>161</height>
+    </rect>
+   </property>
+   <property name="lineWidth">
+    <number>2</number>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+  </widget>
+  <zorder>BatchComboBox</zorder>
+  <zorder>BatchPushButton</zorder>
+  <zorder>gridLayoutWidget_3</zorder>
+  <zorder>layoutWidget</zorder>
+  <zorder>ImportExpPushButton</zorder>
+  <zorder>ImportAnaPushButton</zorder>
+  <zorder>textBrowser_plate</zorder>
+  <zorder>textBrowser_h</zorder>
+  <zorder>textBrowser_comp</zorder>
+  <zorder>line</zorder>
+  <zorder>line_2</zorder>
+  <zorder>line_3</zorder>
+  <zorder>line_4</zorder>
+  <zorder>AnalysisNamesComboBox</zorder>
+  <zorder>label_20</zorder>
+  <zorder>AnaTreeWidget</zorder>
+  <zorder>getplatemapCheckBox</zorder>
+  <zorder>CompPlotOrderComboBox</zorder>
+  <zorder>label_2</zorder>
+  <zorder>label</zorder>
+  <zorder>CompPlotTypeComboBox</zorder>
+  <zorder>label_4</zorder>
+  <zorder>compplotsizeLineEdit</zorder>
+  <zorder>label_3</zorder>
+  <zorder>fomplotchoiceComboBox</zorder>
+  <zorder>usedaqtimeCheckBox</zorder>
+  <zorder>label_9</zorder>
+  <zorder>aboverangecolLineEdit</zorder>
+  <zorder>label_6</zorder>
+  <zorder>belowrangecolLineEdit</zorder>
+  <zorder>label_8</zorder>
+  <zorder>vminmaxLineEdit</zorder>
+  <zorder>stdcsvplotchoiceComboBox</zorder>
+  <zorder>label_5</zorder>
+  <zorder>colormapLineEdit</zorder>
+  <zorder>label_10</zorder>
+  <zorder>label_13</zorder>
+  <zorder>TechTypeRadioButton_0</zorder>
+  <zorder>TechTypeRadioButton_1</zorder>
+  <zorder>TechTypeRadioButton_2</zorder>
+  <zorder>TechTypeRadioButton_3</zorder>
+  <zorder>TechTypeRadioButton_4</zorder>
+  <zorder>TechTypeRadioButton_5</zorder>
+  <zorder>TechTypeRadioButton_6</zorder>
+  <zorder>TechTypeRadioButton_7</zorder>
+  <zorder>TechTypeRadioButton_8</zorder>
+  <zorder>TechTypeRadioButton_9</zorder>
+  <zorder>TechTypeRadioButton_10</zorder>
+  <zorder>label_7</zorder>
+  <zorder>ExpRunUseComboBox</zorder>
+  <zorder>label_14</zorder>
+  <zorder>RunSelectTreeWidget</zorder>
+  <zorder>UserFOMLineEdit</zorder>
+  <zorder>line_5</zorder>
+  <zorder>label_21</zorder>
+  <zorder>FOMProcessNamesComboBox</zorder>
+  <zorder>label_22</zorder>
+  <zorder>autoplotCheckBox</zorder>
+  <zorder>RaiseErrorPushButton</zorder>
+  <zorder>OpenInfoPushButton</zorder>
+  <zorder>expfilenameLineEdit</zorder>
+  <zorder>line_6</zorder>
+  <zorder>label_11</zorder>
+  <zorder>AnaDescLineEdit</zorder>
  </widget>
  <resources/>
  <connections/>

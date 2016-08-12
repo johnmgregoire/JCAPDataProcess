@@ -27,6 +27,8 @@ PLATEMAPBACKUP=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map', ]
 #r'/cifs/10.231.101.11/data/hte_jcap_app_proto/map']
 
 
+XRFSPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments\xrfs\calibration_libraries', r'K:\experiments\xrfs\calibration_libraries', ]
+
 
 
 for l in [PLATEFOLDERS, RUNFOLDERS, EXPFOLDERS_J, EXPFOLDERS_K, ANAFOLDERS_J, ANAFOLDERS_K, FOMPROCESSFOLDERS]:
