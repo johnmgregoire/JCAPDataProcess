@@ -19,8 +19,8 @@ from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
-batchfolder=r'K:\users\sksuram\uvis_batchtests\plate_tests'
-batchinput_fn='batchtest7.txt'
+batchfolder=r'K:\users\sksuram\uvis_batchtests\DR'
+batchinput_fn='15635_postacid.txt'
 
 
 class MainMenu(QMainWindow):
