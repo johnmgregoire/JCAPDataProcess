@@ -152,7 +152,7 @@ for batchcount, batchline in enumerate(batchlines):
             print batchline
             expbool=False
             if forceexp or not 'exp_path' in batchline:
-                rawfn=getbatchlinepath(batchline, key='T_path').lstrip(os.sep)
+                rawfn=getbatchlinepath(batchline, key='DR_path').lstrip(os.sep)
                 logstr, tupbool=batch_exp(rawfn)
                 if not tupbool:#error so False passed or empty tuple
                     continue
@@ -161,7 +161,7 @@ for batchcount, batchline in enumerate(batchlines):
     #            updatelog(batchcount, 'exp_path: %s' %exppath)
                 expbool=True
             elif getpvdbool:
-                rawfn=getbatchlinepath(batchline, key='T_path')
+                rawfn=getbatchlinepath(batchline, key='DR_path')
                 
             if getpvdbool:
                 logstr, tupbool=batch_pvdbool(rawfn)
@@ -185,7 +185,7 @@ for batchcount, batchline in enumerate(batchlines):
                     exppath=getbatchlinepath(batchline, key='exp_path')
                     calcui.importexp(exppath=exppath)#relative path ok
                 calcui.autoplotCheckBox.setChecked(False)
-                for analabel in ['TR_UVVIS', 'BG']:#TODO: for BG run on the ana
+                for analabel in ['DR_UVVIS', 'BG']:#TODO: for BG run on the ana
                     if not select_ana_fcn(calcui, analabel):
                         if skiponerror:
                             updatelog(batchcount, 'ERROR-Analysis %s not available' %analabel)
@@ -221,7 +221,7 @@ for batchcount, batchline in enumerate(batchlines):
                     visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(i)
                     comboind_strlist+=[(i, str(visdataui.stdcsvplotchoiceComboBox.currentText()))]
             
-                for tech in ['T_UVVIS', 'R_UVVIS']:
+                for tech in ['DR_UVVIS']:
                     batch_plotuvisrefs(visdataui, tech=tech)
                     idialog=visdataui.savefigs(save_all_std_bool=False, batchidialog=None, lastbatchiteration=False, filenamesearchlist=[['xy']], justreturndialog=True, prependstr=tech)
                     idialog.doneCheckBox.setChecked(False)

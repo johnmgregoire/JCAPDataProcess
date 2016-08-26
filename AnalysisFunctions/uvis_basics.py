@@ -220,7 +220,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.requiredkeys=['Wavelength (nm)','Signal_0']
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
-        self.qualityfoms=['min_rescaled','max_rescaled','0<T<1','0<R<1','0<T+R<1']
+        self.qualityfoms=['min_rescaled','max_rescaled','T_0to1','R_0to1','TplusR_0to1']
         self.fom_chkqualitynames=['abs_hasnan']
         self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
 
@@ -241,8 +241,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         return 'standard_with_multiple_data_use'
         
     def processnewparams(self):
-        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
+        self.fomnames=['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
+        self.fomnames+=['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
         
         if self.params['window_length'] %2!=1:
             self.params['window_length']+=1
@@ -475,9 +476,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[1]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
-                fomd[key]=numpy.nansum(inter_selindd['abs_smth_refadj'][inds])
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
+                nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
             for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
                          
@@ -520,7 +523,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
         self.requiredparams=[]
         self.fom_chkqualitynames=['abs_hasnan']
-        self.qualityfoms=['min_rescaled','max_rescaled','0<DR<1']
+        self.qualityfoms=['min_rescaled','max_rescaled','DR_0to1']
         self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
         self.processnewparams()
 
@@ -652,9 +655,11 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[1]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
-                fomd[key]=numpy.nansum(inter_selindd['abs_smth_refadj'][inds])
+            for key in ['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            +['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
+                nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
             for sig_str,sigkey in zip(['DR'],['DR_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
 #            WHAT ARE THESE FOMS FOR
@@ -830,9 +835,11 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[1]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
-                fomd[key]=numpy.nansum(inter_selindd['abs_smth_refadj'][inds])
+            for key in ['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            +['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
+                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
+                nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
             for sig_str,sigkey in zip(['T'],['T_smth']):
                 fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
                          

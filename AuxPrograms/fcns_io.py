@@ -899,6 +899,14 @@ def getinfopath_plateid(plateidstr, erroruifcn=None):
         return None
     return p
 
+def importinfo(plateidstr):
+    fn=plateidstr+'.info'
+    p=tryprependpath(PLATEFOLDERS, os.path.join(plateidstr, fn), testfile=True, testdir=False)
+    with open(p, mode='r') as f:
+        lines=f.readlines()
+    infofiled=filedict_lines(lines)
+    return infofiled
+
 def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False):
     p=getinfopath_plateid(plateidstr)
     if p is None:
@@ -1718,16 +1726,23 @@ def get_data_rcp_dict__echerunfile(run_path, file_name):
     return d
 
 def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
-    metastrlist=[]
+    metastrlist=[];mtrpnstrlist=[]
     compstrlist=[]
     depstrlist=[]
     countstrlist=[]
 
     els=udi_dict['ellabels']
     elstr=','.join(els)
-    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y', 'Composition=%s' %(elstr)]
+    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y', 'Composition=%s' %(elstr),'Normalize=%s' %(udi_dict['Normalize']),\
+    'CompType=%s' %(udi_dict['CompType'])]
     qcounts=udi_dict['Iarr']
     metastrlist+=['N=%d' %len(qcounts)]
+    
+    for lab, arr, fmt in [('mX=', udi_dict['mxy'][:, 0], '%.2f'), ('mY=', udi_dict['mxy'][:, 1], '%.2f'),('specind=', udi_dict['specind'], '%d')]:
+        if not  numpy.any(numpy.isnan(arr)):
+            mtrpnstrlist+=[lab+','.join([fmt %v for v in arr])]
+
+        
     for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%d'), ('plate_id=', udi_dict['plate_id'], '%d')]:
         depstrlist+=[lab+','.join([fmt %v for v in arr])]
 
@@ -1749,11 +1764,12 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
         countstrlist+=[l+','.join(['%.5e' %v for v in arr1])]
 
     metastr='\n'.join(['// Metadata']+metastrlist)
+    mtrpndata='\n'.join(['// Motorpns data']+mtrpnstrlist)
     depstr='\n'.join(['// Deposition data']+depstrlist)
     compstr='\n'.join(['// Composition data']+compstrlist)
     countstr='\n'.join(['//Integrated counts data']+countstrlist)
 
-    filestr='\n\n'.join([metastr, depstr, compstr, countstr])
+    filestr='\n\n'.join([metastr, mtrpndata, depstr, compstr, countstr])
 
     f=open(p, mode='w')
     f.write(filestr)
