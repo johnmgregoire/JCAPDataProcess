@@ -1,4 +1,4 @@
-skiponerror=0
+skiponerror=1
 batchfilepath=r'.batch'
 
 import sys, os
@@ -20,7 +20,7 @@ from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
 batchfolder=r'K:\users\sksuram\uvis_batchtests'
-batchinput_fn='20160705.171153_batch_paulfnew2_InnerSpace_v08.txt'
+batchinput_fn='20160913_innerspace_excel_batchready_special_v02.txt'
 
 
 class MainMenu(QMainWindow):
@@ -122,7 +122,8 @@ def batch_exp(fn, expui=expui):
     
     for p in [pT, pR]:
         for zfn in os.listdir(p):
-            if not zfn.endswith('.zip'):
+            if not zfn.endswith('.zip') and os.path.basename(zfn) in ['20151215.112659.copied-20151216220237968PST.zip','20150610.152803.copied-20151020220217814PDT.zip',\
+            '20150714.122417.copied-20151002220132113PDT.zip','20150601.122216.copied-20150601220230164PDT.zip']:
                 continue
             expui.importruns_folder(folderp=os.path.join(p, zfn))
     expui.batchuvissingleplate_norefdata()
@@ -237,7 +238,7 @@ for batchcount, batchline in enumerate(batchlines):
                 batchidialog.ExitRoutine()
                 visdataui.vminmaxLineEdit.setText('')        
                 batchidialog.plotstyleoverrideCheckBox.setChecked(False)
-                visdataui.save_all_std_plots(batchidialog=batchidialog)
+#                visdataui.save_all_std_plots(batchidialog=batchidialog)
                 
                 #save version of FOM plots with 1.6 to 2.6 eV range
                 visdataui.colormapLineEdit.setText('jet_r')
@@ -253,7 +254,7 @@ for batchcount, batchline in enumerate(batchlines):
                 batchidialog.filenamesearchLineEdit.setText(fnsearchle)
                 batchidialog.doneCheckBox.setChecked(False)
                 batchidialog.ExitRoutine()
-                visdataui.save_all_std_plots(batchidialog=batchidialog)
+#                visdataui.save_all_std_plots(batchidialog=batchidialog)
                 updatelog(batchcount, 'images saved')
 #        except:
 #            if skiponerror:
