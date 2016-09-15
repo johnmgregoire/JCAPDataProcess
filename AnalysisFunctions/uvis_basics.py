@@ -241,9 +241,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         return 'standard_with_multiple_data_use'
         
     def processnewparams(self):
-        self.fomnames=['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
+        self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
-        self.fomnames+=['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
+        self.fomnames+=['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
         
         if self.params['window_length'] %2!=1:
             self.params['window_length']+=1
@@ -480,9 +480,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
                 nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
-                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
-            for sig_str,sigkey in zip(['T','R','T+R'],['T_smth','R_smth','1-T-R_smth']):
-                fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
+            for sig_str,sigkey in zip(['T','R','TplusR'],['T_smth','R_smth','1-T-R_smth']):
+                fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
                          
             dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
@@ -655,13 +655,13 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
-            +['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
                 nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
-                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
             for sig_str,sigkey in zip(['DR'],['DR_smth']):
-                fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
+                fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
 #            WHAT ARE THESE FOMS FOR
             dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
@@ -835,13 +835,13 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
 #        ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['avg_abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
-            +['avg_abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
                 nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
-                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/numpy.abs(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
+                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
             for sig_str,sigkey in zip(['T'],['T_smth']):
-                fomd['0<'+sig_str+'<1']=check_inrange(inter_selindd[sigkey])
+                fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
                          
             dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
             dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
