@@ -907,30 +907,28 @@ def importinfo(plateidstr):
     infofiled=filedict_lines(lines)
     return infofiled
 
-def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False):
-    p=getinfopath_plateid(plateidstr)
-    if p is None:
-        return None
-    with open(p, mode='r') as f:
-        filestr=f.read(10000)
-    searchstr='        elements: '
-    if not searchstr in filestr:
-        return None
-    s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
-
-    els=s.split(',')
+def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):
+    infofiled=importinfo(plateidstr)
+    print_idl=[int(x.split('__')[-1]) for x in infofiled['prints'].keys() if 'prints__' in x]
+    print_key='prints__'+str(numpy.max(print_idl)) if print_id=='last' else 'prints__'+str(print_id) if print_id in print_idl else None
+    if print_key!=None:
+        elstr=infofiled['prints'][print_key]['elements'] if 'elements' in infofiled['prints'][print_key].keys() else None
+    if elstr!=None: els=[x for x in elstr.split(',') if x not in [',']] 
+    else: return None
+    
     if multielementink_concentrationinfo_bool:
-        return els, get_multielementink_concentrationinfo(filestr, els)
+        
+        return els, get_multielementink_concentrationinfo(infofiled, print_key,els)
     return els
 
-def get_multielementink_concentrationinfo(filestr, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
+def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
     searchstr1='        concentration_elements: '
     searchstr2='        concentration_values: '
-    if not (searchstr1 in filestr and searchstr2 in filestr):
+    if not (searchstr1 in infofiled['prints'][print_key].keys() and searchstr2 in infofiled['prints'][print_key].keys()):
         return None
-    cels=filestr.partition(searchstr1)[2].partition('\n')[0].strip().split(',')
-    concstr=filestr.partition(searchstr2)[2].partition('\n')[0].strip().split(',')
+    cels=infofiled[print_key][searchstr1.strip()]
+    concstr=infofiled[print_key][searchstr2.strip()]
     conclist=[float(s) for s in concstr]
 
     cels=[cel.strip() for cel in cels]
