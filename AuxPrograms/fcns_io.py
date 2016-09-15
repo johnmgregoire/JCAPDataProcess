@@ -927,8 +927,8 @@ def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if not
     searchstr2='        concentration_values: '
     if not (searchstr1 in infofiled['prints'][print_key].keys() and searchstr2 in infofiled['prints'][print_key].keys()):
         return None
-    cels=infofiled[print_key][searchstr1.strip()]
-    concstr=infofiled[print_key][searchstr2.strip()]
+    cels=infofiled['prints'][print_key][searchstr1.strip()]
+    concstr=infofiled['prints'][print_key][searchstr2.strip()]
     conclist=[float(s) for s in concstr]
 
     cels=[cel.strip() for cel in cels]
