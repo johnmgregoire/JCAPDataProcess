@@ -255,6 +255,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expzipclass=expzipclass
         masterels=None
         inkjetconcentrationadjustment=self.inkjetconcentrationadjustment
+        platemap_plateid_dlist_list=[]
         for runk, rund in self.expfiledict.iteritems():
             if not runk.startswith('run__'):
                continue
@@ -262,21 +263,28 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                      and 'plate_id' in rund['parameters'].keys()):
                 print 'critical info missing for ', runk
             if not 'platemapdlist' in rund.keys():
-                pmlines, pmpath=get_lines_path_file(p=getplatemappath_plateid(str(rund['parameters']['plate_id']), \
-                  erroruifcn=\
-                  lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))))
-                
-                if len(pmpath)==0:
-                    idialog=messageDialog(self, 'invalid platemap for %s' %rund['parameters']['plate_id'])
-                    idialog.exec_()
-                    rund['platemapdlist']=[]
-                    return#just try to cancel things so user can open file again
+                if True in [tup[0]==rund['parameters']['plate_id'] for tup in platemap_plateid_dlist_list]:
+                    rund['platemapdlist']=copy.copy([tup[1] for tup in platemap_plateid_dlist_list if tup[0]==rund['parameters']['plate_id']][0])
                 else:
-                    rund['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)#path not used here because passing lines
-                    s=str(self.platemapfilenameLineEdit.text())
-                    ps=os.path.normpath(pmpath)
-                    if not ps in s:
-                        self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
+                    selectpmfcn=lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))
+                    if self.defaultplatemapCheckBox.isChecked():
+                        pmpath=getplatemappath_plateid(str(rund['parameters']['plate_id']), erroruifcn=selectpmfcn)
+                    else:
+                        pmpath=selectpmfcn('for .exp,', PLATEMAPBACKUP[0])
+                    pmlines, pmpath=get_lines_path_file(p=pmpath)
+                    
+                    if len(pmpath)==0:
+                        idialog=messageDialog(self, 'invalid platemap for %s' %rund['parameters']['plate_id'])
+                        idialog.exec_()
+                        rund['platemapdlist']=[]
+                        return#just try to cancel things so user can open file again
+                    else:
+                        platemap_plateid_dlist_list+=[(rund['parameters']['plate_id'], readsingleplatemaptxt('', lines=pmlines))]#path not used here because passing lines
+                        rund['platemapdlist']=copy.copy(platemap_plateid_dlist_list[-1][1])
+                        s=str(self.platemapfilenameLineEdit.text())
+                        ps=os.path.normpath(pmpath)
+                        if not ps in s:
+                            self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             multielementink_concentrationinfo_bool=bool(self.inkjetconcentrationadjustment)
             ans=getelements_plateidstr(str(rund['parameters']['plate_id']), multielementink_concentrationinfo_bool=multielementink_concentrationinfo_bool)
@@ -381,9 +389,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if platemappath is None:
             plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
             els=getelements_plateidstr(plateidstr)
-            platemappath=getplatemappath_plateid(plateidstr, \
-                erroruifcn=\
-            lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, plateidstr)))
+            selectpmfcn=lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))
+            if self.defaultplatemapCheckBox.isChecked():
+                pmpath=getplatemappath_plateid(plateidstr, erroruifcn=selectpmfcn)
+            else:
+                pmpath=selectpmfcn('for onthefly,', PLATEMAPBACKUP[0])
+            pmlines, platemappath=get_lines_path_file(p=pmpath)
+            
         if platemappath is None or platemappath=='':
             return
         
@@ -399,7 +411,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict['run__1']={}
         self.expfiledict['run__1']['run_path']=self.expfolder
         self.expfiledict['run__1']['run_use']='onthefly'
-        self.expfiledict['run__1']['platemapdlist']=readsingleplatemaptxt(platemappath)
+        self.expfiledict['run__1']['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)
         self.expfiledict['run__1']['platemapsamples']=[d['sample_no'] for d in self.expfiledict['run__1']['platemapdlist']]
         self.expfiledict['run__1']['files_technique__onthefly']={}
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
