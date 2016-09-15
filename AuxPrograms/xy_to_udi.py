@@ -4,21 +4,25 @@ Created on Mon Jun 13 13:59:45 2016
 
 @author: sksuram
 """
-import os,sys,numpy as np,matplotlib.pyplot as plt
+import os,sys,numpy as np,matplotlib.pyplot as plt,sys
 sys.path.append(r'E:\GitHub\JCAPDataProcess\AuxPrograms')
 from fcns_io import *
 from DBPaths import *
 sys.path.append(r'E:\GitHub\JCAPDataProcess\AnalysisFunctions')
+sys.path.append(r'E:\python-codes\CALTECH\datahandling')
 from Analysis_Master import *
 from datamanipulation import *
 
 
-xyfolder=r'K:\experiments\xrds\SSRLApr2016\CaMnO_30508\subbcknd'
+xyfolder=r'K:\experiments\xrds\Lan\MaterialsProject-2\Manganates\30722_SbMnO_LAS_900C_3h\xy file'
 
 Normalize=0.
 write_udi=1
 CompType='random' #options are 'random','calibrated','raw'
 replace_xynan=False
+replace_Int_lessthanzeros_val=1E-05
+replace_Int_lessthanzeros=True
+
 
 add_fn_str='_normalized' if Normalize else ''
 udifl=os.path.join(xyfolder,r'udifl'+add_fn_str+'.txt')
@@ -39,6 +43,8 @@ for xyind,xyfile in enumerate(xyfiles):
     yarr+=[float(bxyf.split('pmpy')[-1].split('_')[0])]
     if 'specind' in bxyf:
         specinds+=[int(bxyf.split('specind')[-1].split('_')[0])]
+    else:
+        specinds+=[int(xyind)]
 xarr=np.array(xarr);yarr=np.array(yarr)
 naninds_xarr=list(np.where(np.isnan(xarr))[0])
 naninds_yarr=list(np.where(np.isnan(yarr))[0])
@@ -50,12 +56,12 @@ elif len(naninds_xarr)>0 or len(naninds_yarr)>0:
     raise ValueError('Nans exist for positions, no replacement values are provided')
 
 
-plateidstr=os.path.split(xyfolder)[-2].split('_')[-1][0:-1]
+plateidstr=xyfolder.split(os.sep)[-2].split('_')[0][0:-1]
 infofiled=importinfo(plateidstr)
 
 udi_dict={}
     
-udi_dict['ellabels']=[x for x in getelements_plateidstr(plateidstr) if x not in ['O','Ar','N']]
+udi_dict['ellabels']=[x for x in getelements_plateidstr(plateidstr,print_id=2) if x not in ['','O','Ar','N']]
 udi_dict['xy']=np.c_[xarr,yarr]
 udi_dict['specind']=specinds
 udi_dict['sample_no']=[]
@@ -82,6 +88,8 @@ Qarr=(4*np.pi*np.sin(np.radians(intsn_twoth_range/2.)))/(wl_CuKa)
 Iarr=np.zeros([len(xyd.keys()),len(intsn_twoth_range)])
 for idx,key in enumerate(sorted(xyd.keys())):
     Iarr[idx,:]=xyd[key]['interp_Inte']
+    if replace_Int_lessthanzeros:
+       Iarr[idx,np.where(Iarr[idx,:]<0)[0]]=replace_Int_lessthanzeros_val
 
 if Normalize:
     for idx in xrange(np.shape(Iarr)[0]):
@@ -95,8 +103,8 @@ if CompType=='random':
     udi_dict['CompType']=CompType
     num_samples=len(xarr)
     comps=np.r_[[np.random.random(num_samples) for x in udi_dict['ellabels']]].T
-    sums=np.sum(comps,axis=0)
-    udi_dict['comps']=comps/sums
+    sums=np.sum(comps,axis=1)
+    udi_dict['comps']=comps/np.tile(sums,(np.shape(comps)[1],1)).T
 
 if write_udi:
     writeudifile(udifl,udi_dict)
