@@ -238,9 +238,9 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
     return numpy.array(z).T
 
 
-def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
+def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False, delim=','):
     d={}
-    arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
+    arr=readtxt_selectcolumns(p, delim=delim, num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
 
     if not 'keys' in fileattrd.keys():
         with open(p, mode='r') as f:
@@ -921,6 +921,7 @@ def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=Fa
         return els, get_multielementink_concentrationinfo(infofiled, print_key,els)
     return els
 
+#get_multielementink_concentrationinfo to be tested after 20160914 update to using "last" print
 def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
     searchstr1='        concentration_elements: '
