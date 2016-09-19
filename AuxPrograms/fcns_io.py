@@ -867,7 +867,8 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
     keys=ls[count-1][1:].split(',')
     keys=[(k.partition('(')[0]).strip() for k in keys]
     dlist=[]
-    for l in ls[count:]:
+    samplelines=[l for l in ls[count:] if l.count(',')==(len(keys)-1)]
+    for l in samplelines:
         sl=l.split(',')
         d=dict([(k, myeval(s.strip())) for k, s in zip(keys, sl)])
         dlist+=[d]
