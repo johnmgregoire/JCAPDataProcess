@@ -66,10 +66,10 @@ class Analysis_Master_nointer():
         runk_typek_b=sorted([('multi_run', typek, True) for typek in self.multirunfiledict.keys() if len(self.multirunfiledict[typek])>0])
         runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
         return runk_typek_b
-    def processnewparams(self):
+    def processnewparams(self, calcFOMDialogclass=None):
         return
     #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
@@ -257,64 +257,3 @@ class Analysis_Master_inter(Analysis_Master_nointer):
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
             zc.close()
-
-#class Analysis_Master_onlyfom(Analysis_Master_nointer):
-#    def __init__(self):
-#        self.analysis_fcn_version='1'
-#        self.dfltparams=dict(['analysis_key', 'ana__x'])
-#        self.params=copy.copy(self.dfltparams)
-#        self.analysis_name='Analysis_Master1'
-#        self.requiredkeys=[]
-#        self.optionalkeys=[]
-#        self.requiredparams=[]
-#        self.fomnames=[]
-#        self.plotparams={}
-#        self.csvheaderdict=dict({}, csv_version='1')
-#        
-#    def processnewparams(self):
-#        return
-#    #this gets the applicable filenames and there may be other required filenames for analysis which can be saved locally and use in self.perform
-#    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
-#        return []
-#    
-#    def check_input(self, critfracapplicable=0.9):
-#        return True, ''
-#    def check_output(self, critfracnan=0.9):
-#        if len(self.fomdlist)==0:
-#            return False, 'No data'
-#        return True, ''
-#
-#    def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
-#        if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
-#            p=prepend_root_exp_path(p)
-#        try:
-#            pd=p+'.dat'
-#            dataarr=readbinary_selinds(pd, numkeys, keyinds, zipclass=zipclass)
-#            return dataarr
-#        except:
-#            pass
-##        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
-#        dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
-#        return dataarr
-#    
-#    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
-#        self.initfiledicts()
-#        self.fomdlist=[]
-#        for filed in self.filedlist:
-##            if numpy.isnan(filed['sample_no']):
-##                if self.debugmode:
-##                    raiseTEMP
-##                continue
-#            fn=filed['fn']
-#            try:
-#                dataarr=self.readdata(os.path.join(expdatfolder, fn), filed['nkeys'], filed['keyinds'], num_header_lines=filed['num_header_lines'], zipclass=zipclass)
-#                fomtuplist=self.fomtuplist_dataarr(dataarr, filed)
-#            except:
-#                if self.debugmode:
-#                    raiseTEMP
-#                fomtuplist=[(k, numpy.nan) for k in self.fomnames]
-#                pass
-#            self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
-#            #writeinterdat
-#        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-#        

@@ -835,3 +835,27 @@ def illumtimeshift(d, ikey, tkey, tshift):
     tmod=d[tkey]-tshift
     inds=[numpy.argmin((t-tmod)**2) for t in d[tkey]]
     d[ikey]=d[ikey][inds]
+
+def calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc='.RelConc', key_append_atfrac='.AtFrac'):
+    #platemap should have standard A-H channels, at least as many as conc_el_chan.shape[1], conc_el_chan is by "new" element and by platemap channel, make the key_append a string to update dlist or None to skip
+    inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]#grab the channels used
+    #with this update the platemap is in units of concentration instead of fraction of printer channel loading
+    if key_append_conc is None:
+        key_append_conc='TEMP'
+    cels_set_ordered_conc=[k+key_append_conc for k in cels_set_ordered]
+    [d.update(\
+                    zip(cels_set_ordered_conc, (numpy.float32([d[k] for k in inkchannelsused])[numpy.newaxis, :]*conc_el_chan).sum(axis=1)))\
+                              for d in platemapdlist]
+    if key_append_atfrac is None:
+        cels_set_ordered_atfrac=[]
+    else:
+        cels_set_ordered_atfrac=[k+key_append_atfrac for k in cels_set_ordered]
+        concarr=numpy.array([[d[k] for k in cels_set_ordered_conc] for d in platemapdlist])
+        comparr2d=concarr/concarr.sum(axis=1)[:, numpy.newaxis]
+        [d.update(zip(cels_set_ordered_atfrac), comparr) for d, comparr in  zip(platemapdlist, comparr2d)]
+    if key_append_conc=='TEMP':
+        for d in platemapdlist:
+            for k in cels_set_ordered_conc:
+                del d[k]
+        cels_set_ordered_conc=[]
+    return cels_set_ordered_conc, cels_set_ordered_atfrac

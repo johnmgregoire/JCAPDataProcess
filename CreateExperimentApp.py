@@ -421,7 +421,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
-                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
+                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
             else:
                 d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:

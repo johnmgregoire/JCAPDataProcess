@@ -81,7 +81,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'analysis_of_ana'
         
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         #this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
         self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech=techk, gui_mode_bool=self.gui_mode_bool)

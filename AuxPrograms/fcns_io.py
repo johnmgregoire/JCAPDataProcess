@@ -685,9 +685,9 @@ def prepend_root_exp_path(p):
             return os.path.join(parentfold, subfoldl[0])
     print 'cannot find folder %s in %s' %(subfold, parentfold)
     return p
-def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
+def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
-    fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
+    fn=os.path.split(p)[1][:15]+ext_str #15 characters in YYYYMMDD.HHMMSS
 
     if (not os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) or not os.path.isabs(p):
         p=prepend_root_exp_path(p)
@@ -698,12 +698,14 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     if '.zip' in p:
         return os.path.join(p, fn)#hope this works out without checking if it is actually there
 
-    fnl=[s for s in os.listdir(p) if s.endswith('.exp')]
+    fnl=[s for s in os.listdir(p) if s.endswith(ext_str)]
     if len(fnl)==0:
-        print 'cannot find .exp file in ', p
+        print 'cannot find %s file in %s' %(ext_str, p)
         return p
     return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
-
+def buildanapath(analysis_path_folder):
+    return buildexppath(analysis_path_folder, ext_str='.ana')
+    
 def buildrunpath(runp):
     #if user makes .exp with a folder on K or intr computer and this run_path is used but the file is gone opr path changed to ..copied, then should bepossible to find this run as a .zip on J but that is not attempted here
     return tryprependpath(RUNFOLDERS, runp)
@@ -878,16 +880,39 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
         return dlist, fid
     return dlist
 
-def getplatemappath_plateid(plateidstr, erroruifcn=None):
-    p=''
-    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
-    if os.path.isdir(fld):
-        l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
-        p=os.path.join(fld, l[0])
-    if (not os.path.isfile(p)) and not erroruifcn is None:
-        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
-    return p
+#def getplatemappath_plateid(plateidstr, erroruifcn=None):
+#    p=''
+#    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
+#    if os.path.isdir(fld):
+#        l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
+#        p=os.path.join(fld, l[0])
+#    if (not os.path.isfile(p)) and not erroruifcn is None:
+#        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
+#    return p
 
+def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:'):
+    p=''
+    infop=getinfopath_plateid(plateidstr)
+    if infop is None:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return p
+    with open(infop, mode='r') as f:
+        s=f.read(1000)
+    pmfold=tryprependpath(PLATEMAPFOLDERS, '')
+    if pmfold=='' or not infokey in s:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return p
+    pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
+    fns=[fn for fn in os.listdir(pmfold) if fn.startswith('0'*(4-len(pmidstr))+pmidstr+'-') and fn.endswith('-mp.txt')]
+    if len(fns)!=1:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return p
+    p=os.path.join(pmfold, fns[0])
+    return p
+    
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
     fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
@@ -908,7 +933,7 @@ def importinfo(plateidstr):
     infofiled=filedict_lines(lines)
     return infofiled
 
-def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):
+def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):#'screening_print'
     infofiled=importinfo(plateidstr)
     print_idl=[int(x.split('__')[-1]) for x in infofiled['prints'].keys() if 'prints__' in x]
     print_key='prints__'+str(numpy.max(print_idl)) if print_id=='last' else 'prints__'+str(print_id) if print_id in print_idl else None
@@ -925,15 +950,15 @@ def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=Fa
 #get_multielementink_concentrationinfo to be tested after 20160914 update to using "last" print
 def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
-    searchstr1='        concentration_elements: '
-    searchstr2='        concentration_values: '
+    searchstr1='concentration_elements'
+    searchstr2='concentration_values'
     if not (searchstr1 in infofiled['prints'][print_key].keys() and searchstr2 in infofiled['prints'][print_key].keys()):
         return None
-    cels=infofiled['prints'][print_key][searchstr1.strip()]
-    concstr=infofiled['prints'][print_key][searchstr2.strip()]
-    conclist=[float(s) for s in concstr]
+    cels=infofiled['prints'][print_key][searchstr1]
+    concstr=infofiled['prints'][print_key][searchstr2]
+    conclist=[float(s) for s in concstr.split(',')]
 
-    cels=[cel.strip() for cel in cels]
+    cels=[cel.strip() for cel in cels.split(',')]
     cels_set=set(cels)
     if len(cels_set)<len(cels) or True in [conclist[0]!=cv for cv in conclist]:#concentrations available where an element is used multiple times. or 1 of the concentrations is different from the rest
         els_printchannels=[regexcompile("[A-Z][a-z]*").findall(el) for el in els]
@@ -1774,3 +1799,11 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     f=open(p, mode='w')
     f.write(filestr)
     f.close()
+
+def sort_dict_keys_by_counter(d, keystartswith='ana__'):
+    try:
+        sorttups=sorted([(int(k[len(keystartswith):]), k) for k in d.keys() if k.startswith(keystartswith)])
+        kl=map(operator.itemgetter(1), sorttups) 
+    except:
+        kl=sorted([k for k in d.keys() if k.startswith(keystartswith)])
+    return kl

@@ -240,7 +240,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'standard_with_multiple_data_use'
         
-    def processnewparams(self):
+    def processnewparams(self, calcFOMDialogclass=None):
         self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
         self.fomnames+=['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
@@ -268,7 +268,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
 
                                  
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
               TRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'], gui_mode_bool=self.gui_mode_bool)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
@@ -539,7 +539,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
         self.tauc_pow=dict([('DA',2),('IA',0.5),('DF',2./3.),('IF',1./3.)])
 
 
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
         DRgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'])
         self.description='%s on %s' %(','.join(self.fomnames), techk)
@@ -716,7 +716,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 
 #        should this be made self.multirunfomnames
 
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist, self.refdict__filedlist=\
               Tgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, optionalkeys=self.optionalkeys, ref_run_selection=self.params['ref_run_selection'])
         self.description='%s on %s' %(','.join(self.fomnames), techk)
@@ -901,7 +901,7 @@ class Analysis__BG(Analysis_Master_inter):
         idialog=messageDialog(self, 'You enetered invalid parameters. They are being restored to defaults. Please try again.')
         idialog.exec_()
         
-    def processnewparams(self):
+    def processnewparams(self, calcFOMDialogclass=None):
         if not isinstance(self.params['analysis_types'],list):
             try:
                 self.params['analysis_types']=self.params['analysis_types'].split(',')
@@ -941,7 +941,7 @@ class Analysis__BG(Analysis_Master_inter):
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+5)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bkgrdslope_repr',\
             colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
 
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=\
               BGgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys,\
               optionalkeys=self.optionalkeys,anadict=anadict)

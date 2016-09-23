@@ -98,7 +98,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'process_fom'
         
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         return self.getapplicablefomfiles(anadict)
         
     def getapplicablefomfiles(self, anadict):
@@ -221,7 +221,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 #        self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#in addition to standard requirements, platemapdlist must be defined for all runs - for simplicity require for all runs in expfiledict even if they are not used in ana__x
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#in addition to standard requirements, platemapdlist must be defined for all runs - for simplicity require for all runs in expfiledict even if they are not used in ana__x
         if False in ['platemapdlist' in rund.keys() for runk, rund in expfiledict.iteritems() if runk.startswith('run__')]:
             self.num_ana_considered=1
             self.filedlist=[]
@@ -289,7 +289,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         self.cpsendswithstr='.CPS'
     
     
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         if runklist is None or len(runklist)==0:
             return []
         if len(self.getapplicablefomfiles(anadict))==0:
@@ -320,7 +320,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         self.description='process %s' %self.params['select_ana']
         return self.filedlist
     
-    def processnewparams(self):
+    def processnewparams(self, calcFOMDialogclass=None):
         self.fomnames=['Tot.nmol']
         if len(self.filedlist)!=1:
             self.filedlist=[]
@@ -329,7 +329,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         
         filed['trans_keys']=[k for k in filed['process_keys'] if k.endswith(self.cpsendswithstr)]
         filed['trans_list']=[k[:-len(self.cpsendswithstr)] for k in filed['trans_keys']]
-        for count, (paramkey, unitstr) in enumerate([('transition_list_for_stds', '.nmol'), ('transition_list_for_comps', '.AtPerc')]):
+        for count, (paramkey, unitstr) in enumerate([('transition_list_for_stds', '.nmol'), ('transition_list_for_comps', '.AtFrac')]):
             trans_list=filed['trans_list']
             if not (self.params[paramkey]=='NONE' or self.params[paramkey]=='ALL'):
                 searchstrs=self.params[paramkey].split(',')
@@ -347,6 +347,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             self.fomnames+=[tr+unitstr for tr in trans_list]
         
         if len(transition_list_for_stds)==0:
+            self.params=copy.copy(self.dfltparams)
             self.filedlist=[]
             return
         
@@ -452,3 +453,155 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 print 'no foms calculated for ', fn
                 continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)
+
+
+#'key_append_conc':'.RelConc', 'key_append_atfrac':'.AtFrac'
+#
+#
+#printellabels, (errorbool, tupormessage)=getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=True, print_id='screening_print')
+#if errorbool:
+#    print tupormessage
+#cels_set_ordered, conc_el_chan=tupormessage
+#cels_set_ordered_conc, cels_set_ordered_atfrac=calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, \
+#                             key_append_conc=self.params['key_append_conc'], key_append_atfrac=self.params['key_append_atfrac'])
+
+
+
+class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_name':'RecentlyAdded', 'aux_ana_ints':'ALL'}
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
+        self.requiredkeys=[]
+        self.optionalkeys=[]
+        self.requiredparams=[]
+        self.fomnames=[]
+        self.plotparams=dict({}, plot__1={})#copied in the default getapplicablefomfiles
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})#get for each csv during .perform()
+        self.auxfiledlist=[]
+        self.auxpath=''
+    
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'process_fom'
+        
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+        if calcFOMDialogclass is None or len(calcFOMDialogclass.aux_ana_dlist)==0:
+            self.filedlist=[]
+            return self.filedlist
+        
+        if not (True in [self.params['aux_ana_name'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
+            self.params['aux_ana_name']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_name not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
+        #do not check if aux ana contains any valid foms - let user change params and validate there
+        if len(self.getapplicablefomfiles(anadict))>0:
+            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
+        return self.filedlist
+    
+    def processnewparams(self, calcFOMDialogclass=None):
+        self.fomnames=[]
+        if not (True in [self.params['aux_ana_name'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
+            self.params=copy.copy(self.dfltparams)
+            self.filedlist=[]
+            return
+        for auxd in calcFOMDialogclass.aux_ana_dlist:
+            if self.params['aux_ana_name'] in auxd['auxexpanapath_relative']:
+                break
+        self.auxpath=auxd['auxexpanapath']
+        if self.params['aux_ana_ints']=='ALL':
+            anak_list=sort_dict_keys_by_counter(auxd, keystartswith='ana__')
+        else:
+            anaintstrlist=self.params['aux_ana_ints'].split(',')
+            anaintstrlist=[s.strip() for s in anaintstrlist]
+            anak_list=[k for k in sort_dict_keys_by_counter(auxd, keystartswith='ana__') if k.partition('ana__')[2] in anaintstrlist]
+            
+        anak_list=[k for k in anak_list\
+           if ('files_multi_run' in auxd[k].keys()) and ('fom_files' in auxd[k]['files_multi_run'].keys())]
+           
+        if self.params['select_aux_keys']=='ALL':
+            keysearchlist=['']
+        else:
+            keysearchlist=self.params['select_aux_keys'].split(',')
+            keysearchlist=[s.strip() for s in keysearchlist if len(s.strip())>0]
+        
+        keysfcn=lambda tagandkeys, notallowedkeys: [k for k in tagandkeys.split(';')[1].split(',') if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
+                                                                                                                   (not k in notallowedkeys) and \
+                                                                                                                (True in [s in k for s in keysearchlist])]
+        keystestfcn=lambda tagandkeys: len(set(tagandkeys.split(';')[1].split(',')).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
+        
+        existkeys=[k for filed in self.filedlist for k in filed['process_keys']]#don't allow aux key overlap with existing keys in any of the fom csvs in play
+        
+        self.auxfiledlist=[]
+        for anak in anak_list:
+            for fnk, tagandkeys in auxd[anak]['files_multi_run']['fom_files'].iteritems():
+                if keystestfcn(tagandkeys) and len(keysfcn(tagandkeys, existkeys))>0:
+                    self.auxfiledlist+=\
+                       [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':tagandkeys.split(';')[1].split(','), \
+                       'num_header_lines':int(tagandkeys.split(';')[2]), 'process_keys':keysfcn(tagandkeys, existkeys)}]
+                    
+                    existkeys+=[self.auxfiledlist[-1]]
+                
+        auxkeylist=[k for filed in self.auxfiledlist for k in filed['process_keys']]
+        if len(auxkeylist)==0:
+            print 'cannot find any unique aux fom keys'
+            self.params=copy.copy(self.dfltparams)
+            self.filedlist=[]
+            return
+        self.params['select_aux_keys']=','.join(auxkeylist)
+
+
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
+        self.initfiledicts()
+        for filed in self.filedlist:
+            
+
+            fn=filed['fn']
+            #try:
+            if 1:
+                fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+                
+                process_keys=filed['process_keys']
+                #along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
+                auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
+                
+                newfomd={}
+                fomd_plt_smp_list=zip(fomd['plate_id'], fomd['sample_no'])
+                
+                if self.params['remove_samples_not_in_aux']:
+                    plt_smp_list=set(fomd_plt_smp_list)
+                    for auxfomd in auxfomd_list:
+                        plt_smp_list=plt_smp_list.intersection(zip(auxfomd['plate_id'], auxfomd['sample_no']))
+                    plt_smp_list=sorted(list(plt_smp_list))
+                    inds=[fomd_plt_smp_list.index(plt_smp_list) for tup in plt_smp_list]
+                    for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+process_keys:
+                        newfomd[k]=fomd[k][inds]
+                else:#keep all master ana sample_no and fill in nan if missing from aux
+                    plt_smp_list=fomd_plt_smp_list
+                    for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+process_keys:
+                        newfomd[k]=fomd[k]
+                self.fomnames=process_keys
+                self.strkeys_fomdlist=['aux_anak']
+                #newfomd['aux_anaint']=numpy.zeros(len(newfomd['sample_no']), dtype='int32')
+                newfomd['aux_anak']=np.array(['']*len(newfomd['sample_no']))
+                for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
+                    auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(auxfomd['plate_id'], auxfomd['sample_no'])) if tup in plt_smp_list]).T
+                    #newfomd['aux_anaint'][fomdinds]=int(auxfiled['ana'].partition('__')[2])
+                    newfomd['aux_anak'][fomdinds]=auxfiled['ana']
+                    if len(auxfomdinds)==0:#if no matching plate,sample then skip this column merge
+                        continue
+                    self.fomnames+=auxfiled['process_keys']
+                    for k in auxfiled['process_keys']:
+                        newfomd[k]=numpy.ones(len(newfomd['sample_no']), dtype='float64')*numpy.nan
+                        newfomd[k][fomdinds]=auxfomd[k][auxfomdinds]
+                allkeys=FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
+                self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
+
+#            except:
+#                if self.debugmode:
+#                    raiseTEMP
+#                print 'skipped filter/smooth of file ', fn
+#                self.fomdlist=[]
+#                continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here

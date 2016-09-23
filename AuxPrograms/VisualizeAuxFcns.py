@@ -53,7 +53,7 @@ def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdli
 
 def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None):
     if anakl is None:
-        anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
+        anakl=sort_dict_keys_by_counter(anafiledict, keystartswith='ana__')
     for anak in anakl:
         anad=anafiledict[anak]
         anaint=int(anak.partition('ana__')[2])
@@ -235,11 +235,8 @@ class treeclass_anaexpfom():
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
         
-        try:
-            sorttups=sorted([(int(k[len(laststartswith):]), k) for k in d.keys() if k.startswith(laststartswith)])
-            anakl=map(operator.itemgetter(1), sorttups) 
-        except:
-            anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        anakl=sort_dict_keys_by_counter(d, keystartswith=laststartswith)
+
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem, expparent=expparent)
