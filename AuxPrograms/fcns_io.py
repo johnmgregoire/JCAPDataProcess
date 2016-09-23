@@ -890,28 +890,29 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
 #        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
 #    return p
 
-def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:'):
+def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:', return_pmidstr=False):
     p=''
+    pmidstr=''
     infop=getinfopath_plateid(plateidstr)
     if infop is None:
         if not erroruifcn is None:
             p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-        return p
+        return (p, pmidstr) if return_pmidstr else p
     with open(infop, mode='r') as f:
         s=f.read(1000)
     pmfold=tryprependpath(PLATEMAPFOLDERS, '')
     if pmfold=='' or not infokey in s:
         if not erroruifcn is None:
             p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-        return p
+        return (p, pmidstr) if return_pmidstr else p
     pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
     fns=[fn for fn in os.listdir(pmfold) if fn.startswith('0'*(4-len(pmidstr))+pmidstr+'-') and fn.endswith('-mp.txt')]
     if len(fns)!=1:
         if not erroruifcn is None:
             p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-        return p
+        return (p, pmidstr) if return_pmidstr else p
     p=os.path.join(pmfold, fns[0])
-    return p
+    return (p, pmidstr) if return_pmidstr else p
     
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
@@ -983,19 +984,19 @@ def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if not
         #for a given platemap sample with x being the 8-component vecotr of ink channel intensity, the unnormalized concentration of cels_set_ordered is conc_el_chan*x[:conc_el_chan.shape[0]]
         return False, (cels_set_ordered, conc_el_chan)
     return None
-
-def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
-    p=getinfopath_plateid(plateidstr)
-    s=None
-    if not p is None:
-        with open(p, mode='r') as f:
-            filestr=f.read(10000)
-        searchstr='        map_id: '
-        if searchstr in filestr:
-            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
-    if s is None and not erroruifcn is None:
-        s=erroruifcn('Enter Platemap ID')
-    return s
+#
+#def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
+#    p=getinfopath_plateid(plateidstr)
+#    s=None
+#    if not p is None:
+#        with open(p, mode='r') as f:
+#            filestr=f.read(10000)
+#        searchstr='        map_id: '
+#        if searchstr in filestr:
+#            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+#    if s is None and not erroruifcn is None:
+#        s=erroruifcn('Enter Platemap ID')
+#    return s
 
 def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
 #find pcks with matching mapid in the root folder or 1 level of subfolders. onyl matches mapid before the first '-'

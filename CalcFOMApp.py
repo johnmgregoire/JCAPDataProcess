@@ -309,12 +309,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
-                    rund['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(str(rund['parameters']['plate_id'])), \
+                    pmpath, pmidstr=getplatemappath_plateid(str(rund['parameters']['plate_id']), return_pmidstr=True)
+                    rund['platemapdlist']=readsingleplatemaptxt(pmpath, \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+                    if len(pmidstr)>0:
+                        rund['platemap_id']=pmidstr
                 if runk.startswith('run__') and not 'platemap_id' in rund.keys():
-                    rund['platemap_id']=getplatemapid_plateidstr(str(rund['parameters']['plate_id']), erroruifcn=\
-                    lambda s:userinputcaller(self, inputs=[('platemap id: ', str, '')], title=s,  cancelallowed=False)[0])
+                    rund['platemap_id']=userinputcaller(self, inputs=[('platemap id: ', str, '')], title='Reading platemap filed. Enter map_id',  cancelallowed=False)[0]
             platemapids=[rund['platemap_id'] for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
             self.FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
             
