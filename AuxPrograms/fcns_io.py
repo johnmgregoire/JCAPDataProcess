@@ -936,6 +936,11 @@ def importinfo(plateidstr):
 
 def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):#'screening_print'
     infofiled=importinfo(plateidstr)
+    while not 'prints' in infofiled.keys():
+        if not 'lineage' in infofiled.keys() or not ',' in infofiled['lineage']:
+            return None
+        parentplateidstr=infofiled['lineage'].split(',')[-2].strip()
+        infofiled=importinfo(parentplateidstr)
     print_idl=[int(x.split('__')[-1]) for x in infofiled['prints'].keys() if 'prints__' in x]
     print_key='prints__'+str(numpy.max(print_idl)) if print_id=='last' else 'prints__'+str(print_id) if print_id in print_idl else None
     if print_key!=None:
