@@ -467,10 +467,10 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 
 
 
-class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
+class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_name':'RecentlyAdded', 'aux_ana_ints':'ALL'}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_name':'RecentlyAdded', 'aux_ana_ints':'ALL'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
         self.requiredkeys=[]
@@ -506,7 +506,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
         for auxd in calcFOMDialogclass.aux_ana_dlist:
             if self.params['aux_ana_name'] in auxd['auxexpanapath_relative']:
                 break
-        self.auxpath=auxd['auxexpanapath']
+        self.auxpath=os.path.split(auxd['auxexpanapath'])[0]
         if self.params['aux_ana_ints']=='ALL':
             anak_list=sort_dict_keys_by_counter(auxd, keystartswith='ana__')
         else:
@@ -523,20 +523,20 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
             keysearchlist=self.params['select_aux_keys'].split(',')
             keysearchlist=[s.strip() for s in keysearchlist if len(s.strip())>0]
         
-        keysfcn=lambda tagandkeys, notallowedkeys: [k for k in tagandkeys.split(';')[1].split(',') if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
+        keysfcn=lambda filed, notallowedkeys: [k for k in filed['keys'] if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
                                                                                                                    (not k in notallowedkeys) and \
                                                                                                                 (True in [s in k for s in keysearchlist])]
-        keystestfcn=lambda tagandkeys: len(set(tagandkeys.split(';')[1].split(',')).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
+        keystestfcn=lambda filed: len(set(filed['keys']).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
         
         existkeys=[k for filed in self.filedlist for k in filed['process_keys']]#don't allow aux key overlap with existing keys in any of the fom csvs in play
         
         self.auxfiledlist=[]
         for anak in anak_list:
-            for fnk, tagandkeys in auxd[anak]['files_multi_run']['fom_files'].iteritems():
-                if keystestfcn(tagandkeys) and len(keysfcn(tagandkeys, existkeys))>0:
+            for fnk, filed in auxd[anak]['files_multi_run']['fom_files'].iteritems():
+                if keystestfcn(filed) and len(keysfcn(filed, existkeys))>0:
                     self.auxfiledlist+=\
-                       [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':tagandkeys.split(';')[1].split(','), \
-                       'num_header_lines':int(tagandkeys.split(';')[2]), 'process_keys':keysfcn(tagandkeys, existkeys)}]
+                       [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':filed['keys'], \
+                       'num_header_lines':filed['num_header_lines'], 'process_keys':keysfcn(filed, existkeys)}]
                     
                     existkeys+=[self.auxfiledlist[-1]]
                 
@@ -571,17 +571,17 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
                     for auxfomd in auxfomd_list:
                         plt_smp_list=plt_smp_list.intersection(zip(auxfomd['plate_id'], auxfomd['sample_no']))
                     plt_smp_list=sorted(list(plt_smp_list))
-                    inds=[fomd_plt_smp_list.index(plt_smp_list) for tup in plt_smp_list]
-                    for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+process_keys:
+                    inds=[fomd_plt_smp_list.index(tup) for tup in plt_smp_list]
+                    for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
                         newfomd[k]=fomd[k][inds]
                 else:#keep all master ana sample_no and fill in nan if missing from aux
                     plt_smp_list=fomd_plt_smp_list
-                    for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+process_keys:
+                    for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
                         newfomd[k]=fomd[k]
                 self.fomnames=process_keys
                 self.strkeys_fomdlist=['aux_anak']
                 #newfomd['aux_anaint']=numpy.zeros(len(newfomd['sample_no']), dtype='int32')
-                newfomd['aux_anak']=np.array(['']*len(newfomd['sample_no']))
+                newfomd['aux_anak']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#S8 is ana__NNN
                 for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
                     auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(auxfomd['plate_id'], auxfomd['sample_no'])) if tup in plt_smp_list]).T
                     #newfomd['aux_anaint'][fomdinds]=int(auxfiled['ana'].partition('__')[2])
@@ -592,7 +592,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_nointer):
                     for k in auxfiled['process_keys']:
                         newfomd[k]=numpy.ones(len(newfomd['sample_no']), dtype='float64')*numpy.nan
                         newfomd[k][fomdinds]=auxfomd[k][auxfomdinds]
-                allkeys=FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
+                allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
 
 #            except:
