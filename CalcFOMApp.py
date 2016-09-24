@@ -163,7 +163,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         ])
         
         self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, \
-                                      self.batch_analyzethenprocess_allsubspace, self.batch_analyze_fcn_same_techclass, self.batch_merge_atfrac_from_aux]
+                                      self.batch_analyzethenprocess_allsubspace, self.batch_analyze_fcn_same_techclass, \
+                                      self.batch_merge_atfrac_from_aux]
                                       
         batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name',\
                          'Run Analysis + Process all w/ same root name', 'Run select Analysis on all similar techniques', \
@@ -1370,6 +1371,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for i in range(1, int(self.FOMProcessNamesComboBox.count())):
             matchbool='FOM_Merge_Aux_Ana' in str(self.FOMProcessNamesComboBox.itemText(i))
             if matchbool:
+                self.FOMProcessNamesComboBox.setCurrentIndex(i)
                 break
         if not matchbool:
             print 'skipping %s, probably because no appropriate fom_files found' %anak
