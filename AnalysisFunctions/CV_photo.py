@@ -223,9 +223,6 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         iminsign = 1 if paramd['redox_couple_type']=='O2/H2O' else -1
         iminind = numpy.argmin(iphoto) if all(iphoto>0) else numpy.argmax(iphoto) if all(iphoto<0) else None
         iphotomin = 0 if iminind==None else iphoto[iminind]
-        iphotobase = self.params['i_photo_base']
-        ## Vmicro only calculated when 'i_photo_base' is specified; manually/externally check I(A)_fit=i_photo_base was observed for all samples in analysis
-        vmicro = numpy.nan if iphotobase==0 else interd['Ewe(V)_fitrng'][numpy.argmin((iphoto-iphotobase)**2)]
         pphoto = iphoto*ewe_eo*(-1*iminsign)
         pmaxind = numpy.argmax([v for i, v in enumerate(pphoto) if iphoto[i]>0]) if iminsign > 0 else numpy.argmin([v for i, v in enumerate(pphoto) if iphoto[i]<0])
         pphotomax = pphoto[pmaxind]
@@ -258,7 +255,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd['I(A)_voclinfitrng'] = numpy.polyval(numpy.poly1d(voccoeff), ewe)
 
         ## CX says prototyping reports photoanode and photocathode Voc both as positive values
-        voc = numpy.absolute((-1*voccoeff[1]/voccoeff[0])-eo)
+        voc = numpy.absolute(eo-(-1*voccoeff[1]/voccoeff[0]))
+        iphotobase = self.params['i_photo_base']
+        vmicro = numpy.nan if iphotobase==0 else numpy.absolute(eo-interd['Ewe(V)_fitrng'][numpy.argmin((iphoto-iphotobase)**2)])
         vatpmax = numpy.absolute(ewe_eo[pmaxind])
         fillfactor = numpy.absolute(pphotomax/(voc*isc)) if iatpmax<=(isc*(1+self.params['i_at_pmax_tolerance'])) and numpy.absolute(pphotomax)<numpy.absolute(voc*isc) else numpy.nan
 
