@@ -281,7 +281,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         auxexpanadict['auxexpanapath']=auxexpanapath
         dlist+=[auxexpanadict]
         
-        self.anadict['aux_exp_paths' if exp else 'aux_ana_paths']=','.join([d['auxexpanapath_relative'] for d in dlist])
+        ###do not save apths as top level key but instead gets saved when used in ana__ blocks, typically in params
+        ###self.anadict['aux_exp_paths' if exp else 'aux_ana_paths']=','.join([d['auxexpanapath_relative'] for d in dlist])
         #update analysis function options
         self.updateana()#fill analysis types to enable auxs-related fucntions will happen here
         

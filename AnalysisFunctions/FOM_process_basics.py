@@ -470,7 +470,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_name':'RecentlyAdded', 'aux_ana_ints':'ALL'}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_path':'RecentlyAdded', 'aux_ana_ints':'ALL'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
         self.requiredkeys=[]
@@ -490,8 +490,8 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             self.filedlist=[]
             return self.filedlist
         
-        if not (True in [self.params['aux_ana_name'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
-            self.params['aux_ana_name']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_name not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
+        if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
+            self.params['aux_ana_path']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_path not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
         #do not check if aux ana contains any valid foms - let user change params and validate there
         if len(self.getapplicablefomfiles(anadict))>0:
             self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
@@ -499,12 +499,13 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     
     def processnewparams(self, calcFOMDialogclass=None):
         self.fomnames=[]
-        if not (True in [self.params['aux_ana_name'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
-            self.params=copy.copy(self.dfltparams)
+        if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
+            self.params=copy.copy(self.dfltparams)#no aux_ana meet search so return to default, will also happen if there are no aux_ana open
             self.filedlist=[]
             return
         for auxd in calcFOMDialogclass.aux_ana_dlist:
-            if self.params['aux_ana_name'] in auxd['auxexpanapath_relative']:
+            if self.params['aux_ana_path'] in auxd['auxexpanapath_relative']:#can only use 1 aux ana so use the first one found
+                self.params['aux_ana_path']=auxd['auxexpanapath_relative']
                 break
         self.auxpath=os.path.split(auxd['auxexpanapath'])[0]
         if self.params['aux_ana_ints']=='ALL':
@@ -538,7 +539,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                        [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':filed['keys'], \
                        'num_header_lines':filed['num_header_lines'], 'process_keys':keysfcn(filed, existkeys)}]
                     
-                    existkeys+=[self.auxfiledlist[-1]]
+                    existkeys+=[self.auxfiledlist[-1]]#aux keys can be from multipleana__ blocks but only 1 ana_file
                 
         auxkeylist=[k for filed in self.auxfiledlist for k in filed['process_keys']]
         if len(auxkeylist)==0:
