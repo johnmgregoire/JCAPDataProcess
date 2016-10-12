@@ -671,9 +671,10 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
         p=p.replace(chr(92),chr(47))
     return p
 
-def prepend_root_exp_path(p):
+def prepend_root_exp_path(p, exp=True):
     parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
-    for parentfold in [tryprependpath(EXPFOLDERS_J, parentfoldtemp), tryprependpath(EXPFOLDERS_K, parentfoldtemp)]:
+    for parentfold in [tryprependpath(EXPFOLDERS_J if exp else ANAFOLDERS_J, parentfoldtemp), \
+                            tryprependpath(EXPFOLDERS_K if exp else EXPFOLDERS_J, parentfoldtemp)]:
         if len(parentfold)==0:
             continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
@@ -1813,3 +1814,69 @@ def sort_dict_keys_by_counter(d, keystartswith='ana__'):
     except:
         kl=sorted([k for k in d.keys() if k.startswith(keystartswith)])
     return kl
+
+def copyfolder_1level(srcfolder, savefolder, movebool=False):
+    if os.path.normpath(srcfolder)==os.path.normpath(savefolder):
+        return 'Cannot copy - same folder'
+    if not os.path.isdir(savefolder):
+        try:
+            os.mkdir(savefolder)
+        except:
+            return 'Cannot copy - could not create source directory'
+
+    for fn in os.listdir(srcfolder):
+        if fn.startswith('.'):
+            continue
+        if movebool:
+            shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+        else:
+            shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+    return False
+
+def gen_pathd_absorrel_expanapath(p, desttype='eche', exp=False, only_check_temp=False):#p is the folder of an exp or ana , validate that it is where it should be (on J or K in desttype folder) or give new destpath
+    if not (os.path.isdir(p) and os.path.isabs(p)):
+        srcabs=prepend_root_exp_path(p, exp=exp)
+    else:
+        srcabs=p
+    if '.copied' in srcabs: #found probably on J maybe on K but if so copied which means can't be temp
+        return None
+    if only_check_temp:
+        kfold=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, '')
+        if os.path.normpath(srcabs).startswith(os.path.normpath(kfold)) and (not 'temp' in p) and ('.done' in srcabs):#p is on K and not in temp so probably in a good place
+            return None
+        return {}#if onyl checking in temp and it is in temp (or not on K) then can't provide a solution
+    deststartswith=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, desttype)
+    if os.path.normpath(srcabs).startswith(os.path.normpath(deststartswith)):#already in desired place, could be in subfolder and don't check that as of now
+        if not ('.run' in p):#then presumably is .done in K and will go to J soon
+            return None
+        #else this is going to make a .done copy in K and .run will stay there and will get cleaned up later
+    foldname=os.path.split(p)[1].replace('.run', '.done')
+    dest=os.path.join(deststartswith, foldname)
+    destrel=(r'/'+os.path.join(desttype, foldname)).replace(chr(92),chr(47))
+    return {'destabs':dest, 'destrel':destrel, 'srcabs':srcabs, 'srcrel':p}
+    
+    
+    
+def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-containing paths are not on J or in anatype folder
+    needcopy_dlist=[]
+    for k, v in anad.iteritems():
+        if k=='experiment_path':
+            d=gen_pathd_absorrel_expanapath(v, desttype=anatype, exp=True)
+            if d is None:
+                continue
+            d['anadkeylist']=['experiment_path']
+            needcopy_dlist+=[d]
+        elif k.startswith('ana__'):
+            kl=[k]
+            if 'parameters' in v.keys():
+                kl+=['parameters']
+                for count, auxk in enumerate(['aux_ana_path', 'aux_exp_path']):
+                    if auxk in v['paramaters'].keys():
+                        d=gen_pathd_absorrel_expanapath(v['paramaters'][auxk], desttype=anatype, exp=(count==1), only_check_temp=True)
+                        if d is None:
+                            continue
+                        #d['anadkeylist']=kl+[auxk]
+                        #needcopy_dlist+=[d]
+                        needcopy_dlist+=[None]#an aux could be xrfs so not needed to be copied to this place but just can't be in temp
+    return needcopy_dlist
+       

@@ -816,16 +816,35 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         if anatype is None:
             savefolder=None
-            idialog=SaveOptionsDialog(self, self.anadict['analysis_type'])
+            dfltanatype=self.anadict['analysis_type']
+            idialog=SaveOptionsDialog(self, dfltanatype)
             idialog.exec_()
-            if not idialog.choice:
+            if not idialog.choice or len(idialog.choice)==0:
                 return
             anatype=idialog.choice
-            if idialog.choice=='browse':
+            if anatype=='browse':
                 savefolder=mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Select folder for saving ANA')
                 if savefolder is None or len(savefolder)==0:
                     return
                 rundone=''#rundone not used if user browses for folder
+            elif anatype==dfltanatype:#***saving in a place like eche or uvis then need to check if other things are there too
+                needcopy_dlist=find_paths_in_ana_need_copy_to_anatype(self.anadict, anatype)
+                if len(needcopy_dlist)>0:
+                    if None in needcopy_dlist:
+                        idialog=messageDialog(self, 'Aborting Save: Aux exp/ana in temp or not on K')
+                        idialog.exec_()
+                        return
+                    idialog=messageDialog(self, 'Need to copy EXP and/or ANA to %s to continue' %anatype)
+                    if not idialog.exec_():
+                        return
+                    for d_needcopy in needcopy_dlist: 
+                        errormsg=copyfolder_1level(d_needcopy['srcabs'], d_needcopy['destabs'])
+                        if errormsg:
+                            idialog=messageDialog(self, 'Aborting Save on exp/ana copy: ' %errormsg)
+                            idialog.exec_()
+                            return
+                        get_dict_item_keylist(self.anadict, d_needcopy['anadkeylist'][:-1])[d_needcopy['anadkeylist'][-1]]=d_needcopy['destrel']
+                    self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         else:
             savefolder=None
             

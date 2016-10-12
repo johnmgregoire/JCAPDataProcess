@@ -16,6 +16,9 @@ def myeval(c):
     return c
     
 
+def get_dict_item_keylist(d, keylist):
+    return reduce(lambda d, k: d[k], keylist, d)
+    
 def removeoutliers_meanstd(arr, nptsoneside, nsig, gapptsoneside=0): #avrages maximum of 2*nptoneside points and usees distance from mean scaled by std compared to nsig to determine if the value should be replaced by the mean. if gapptsoneside>0, will do this leaving a gap around the point in question and using nptsoneside-gaps points for the mean and std
     if nptsoneside==1 and gapptsoneside==0:
         return removesinglepixoutliers(arr, critratiotoneighbors=nsig)
