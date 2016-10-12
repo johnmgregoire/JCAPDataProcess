@@ -1871,8 +1871,8 @@ def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-conta
             if 'parameters' in v.keys():
                 kl+=['parameters']
                 for count, auxk in enumerate(['aux_ana_path', 'aux_exp_path']):
-                    if auxk in v['paramaters'].keys():
-                        d=gen_pathd_absorrel_expanapath(v['paramaters'][auxk], desttype=anatype, exp=(count==1), only_check_temp=True)
+                    if auxk in v['parameters'].keys():
+                        d=gen_pathd_absorrel_expanapath(v['parameters'][auxk], desttype=anatype, exp=(count==1), only_check_temp=True)
                         if d is None:
                             continue
                         #d['anadkeylist']=kl+[auxk]

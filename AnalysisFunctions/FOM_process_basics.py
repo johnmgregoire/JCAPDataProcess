@@ -470,7 +470,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_path':'RecentlyAdded', 'aux_ana_ints':'ALL'}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_path':'RecentlyAdded', 'aux_ana_ints':'ALL', 'match_plate_id':1}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
         self.requiredkeys=[]
@@ -552,12 +552,18 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
+        
+        matchplateidbool=bool(self.params['match_plate_id'])
+        if matchplateidbool:
+            matchplateidfcn=lambda idarr:idarr
+        else:
+            matchplateidfcn=lambda idarr:['']*len(idarr)#use emtpy strings so that matching tups look the same but plate_id is always empty string so it always matches
         for filed in self.filedlist:
             
 
             fn=filed['fn']
-            #try:
-            if 1:
+            try:
+            #if 1:
                 fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 
                 process_keys=filed['process_keys']
@@ -565,12 +571,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
                 
                 newfomd={}
-                fomd_plt_smp_list=zip(fomd['plate_id'], fomd['sample_no'])
+                fomd_plt_smp_list=zip(matchplateidfcn(fomd['plate_id']), fomd['sample_no'])
                 
                 if self.params['remove_samples_not_in_aux']:
                     plt_smp_list=set(fomd_plt_smp_list)
                     for auxfomd in auxfomd_list:
-                        plt_smp_list=plt_smp_list.intersection(zip(auxfomd['plate_id'], auxfomd['sample_no']))
+                        plt_smp_list=plt_smp_list.intersection(zip(matchplateidfcn(auxfomd['plate_id']), auxfomd['sample_no']))
                     plt_smp_list=sorted(list(plt_smp_list))
                     inds=[fomd_plt_smp_list.index(tup) for tup in plt_smp_list]
                     for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
@@ -579,12 +585,16 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     plt_smp_list=fomd_plt_smp_list
                     for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
                         newfomd[k]=fomd[k]
+                if len(plt_smp_list)==0:
+                    continue
                 self.fomnames=process_keys
                 self.strkeys_fomdlist=['aux_anak']
-                #newfomd['aux_anaint']=numpy.zeros(len(newfomd['sample_no']), dtype='int32')
                 newfomd['aux_anak']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#S8 is ana__NNN
+                if not matchplateidbool:
+                    self.strkeys_fomdlist+=['aux_plate_id']
+                    newfomd['aux_plate_id']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#plate_id presumably no more than 8 characters long
                 for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
-                    auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(auxfomd['plate_id'], auxfomd['sample_no'])) if tup in plt_smp_list]).T
+                    auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(matchplateidfcn(auxfomd['plate_id']), auxfomd['sample_no'])) if tup in plt_smp_list]).T
                     #newfomd['aux_anaint'][fomdinds]=int(auxfiled['ana'].partition('__')[2])
                     newfomd['aux_anak'][fomdinds]=auxfiled['ana']
                     if len(auxfomdinds)==0:#if no matching plate,sample then skip this column merge
@@ -593,15 +603,17 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     for k in auxfiled['process_keys']:
                         newfomd[k]=numpy.ones(len(newfomd['sample_no']), dtype='float64')*numpy.nan
                         newfomd[k][fomdinds]=auxfomd[k][auxfomdinds]
+                    if not matchplateidbool:#if not matching by plate_id then the aux plate_id could be different so need to save it. This will arise for parent/child merges
+                        newfomd['aux_plate_id'][fomdinds]=numpy.array(auxfomd['plate_id'][auxfomdinds],dtype='|S8')
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
 
-#            except:
-#                if self.debugmode:
-#                    raiseTEMP
-#                print 'skipped filter/smooth of file ', fn
-#                self.fomdlist=[]
-#                continue
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                print 'skipped filter/smooth of file ', fn
+                self.fomdlist=[]
+                continue
             if len(self.fomdlist)==0:
                 print 'no foms calculated for ', fn
                 continue

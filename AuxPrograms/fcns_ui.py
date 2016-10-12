@@ -200,7 +200,7 @@ class userinputDialog(QDialog):
                 self.changedbool+=[s!=tup[2]]
             else:
                 self.changedbool+=[True]
-            if tup[1]==str:
+            if tup[1]==str or tup[1]==unicode:
                 try:
                     self.ans+=[s]
                 except:
