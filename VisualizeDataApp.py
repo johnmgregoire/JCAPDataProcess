@@ -771,7 +771,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for fomdlist_index0, (usebool, fomdlist, fomnames, platemapkeys) in enumerate(zip(l_usefombool, self.l_fomdlist, self.l_fomnames, self.l_platemap4keys)):#the pmkeys here provides custom comps calcualtion without reassigning any pm channels
             if not usebool or not fomname in fomnames:
                 continue
-            plotdinfo+=[extractplotdinfo(d, platemapkeys, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1) for fomdlist_index1, d in enumerate(fomdlist) if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
+            if self.compCalcFromFOMCheckBox.isChecked():
+                ellabs=self.getellabels_pm4keys(platemapkeys)
+                srchstr=str(self.compsCalcFOMSearchStrLineEdit.text())
+                calc_comps__starts_contains_tups=[(ellab, srchstr) for ellab in ellabs]
+            else:
+                calc_comps__starts_contains_tups=None
+            plotdinfo+=[extractplotdinfo(d, platemapkeys, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1, calc_comps__starts_contains_tups=calc_comps__starts_contains_tups)\
+                                    for fomdlist_index1, d in enumerate(fomdlist) \
+                                        if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
         for count, k in enumerate(['fomdlist_index0','fomdlist_index1','plate_id','code','sample_no', 'fom', 'xy', 'comps']):
             self.fomplotd[k]=numpy.array(map(operator.itemgetter(count), plotdinfo))
         self.fomplotd['comps']=numpy.array([c/c.sum() for c in self.fomplotd['comps']])

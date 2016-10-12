@@ -221,7 +221,7 @@ class Ui_VisDataDialog(object):
         self.fomstatsTextBrowser.setFont(font)
         self.fomstatsTextBrowser.setObjectName(_fromUtf8("fomstatsTextBrowser"))
         self.textBrowser_fomhist = QtGui.QTextBrowser(VisDataDialog)
-        self.textBrowser_fomhist.setGeometry(QtCore.QRect(320, 210, 371, 221))
+        self.textBrowser_fomhist.setGeometry(QtCore.QRect(320, 230, 371, 201))
         self.textBrowser_fomhist.setObjectName(_fromUtf8("textBrowser_fomhist"))
         self.FilenameFilterPushButton = QtGui.QPushButton(VisDataDialog)
         self.FilenameFilterPushButton.setGeometry(QtCore.QRect(10, 128, 101, 31))
@@ -332,6 +332,12 @@ class Ui_VisDataDialog(object):
         self.defaultplatemapCheckBox.setGeometry(QtCore.QRect(10, 66, 91, 21))
         self.defaultplatemapCheckBox.setChecked(True)
         self.defaultplatemapCheckBox.setObjectName(_fromUtf8("defaultplatemapCheckBox"))
+        self.compCalcFromFOMCheckBox = QtGui.QCheckBox(VisDataDialog)
+        self.compCalcFromFOMCheckBox.setGeometry(QtCore.QRect(530, 200, 101, 31))
+        self.compCalcFromFOMCheckBox.setObjectName(_fromUtf8("compCalcFromFOMCheckBox"))
+        self.compsCalcFOMSearchStrLineEdit = QtGui.QLineEdit(VisDataDialog)
+        self.compsCalcFOMSearchStrLineEdit.setGeometry(QtCore.QRect(630, 206, 61, 20))
+        self.compsCalcFOMSearchStrLineEdit.setObjectName(_fromUtf8("compsCalcFOMSearchStrLineEdit"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -421,4 +427,8 @@ class Ui_VisDataDialog(object):
         self.saveudiPushButton.setText(_translate("VisDataDialog", "->udi", None))
         self.addallsamplesPushButton.setText(_translate("VisDataDialog", "+all", None))
         self.defaultplatemapCheckBox.setText(_translate("VisDataDialog", "dflt platemap?", None))
+        self.compCalcFromFOMCheckBox.setText(_translate("VisDataDialog", "Calc. comps from\n"
+"FOMs containing:", None))
+        self.compsCalcFOMSearchStrLineEdit.setToolTip(_translate("VisDataDialog", "Comment string to be included in EXP", None))
+        self.compsCalcFOMSearchStrLineEdit.setText(_translate("VisDataDialog", "AtFrac", None))
 

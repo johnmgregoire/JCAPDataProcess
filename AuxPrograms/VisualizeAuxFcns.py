@@ -38,7 +38,7 @@ def d_nestedkeys(d, keylist):
 
 
 #plateid,code,sample,fom,xy,comp
-def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdlist_index1):#, ellabels=['a', 'b', 'c', 'd']):
+def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdlist_index1, calc_comps__starts_contains_tups=None):#, ellabels=['a', 'b', 'c', 'd']):
     d=fomd
     returnlist=[fomdlist_index0, fomdlist_index1]
     returnlist+=[d[k] for k in ['plate_id','code','sample_no', fomname]]
@@ -48,7 +48,12 @@ def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdli
         rund=expfiledict['run__%d' %d['runint']]
         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
         returnlist+=[[pmd[k] for k in ['x', 'y']]]
-        returnlist+=[[pmd[k] for k in pmkeys]]
+        if calc_comps__starts_contains_tups is None or len([k for startstr, contstr in calc_comps__starts_contains_tups for k in d.keys() if k.startswith(startstr) and contstr in k])==0:#default platemap comps or no keys available for calc comp
+            returnlist+=[[pmd[k] for k in pmkeys]]
+        else:#at least 1 key available so use all available and fill zero otherwise. If multiple keys match criteria, use the first one found
+            getmatchklist=lambda startstr, contstr: [k for k in d.keys() if k.startswith(startstr) and contstr in k]
+            matchkeys=[None if len(getmatchklist(startstr, contstr))==0 else getmatchklist(startstr, contstr)[0] for startstr, contstr in calc_comps__starts_contains_tups]
+            returnlist+=[[0. if k is None else d[k] for k in matchkeys]]
     return returnlist
 
 def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None):
