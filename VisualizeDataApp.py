@@ -38,12 +38,12 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 from OpenFromInfoApp import openfrominfoDialog
 from CalcFOMApp import AnalysisClasses
 
-
+GUIMODE=True
 class visdataDialog(QDialog, Ui_VisDataDialog):
-    def __init__(self, parent=None, title='', folderpath=None):
+    def __init__(self, parent=None, title='', folderpath=None, GUIMODE=GUIMODE):
         super(visdataDialog, self).__init__(parent)
         self.setupUi(self)
-        
+        self.GUIMODE=GUIMODE
         self.parent=parent
         
         #self.SelectTreeView.setModel(CheckableDirModel(self))
@@ -115,7 +115,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def runbatchprocess(self):
         if self.batchprocesses[self.BatchComboBox.currentIndex()](self):
             idialog=messageDialog(self, 'Error in batch process - aborted.')
-            idialog.exec_()
+            if self.GUIMODE:
+                idialog.exec_()
         
     def clearall(self):
         self.l_fomdlist=[]
@@ -164,7 +165,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.importana(p=idialog.selectpath)
         if idialog.selecttype=='exp':
             self.importexp(experiment_path=idialog.selectpath)
-    def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None):
+    def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None, ellabelsforquatplots='ask'):#if running batch set ellabelsforquatplots to something else
         if anafiledict is None or anafolder is None:
             if p is None:
                 p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
@@ -233,7 +234,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #                              for d in rund['platemapdlist']]
         return cels_set_ordered
         
-    def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
+    def importexp(self, experiment_path=None, fromana=False, ellabelsforquatplots='ask'):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
         if experiment_path is None:
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
             if exppath is None or len(exppath)==0:
@@ -338,17 +339,34 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if False in [ellab in rund['platemapdlist'][0].keys() for runk, rund in self.expfiledict.iteritems() for ellab in self.ellabels if runk.startswith('run__')]:#compsoitions weren't caclulated to wil only be able to do 4-element projections if ana__ blocks provide keys
                 self.remap_platemaplabels(newellabels=masterels)
                 self.platemap4keys_default=self.ellabels[:4]
-            elif len(self.ellabels)<=4:
-                self.platemap4keys_default=self.ellabels[:4]
-            else:
-                ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
+#            elif len(self.ellabels)<=4:
+#                self.platemap4keys_default=self.ellabels[:4]
+            else:#if no ellabels are missing in platemap then they were all recalculated meaning that platemap signals are not good for composition plots so give the option to use multi-ink-calculated compositions
+                if ellabelsforquatplots=='ask':
+                    ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
+                elif isinstance(ellabelsforquatplots, list):
+                    ans=ellabelsforquatplots
+                else:
+                    ans=None
                 if not ans is None:
                     self.ellabels=[v.strip() for v in ans]
                     self.platemap4keys_default=self.ellabels #the calculated comps for these 4 elements will now be considered as 4 platemap channels
                     self.ellabelsLineEdit.setText(','.join(self.ellabels))
         else:
-            self.remap_platemaplabels(newellabels=masterels)
+            self.remap_platemaplabels(newellabels=masterels)#self.ellabels assigned in here
             self.platemap4keys_default=self.ellabels[:4]
+            if len(self.ellabels)>4:
+                if not fromana or not fromana and not (True in ['platemap_comp4plot_keylist' in anad.keys() for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')]):#either exp or no ana__ has specified which 4 to use so ask or allow to be specified
+                    if ellabelsforquatplots=='ask':
+                        ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter 4 elements to use for plots or close to use platemap',  cancelallowed=True)
+                    elif isinstance(ellabelsforquatplots, list):
+                        ans=ellabelsforquatplots
+                    else:
+                        ans=None
+                    if not ans is None:
+                        self.ellabels=[v.strip() for v in ans]
+                        self.platemap4keys_default=self.ellabels #the calculated comps for these 4 elements will now be considered as 4 platemap channels
+                        self.ellabelsLineEdit.setText(','.join(self.ellabels))
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
