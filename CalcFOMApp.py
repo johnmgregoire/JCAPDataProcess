@@ -52,6 +52,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
             Analysis__FOM_Merge_Aux_Ana(), \
+            Analysis__FOM_Merge_PlatemapComps(), \
             Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
 #NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
 

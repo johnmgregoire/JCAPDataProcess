@@ -606,3 +606,107 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 print 'no foms calculated for ', fn
                 continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
+
+
+
+class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'key_append_conc':'.PM.Loading', 'key_append_atfrac':'.PM.AtFrac', 'tot_conc_label':'Tot.PM.Loading'}
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__FOM_Merge_PlatemapComps'
+        self.requiredkeys=[]
+        self.optionalkeys=[]
+        self.requiredparams=[]
+        self.fomnames=[]
+        self.plotparams=dict({}, plot__1={})#copied in the default getapplicablefomfiles
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})#get for each csv during .perform()
+
+    
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'process_fom'
+        
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+        if True in [not 'platemapdlist' in rund.keys() for runk, rund in calcFOMDialogclass.expfiledict.iteritems() if runk.startswith('run__')]:
+            #all platemaps must be available
+            self.filedlist=[]
+            return self.filedlist
+        if len(self.getapplicablefomfiles(anadict))>0:
+            self.processnewparams()
+        return self.filedlist
+    
+    def processnewparams(self, calcFOMDialogclass=None):
+        self.fomnames=[]
+
+
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
+        self.initfiledicts()
+
+        for filed in self.filedlist:
+            
+
+            fn=filed['fn']
+            #try:
+            if 1:
+                fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+                
+                process_keys=filed['process_keys']
+                
+                if not 'plate_id' in fomd.keys():
+                    print 'no plate_id - skipped filter/smooth of file ', fn
+                    self.fomdlist=[]
+                    continue
+                allplateids=sorted(list(set(fomd['plate_id'])))
+                
+                self.fomnames=process_keys
+                for pid in allplateids:
+                    
+                    pmpath, pmidstr=getplatemappath_plateid(str(pid), return_pmidstr=True)
+                    platemapdlist=readsingleplatemaptxt(pmpath, erroruifcn=None)
+                    
+                    els, tup_multielementink=getelements_plateidstr(str(pid), multielementink_concentrationinfo_bool=True)
+                    if not tup_multielementink is None:
+                        errorbool, tupormessage=tup_multielementink
+                        if errorbool:
+                            errorreadingmultielementinfo
+                        cels_set_ordered, conc_el_chan=tupormessage
+                
+                    else:
+                        cels_set_ordered=els
+                        conc_el_chan=numpy.zeros((len(els), len(els)), dtype='float64')
+                        numpy.fill_diagonal(conc_el_chan, 1.)
+                    tot_conc_label=None if len(self.params['tot_conc_label'])==0 else self.params['tot_conc_label']
+                    calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc=self.params['key_append_conc'], key_append_atfrac=self.params['key_append_atfrac'], tot_conc_label=tot_conc_label)
+                    newfomnames=[el+self.params['key_append_conc'] for el in cels_set_ordered]+\
+                                          [el+self.params['key_append_atfrac'] for el in cels_set_ordered]+\
+                                          ([] if tot_conc_label is None else [tot_conc_label])
+                    newfomnames=[lab for lab in newfomnames if not (lab in process_keys or lab in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)]
+                    
+                    fomdinds_plate=numpy.where((fomd['plate_id']==pid)&(fomd['sample_no']>0))[0]
+                    smps=fomd['sample_no'][fomdinds_plate]
+                    pmsmps=[pmd['sample_no'] for pmd in platemapdlist]
+                    pminds=[pmsmps.index(smp) for smp in smps]
+                    
+                    for k in newfomnames:
+                        if not k in self.fomnames:
+                            fomd[k]=numpy.ones(len(fomd['sample_no']), dtype='float64')*numpy.nan
+                            self.fomnames+=[k]
+                        fomd[k][fomdinds_plate]=numpy.array([platemapdlist[pmind][k] for pmind in pminds])
+                
+                self.strkeys_fomdlist=[]
+                allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames
+                self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[fomd[k] for k in allkeys])]
+
+#            except:
+#                if self.debugmode:
+#                    raiseTEMP
+#                print 'skipped filter/smooth of file ', fn
+#                self.fomdlist=[]
+#                continue
+#            if len(self.fomdlist)==0:
+#                print 'no foms calculated for ', fn
+#                continue
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
+
+
+
