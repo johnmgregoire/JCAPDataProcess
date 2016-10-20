@@ -646,8 +646,8 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
             
 
             fn=filed['fn']
-            #try:
-            if 1:
+            try:
+            #if 1:
                 fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 
                 process_keys=filed['process_keys']
@@ -697,15 +697,15 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[fomd[k] for k in allkeys])]
 
-#            except:
-#                if self.debugmode:
-#                    raiseTEMP
-#                print 'skipped filter/smooth of file ', fn
-#                self.fomdlist=[]
-#                continue
-#            if len(self.fomdlist)==0:
-#                print 'no foms calculated for ', fn
-#                continue
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                print 'skipped filter/smooth of file ', fn
+                self.fomdlist=[]
+                continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
 
 
