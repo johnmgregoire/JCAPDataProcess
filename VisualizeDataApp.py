@@ -338,6 +338,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if False in [ellab in rund['platemapdlist'][0].keys() for runk, rund in self.expfiledict.iteritems() for ellab in self.ellabels if runk.startswith('run__')]:#compsoitions weren't caclulated to wil only be able to do 4-element projections if ana__ blocks provide keys
                 self.remap_platemaplabels(newellabels=masterels)
                 self.platemap4keys_default=self.ellabels[:4]
+            elif len(self.ellabels)<=4:
+                self.platemap4keys_default=self.ellabels[:4]
             else:
                 ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
                 if not ans is None:
