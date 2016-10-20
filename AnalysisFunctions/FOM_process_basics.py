@@ -455,18 +455,6 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)
 
 
-#'key_append_conc':'.RelConc', 'key_append_atfrac':'.AtFrac'
-#
-#
-#printellabels, (errorbool, tupormessage)=getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=True, print_id='screening_print')
-#if errorbool:
-#    print tupormessage
-#cels_set_ordered, conc_el_chan=tupormessage
-#cels_set_ordered_conc, cels_set_ordered_atfrac=calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, \
-#                             key_append_conc=self.params['key_append_conc'], key_append_atfrac=self.params['key_append_atfrac'])
-
-
-
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'

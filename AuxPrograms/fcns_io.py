@@ -935,34 +935,38 @@ def importinfo(plateidstr):
     infofiled=filedict_lines(lines)
     return infofiled
 
-def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):#'screening_print'
+def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_key_or_keyword='screening_print_id', exclude_elements_list=['']):#print_key_or_keyword can be e.g. "print__3" or screening_print_id
     infofiled=importinfo(plateidstr)
-    while not 'prints' in infofiled.keys():
+    requiredkeysthere=lambda infofiled: ('screening_print_id' in infofiled.keys()) if print_key_or_keyword=='screening_print_id' \
+                                                           else (print_key_or_keyword in infofiled['prints'].keys())
+    while not ('prints' in infofiled.keys() and requiredkeysthere(infofiled)):
         if not 'lineage' in infofiled.keys() or not ',' in infofiled['lineage']:
             return None
         parentplateidstr=infofiled['lineage'].split(',')[-2].strip()
         infofiled=importinfo(parentplateidstr)
-    print_idl=[int(x.split('__')[-1]) for x in infofiled['prints'].keys() if 'prints__' in x]
-    print_key='prints__'+str(numpy.max(print_idl)) if print_id=='last' else 'prints__'+str(print_id) if print_id in print_idl else None
-    if print_key!=None:
-        elstr=infofiled['prints'][print_key]['elements'] if 'elements' in infofiled['prints'][print_key].keys() else None
-    if elstr!=None: els=[x for x in elstr.split(',') if x not in [',']] 
-    else: return None
+    if print_key_or_keyword=='screening_print_id':
+        printdlist=[printd for printd in infofiled['prints'].values() if 'id' in printd.keys() and printd['id']==infofiled['screening_print_id']]
+        if len(printdlist)==0:
+            return None
+        printd=printdlist[0]
+    else:
+        printd=infofiled['prints'][print_key_or_keyword]
+    if not 'elements' in printd.keys():
+        return None
+    els=[x for x in printd['elements'].split(',') if x not in exclude_elements_list] 
     
     if multielementink_concentrationinfo_bool:
-        
-        return els, get_multielementink_concentrationinfo(infofiled, print_key,els)
+        return els, get_multielementink_concentrationinfo(printd,els)
     return els
 
-#get_multielementink_concentrationinfo to be tested after 20160914 update to using "last" print
-def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
+def get_multielementink_concentrationinfo(printd, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
     searchstr1='concentration_elements'
     searchstr2='concentration_values'
-    if not (searchstr1 in infofiled['prints'][print_key].keys() and searchstr2 in infofiled['prints'][print_key].keys()):
+    if not (searchstr1 in printd.keys() and searchstr2 in printd.keys()):
         return None
-    cels=infofiled['prints'][print_key][searchstr1]
-    concstr=infofiled['prints'][print_key][searchstr2]
+    cels=printd[searchstr1]
+    concstr=printd[searchstr2]
     conclist=[float(s) for s in concstr.split(',')]
 
     cels=[cel.strip() for cel in cels.split(',')]
@@ -1603,7 +1607,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
 
     if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
         for fn in os.listdir(srcfolder):
-            if fn.startswith('.'):
+            if fn.startswith('.') or '.db' in fn:
                 continue
             if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
                 continue

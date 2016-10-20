@@ -56,7 +56,7 @@ def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdli
             returnlist+=[[0. if k is None else d[k] for k in matchkeys]]
     return returnlist
 
-def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None):
+def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None, platemap4keys_default=['A', 'B', 'C', 'D']):
     if anakl is None:
         anakl=sort_dict_keys_by_counter(anafiledict, keystartswith='ana__')
     for anak in anakl:
@@ -82,7 +82,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     if 'platemap_comp4plot_keylist' in anad.keys():
                         pmkeys=anad['platemap_comp4plot_keylist'].split(',')
                     else:
-                        pmkeys=['A', 'B', 'C', 'D']
+                        pmkeys=platemap4keys_default
                     l_platemapkeys+=[pmkeys]
                     treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
 
