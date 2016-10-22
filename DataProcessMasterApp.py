@@ -22,12 +22,12 @@ class MainMenu(QMainWindow):
     def __init__(self, previousmm, execute=True):#, TreeWidg):
         super(MainMenu, self).__init__(None)
         self.setWindowTitle('HTE Experiment and FOM Data Processing')
-        self.expui=expDialog(self, title='Create/Edit an Experiment')
-        self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
-        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
-        self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
-        self.filesearchui=filesearchDialog(self, title='Search for exp/ana files')
-        self.filemanui=filemanDialog(self, title='Delete obsolete .run folders')
+        self.expui=None
+        self.calcui=None
+        self.visdataui=None
+        self.combinefomui=None
+        self.filesearchui=None
+        self.filemanui=None
         
         expuiButton=QPushButton()
         expuiButton.setText("Create/edit\nExperiment")
@@ -70,19 +70,49 @@ class MainMenu(QMainWindow):
         #self.setLayout(mainlayout)
         
     def expui_exec(self):
+        if self.expui is None:
+            self.expui=expDialog(self, title='Create/Edit an Experiment')
         self.expui.show()
-    def calcui_exec(self):
-        self.calcui.show()
-    def visui_exec(self):
-        self.visdataui.show()
+    def calcui_exec(self, show=True):
+        if self.calcui is None:
+            self.calcui=calcfomDialog(self, title='Calculate FOM from EXP')
+        if show:
+            self.calcui.show()
+    def visui_exec(self, show=True):
+        if self.visdataui is None:
+            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+        if show:
+            self.visdataui.show()
     def combinefomui_exec(self):
+        if self.combinefomui is None:
+            self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
         self.combinefomui.show()
     def filesearchui_exec(self):
+        if self.filesearchui is None:
+            self.filesearchui=filesearchDialog(self, title='Search for exp/ana files')
         self.filesearchui.show()
     def filemanui_exec(self):
+        if self.filemanui is None:
+            self.filemanui=filemanDialog(self, title='Delete obsolete .run folders')
         self.filemanui.show()
+    
+    def calcexp(self, expfiledict=None, exppath=None, show=True):
+        self.calcui_exec(show=show)
+        if not (expfiledict is None or exppath is None):
+            self.calcui.importexp(expfiledict=expfiledict, exppath=exppath)
+        
+    def visexpana(self, anafiledict=None, anafolder=None, experiment_path=None, show=True):
+        self.visui_exec(show=show)
+        if not (anafiledict is None or anafolder is None):
+            self.visdataui.importana(anafiledict=anafiledict, anafolder=anafolder)
+        elif not experiment_path is None:
+            self.visdataui.importexp(experiment_path=experiment_path)
         
         
+        
+        
+        
+
 mainapp=QApplication(sys.argv)
 form=MainMenu(None)
 form.show()

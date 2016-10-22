@@ -744,10 +744,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         d=copy.deepcopy(self.anadict)
         convertfilekeystofiled(d)
         #importfomintoanadict(d)
-        self.parent.visdataui.importana(anafiledict=d, anafolder=anasavefolder)
         if show:
             self.hide()
-            self.parent.visdataui.show()
+        self.parent.visexpana(anafiledict=d, anafolder=anasavefolder, show=show)
+        
     def saveview(self):
         anasavefolder=self.saveana(dontclearyet=True)
         self.viewresult(anasavefolder=anasavefolder)#just hide+show so shouldn't get hung here
@@ -1497,7 +1497,7 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', **kwargs)
-            self.calcui.importexp(exppath=r'K:\processes\experiment\eche\20161021.105822.copied-20161021221009715PDT\20161021.105822.exp')
+            #self.calcui.importexp(exppath=r'K:\processes\experiment\eche\20161021.105822.copied-20161021221009715PDT\20161021.105822.exp')
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
