@@ -42,6 +42,7 @@ from CA_CP_basics import *
 from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
 from FOM_process_basics import *
+from FOM_process_merge import *
 from import_scipy_foruvis import *
 from eche_spectral import Analysis__SpectralPhoto
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
@@ -53,6 +54,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
             Analysis__FOM_Merge_Aux_Ana(), \
             Analysis__FOM_Merge_PlatemapComps(), \
+            Analysis__Filter_Linear_Projection(), \
             Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
 #NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
 
@@ -1495,7 +1497,7 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', **kwargs)
-            #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160221.123408.run\20160221.123408.exp')
+            self.calcui.importexp(exppath=r'K:\processes\experiment\eche\20161021.105822.copied-20161021221009715PDT\20161021.105822.exp')
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
