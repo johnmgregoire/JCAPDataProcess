@@ -13,6 +13,7 @@ sys.path.append(os.path.join(projectpath,'OtherApps'))
 from CreateExperimentApp import expDialog
 from CalcFOMApp import calcfomDialog
 from VisualizeDataApp import visdataDialog
+from StackPlotApp import stackplotDialog
 from CombineFomApp import combinefomDialog
 from FileSearchApp import filesearchDialog
 from FileManagementApp import filemanDialog
@@ -25,6 +26,7 @@ class MainMenu(QMainWindow):
         self.expui=None
         self.calcui=None
         self.visdataui=None
+        self.stackplotui=None
         self.combinefomui=None
         self.filesearchui=None
         self.filemanui=None
@@ -40,6 +42,10 @@ class MainMenu(QMainWindow):
         visdataButton=QPushButton()
         visdataButton.setText("Visualize\nData")
         QObject.connect(visdataButton, SIGNAL("pressed()"), self.visui_exec)
+        
+        stackplotButton=QPushButton()
+        stackplotButton.setText("Stack\nPlots")
+        QObject.connect(stackplotButton, SIGNAL("pressed()"), self.stackui_exec)   
         
         combinefomuiButton=QPushButton()
         combinefomuiButton.setText("Combine\nFOM files")
@@ -58,9 +64,10 @@ class MainMenu(QMainWindow):
         mainlayout.addWidget(expuiButton, 0, 0)
         mainlayout.addWidget(calcuiButton, 0, 1)
         mainlayout.addWidget(visdataButton, 0, 2)
-        mainlayout.addWidget(combinefomuiButton, 0, 3)
-        mainlayout.addWidget(filesearchButton, 0, 4)
-        mainlayout.addWidget(filemanButton, 0, 5)
+        mainlayout.addWidget(stackplotButton, 0, 3)
+        mainlayout.addWidget(combinefomuiButton, 0, 4)
+        mainlayout.addWidget(filesearchButton, 0, 5)
+        mainlayout.addWidget(filemanButton, 0, 6)
    
         window=QWidget();
         window.setLayout(mainlayout);
@@ -83,6 +90,11 @@ class MainMenu(QMainWindow):
             self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
         if show:
             self.visdataui.show()
+    def stackui_exec(self, show=True):
+        if self.stackplotui is None:
+            self.stackplotui=stackplotDialog(self, title='Stack Plots of FOM data')
+        if show:
+            self.stackplotui.show()
     def combinefomui_exec(self):
         if self.combinefomui is None:
             self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')

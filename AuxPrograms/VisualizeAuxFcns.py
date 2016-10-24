@@ -218,10 +218,10 @@ class treeclass_anaexpfom():
             mainitem.addChild(item)
         
         self.fomwidgetItem.addChild(mainitem)
-        
-        summlines=[str(self.summarybrowser.toPlainText())]#adds lines onto self.SummaryTextBrowser (where self is visdataDialog) and since analysis can be done on the fly fom csvs must come last in the summary browser
-        summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
-        self.summarybrowser.setText('\n'.join(summlines))
+        if not self.summarybrowser is None:
+            summlines=[str(self.summarybrowser.toPlainText())]#adds lines onto self.SummaryTextBrowser (where self is visdataDialog) and since analysis can be done on the fly fom csvs must come last in the summary browser
+            summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
+            self.summarybrowser.setText('\n'.join(summlines))
         
     def filltree(self, d, toplevelitem, startkey='ana_version', laststartswith='ana__', expparent=False):
         self.treeWidget.clear()

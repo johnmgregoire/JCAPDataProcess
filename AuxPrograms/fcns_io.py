@@ -18,7 +18,6 @@ ExpTickLabels=FuncFormatter(myexpformat)
 
 are_paths_equivalent=lambda path1, path2:os.path.normcase(os.path.abspath(path1))==os.path.normcase(os.path.abspath(path2))
 
-
 def filterchars(s, valid_chars = "-_.%s%s" % (string.ascii_letters, string.digits)):
     return ''.join([c for c in s if c in valid_chars])
 

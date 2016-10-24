@@ -20,3 +20,7 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\LoadCSVForm.ui -
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\RunsFromInfoForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\RunsFromInfoForm.py
 
 pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\OpenFromInfoForm.ui -o Z:\Documents\PythonCode\JCAP\JCAPDataProcess\OpenFromInfoForm.py
+
+
+
+C:\Users\gregoire>pyuic "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\StackPlotForm.ui" -o "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\StackPlotForm.py"
