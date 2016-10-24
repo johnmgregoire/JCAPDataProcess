@@ -1728,10 +1728,9 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     compstrlist=[]
     depstrlist=[]
     countstrlist=[]
-
     els=udi_dict['ellabels']
     elstr=','.join(els)
-    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y', 'Composition=%s' %(elstr),'Normalize=%s' %(udi_dict['Normalize']),\
+    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y,sample_no,plate_id', 'Composition=%s' %(elstr),'Motorpns=%s' %(','.join(udi_dict['Motorpns'])),'Normalize=%s' %(udi_dict['Normalize']),\
     'CompType=%s' %(udi_dict['CompType'])]
     qcounts=udi_dict['Iarr']
     metastrlist+=['N=%d' %len(qcounts)]
@@ -1741,7 +1740,8 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
             mtrpnstrlist+=[lab+','.join([fmt %v for v in arr])]
 
         
-    for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%d'), ('plate_id=', udi_dict['plate_id'], '%d')]:
+    for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%.0f'), ('plate_id=', [udi_dict['plate_id']], '%d'),\
+    ]:
         depstrlist+=[lab+','.join([fmt %v for v in arr])]
 
 
@@ -1768,7 +1768,42 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     countstr='\n'.join(['//Integrated counts data']+countstrlist)
 
     filestr='\n\n'.join([metastr, mtrpndata, depstr, compstr, countstr])
-
+    filestr=filestr.replace('nan','NaN')
     f=open(p, mode='w')
     f.write(filestr)
     f.close()
+
+def readudi(fl,fltyp='src'):
+    def getval(valstr,dtype=numpy.float32,sep=','):
+        if sep in valstr:
+            return [dtype(x) for x in valstr.split(sep)]
+        else:
+            return dtype(valstr)
+    dtypes=dict([('Metadata',str),('Motorpns data',numpy.float32),('Deposition data',numpy.float32),('Composition data',numpy.float32),('Integrated counts data',numpy.float32)])
+
+    filed={}
+    if fltyp=='src':
+        with open(fl,'r') as fls:
+            for line in fls.readlines():
+                line=line.rstrip('\n')
+                if line.startswith('//'):
+                    key=line.split('//')[-1].strip()
+                    filed[key]={}
+                elif line.strip()!='':
+                    try:
+                        filed[key]=dict(filed[key].items()+[(line.split('=')[0],getval(line.split('=')[-1],dtype=dtypes[key]))])
+                    except:
+                            print 'Error encountered for line %s' %(line)
+#                        continue
+        datad={}
+        print filed['Motorpns data'].keys()
+        Ikeys=filed['Integrated counts data'].keys()
+        Ikeys.remove('Q')
+        datad['Iarr']=numpy.array([filed['Integrated counts data'][idx] for idx in sorted(Ikeys,key=lambda x: int(x.split('I')[-1])) if idx.startswith('I')])
+        datad['mxy']=numpy.array([filed['Motorpns data'][x] for x in ['mX','mY']]).T
+        datad['xy']=numpy.array([filed['Deposition data'][x] for x in ['X','Y']]).T
+        datad['comps']=numpy.array([filed['Composition data'][x] for x in filed['Metadata']['Composition']])
+        datad=dict(datad.items()+filed['Metadata'].items()+[(mkey,filed['Motorpns data'][mkey]) for mkey in filed['Motorpns data'].keys() if mkey not in ['mX,mY']]+\
+        [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
+    
+    return datad
