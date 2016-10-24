@@ -17,7 +17,7 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, require
            if anak.startswith('ana__') and anav['name']==requiredanalysis and True in ['files_' in ftk for ftk in anav.keys()]]
 
     if len(tech)>0:
-        #if tech=None then don't filter by technique. also if techniuqe not in anad then technique qill not be matched and the ==2 below will require only 1 Iphoto in the existing .ana. 
+        #if tech=None then don't filter by technique. also if techniuqe not in anad then technique qill not be matched and the ==2 below will require only 1 Iphoto in the existing .ana.
         #otherwise this will require techniques to match so that Iphoto on different techniques in the existing .ana won't cause an excess of matches that exceed the ==2 requirement
         anak_ftklist=[(anak,ftkl) for anak, ftkl in anak_ftklist if (not 'technique' in anadict[anak].keys()) or anadict[anak]['technique']==tech]
     #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
@@ -32,11 +32,11 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, require
                 if ftk==('files_'+filed['run']) and int(tagandkeys.split(';')[4].strip())==filed['sample_no']\
           ]
         for filed in filedlist]
-    
+
     #the keys anakeys__inter_file and anakeys__inter_rawlen_file assume there is only previous required analysis so this needs to be changed if combining multiple types of rpevious analysis
     filedlist2=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
           for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
-    
+
     if gui_mode_bool and len(filedlist2)==0 and len(anak_ftklist)>0:#the ==2 requirement was not met, which may mean that there was more than 1 Iphoto for that technique
         print 'When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:' %(requiredanalysis, tech)
         print [anak for anak, ftkl in anak_ftklist]
@@ -50,8 +50,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
   ('poly_fit_order', 3), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
   ('i_at_pmax_tolerance', 0.01), ('num_points_slope_calc', 3), \
-  ('pct_ewe_range_slope', 50), ('i_photo_base', None), \
-  ('num_sweeps_to_fit', 1), ('use_sweeps_from_end', True) \
+  ('pct_ewe_range_slope', 15), ('i_photo_base', 1E-8), \
+  ('num_sweeps_to_fit', 1), ('use_sweeps_from_end', True), \
+  ('isc_frac_limit', 0.02) \
                                        ])
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Pphotomax'
@@ -71,7 +72,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.plotparams['plot__2']['series__2']='I(A)_voclinfitrng'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='Pmax.W', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
     # this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     # def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
     #     self.requiredkeys[-1]=self.params['illum_key']
@@ -80,15 +81,15 @@ class Analysis__Pphotomax(Analysis_Master_inter):
     #     return self.filedlist
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'analysis_of_ana'
-        
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         #this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
         self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech=techk, gui_mode_bool=self.gui_mode_bool)
-        
+
         self.description='%s on %s' %(','.join(self.fomnames), techk)
-        return self.filedlist    
-        
+        return self.filedlist
+
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
         closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
@@ -108,7 +109,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 for k, v in zip(self.requiredkeys, dataarr):
                     datadict[k]=v
                 for interfiled in [filed['ana__inter_filed'], filed['ana__inter_rawlen_filed']]:
-                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data 
+                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
                     for k, v in zip(interfiled['keys'], tempdataarr):
                         datadict[k]=v
                 fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
@@ -117,8 +118,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     raiseTEMP
                 fomtuplist, rawlend, interlend, miscfilestr=[(k, numpy.nan) for k in self.fomnames], {}, {}, None
                 pass
-            
-            
+
+
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:
@@ -135,11 +136,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
             if not miscfilestr is None and isinstance(miscfilestr, str) and len(miscfilestr)>0:
                 fnm='%s__%s_polycoeff.txt' %(anak,os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnm)        
+                p=os.path.join(destfolder,fnm)
                 with open(p, mode='w') as f:
                     f.write(miscfilestr)
                 self.runfiledict[filed['run']]['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
-            
+
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
             zc.close()
@@ -156,7 +157,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         # extract sweep direction from dE/dt
         deltaE=numpy.subtract(ewetrim[1:], ewetrim[:-1])
         deltaE=numpy.sign(numpy.append(deltaE[0], deltaE)) # assume starting direction is the same as 2nd point
-        
+
         anodstartinds=numpy.where(deltaE[1:]>deltaE[:-1])[0]
         cathstartinds=numpy.where(deltaE[1:]<deltaE[:-1])[0]
 
@@ -164,27 +165,27 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             anodstartinds=numpy.append(0, anodstartinds)
         else:
             cathstartinds=numpy.append(0, cathstartinds)
-        
+
         anodendinds, cathendinds = map(lambda inds: [i-1 for i in inds if i>0], [cathstartinds, anodstartinds])
 
         if deltaE[-1]>0:
             anodendinds=numpy.append(anodendinds, len(deltaE)-1).astype(int)
         else:
             cathendinds=numpy.append(cathendinds, len(deltaE)-1).astype(int)
-        
+
         ## construct list of start, end t(s) tuples for each anodic and cathodic sweep (generalizes for >1 CV cycles)
         anodstartendinds = [(start, end) for start, end in zip(anodstartinds, anodendinds)]
         cathstartendinds = [(start, end) for start, end in zip(cathstartinds, cathendinds)]
 
         anodt_tpl, catht_tpl = map(lambda startendinds: [(ttrim[start], ttrim[end]) for (start, end) in startendinds], \
             [anodstartendinds, cathstartendinds])
-        
+
         ## for now, number of sweeps to fit from start or end of measurement will be 'consecutive' (i.e. fit to first three anodic sweeps, but never first + third)
         if self.params['use_sweeps_from_end']:
             anodt_tpl, catht_tpl = map(lambda t_tpl: t_tpl[-1*self.params['num_sweeps_to_fit']:], [anodt_tpl, catht_tpl])
         else:
             anodt_tpl, catht_tpl = map(lambda t_tpl: t_tpl[:self.params['num_sweeps_to_fit']], [anodt_tpl, catht_tpl])
-        
+
         ## time tuples for chosen sweep direction (or both)
         sweepdir=self.params['sweep_direction']
         time_tpl = numpy.append(anodt_tpl, catht_tpl) if sweepdir==0 else anodt_tpl if sweepdir<0 else catht_tpl
@@ -192,7 +193,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ## create _dark and _ill interd keys from fitted range
         cyc_start = self.params['num_cycles_omit_start']
         cyc_end = None if self.params['num_cycles_omit_end']==0 else -1*self.params['num_cycles_omit_end']
-        
+
         ttrim_fitrng = [ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
         ewetrim_fitrng = [ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
         iphoto_fitrng = [illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
@@ -208,10 +209,10 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd['t(s)_fitrng'] = numpy.array([d['t(s)'][i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
         rawinds=numpy.arange(len(d['t(s)']))
         interd['rawselectinds'] = numpy.array([rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
-        
+
         rawlend['I(A)_fit'] = fittedfunc(d['Ewe(V)'])
         rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
-        
+
         eo = paramd['reference_e0']
         isc = fittedfunc(eo)
         ## fom values are calculated from fitted Ewe(V) range instead of full range
@@ -222,16 +223,23 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         iminsign = 1 if paramd['redox_couple_type']=='O2/H2O' else -1
         iminind = numpy.argmin(iphoto) if all(iphoto>0) else numpy.argmax(iphoto) if all(iphoto<0) else None
         iphotomin = 0 if iminind==None else iphoto[iminind]
-        iphotobase = self.params['i_photo_base']
-        ## Vmicro only calculated when 'i_photo_base' is specified; manually/externally check I(A)_fit=i_photo_base was observed for all samples in analysis
-        vmicro = numpy.nan if iphotobase==None else interd['Ewe(V)_fitrng'][numpy.argmin((iphoto-iphotobase)**2)]
         pphoto = iphoto*ewe_eo*(-1*iminsign)
         pmaxind = numpy.argmax([v for i, v in enumerate(pphoto) if iphoto[i]>0]) if iminsign > 0 else numpy.argmin([v for i, v in enumerate(pphoto) if iphoto[i]<0])
         pphotomax = pphoto[pmaxind]
         iatpmax = interd['I(A)_fitrng'][pmaxind]
 
         vocfitlen = self.params['num_points_slope_calc']
-        ewe_vocrng = [e for e in ewe if e < numpy.percentile(ewe, self.params['pct_ewe_range_slope'])] if iminsign > 0 else [e for e in ewe if e > numpy.percentile(ewe, self.params['pct_ewe_range_slope'])]
+
+        ## Limit ewe range for Voc extrapolation based on
+        iphoto_outinds = [i for i, v in enumerate(interd['I(A)_fitrng']) if v <= isc*self.params['isc_frac_limit']] if iminsign > 0 else \
+                            [i for i, v in enumerate(interd['I(A)_fitrng']) if v >= isc*self.params['isc_frac_limit']]
+        voc_ewelim = max(ewe[iphoto_outinds]) if iminsign > 0 else \
+                        min(ewe[iphoto_outinds])
+        ewe_vocrng = [v for v in ewe if v >= voc_ewelim] if iminsign > 0 else \
+                        [v for v in ewe if v <= voc_ewelim]
+        ewe_vocrng = [v for v in ewe_vocrng if v >= voc_ewelim and v < numpy.percentile(ewe_vocrng, self.params['pct_ewe_range_slope'])] if iminsign > 0 else \
+                        [v for v in ewe_vocrng if v <= voc_ewelim and v > numpy.percentile(ewe_vocrng, self.params['pct_ewe_range_slope'])]
+
 
         ## Voc linear fit to # of consecutive points along Ewe(V)_fitrng;
         voclinfits = []
@@ -245,8 +253,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         # plt.plot(ewe, numpy.polyval(voccoeff, ewe))
         # plt.show()
         interd['I(A)_voclinfitrng'] = numpy.polyval(numpy.poly1d(voccoeff), ewe)
+
         ## CX says prototyping reports photoanode and photocathode Voc both as positive values
-        voc = numpy.absolute((-1*voccoeff[1]/voccoeff[0])-eo)
+        voc = numpy.absolute(eo-(-1*voccoeff[1]/voccoeff[0]))
+        iphotobase = self.params['i_photo_base']
+        vmicro = numpy.nan if iphotobase==0 else numpy.absolute(eo-interd['Ewe(V)_fitrng'][numpy.argmin((iphoto-iphotobase)**2)])
         vatpmax = numpy.absolute(ewe_eo[pmaxind])
         fillfactor = numpy.absolute(pphotomax/(voc*isc)) if iatpmax<=(isc*(1+self.params['i_at_pmax_tolerance'])) and numpy.absolute(pphotomax)<numpy.absolute(voc*isc) else numpy.nan
 
@@ -256,7 +267,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 ('Fill_factor', fillfactor)]
 
         return fomtuplist, rawlend, interd, miscfilestr
-        
+
 
 #c=Analysis__Pphotomax()
 #c.debugmode=True
@@ -276,4 +287,3 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 #    print k, v
 #print 'THESE FOMs CALCULATED'
 #print c.fomdlist
-

@@ -153,136 +153,6 @@ comment will remain as you change analysis options</string>
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>10</y>
-     <width>212</width>
-     <height>141</height>
-    </rect>
-   </property>
-   <layout class="QGridLayout" name="AnalysisGridLayout">
-    <property name="sizeConstraint">
-     <enum>QLayout::SetFixedSize</enum>
-    </property>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="AnalyzeDataPushButton">
-      <property name="toolTip">
-       <string>Perform the selected analysis</string>
-      </property>
-      <property name="text">
-       <string>Analyze Data</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="EditDfltVisPushButton">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="toolTip">
-       <string>Edit the FOM visualization parameters in the .csv
-ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
-      </property>
-      <property name="text">
-       <string>Update Dflt Vis</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="ClearAnalysisPushButton">
-      <property name="toolTip">
-       <string>Clear the analysis, removing intermediate data and FOMs</string>
-      </property>
-      <property name="text">
-       <string>Clear Analysis</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QPushButton" name="EditAnalysisParamsPushButton">
-      <property name="toolTip">
-       <string>Edit parameters involved inthe analysis</string>
-      </property>
-      <property name="text">
-       <string>Edit Params</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QPushButton" name="SaveAnaPushButton">
-      <property name="toolTip">
-       <string>Save .fom, FOR THE SELECTED ANALYSIS TYPE ONLY.
- Intermediate data will also be saved</string>
-      </property>
-      <property name="text">
-       <string>Save ANA</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="ImportAnalysisParamsPushButton">
-      <property name="toolTip">
-       <string>Import a .par file</string>
-      </property>
-      <property name="text">
-       <string>Import Params</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <widget class="QPushButton" name="ViewResultPushButton">
-      <property name="toolTip">
-       <string>Send Raw, Intermediate and FOM data to the Visualize window</string>
-      </property>
-      <property name="text">
-       <string>View Result</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="ClearSingleAnalysisPushButton">
-      <property name="toolTip">
-       <string>Clear the analysis, removing intermediate data and FOMs</string>
-      </property>
-      <property name="text">
-       <string>Del 1 ana__x</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0">
-     <widget class="QPushButton" name="SaveViewPushButton">
-      <property name="toolTip">
-       <string>Send Raw, Intermediate and FOM data to the Visualize window</string>
-      </property>
-      <property name="text">
-       <string>Save+View</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="1">
-     <widget class="QPushButton" name="UpdatePlotPushButton">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="toolTip">
-       <string>Edit the FOM visualization parameters in the .csv
-ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
-      </property>
-      <property name="text">
-       <string>Update Plots</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
   <widget class="QPushButton" name="ImportExpPushButton">
    <property name="geometry">
     <rect>
@@ -1155,70 +1025,197 @@ to generate Intermediate and FOM results</string>
     <enum>Qt::Vertical</enum>
    </property>
   </widget>
-  <zorder>BatchComboBox</zorder>
-  <zorder>BatchPushButton</zorder>
-  <zorder>gridLayoutWidget_3</zorder>
-  <zorder>layoutWidget</zorder>
-  <zorder>ImportExpPushButton</zorder>
-  <zorder>ImportAnaPushButton</zorder>
-  <zorder>textBrowser_plate</zorder>
-  <zorder>textBrowser_h</zorder>
-  <zorder>textBrowser_comp</zorder>
-  <zorder>line</zorder>
-  <zorder>line_2</zorder>
-  <zorder>line_3</zorder>
-  <zorder>line_4</zorder>
-  <zorder>AnalysisNamesComboBox</zorder>
-  <zorder>label_20</zorder>
-  <zorder>AnaTreeWidget</zorder>
-  <zorder>getplatemapCheckBox</zorder>
-  <zorder>CompPlotOrderComboBox</zorder>
-  <zorder>label_2</zorder>
-  <zorder>label</zorder>
-  <zorder>CompPlotTypeComboBox</zorder>
-  <zorder>label_4</zorder>
-  <zorder>compplotsizeLineEdit</zorder>
-  <zorder>label_3</zorder>
-  <zorder>fomplotchoiceComboBox</zorder>
-  <zorder>usedaqtimeCheckBox</zorder>
-  <zorder>label_9</zorder>
-  <zorder>aboverangecolLineEdit</zorder>
-  <zorder>label_6</zorder>
-  <zorder>belowrangecolLineEdit</zorder>
-  <zorder>label_8</zorder>
-  <zorder>vminmaxLineEdit</zorder>
-  <zorder>stdcsvplotchoiceComboBox</zorder>
-  <zorder>label_5</zorder>
-  <zorder>colormapLineEdit</zorder>
-  <zorder>label_10</zorder>
-  <zorder>label_13</zorder>
-  <zorder>TechTypeRadioButton_0</zorder>
-  <zorder>TechTypeRadioButton_1</zorder>
-  <zorder>TechTypeRadioButton_2</zorder>
-  <zorder>TechTypeRadioButton_3</zorder>
-  <zorder>TechTypeRadioButton_4</zorder>
-  <zorder>TechTypeRadioButton_5</zorder>
-  <zorder>TechTypeRadioButton_6</zorder>
-  <zorder>TechTypeRadioButton_7</zorder>
-  <zorder>TechTypeRadioButton_8</zorder>
-  <zorder>TechTypeRadioButton_9</zorder>
-  <zorder>TechTypeRadioButton_10</zorder>
-  <zorder>label_7</zorder>
-  <zorder>ExpRunUseComboBox</zorder>
-  <zorder>label_14</zorder>
-  <zorder>RunSelectTreeWidget</zorder>
-  <zorder>UserFOMLineEdit</zorder>
-  <zorder>line_5</zorder>
-  <zorder>label_21</zorder>
-  <zorder>FOMProcessNamesComboBox</zorder>
-  <zorder>label_22</zorder>
-  <zorder>autoplotCheckBox</zorder>
-  <zorder>RaiseErrorPushButton</zorder>
-  <zorder>OpenInfoPushButton</zorder>
-  <zorder>expfilenameLineEdit</zorder>
-  <zorder>line_6</zorder>
-  <zorder>label_11</zorder>
-  <zorder>AnaDescLineEdit</zorder>
+  <widget class="QPushButton" name="EditAnalysisParamsPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>70</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Edit parameters involved inthe analysis</string>
+   </property>
+   <property name="text">
+    <string>Edit Params</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="AnalyzeDataPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>90</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Perform the selected analysis</string>
+   </property>
+   <property name="text">
+    <string>Analyze Data</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ImportAnalysisParamsPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>10</y>
+     <width>102</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Import a .par file</string>
+   </property>
+   <property name="text">
+    <string>Import Params</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="SaveAnaPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>111</y>
+     <width>102</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Save .fom, FOR THE SELECTED ANALYSIS TYPE ONLY.
+ Intermediate data will also be saved</string>
+   </property>
+   <property name="text">
+    <string>Save ANA</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="SaveViewPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>130</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Send Raw, Intermediate and FOM data to the Visualize window</string>
+   </property>
+   <property name="text">
+    <string>Save+View</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="EditDfltVisPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>30</y>
+     <width>102</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="toolTip">
+    <string>Edit the FOM visualization parameters in the .csv
+ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
+   </property>
+   <property name="text">
+    <string>Update Dflt Vis</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ClearAnalysisPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>10</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Clear the analysis, removing intermediate data and FOMs</string>
+   </property>
+   <property name="text">
+    <string>Clear Analysis</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ClearSingleAnalysisPushButton">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>32</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Clear the analysis, removing intermediate data and FOMs</string>
+   </property>
+   <property name="text">
+    <string>Del 1 ana__x</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ViewResultPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>132</y>
+     <width>102</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Send Raw, Intermediate and FOM data to the Visualize window</string>
+   </property>
+   <property name="text">
+    <string>View Result</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="UpdatePlotPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>111</y>
+     <width>101</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="toolTip">
+    <string>Edit the FOM visualization parameters in the .csv
+ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
+   </property>
+   <property name="text">
+    <string>Update Plots</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="OpenAuxExpAnaPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>80</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Perform the selected analysis</string>
+   </property>
+   <property name="text">
+    <string>SelectAuxEXP/ANA</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

@@ -98,7 +98,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'process_fom'
         
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         return self.getapplicablefomfiles(anadict)
         
     def getapplicablefomfiles(self, anadict):
@@ -221,7 +221,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 #        self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#in addition to standard requirements, platemapdlist must be defined for all runs - for simplicity require for all runs in expfiledict even if they are not used in ana__x
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#in addition to standard requirements, platemapdlist must be defined for all runs - for simplicity require for all runs in expfiledict even if they are not used in ana__x
         if False in ['platemapdlist' in rund.keys() for runk, rund in expfiledict.iteritems() if runk.startswith('run__')]:
             self.num_ana_considered=1
             self.filedlist=[]
@@ -289,7 +289,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         self.cpsendswithstr='.CPS'
     
     
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         if runklist is None or len(runklist)==0:
             return []
         if len(self.getapplicablefomfiles(anadict))==0:
@@ -320,7 +320,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         self.description='process %s' %self.params['select_ana']
         return self.filedlist
     
-    def processnewparams(self):
+    def processnewparams(self, calcFOMDialogclass=None):
         self.fomnames=['Tot.nmol']
         if len(self.filedlist)!=1:
             self.filedlist=[]
@@ -329,7 +329,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         
         filed['trans_keys']=[k for k in filed['process_keys'] if k.endswith(self.cpsendswithstr)]
         filed['trans_list']=[k[:-len(self.cpsendswithstr)] for k in filed['trans_keys']]
-        for count, (paramkey, unitstr) in enumerate([('transition_list_for_stds', '.nmol'), ('transition_list_for_comps', '.AtPerc')]):
+        for count, (paramkey, unitstr) in enumerate([('transition_list_for_stds', '.nmol'), ('transition_list_for_comps', '.AtFrac')]):
             trans_list=filed['trans_list']
             if not (self.params[paramkey]=='NONE' or self.params[paramkey]=='ALL'):
                 searchstrs=self.params[paramkey].split(',')
@@ -347,6 +347,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             self.fomnames+=[tr+unitstr for tr in trans_list]
         
         if len(transition_list_for_stds)==0:
+            self.params=copy.copy(self.dfltparams)
             self.filedlist=[]
             return
         
@@ -452,3 +453,4 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 print 'no foms calculated for ', fn
                 continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)
+

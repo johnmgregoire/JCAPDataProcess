@@ -1,68 +1,16 @@
-import time, csv
+import csv
 import os, os.path
 import sys
 import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import operator
-import matplotlib
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-except ImportError:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import numpy.ma as ma
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import pylab
-import pickle
+
+
 from fcns_math import *
 from fcns_io import *
 
-PyCodePath=os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
 
-from matplotlib.ticker import FuncFormatter
-from matplotlib.ticker import ScalarFormatter
-def myexpformat_4digs(x, pos):
-    return '%.3e' %x
-#    for ndigs in range(4):
-#        lab=(('%.'+'%d' %ndigs+'e') %x).replace('e+0','e').replace('e+','e').replace('e0','').replace('e-0','e')
-#        if eval(lab)==x:
-#            return lab
-#    return lab
 
-ExpTickLabels=FuncFormatter(myexpformat_4digs)
-RegTickLabels=matplotlib.ticker.ScalarFormatter()
-
-def autotickformat(ax, x=False, y=False, ndec=3):
-    for bl, xax, lims in zip([x, y], [ax.xaxis, ax.yaxis], [ax.get_xlim(), ax.get_ylim()]):
-        if bl:
-            try:
-                doit=numpy.max(numpy.log10(numpy.abs(numpy.array(lims))))<(-ndec)
-                doit=doit or numpy.min(numpy.log10(numpy.abs(numpy.array(lims))))>ndec
-            except:
-                print 'error on axis formatter for lims ', lims
-                continue
-            if doit:
-                xax.set_major_formatter(ExpTickLabels)
-            else:
-                xax.set_major_formatter(RegTickLabels)
-
-def autocolorbarformat(lims, ndec=3):
-    try:
-        doit=numpy.max(numpy.log10(numpy.abs(numpy.array(lims))))<(-ndec)
-        doit=doit or numpy.min(numpy.log10(numpy.abs(numpy.array(lims))))>ndec
-    except:
-        print 'error on axis formatter for lims ', lims
-        return
-    if doit:
-        return ExpTickLabels
-    else:
-        return RegTickLabels
-
-wd=os.getcwd()
 
 
 

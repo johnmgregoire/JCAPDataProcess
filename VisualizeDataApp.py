@@ -38,12 +38,12 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 from OpenFromInfoApp import openfrominfoDialog
 from CalcFOMApp import AnalysisClasses
 
-
+GUIMODE=True
 class visdataDialog(QDialog, Ui_VisDataDialog):
-    def __init__(self, parent=None, title='', folderpath=None):
+    def __init__(self, parent=None, title='', folderpath=None, GUIMODE=GUIMODE):
         super(visdataDialog, self).__init__(parent)
         self.setupUi(self)
-        
+        self.GUIMODE=GUIMODE
         self.parent=parent
         
         #self.SelectTreeView.setModel(CheckableDirModel(self))
@@ -103,7 +103,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         batchdesc=BatchDescList
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
-        
+
         self.inkjetconcentrationadjustment='ask_if_appropriate'#'ask_if_appropriate' for dialog, or False/True    
         self.plotwsetup()
         
@@ -115,7 +115,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def runbatchprocess(self):
         if self.batchprocesses[self.BatchComboBox.currentIndex()](self):
             idialog=messageDialog(self, 'Error in batch process - aborted.')
-            idialog.exec_()
+            if self.GUIMODE:
+                idialog.exec_()
         
     def clearall(self):
         self.l_fomdlist=[]
@@ -131,7 +132,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.customlegendfcn=lambda sample, els, comp, code, fom, xy: `sample`
         
         self.ellabels=['A', 'B', 'C', 'D']
-        
+        self.platemap4keys_default=['A', 'B', 'C', 'D']
         self.expfolder=''
         self.clearfomplotd()
         self.clearvisuals()
@@ -164,7 +165,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.importana(p=idialog.selectpath)
         if idialog.selecttype=='exp':
             self.importexp(experiment_path=idialog.selectpath)
-    def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None):
+    def importana(self, p=None, anafiledict=None, anafolder=None, anazipclass=None, ellabelsforquatplots='ask'):#if running batch set ellabelsforquatplots to something else
         if anafiledict is None or anafolder is None:
             if p is None:
                 p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
@@ -200,7 +201,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_platemap4keys=[]
         
         #this fcn appends all ana fom files to the l_ structures and append to Fom item in tree
-        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass, anakl=self.sorted_ana_exp_keys())
+        readandformat_anafomfiles(self.anafolder, self.anafiledict, self.l_fomdlist, self.l_fomnames, self.l_csvheaderdict, self.l_platemap4keys, self.AnaExpFomTreeWidgetFcns, anazipclass=self.anazipclass, anakl=self.sorted_ana_exp_keys(), platemap4keys_default=self.platemap4keys_default)
         self.expanafilenameLineEdit.setText(os.path.normpath(self.anafolder))
         self.updatefomdlist_plateruncode()
         
@@ -221,18 +222,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             idialog=messageDialog(self, 'Non standard ink deposition:\nShould platemap compositions be modified?')
             if not idialog.exec_():
                 return False
-        cels_set_ordered, conc_el_chan=tupormessage#***
-        pmchans_cels=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[0]]
-        pmchans_zeroafter=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][conc_el_chan.shape[0]:]
-        inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]
-        #with this update the platemap is in units of concentration instead of fraction of printer channel loading
-        [d.update(\
-                    zip(pmchans_cels, (conc_el_chan*numpy.float32([d[k] for k in inkchannelsused])).sum(axis=1))+\
-                    zip(pmchans_zeroafter, [0]*len(pmchans_zeroafter)))\
-                              for d in rund['platemapdlist']]
+        
+        cels_set_ordered, conc_el_chan=tupormessage
+        
+        calc_comps_multi_element_inks(rund['platemapdlist'], cels_set_ordered, conc_el_chan, key_append_conc='', key_append_atfrac=None)
+        
+#        inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]#grab the channels used
+#        #with this update the platemap is in units of concentration instead of fraction of printer channel loading
+#        [d.update(\
+#                    zip(cels_set_ordered, (numpy.float32([d[k] for k in inkchannelsused])[numpy.newaxis, :]*conc_el_chan).sum(axis=1)))\
+#                              for d in rund['platemapdlist']]
         return cels_set_ordered
         
-    def importexp(self, experiment_path=None, fromana=False):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
+    def importexp(self, experiment_path=None, fromana=False, ellabelsforquatplots='ask'):#experiment_path here is the folder, not the file. thsi fcn geretaes expapth, which is the file, but it could be the file too
         if experiment_path is None:
             exppath=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or .zip file')
             if exppath is None or len(exppath)==0:
@@ -254,8 +256,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.expzipclass.close()
         self.expzipclass=expzipclass
         masterels=None
-        inkjetconcentrationadjustment=self.inkjetconcentrationadjustment
+        #inkjetconcentrationadjustment=self.inkjetconcentrationadjustment
         platemap_plateid_dlist_list=[]
+        platemapfilenamestr=str(self.platemapfilenameLineEdit.text())
         for runk, rund in self.expfiledict.iteritems():
             if not runk.startswith('run__'):
                continue
@@ -270,7 +273,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     if self.defaultplatemapCheckBox.isChecked():
                         pmpath=getplatemappath_plateid(str(rund['parameters']['plate_id']), erroruifcn=selectpmfcn)
                     else:
-                        pmpath=selectpmfcn('for .exp,', PLATEMAPBACKUP[0])
+                        pmpath=selectpmfcn('for .exp,', PLATEMAPFOLDERS[0])
                     pmlines, pmpath=get_lines_path_file(p=pmpath)
                     
                     if len(pmpath)==0:
@@ -281,10 +284,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     else:
                         platemap_plateid_dlist_list+=[(rund['parameters']['plate_id'], readsingleplatemaptxt('', lines=pmlines))]#path not used here because passing lines
                         rund['platemapdlist']=copy.copy(platemap_plateid_dlist_list[-1][1])
-                        s=str(self.platemapfilenameLineEdit.text())
+                        
                         ps=os.path.normpath(pmpath)
-                        if not ps in s:
-                            self.platemapfilenameLineEdit.setText(','.join([s, ps]).strip(','))
+
+                        if not ps in platemapfilenamestr:
+                            platemapfilenamestr=','.join([platemapfilenamestr, ps]).strip(',')
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             multielementink_concentrationinfo_bool=bool(self.inkjetconcentrationadjustment)
             ans=getelements_plateidstr(str(rund['parameters']['plate_id']), multielementink_concentrationinfo_bool=multielementink_concentrationinfo_bool)
@@ -292,9 +296,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 els, tup_multielementink=ans
                 if not tup_multielementink is None:
                     errorbool, tupormessage=tup_multielementink
-                    cels_set_ordered=self.process_multielementink(rund, errorbool, tupormessage, inkjetconcentrationadjustment=inkjetconcentrationadjustment)
+                    cels_set_ordered=self.process_multielementink(rund, errorbool, tupormessage, inkjetconcentrationadjustment=self.inkjetconcentrationadjustment)
                     if cels_set_ordered:
-                        inkjetconcentrationadjustment=True#if asking and doing it then don't ask again this import
+                        self.inkjetconcentrationadjustment=True#if asking and doing it then don't ask again this import
                         els=cels_set_ordered
             else:
                 els=ans
@@ -305,6 +309,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 continue
 #            if len(els)>4:
 #                els=els[:4]
+
             if masterels is None:
                 masterels=els
             elif masterels==els:
@@ -325,10 +330,43 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 idialog=messageDialog(self, 'WARNING: %s has elements %s but elements %s were already loaded' %(runk,','.join(els), ','.join(masterels)))
                 idialog.exec_()
                 masterels=['A', 'B', 'C', 'D']
+
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
             self.ellabels=['A', 'B', 'C', 'D']
-        else:#to get here evrythign has a platemap
-            self.remap_platemaplabels(newellabels=masterels)
+            self.platemap4keys_default=['A', 'B', 'C', 'D']
+        elif isinstance(self.inkjetconcentrationadjustment, bool) and self.inkjetconcentrationadjustment:#to get here evrythign has a platemap, don't relabel if multierlement processing because then relabel aleready happened
+            self.ellabels=masterels
+            if False in [ellab in rund['platemapdlist'][0].keys() for runk, rund in self.expfiledict.iteritems() for ellab in self.ellabels if runk.startswith('run__')]:#compsoitions weren't caclulated to wil only be able to do 4-element projections if ana__ blocks provide keys
+                self.remap_platemaplabels(newellabels=masterels)
+                self.platemap4keys_default=self.ellabels[:4]
+#            elif len(self.ellabels)<=4:
+#                self.platemap4keys_default=self.ellabels[:4]
+            else:#if no ellabels are missing in platemap then they were all recalculated meaning that platemap signals are not good for composition plots so give the option to use multi-ink-calculated compositions
+                if ellabelsforquatplots=='ask':
+                    ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
+                elif isinstance(ellabelsforquatplots, list):
+                    ans=ellabelsforquatplots
+                else:
+                    ans=None
+                if not ans is None:
+                    self.ellabels=[v.strip() for v in ans]
+                    self.platemap4keys_default=self.ellabels #the calculated comps for these 4 elements will now be considered as 4 platemap channels
+                    self.ellabelsLineEdit.setText(','.join(self.ellabels))
+        else:
+            self.remap_platemaplabels(newellabels=masterels)#self.ellabels assigned in here
+            self.platemap4keys_default=self.ellabels[:4]
+            if len(self.ellabels)>4:
+                if not fromana or not fromana and not (True in ['platemap_comp4plot_keylist' in anad.keys() for anak, anad in self.anafiledict.iteritems() if anak.startswith('ana__')]):#either exp or no ana__ has specified which 4 to use so ask or allow to be specified
+                    if ellabelsforquatplots=='ask':
+                        ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter 4 elements to use for plots or close to use platemap',  cancelallowed=True)
+                    elif isinstance(ellabelsforquatplots, list):
+                        ans=ellabelsforquatplots
+                    else:
+                        ans=None
+                    if not ans is None:
+                        self.ellabels=[v.strip() for v in ans]
+                        self.platemap4keys_default=self.ellabels #the calculated comps for these 4 elements will now be considered as 4 platemap channels
+                        self.ellabelsLineEdit.setText(','.join(self.ellabels))
 
         self.AnaExpFomTreeWidgetFcns.initfilltree(self.expfiledict, self.anafiledict)
         self.fillcomppermutations()
@@ -351,6 +389,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             self.setupfilterchoices()
             self.updatefomplotchoices()
             self.fillxyoptions(clear=True)
+        self.platemapfilenameLineEdit.setText(platemapfilenamestr)
         summlines+=['RUN:']
         summlines+=['-'.join([runk, self.expfiledict[runk]['description'] if 'description' in self.expfiledict[runk].keys() else '']) for runk in self.sorted_ana_exp_keys(ana=False)]
         summlines+=['FOM:']
@@ -393,7 +432,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if self.defaultplatemapCheckBox.isChecked():
                 pmpath=getplatemappath_plateid(plateidstr, erroruifcn=selectpmfcn)
             else:
-                pmpath=selectpmfcn('for onthefly,', PLATEMAPBACKUP[0])
+                pmpath=selectpmfcn('for onthefly,', PLATEMAPFOLDERS[0])
             pmlines, platemappath=get_lines_path_file(p=pmpath)
             
         if platemappath is None or platemappath=='':
@@ -464,7 +503,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             if len(self.l_fomdlist[0])>0:
                 self.l_fomnames=[['anaint', 'runint', 'plate_id', 'sample_no']]
                 self.l_csvheaderdict=[{}]
-                self.l_platemap4keys=[['A', 'B', 'C', 'D']]
+                self.l_platemap4keys=[self.platemap4keys_default]
             else:
                 self.l_fomdlist=[]
                 self.l_fomnames=[]
@@ -671,7 +710,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomnames+=[self.analysisclass.fomnames]
         self.l_csvheaderdict+=[self.analysisclass.csvheaderdict]#this contains default plot info
         self.l_csvheaderdict[-1]['anak']='ana__onthefly'
-        self.l_platemap4keys+=[['A', 'B', 'C', 'D']]
+        self.l_platemap4keys+=[self.platemap4keys_default]
         #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         #self.l_usefombool+=[True]
         self.updatefomdlist_plateruncode(inds=[-1])
@@ -725,7 +764,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.l_fomnames+=[copy.copy(idialog.fomnames)]
         self.l_csvheaderdict+=[{}]
         self.l_csvheaderdict[-1]['anak']='ana__loadcsv'
-        self.l_platemap4keys+=[['A', 'B', 'C', 'D']]
+        self.l_platemap4keys+=[self.platemap4keys_default]
         #self.clearfomplotd()  don't need to clear here because all indexes in fomplotd will still work
         
         if self.ellabels==['A', 'B', 'C', 'D']:#If default ellabels give option for user to enter new ones. otherwise assume thigns already loaded and use existing ellabels
@@ -763,7 +802,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for fomdlist_index0, (usebool, fomdlist, fomnames, platemapkeys) in enumerate(zip(l_usefombool, self.l_fomdlist, self.l_fomnames, self.l_platemap4keys)):#the pmkeys here provides custom comps calcualtion without reassigning any pm channels
             if not usebool or not fomname in fomnames:
                 continue
-            plotdinfo+=[extractplotdinfo(d, platemapkeys, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1) for fomdlist_index1, d in enumerate(fomdlist) if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
+            if self.compCalcFromFOMCheckBox.isChecked():
+                ellabs=self.getellabels_pm4keys(platemapkeys)
+                srchstr=str(self.compsCalcFOMSearchStrLineEdit.text())
+                calc_comps__starts_contains_tups=[(ellab, srchstr) for ellab in ellabs]
+            else:
+                calc_comps__starts_contains_tups=None
+            plotdinfo+=[extractplotdinfo(d, platemapkeys, fomname, self.expfiledict, fomdlist_index0, fomdlist_index1, calc_comps__starts_contains_tups=calc_comps__starts_contains_tups)\
+                                    for fomdlist_index1, d in enumerate(fomdlist) \
+                                        if fomname in d.keys() and d['plate_id'] in plateidallowedvals and d['runint'] in runintallowedvals and d['code'] in codeallowedvals]#and not numpy.isnan(d[fomname]), don't do this so can do fomname swap without loss of samples
         for count, k in enumerate(['fomdlist_index0','fomdlist_index1','plate_id','code','sample_no', 'fom', 'xy', 'comps']):
             self.fomplotd[k]=numpy.array(map(operator.itemgetter(count), plotdinfo))
         self.fomplotd['comps']=numpy.array([c/c.sum() for c in self.fomplotd['comps']])
@@ -1180,6 +1227,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         writeudifile(p, udidict)
         
     def getellabels_pm4keys(self, pmkeys):
+        if not (False in [pmk in self.ellabels for pmk in pmkeys]):#pmkeys has a libreal interpreation and could already be ellabels in which case do nothing here
+            return pmkeys
         ellabelinds=[['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].index(pmk) for pmk in pmkeys]
         return [self.ellabels[i] if i<len(self.ellabels) else 'X' for i in ellabelinds]#pmkeys should refer to element label indeces that exist but if not fill the X to softly notify the user that soemthig is wrong, i.e. not all the element labels were read from the database
     def plotxy(self, filed=None):#filed to plot from a  single file and must have key 'path' in addition to standard filed
@@ -1458,6 +1507,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return lambda x, y, ax: None
         self.quatcompclass.loadplotdata(comps[compsinds][:, self.comppermuteinds], cols[compsinds])
         plotw3dbool=self.quatcompclass.plot(plotw=plotw, s=s)
+
         #plotw.redoaxes(projection3d=)
         if sm is None:
             self.quatcompclass.cbax.cla()
@@ -1466,8 +1516,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if plotw3dbool:
                     cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
                 else:
-                    cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax, extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
+                    cb=plotw.fig.colorbar(sm, cax=self.quatcompclass.cbax,extend=self.extend, format=autocolorbarformat((self.vmin, self.vmax)))
                 cb.set_label(self.fomplotd['fomname'])
+        
         plotw.fig.canvas.draw()
         return self.quatcompclass.toComp
     

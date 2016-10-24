@@ -194,7 +194,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.requiredkeys[-1]=self.params['illum_key']
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)

@@ -16,6 +16,9 @@ def myeval(c):
     return c
     
 
+def get_dict_item_keylist(d, keylist):
+    return reduce(lambda d, k: d[k], keylist, d)
+    
 def removeoutliers_meanstd(arr, nptsoneside, nsig, gapptsoneside=0): #avrages maximum of 2*nptoneside points and usees distance from mean scaled by std compared to nsig to determine if the value should be replaced by the mean. if gapptsoneside>0, will do this leaving a gap around the point in question and using nptsoneside-gaps points for the mean and std
     if nptsoneside==1 and gapptsoneside==0:
         return removesinglepixoutliers(arr, critratiotoneighbors=nsig)
@@ -835,3 +838,95 @@ def illumtimeshift(d, ikey, tkey, tshift):
     tmod=d[tkey]-tshift
     inds=[numpy.argmin((t-tmod)**2) for t in d[tkey]]
     d[ikey]=d[ikey][inds]
+
+def calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc='.RelLoading', key_append_atfrac='.AtFrac', tot_conc_label=None):
+    #platemap should have standard A-H channels, at least as many as conc_el_chan.shape[1], conc_el_chan is by "new" element and by platemap channel, make the key_append a string to update dlist or None to skip
+    inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]#grab the channels used
+    #with this update the platemap is in units of concentration instead of fraction of printer channel loading
+    if key_append_conc is None:
+        key_append_conc='TEMP'
+    cels_set_ordered_conc=[k+key_append_conc for k in cels_set_ordered]
+    [d.update(\
+                    zip(cels_set_ordered_conc, (numpy.float32([d[k] for k in inkchannelsused])[numpy.newaxis, :]*conc_el_chan).sum(axis=1)))\
+                              for d in platemapdlist]
+    if key_append_atfrac is None:
+        cels_set_ordered_atfrac=[]
+    else:
+        cels_set_ordered_atfrac=[k+key_append_atfrac for k in cels_set_ordered]
+        concarr=numpy.array([[d[k] for k in cels_set_ordered_conc] for d in platemapdlist])
+        if not tot_conc_label is None:
+            [d.update([(tot_conc_label, carr.sum())]) for d, carr in  zip(platemapdlist, concarr)]
+        comparr2d=concarr/concarr.sum(axis=1)[:, numpy.newaxis]
+        [d.update(zip(cels_set_ordered_atfrac, comparr)) for d, comparr in  zip(platemapdlist, comparr2d)]
+    if key_append_conc=='TEMP':
+        for d in platemapdlist:
+            for k in cels_set_ordered_conc:
+                del d[k]
+        cels_set_ordered_conc=[]
+    return cels_set_ordered_conc, cels_set_ordered_atfrac
+
+def ternary_comp_to_cart(a, b, c):
+    return 1.-a-b/2., numpy.sqrt(3)*b/2.0
+
+def quaternary_comp_to_cart(a, b, c, d):
+    return 1.-a-b/2.-d/2., b/2.*(3.**.5)+d/2./(3.**.5), d*(2.**.5)/(3.**.5)
+    
+def filterbydistancefromline(arr_of_xyz, xyz1, xyz2, critdist, betweenpoints=True, invlogic=False, returnonlyinds=False, is_composition=False): #if N points in D dimmensions arr_ is NxD, xyz1 and 2 are D, critdist is D-dimmension Euclidean, lineparameter is 0 to 1 from xyz 1 to xyz2 and can be out of that range
+    #see http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+    if is_composition:#probably cheaper to not do coordinate transform and just multiply by the distance ratio for the ndim, but this allows quat. to be done with 3D math
+        arr_of_xyz/=arr_of_xyz.sum(axis=1)[:,numpy.newaxis]
+        xyz1/=xyz1.sum()
+        xyz2/=xyz2.sum()
+        
+        if xyz1.size==1:
+            print 'unary compositions do not make sense'
+        elif xyz1.size==2:
+            arr_of_xyz=arr_of_xyz[:, 0]
+            xyz1=xyz1[:1]
+            xyz2=xyz2[:1]
+        elif xyz1.size==3:
+            arr_of_xyz=numpy.array(ternary_comp_to_cart(*arr_of_xyz.T)).T
+            xyz1=numpy.array(ternary_comp_to_cart(*xyz1))
+            xyz2=numpy.array(ternary_comp_to_cart(*xyz2))
+        elif xyz1.size==4:
+            arr_of_xyz=numpy.array(quaternary_comp_to_cart(*arr_of_xyz.T)).T
+            xyz1=numpy.array(quaternary_comp_to_cart(*xyz1))
+            xyz2=numpy.array(quaternary_comp_to_cart(*xyz2))
+        else:
+            print 'quinary or higher compositions not supported'
+            return None
+    else:
+        if xyz1.size>3:
+            print 'Only 1D,2D,3D supported'
+            return None
+    notnoninds=numpy.where(numpy.logical_not(numpy.isnan(arr_of_xyz)).prod(axis=1))[0]
+    numnansamples=len(arr_of_xyz)-len(notnoninds)
+    if numnansamples>0:
+        arr_of_xyz=arr_of_xyz[notnoninds]
+    distfromlin=numpy.array([numpy.linalg.norm(numpy.cross(xyz2-xyz1, xyz1-xyz))/numpy.linalg.norm((xyz2-xyz1)) for xyz in arr_of_xyz])
+    if betweenpoints:
+        lineparameter=numpy.array([-numpy.inner(xyz2-xyz1, xyz1-xyz)/numpy.linalg.norm((xyz2-xyz1))**2 for xyz in arr_of_xyz])
+        if invlogic:
+            inds=numpy.where(numpy.logical_not((distfromlin<=critdist) & (lineparameter>=0) & (lineparameter<=1)))[0]
+        else:
+            inds=numpy.where((distfromlin<=critdist) & (lineparameter>=0) & (lineparameter<=1))[0]
+    else:
+        lineparameter=numpy.array([-numpy.inner(xyz2-xyz1, xyz1-xyz)/numpy.linalg.norm((xyz2-xyz1))**2 for xyz in arr_of_xyz])
+        if invlogic:
+            inds=numpy.where(numpy.logical_not(distfromlin<=critdist))[0]
+        else:
+            inds=numpy.where(distfromlin<=critdist)[0]
+    if returnonlyinds:
+        return notnoninds[inds]
+    else:
+        if numnansamples>0:
+            temp=numpy.ones(len(notnoninds)+numnansamples, dtype='float64')*numpy.nan
+            temp[notnoninds]=distfromlin
+            distfromlin=temp
+            
+            temp=numpy.ones(len(notnoninds)+numnansamples, dtype='float64')*numpy.nan
+            temp[notnoninds]=lineparameter
+            lineparameter=temp
+            inds=notnoninds[inds]
+        return {'select_inds':inds, 'dist_from_line':distfromlin, 'norm_dist_along_line':lineparameter}
+

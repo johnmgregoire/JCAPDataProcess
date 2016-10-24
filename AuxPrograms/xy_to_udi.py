@@ -61,7 +61,7 @@ infofiled=importinfo(plateidstr)
 
 udi_dict={}
     
-udi_dict['ellabels']=[x for x in getelements_plateidstr(plateidstr,print_id=2) if x not in ['','O','Ar','N']]
+udi_dict['ellabels']=[x for x in getelements_plateidstr(plateidstr) if x not in ['','O','Ar','N']]#,print_id=2 removed on 20161019 because no longer valid
 udi_dict['xy']=np.c_[xarr,yarr]
 udi_dict['specind']=specinds
 udi_dict['sample_no']=[]

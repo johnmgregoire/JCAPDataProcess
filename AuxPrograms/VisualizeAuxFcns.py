@@ -38,7 +38,7 @@ def d_nestedkeys(d, keylist):
 
 
 #plateid,code,sample,fom,xy,comp
-def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdlist_index1):#, ellabels=['a', 'b', 'c', 'd']):
+def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdlist_index1, calc_comps__starts_contains_tups=None):#, ellabels=['a', 'b', 'c', 'd']):
     d=fomd
     returnlist=[fomdlist_index0, fomdlist_index1]
     returnlist+=[d[k] for k in ['plate_id','code','sample_no', fomname]]
@@ -48,12 +48,17 @@ def extractplotdinfo(fomd, pmkeys, fomname, expfiledict, fomdlist_index0, fomdli
         rund=expfiledict['run__%d' %d['runint']]
         pmd=rund['platemapdlist'][rund['platemapsamples'].index(d['sample_no'])]
         returnlist+=[[pmd[k] for k in ['x', 'y']]]
-        returnlist+=[[pmd[k] for k in pmkeys]]
+        if calc_comps__starts_contains_tups is None or len([k for startstr, contstr in calc_comps__starts_contains_tups for k in d.keys() if k.startswith(startstr) and contstr in k])==0:#default platemap comps or no keys available for calc comp
+            returnlist+=[[pmd[k] for k in pmkeys]]
+        else:#at least 1 key available so use all available and fill zero otherwise. If multiple keys match criteria, use the first one found
+            getmatchklist=lambda startstr, contstr: [k for k in d.keys() if k.startswith(startstr) and contstr in k]
+            matchkeys=[None if len(getmatchklist(startstr, contstr))==0 else getmatchklist(startstr, contstr)[0] for startstr, contstr in calc_comps__starts_contains_tups]
+            returnlist+=[[0. if k is None else d[k] for k in matchkeys]]
     return returnlist
 
-def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None):
+def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_csvheaderdict, l_platemapkeys, treefcns, anazipclass=None, anakl=None, platemap4keys_default=['A', 'B', 'C', 'D']):
     if anakl is None:
-        anakl=sorted([anak for anak in anafiledict.keys() if anak.startswith('ana__')])
+        anakl=sort_dict_keys_by_counter(anafiledict, keystartswith='ana__')
     for anak in anakl:
         anad=anafiledict[anak]
         anaint=int(anak.partition('ana__')[2])
@@ -77,7 +82,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                     if 'platemap_comp4plot_keylist' in anad.keys():
                         pmkeys=anad['platemap_comp4plot_keylist'].split(',')
                     else:
-                        pmkeys=['A', 'B', 'C', 'D']
+                        pmkeys=platemap4keys_default
                     l_platemapkeys+=[pmkeys]
                     treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
 
@@ -213,10 +218,10 @@ class treeclass_anaexpfom():
             mainitem.addChild(item)
         
         self.fomwidgetItem.addChild(mainitem)
-        
-        summlines=[str(self.summarybrowser.toPlainText())]#adds lines onto self.SummaryTextBrowser (where self is visdataDialog) and since analysis can be done on the fly fom csvs must come last in the summary browser
-        summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
-        self.summarybrowser.setText('\n'.join(summlines))
+        if not self.summarybrowser is None:
+            summlines=[str(self.summarybrowser.toPlainText())]#adds lines onto self.SummaryTextBrowser (where self is visdataDialog) and since analysis can be done on the fly fom csvs must come last in the summary browser
+            summlines+=['%s: %s; %s' %(fomlabel, anak if (not anak is None) else '', ','.join(fomnames))]
+            self.summarybrowser.setText('\n'.join(summlines))
         
     def filltree(self, d, toplevelitem, startkey='ana_version', laststartswith='ana__', expparent=False):
         self.treeWidget.clear()
@@ -235,11 +240,8 @@ class treeclass_anaexpfom():
             toplevelitem.addChild(mainitem)
             mainitem.setExpanded(False)
         
-        try:
-            sorttups=sorted([(int(k[len(laststartswith):]), k) for k in d.keys() if k.startswith(laststartswith)])
-            anakl=map(operator.itemgetter(1), sorttups) 
-        except:
-            anakl=sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        anakl=sort_dict_keys_by_counter(d, keystartswith=laststartswith)
+
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem, expparent=expparent)

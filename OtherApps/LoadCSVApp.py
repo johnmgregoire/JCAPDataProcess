@@ -181,7 +181,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
             pmpath=''
         pmlines, pmpath=get_lines_path_file(p=pmpath, \
                   erroruifcn=\
-                  lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP, markstr='Error: %s select platemap for csv file'))
+                  lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0],  markstr='Error: %s select platemap for csv file'))
         
         try:
             self.rund['platemapdlist']=readsingleplatemaptxt('', lines=pmlines)

@@ -18,7 +18,6 @@ ExpTickLabels=FuncFormatter(myexpformat)
 
 are_paths_equivalent=lambda path1, path2:os.path.normcase(os.path.abspath(path1))==os.path.normcase(os.path.abspath(path2))
 
-
 def filterchars(s, valid_chars = "-_.%s%s" % (string.ascii_letters, string.digits)):
     return ''.join([c for c in s if c in valid_chars])
 
@@ -238,9 +237,9 @@ def readtxt_selectcolumns(p, selcolinds=None, delim='\t', num_header_lines=1, fl
     return numpy.array(z).T
 
 
-def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False):
+def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False, delim=','):
     d={}
-    arr=readtxt_selectcolumns(p, delim=',', num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
+    arr=readtxt_selectcolumns(p, delim=delim, num_header_lines=fileattrd['num_header_lines'], floatintstr=str, zipclass=zipclass)
 
     if not 'keys' in fileattrd.keys():
         with open(p, mode='r') as f:
@@ -671,9 +670,10 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
         p=p.replace(chr(92),chr(47))
     return p
 
-def prepend_root_exp_path(p):
+def prepend_root_exp_path(p, exp=True):
     parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
-    for parentfold in [tryprependpath(EXPFOLDERS_J, parentfoldtemp), tryprependpath(EXPFOLDERS_K, parentfoldtemp)]:
+    for parentfold in [tryprependpath(EXPFOLDERS_J if exp else ANAFOLDERS_J, parentfoldtemp), \
+                            tryprependpath(EXPFOLDERS_K if exp else EXPFOLDERS_J, parentfoldtemp)]:
         if len(parentfold)==0:
             continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
@@ -685,9 +685,9 @@ def prepend_root_exp_path(p):
             return os.path.join(parentfold, subfoldl[0])
     print 'cannot find folder %s in %s' %(subfold, parentfold)
     return p
-def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
+def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
-    fn=os.path.split(p)[1][:15]+'.exp' #15 characters in YYYYMMDD.HHMMSS
+    fn=os.path.split(p)[1][:15]+ext_str #15 characters in YYYYMMDD.HHMMSS
 
     if (not os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) or not os.path.isabs(p):
         p=prepend_root_exp_path(p)
@@ -698,12 +698,14 @@ def buildexppath(experiment_path_folder):#exp path is the path of the .exp ascii
     if '.zip' in p:
         return os.path.join(p, fn)#hope this works out without checking if it is actually there
 
-    fnl=[s for s in os.listdir(p) if s.endswith('.exp')]
+    fnl=[s for s in os.listdir(p) if s.endswith(ext_str)]
     if len(fnl)==0:
-        print 'cannot find .exp file in ', p
+        print 'cannot find %s file in %s' %(ext_str, p)
         return p
     return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
-
+def buildanapath(analysis_path_folder):
+    return buildexppath(analysis_path_folder, ext_str='.ana')
+    
 def buildrunpath(runp):
     #if user makes .exp with a folder on K or intr computer and this run_path is used but the file is gone opr path changed to ..copied, then should bepossible to find this run as a .zip on J but that is not attempted here
     return tryprependpath(RUNFOLDERS, runp)
@@ -867,7 +869,8 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
     keys=ls[count-1][1:].split(',')
     keys=[(k.partition('(')[0]).strip() for k in keys]
     dlist=[]
-    for l in ls[count:]:
+    samplelines=[l for l in ls[count:] if l.count(',')==(len(keys)-1)]
+    for l in samplelines:
         sl=l.split(',')
         d=dict([(k, myeval(s.strip())) for k, s in zip(keys, sl)])
         dlist+=[d]
@@ -877,16 +880,40 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
         return dlist, fid
     return dlist
 
-def getplatemappath_plateid(plateidstr, erroruifcn=None):
-    p=''
-    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
-    if os.path.isdir(fld):
-        l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
-        p=os.path.join(fld, l[0])
-    if (not os.path.isfile(p)) and not erroruifcn is None:
-        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
-    return p
+#def getplatemappath_plateid(plateidstr, erroruifcn=None):
+#    p=''
+#    fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
+#    if os.path.isdir(fld):
+#        l=[fn for fn in os.listdir(fld) if fn.endswith('map')]+['None']
+#        p=os.path.join(fld, l[0])
+#    if (not os.path.isfile(p)) and not erroruifcn is None:
+#        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
+#    return p
 
+def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:', return_pmidstr=False):
+    p=''
+    pmidstr=''
+    infop=getinfopath_plateid(plateidstr)
+    if infop is None:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return (p, pmidstr) if return_pmidstr else p
+    with open(infop, mode='r') as f:
+        s=f.read(1000)
+    pmfold=tryprependpath(PLATEMAPFOLDERS, '')
+    if pmfold=='' or not infokey in s:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return (p, pmidstr) if return_pmidstr else p
+    pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
+    fns=[fn for fn in os.listdir(pmfold) if fn.startswith('0'*(4-len(pmidstr))+pmidstr+'-') and fn.endswith('-mp.txt')]
+    if len(fns)!=1:
+        if not erroruifcn is None:
+            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+        return (p, pmidstr) if return_pmidstr else p
+    p=os.path.join(pmfold, fns[0])
+    return (p, pmidstr) if return_pmidstr else p
+    
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
     fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
@@ -907,31 +934,41 @@ def importinfo(plateidstr):
     infofiled=filedict_lines(lines)
     return infofiled
 
-def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_id='last'):
+def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_key_or_keyword='screening_print_id', exclude_elements_list=['']):#print_key_or_keyword can be e.g. "print__3" or screening_print_id
     infofiled=importinfo(plateidstr)
-    print_idl=[int(x.split('__')[-1]) for x in infofiled['prints'].keys() if 'prints__' in x]
-    print_key='prints__'+str(numpy.max(print_idl)) if print_id=='last' else 'prints__'+str(print_id) if print_id in print_idl else None
-    if print_key!=None:
-        elstr=infofiled['prints'][print_key]['elements'] if 'elements' in infofiled['prints'][print_key].keys() else None
-    if elstr!=None: els=[x for x in elstr.split(',') if x not in [',']] 
-    else: return None
+    requiredkeysthere=lambda infofiled: ('screening_print_id' in infofiled.keys()) if print_key_or_keyword=='screening_print_id' \
+                                                           else (print_key_or_keyword in infofiled['prints'].keys())
+    while not ('prints' in infofiled.keys() and requiredkeysthere(infofiled)):
+        if not 'lineage' in infofiled.keys() or not ',' in infofiled['lineage']:
+            return None
+        parentplateidstr=infofiled['lineage'].split(',')[-2].strip()
+        infofiled=importinfo(parentplateidstr)
+    if print_key_or_keyword=='screening_print_id':
+        printdlist=[printd for printd in infofiled['prints'].values() if 'id' in printd.keys() and printd['id']==infofiled['screening_print_id']]
+        if len(printdlist)==0:
+            return None
+        printd=printdlist[0]
+    else:
+        printd=infofiled['prints'][print_key_or_keyword]
+    if not 'elements' in printd.keys():
+        return None
+    els=[x for x in printd['elements'].split(',') if x not in exclude_elements_list] 
     
     if multielementink_concentrationinfo_bool:
-        
-        return els, get_multielementink_concentrationinfo(infofiled, print_key,els)
+        return els, get_multielementink_concentrationinfo(printd,els)
     return els
 
-def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
+def get_multielementink_concentrationinfo(printd, els):#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
 
-    searchstr1='        concentration_elements: '
-    searchstr2='        concentration_values: '
-    if not (searchstr1 in infofiled['prints'][print_key].keys() and searchstr2 in infofiled['prints'][print_key].keys()):
+    searchstr1='concentration_elements'
+    searchstr2='concentration_values'
+    if not (searchstr1 in printd.keys() and searchstr2 in printd.keys()):
         return None
-    cels=infofiled['prints'][print_key][searchstr1.strip()]
-    concstr=infofiled['prints'][print_key][searchstr2.strip()]
-    conclist=[float(s) for s in concstr]
+    cels=printd[searchstr1]
+    concstr=printd[searchstr2]
+    conclist=[float(s) for s in concstr.split(',')]
 
-    cels=[cel.strip() for cel in cels]
+    cels=[cel.strip() for cel in cels.split(',')]
     cels_set=set(cels)
     if len(cels_set)<len(cels) or True in [conclist[0]!=cv for cv in conclist]:#concentrations available where an element is used multiple times. or 1 of the concentrations is different from the rest
         els_printchannels=[regexcompile("[A-Z][a-z]*").findall(el) for el in els]
@@ -956,19 +993,19 @@ def get_multielementink_concentrationinfo(infofiled,print_key, els):#None if not
         #for a given platemap sample with x being the 8-component vecotr of ink channel intensity, the unnormalized concentration of cels_set_ordered is conc_el_chan*x[:conc_el_chan.shape[0]]
         return False, (cels_set_ordered, conc_el_chan)
     return None
-
-def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
-    p=getinfopath_plateid(plateidstr)
-    s=None
-    if not p is None:
-        with open(p, mode='r') as f:
-            filestr=f.read(10000)
-        searchstr='        map_id: '
-        if searchstr in filestr:
-            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
-    if s is None and not erroruifcn is None:
-        s=erroruifcn('Enter Platemap ID')
-    return s
+#
+#def getplatemapid_plateidstr(plateidstr, erroruifcn=None):
+#    p=getinfopath_plateid(plateidstr)
+#    s=None
+#    if not p is None:
+#        with open(p, mode='r') as f:
+#            filestr=f.read(10000)
+#        searchstr='        map_id: '
+#        if searchstr in filestr:
+#            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+#    if s is None and not erroruifcn is None:
+#        s=erroruifcn('Enter Platemap ID')
+#    return s
 
 def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
 #find pcks with matching mapid in the root folder or 1 level of subfolders. onyl matches mapid before the first '-'
@@ -1569,7 +1606,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
 
     if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
         for fn in os.listdir(srcfolder):
-            if fn.startswith('.'):
+            if fn.startswith('.') or '.db' in fn:
                 continue
             if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
                 continue
@@ -1773,6 +1810,7 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     f.write(filestr)
     f.close()
 
+<<<<<<< HEAD
 def readudi(fl,fltyp='src'):
     def getval(valstr,dtype=numpy.float32,sep=','):
         if sep in valstr:
@@ -1807,3 +1845,78 @@ def readudi(fl,fltyp='src'):
         [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
     
     return datad
+=======
+def sort_dict_keys_by_counter(d, keystartswith='ana__'):
+    try:
+        sorttups=sorted([(int(k[len(keystartswith):]), k) for k in d.keys() if k.startswith(keystartswith)])
+        kl=map(operator.itemgetter(1), sorttups) 
+    except:
+        kl=sorted([k for k in d.keys() if k.startswith(keystartswith)])
+    return kl
+
+def copyfolder_1level(srcfolder, savefolder, movebool=False):
+    if os.path.normpath(srcfolder)==os.path.normpath(savefolder):
+        return 'Cannot copy - same folder'
+    if not os.path.isdir(savefolder):
+        try:
+            os.mkdir(savefolder)
+        except:
+            return 'Cannot copy - could not create source directory'
+
+    for fn in os.listdir(srcfolder):
+        if fn.startswith('.'):
+            continue
+        if movebool:
+            shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+        else:
+            shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+    return False
+
+def gen_pathd_absorrel_expanapath(p, desttype='eche', exp=False, only_check_temp=False):#p is the folder of an exp or ana , validate that it is where it should be (on J or K in desttype folder) or give new destpath
+    if not (os.path.isdir(p) and os.path.isabs(p)):
+        srcabs=prepend_root_exp_path(p, exp=exp)
+    else:
+        srcabs=p
+    if '.copied' in srcabs: #found probably on J maybe on K but if so copied which means can't be temp
+        return None
+    if only_check_temp:
+        kfold=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, '')
+        if os.path.normpath(srcabs).startswith(os.path.normpath(kfold)) and (not 'temp' in p) and ('.done' in srcabs):#p is on K and not in temp so probably in a good place
+            return None
+        return {}#if onyl checking in temp and it is in temp (or not on K) then can't provide a solution
+    deststartswith=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, desttype)
+    if os.path.normpath(srcabs).startswith(os.path.normpath(deststartswith)):#already in desired place, could be in subfolder and don't check that as of now
+        if not ('.run' in p):#then presumably is .done in K and will go to J soon
+            return None
+        #else this is going to make a .done copy in K and .run will stay there and will get cleaned up later
+    foldname=os.path.split(p)[1].replace('.run', '.done')
+    dest=os.path.join(deststartswith, foldname)
+    destrel=(r'/'+os.path.join(desttype, foldname)).replace(chr(92),chr(47))
+    return {'destabs':dest, 'destrel':destrel, 'srcabs':srcabs, 'srcrel':p}
+    
+    
+    
+def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-containing paths are not on J or in anatype folder
+    needcopy_dlist=[]
+    for k, v in anad.iteritems():
+        if k=='experiment_path':
+            d=gen_pathd_absorrel_expanapath(v, desttype=anatype, exp=True)
+            if d is None:
+                continue
+            d['anadkeylist']=['experiment_path']
+            needcopy_dlist+=[d]
+        elif k.startswith('ana__'):
+            kl=[k]
+            if 'parameters' in v.keys():
+                kl+=['parameters']
+                for count, auxk in enumerate(['aux_ana_path', 'aux_exp_path']):
+                    if auxk in v['parameters'].keys():
+                        d=gen_pathd_absorrel_expanapath(v['parameters'][auxk], desttype=anatype, exp=(count==1), only_check_temp=True)
+                        if d is None:
+                            continue
+                        #d['anadkeylist']=kl+[auxk]
+                        #needcopy_dlist+=[d]
+                        needcopy_dlist+=[None]#an aux could be xrfs so not needed to be copied to this place but just can't be in temp
+    return needcopy_dlist
+       
+>>>>>>> origin/master

@@ -421,7 +421,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
-                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPBACKUP[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
+                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
             else:
                 d['platemapdlist']=[]
         if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
@@ -722,8 +722,9 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.ExpTextBrowser.setText(self.expfilestr)
     
     def saveexpgoana(self):
+        self.hide()
         saveexpfiledict, exppath=self.saveexp()
-        self.parent.calcui.importexp(expfiledict=copy.deepcopy(saveexpfiledict), exppath=exppath)
+        self.parent.calcexp(expfiledict=copy.deepcopy(saveexpfiledict), exppath=exppath)
         for runk, rund in self.parent.calcui.expfiledict.iteritems():#copy over any platemap info
             if not runk.startswith('run__'):
                 continue
@@ -731,14 +732,12 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             rcpdl=[rcpd for rcpd in self.rcpdlist if rcpd['rcp_file']==rcpfile and len(rcpd['platemapdlist'])>0]
             if len(rcpdl)>0:
                 rund['platemapdlist']=copy.copy(rcpdl[0]['platemapdlist'])
-        self.parent.calcui_exec()
-        self.hide()
+        
 
     def saveexpgovis(self):
-        saveexpfiledict, exppath=self.saveexp()
-        self.parent.visdataui.importexp(experiment_path=os.path.split(exppath)[0])
-        self.parent.visui_exec()
         self.hide()
+        saveexpfiledict, exppath=self.saveexp()
+        self.parent.visexpana(experiment_path=os.path.split(exppath)[0])
         
     def saveexp(self, exptype=None, rundone=None):
         #self.expfilestr, self.expfiledict are read from the tree so will include edited params

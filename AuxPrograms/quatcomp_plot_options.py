@@ -132,12 +132,7 @@ class quatcompplotoptions():
             
         
         plotw.fig.clf()
-        if not self.plotwcbaxrect is None:
-            plotw.axes=plotw.fig.add_axes((0, 0, self.plotwcbaxrect[0]-.01, 1))
-            self.cbax=plotw.fig.add_axes(self.plotwcbaxrect)
-        else:
-            plotw.axes=plotw.fig.add_axes((0, 0, 1, 1))
-            
+
         if i in self.ternaryface_uiinds:
             selclass=self.ternaryfaceoptions[self.ternaryface_uiinds.index(i)][1]
             self.toComp=self.ternaryfaceplot(plotw, selclass, **kwargs)
@@ -145,7 +140,6 @@ class quatcompplotoptions():
             makefcn, scatterfcn=self.stackedternoptions[self.stackedtern_uiinds.index(i)][1]
             delta=self.stackedternoptions[self.stackedtern_uiinds.index(i)][2]
             self.toComp=self.stackedternplot(plotw, makefcn, scatterfcn, delta, **kwargs)
-        
         return False
     
     def quat3dplot(self, plotw3d, plotclass, **kwargs):
@@ -157,17 +151,30 @@ class quatcompplotoptions():
         return lambda x, y, ax:None
 
     def ternaryfaceplot(self, plotw, plotclass, **kwargs):
+        if not self.plotwcbaxrect is None:
+            plotw.axes=plotw.fig.add_axes((0, 0, self.plotwcbaxrect[0]-.01, 1))
+            self.cbax=plotw.fig.add_axes(self.plotwcbaxrect)
+        else:
+            plotw.axes=plotw.fig.add_axes((0, 0, 1, 1))
         ax=plotw.axes
         tf=plotclass(ax, nintervals=self.nintervals, ellabels=self.ellabels)
         tf.label()
         tf.scatter(self.quatcomps, self.cols, **kwargs)
         return lambda x, y, ax: tf.toComp(x, y)
-    def stackedternplot(self, plotw, makefcn, scatterfcn, delta, **kwargs):
+    def stackedternplot(self, plotw, makefcn, scatterfcn, delta, drawcolorbarhere=False, **kwargs):
         if 's' in kwargs.keys() and not isinstance(kwargs['s'], int):
             kwargs['s']=18
         plotw.fig.clf()
-        if not self.plotwcbaxrect is None:
+        if self.plotwcbaxrect is None:
+            self.cbax=None
+            kwargs['cb']=False
+        elif drawcolorbarhere:
+            self.cbax=None#if drawing here cannot pass the cbax because scatterfcn doesn't return it
+            kwargs['cb']=True
             kwargs['cbrect']=self.plotwcbaxrect
+        else:#going to draw colorbar externally so only make cbax here
+            self.cbax=plotw.fig.add_axes(self.plotwcbaxrect)
+            kwargs['cb']=False#do not make the colorbar in the scatterfcn 
         self.axl, self.stpl=makefcn(fig=plotw.fig, ellabels=self.ellabels)
         scatterfcn(self.quatcomps, self.cols, self.stpl, edgecolor='none', **kwargs)
         
