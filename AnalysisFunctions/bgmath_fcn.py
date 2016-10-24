@@ -140,7 +140,7 @@ min_finseglength,min_bgTP_finseg_diff ,min_bgfinalseglength,bgtyp):
     else:
         num_segments=num_slopes-1
     tot_segs=num_segments
-    for i in np.arange(0,tot_segs-1):
+    for i in np.arange(0,tot_segs-1):        
         if slopes[i]<min_allowedslope:
             num_segments=i
             break
@@ -283,7 +283,7 @@ def runuvvis(data,inputvars):
                 pfomd[bgtyp]['bgcode_0']=7
                 continue
         plinfitd[bgtyp],pfomd[bgtyp]=fitresult(data,bgtyp,max_numbgs=inputvars['maxbgspersmp'],\
-        num_knots=inputvars['num_knots'],tol=inputvars['tol'],min_allowedslope=inputvars['min_allowedslope'],\
+        num_knots=inputvars['num_knots'],tol=inputvars['tol'],min_allowedslope=inputvars[bgtyp+'_min_allowedslope'],\
         min_bgTP_diff=inputvars['min_bgTP_diff'],min_bkgrdslope=inputvars['min_bkgrdslope'],\
         min_bgbkgrdslopediff=inputvars['min_bgbkgrdslopediff'],min_finseglength=inputvars['min_finseglength'],\
         min_bgTP_finseg_diff=inputvars['min_bgTP_finseg_diff'],\
