@@ -871,9 +871,9 @@ class Analysis__BG(Analysis_Master_inter):
                                #fitting params
                               ('merge_linsegslopediff_percent',10.),('max_merge_differentialTP',10000.),
                               #params for merging linsegs
-                              ('min_allowedslope',-2),('min_finseglength',0.1),
+                              ('DA_min_allowedslope',-1),('IA_min_allowedslope',-0.5),('DF_min_allowedslope',-0.75),('IF_min_allowedslope',-0.5),('min_finseglength',0.1),
                               #parameters before entering bg identification
-                              ('min_bgTP_diff',0.1),('min_bkgrdslope',-0.05),('min_bgbkgrdslopediff',0.2),('min_bgTP_finseg_diff',0.2),('min_bgfinalseglength',0.2),
+                              ('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),('min_bgbkgrdslopediff',0.4),('min_bgTP_finseg_diff',0.3),('min_bgfinalseglength',0.2),
                               #params for bg and bkgrd
                               ('analysis_types','DA,IA'),('maxbgspersmp',4),('chkoutput_types','DA,IA'),
                               ('abs_minallowedslope',-numpy.inf),('max_absolute_2ndderiv',numpy.inf),('use_absderivs_forpeaks',False)
@@ -917,9 +917,9 @@ class Analysis__BG(Analysis_Master_inter):
         if numpy.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
             self.rtn_defaults
       
-        self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_bgcode_repr',x+'_bgslope_repr',x+'_bkgrdslope_repr',x+'_code'+'0'+'_only']\
+        self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_bgcode_repr',x+'_bgslope_repr',x+'_bkgrdslope_repr',x+'_bgcode0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
-                             for item in sublist]
+                             for item in sublist]+[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
                                  
         self.fom_chkqualitynames=[bgtyp+'_bg_0' for bgtyp in self.params['chkoutput_types']]
         self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
