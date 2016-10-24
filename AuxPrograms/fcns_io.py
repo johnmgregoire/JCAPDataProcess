@@ -1919,4 +1919,3 @@ def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-conta
                         needcopy_dlist+=[None]#an aux could be xrfs so not needed to be copied to this place but just can't be in temp
     return needcopy_dlist
        
->>>>>>> origin/master
