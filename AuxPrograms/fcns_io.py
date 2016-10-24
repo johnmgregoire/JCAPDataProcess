@@ -1810,7 +1810,6 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     f.write(filestr)
     f.close()
 
-<<<<<<< HEAD
 def readudi(fl,fltyp='src'):
     def getval(valstr,dtype=numpy.float32,sep=','):
         if sep in valstr:
@@ -1845,7 +1844,8 @@ def readudi(fl,fltyp='src'):
         [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
     
     return datad
-=======
+
+
 def sort_dict_keys_by_counter(d, keystartswith='ana__'):
     try:
         sorttups=sorted([(int(k[len(keystartswith):]), k) for k in d.keys() if k.startswith(keystartswith)])
