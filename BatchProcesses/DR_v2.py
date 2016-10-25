@@ -20,7 +20,7 @@ from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
 batchfolder=r'K:\users\sksuram\uvis_batchtests'
-batchinput_fn='20160705.171153_batch_paulfnew2_InnerSpace_v08.txt'
+batchinput_fn='15589.txt'
 
 
 class MainMenu(QMainWindow):
