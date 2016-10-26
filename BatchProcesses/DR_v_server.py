@@ -20,7 +20,7 @@ from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
 
 batchfolder=r'K:\users\sksuram\uvis_batchtests'
-batchinput_fn='20160705.171153_batch_paulfnew2_InnerSpace_v08.txt'
+batchinput_fn='server_DRtest.txt'
 
 
 class MainMenu(QMainWindow):
@@ -31,6 +31,19 @@ class MainMenu(QMainWindow):
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', guimode=False)
         self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
 
+    def visui_exec(self, show=True):
+        if self.visdataui is None:
+            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+        if show:
+            self.visdataui.show()
+        
+    def visexpana(self, anafiledict=None, anafolder=None, experiment_path=None, show=True):
+        self.visui_exec(show=show)
+        if not (anafiledict is None or anafolder is None):
+            self.visdataui.importana(anafiledict=anafiledict, anafolder=anafolder)
+        elif not experiment_path is None:
+            self.visdataui.importexp(experiment_path=experiment_path)
+            
 mainapp=QApplication(sys.argv)
 form=MainMenu(None)
 #form.show()
