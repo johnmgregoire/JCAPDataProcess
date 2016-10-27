@@ -450,7 +450,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>90</y>
+     <y>80</y>
      <width>91</width>
      <height>21</height>
     </rect>
@@ -462,14 +462,18 @@ No(s):</string>
   <widget class="QLabel" name="label_10">
    <property name="geometry">
     <rect>
-     <x>810</x>
+     <x>850</x>
      <y>180</y>
-     <width>51</width>
+     <width>31</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>colormap:</string>
+    <string>color
+map</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QComboBox" name="stdcsvplotchoiceComboBox">
@@ -504,8 +508,8 @@ No(s):</string>
   <widget class="QLineEdit" name="belowrangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>800</x>
-     <y>160</y>
+     <x>810</x>
+     <y>150</y>
      <width>61</width>
      <height>22</height>
     </rect>
@@ -543,8 +547,8 @@ No(s):</string>
   <widget class="QLineEdit" name="colormapLineEdit">
    <property name="geometry">
     <rect>
-     <x>860</x>
-     <y>181</y>
+     <x>880</x>
+     <y>180</y>
      <width>51</width>
      <height>21</height>
     </rect>
@@ -560,7 +564,7 @@ No(s):</string>
    <property name="geometry">
     <rect>
      <x>820</x>
-     <y>110</y>
+     <y>100</y>
      <width>91</width>
      <height>22</height>
     </rect>
@@ -585,8 +589,8 @@ No(s):</string>
   <widget class="QLabel" name="label_12">
    <property name="geometry">
     <rect>
-     <x>810</x>
-     <y>130</y>
+     <x>820</x>
+     <y>120</y>
      <width>101</width>
      <height>31</height>
     </rect>
@@ -599,8 +603,8 @@ No(s):</string>
   <widget class="QLineEdit" name="aboverangecolLineEdit">
    <property name="geometry">
     <rect>
-     <x>860</x>
-     <y>160</y>
+     <x>870</x>
+     <y>150</y>
      <width>61</width>
      <height>22</height>
     </rect>
@@ -959,7 +963,7 @@ x-y style</string>
   <widget class="QLineEdit" name="platescatterLineEdit">
    <property name="geometry">
     <rect>
-     <x>750</x>
+     <x>740</x>
      <y>180</y>
      <width>41</width>
      <height>22</height>
@@ -976,15 +980,18 @@ Rest of the string is the interger marker size.</string>
   <widget class="QLabel" name="label_16">
    <property name="geometry">
     <rect>
-     <x>710</x>
+     <x>700</x>
      <y>180</y>
-     <width>51</width>
+     <width>41</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
     <string>plate
-scatter:</string>
+scatter</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <widget class="QLineEdit" name="ellabelsLineEdit">
@@ -1231,6 +1238,39 @@ FOMs containing:</string>
    </property>
    <property name="text">
     <string>AtFrac</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="numcompintervalsSpinBox">
+   <property name="geometry">
+    <rect>
+     <x>820</x>
+     <y>180</y>
+     <width>31</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::NoButtons</enum>
+   </property>
+   <property name="maximum">
+    <number>100</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_19">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>180</y>
+     <width>41</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>comp
+intervs</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
  </widget>

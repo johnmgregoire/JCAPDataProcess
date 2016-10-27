@@ -30,7 +30,7 @@ def attemptnumericconversion(s, fcn=float):
 
 def attemptnumericconversion_tryintfloat(s):
     try:
-        return ('.' in s and (float(s),) or (int(s),))[0]
+        return (('.' in s or 'E' in s or 'e' in s) and (float(s),) or (int(s),))[0]
     except ValueError:
         return s
 #    if (s.replace('.', '', 1).replace('e', '', 1).replace('+', '', 1).replace('-', '', 1)).isalnum():
@@ -934,8 +934,11 @@ def importinfo(plateidstr):
     infofiled=filedict_lines(lines)
     return infofiled
 
-def getelements_plateidstr(plateidstr, multielementink_concentrationinfo_bool=False,print_key_or_keyword='screening_print_id', exclude_elements_list=['']):#print_key_or_keyword can be e.g. "print__3" or screening_print_id
-    infofiled=importinfo(plateidstr)
+def getelements_plateidstr(plateidstr_or_filed, multielementink_concentrationinfo_bool=False,print_key_or_keyword='screening_print_id', exclude_elements_list=['']):#print_key_or_keyword can be e.g. "print__3" or screening_print_id
+    if isinstance(plateidstr_or_filed, dict):
+        infofiled=plateidstr_or_filed
+    else:
+        infofiled=importinfo(plateidstr_or_filed)
     requiredkeysthere=lambda infofiled: ('screening_print_id' in infofiled.keys()) if print_key_or_keyword=='screening_print_id' \
                                                            else (print_key_or_keyword in infofiled['prints'].keys())
     while not ('prints' in infofiled.keys() and requiredkeysthere(infofiled)):

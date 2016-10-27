@@ -1505,7 +1505,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         compsinds=[i for i, (compv, colv) in enumerate(zip(comps, cols)) if not (numpy.any(numpy.isnan(compv)) or numpy.any(numpy.isnan(colv)))]
         if len(compsinds)==0:
             return lambda x, y, ax: None
-        self.quatcompclass.loadplotdata(comps[compsinds][:, self.comppermuteinds], cols[compsinds])
+
+        nintervals=int(self.numcompintervalsSpinBox.value())
+        if nintervals==0:
+            nintervals=None
+        self.quatcompclass.loadplotdata(comps[compsinds][:, self.comppermuteinds], cols[compsinds], nintervals=nintervals)
         plotw3dbool=self.quatcompclass.plot(plotw=plotw, s=s)
 
         #plotw.redoaxes(projection3d=)

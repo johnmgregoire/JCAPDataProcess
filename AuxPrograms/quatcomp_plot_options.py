@@ -1,23 +1,23 @@
-import time
+#import time
 import os, os.path
 import sys
-import numpy, copy
+import numpy, copy, itertools
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import operator
+#import operator
 import matplotlib
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-try:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-except ImportError:
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import numpy.ma as ma
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-import matplotlib.mlab as mlab
-import pylab
-import pickle
+#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#try:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#except ImportError:
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#from matplotlib.figure import Figure
+#import numpy.ma as ma
+#import matplotlib.colors as colors
+#import matplotlib.cm as cm
+#import matplotlib.mlab as mlab
+#import pylab
+#import pickle
 #from fcns_math import *
 #from fcns_io import *
 #from fcns_ui import *
@@ -31,7 +31,7 @@ wd=os.getcwd()
 
 
 sys.path.append(os.path.join(PyCodePath,'PythonCompositionPlots'))
-from myternaryutility import TernaryPlot
+#from myternaryutility import TernaryPlot
 from myquaternaryutility import QuaternaryPlot
 from quaternary_FOM_stackedtern2 import *
 from quaternary_FOM_stackedtern5 import *
@@ -93,18 +93,30 @@ class quatcompplotoptions():
             self.plottypeComboBox.insertItem(999, tup[0])
         self.plottypeComboBox.setCurrentIndex(1)
     
-    def loadplotdata(self, quatcomps, cols, nintervals=None):
+    def loadplotdata(self, quatcomps, cols, nintervals=None, max_nintervals=30, comp1dindstocheck=[-1], negligible_comp_diff=.005):
         self.cols=cols
         self.quatcomps=quatcomps
         if nintervals is None and len(self.quatcomps)>0:
 #            pairwisediffs=(((quatcomps[1:]-quatcomps[:-1])**2).sum(axis=1))**.5/2.**.5
 #            mindiff=(pairwisediffs[pairwisediffs>0.005]).min()
-            difflist=[x-y for i in range(quatcomps.shape[1]) for x in quatcomps[:, i] for y in quatcomps[:, i] if x>y+.01]
-            if len(difflist)==0:
+            negligible_comp_diff2=negligible_comp_diff**2
+            mindiff=999.
+            for elind in comp1dindstocheck:
+                elconc=quatcomps[:, elind]
+                elconcdiff=numpy.abs(elconc[1:]-elconc[:-1])
+                elconcdiff=elconcdiff[elconcdiff>0]
+                if len(elconcdiff)==0:#all of them are equal
+                    continue
+                mindiff=min(mindiff, elconcdiff.min())
+                mindiff2=mindiff**2
+                difflist=[((x0-x1)**2)**.5 for x0, x1 in itertools.combinations(elconc, 2) if (x0-x1)**2>negligible_comp_diff2 and (x0-x1)**2<mindiff2]
+                if len(difflist)>0:
+                    mindiff=min(difflist)
+
+            if mindiff>1.:#actually menas 999 which means the mindiff was 0, all the checked comp axes were the same values within negligible_comp_diff
                 self.nintervals=5#count this as the ~minumum number of intervals
             else:
-                mindiff=min(difflist)
-                self.nintervals=round(1./mindiff)
+                self.nintervals=int(min(max_nintervals, round(1./mindiff)))
         else:
             self.nintervals=nintervals
             
