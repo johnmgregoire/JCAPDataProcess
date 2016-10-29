@@ -8,10 +8,8 @@ p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h\data\Y-18-9_0_9.bsml'
 
 
 
-
-
 getxylist=lambda tree: [node.text.split(',')[:2] for node in tree.iter('Datum')]
-
+fmtbrukertimestamp=lambda s:s.partition('.')[0].replace('-','').replace(':','').replace('T','.')
 def get_bmsl_dict(p):
     paramd={}
     
@@ -21,7 +19,8 @@ def get_bmsl_dict(p):
         #TODO: Dan fills in paramd with keywords from Lan
         paramd['TimePerStep']=node.attrib['Value']
     #TODO: generate YYYYMMDD.HHMMSS timestamp string
-    timestamp=''
+    timestr=[node for node in tree.iter('TimeStampSaved')][0].text
+    timestamp=fmtbrukertimestamp(timestr)
     try:
         xystr_list=getxylist(tree)
     except:
@@ -97,5 +96,5 @@ def get_rcpdlist_xrdolfder(p):
     return rcpdind_pathstocopy, rcpdlist#the fns in rcpdlist
 
 
-p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
-rcpdind_pathstocopy, rcpdlist=get_rcpdlist_xrdolfder(p)
+#p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
+#rcpdind_pathstocopy, rcpdlist=get_rcpdlist_xrdolfder(p)
