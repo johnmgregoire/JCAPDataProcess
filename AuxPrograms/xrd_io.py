@@ -1,23 +1,85 @@
 from xml.etree import ElementTree
 import os, numpy, copy, time
 from collections import OrderedDict as OD
-p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h\data\Y-18-9_0_9.bsml'
+p=r'K:\users\hte\ProjectSummaries\Oxynitrides\La-Ta-O-N\15635\xrd\postacid\20160715\data\postacid.bsml'
 
 #for node in tree.findall('.//TimePerStep'):
 #    print node.tag, node.get('Value')
 
 
+# tuple list for parsing bsml 2 cases:
+#     1. xpath to taget tag is unique, 3-tuple (keyname, xpath_to_target_tag, target_attrib)
+#     2. xpath to target tag is not unique, 6-tuple (keyname, xpath_to_parent_tag, match_parent_attrib, match_parent_value, target_tag, target_attrib)
+#         2b. if target tag is empty string, parent node contains the desired attribute
+bstuplist= [\
+    ('machine_name', './/SerializedObject/Identifier', "IdentificationType", 'MeasurementLogic', '', ['MachineName']), \
+    ('sample_id', './/SampleInfo/SampleId', ['Value']), \
+    ('user', './/XmlFieldConnections/FieldRestrictionConnection', 'FieldName', 'User', './/Data', ['Value']), \
+    ('comment', './/XmlFieldConnections/FieldRestrictionConnection', 'FieldName', 'Comment', './/Data', ['Value']), \
+    ('exp_method', './/SerializedObject/BaseMethods/Method', ['AppType']), \
+    ('xray_tube_type', './/MountedTube/Generator/Matcher', ['BeringObjectName']), \
+    ('xray_tube_voltage', './/MountedTube/Generator/Voltage', ['Value', 'Unit']), \
+    ('xray_tube_current', './/MountedTube/Generator/Current', ['Value', 'Unit']), \
+    ('xray_tube_material', './/MountedTube/Generator/TubeMaterial', ['Value', 'Unit']), \
+    ('slit_condition', './/MountedComponent/MountedOptic', ['VisibleName']), \
+    ('collimator', './/BeamPathContainerAbc/BankPositions/BankPosition', 'BankPosition', '4', './/MountedComponent', ['VisibleName']), \
+    ('detector_type', './/BeamPathContainerAbc/BankPositions/BankPosition', 'BankPosition', '0', './/MountedComponent', ['VisibleName']), \
+    ('theta', './/DataEntityContainer/Data', 'VisibleName', 'Theta', './/Position', ['Value', 'Unit']), \
+    ('2theta', './/DataEntityContainer/Data', 'VisibleName', 'Two Theta', './/Position', ['Value', 'Unit']), \
+    ('psi', './/DataEntityContainer/Data', 'VisibleName', 'Psi', './/Position', ['Value', 'Unit']), \
+    ('phi', './/DataEntityContainer/Data', 'VisibleName', 'Phi', './/Position', ['Value', 'Unit']), \
+    ('beam_translation', './/DataEntityContainer/Data', 'VisibleName', 'Beam Transl.', './/Position', ['Value', 'Unit']), \
+    ('beam_translation', './/DataEntityContainer/Data', 'VisibleName', 'Beam Transl.', './/Position', ['Value', 'Unit']), \
+    ('track_distance', './/DataEntityContainer/Data', 'VisibleName', 'TrackDistance', './/Position', ['Value', 'Unit']), \
+    ('motor_z', './/DataEntityContainer/Data', 'VisibleName', 'Z', './/Position', ['Value', 'Unit']), \
+    ('scan_type', './/LogicData/DataEntityContainer', '{http://www.w3.org/2001/XMLSchema-instance}type', 'ScanSetup', '', ['VisibleName']), \
+    ('integration_time', './/DataEntityContainer/TimePerStep', ['Value', 'Unit']), \
+    ('frames_per_sample', './/DataEntityContainer/MeasurementPoints', ['Value', 'Unit']), \
+    ('detector_serial', './/Detectors/DetectorList/DetectorData/SerialNumber', ['Value']), \
+    ('detector_image_size_x', './/Detectors/DetectorList/DetectorData/ImageSizeX', ['Value', 'Unit']), \
+    ('detector_image_size_y', './/Detectors/DetectorList/DetectorData/ImageSizeX', ['Value', 'Unit']), \
+    ('face_to_detection_layer', './/Detectors/DetectorList/DetectorData/FaceToDetectionLayer', ['Value', 'Unit']), \
+    ('header_name', './/Detectors/DetectorList/DetectorData/HeaderName', ['Value']) \
+    ]
+
+# special tuple list for theta/2theta setup values, needs 3 calls to .iterfind
+thetatuplist= [\
+    ('Start', ['Value', 'Unit']), \
+    ('Increment', ['Value', 'Unit']), \
+    ('End', ['Value', 'Unit']), \
+    ]
 
 getxylist=lambda tree: [node.text.split(',')[:2] for node in tree.iter('Datum')]
 fmtbrukertimestamp=lambda s:s.partition('.')[0].replace('-','').replace(':','').replace('T','.')
 def get_bmsl_dict(p):
     paramd={}
-    
+
     with open(p, 'rt') as f:
         tree = ElementTree.parse(f)
-    for node in tree.iter('TimePerStep'):
-        #TODO: Dan fills in paramd with keywords from Lan
-        paramd['TimePerStep']=node.attrib['Value']
+    for tup in bstuplist:
+        if len(tup)==3: # xpath to node is unique
+            keyname, tpath, tattr = tup
+            for node in tree.iterfind(tpath):
+                paramd[keyname]=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+        else: # xpath is not unique, find the correct node by matching parent attributes
+            keyname, ppath, pattr, pval, tpath, tattr = tup
+            for pnode in tree.iterfind(ppath):
+                if pnode.attrib[pattr]==pval:
+                    if tpath=='': # match part of multi-attribute node
+                        paramd[keyname]=pnode.attrib[tattr[0]] if len(tattr)==1 else ' '.join([pnode.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                    else: # match parent attribute then iterate on children to find tag & value
+                        for node in pnode.iterfind(tpath):
+                            paramd[keyname]=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+
+    # spectial matching for theta/2theta setup. there's got to be a better way of crawling through these nodes
+    for gpnode in tree.iterfind('.//ScanAxisList/ScanAxis'):
+        if gpnode.attrib['VisibleName'] in ['2Theta', 'Theta']:
+            for tup in thetatuplist:
+                for pnode in gpnode.iterfind('.//ScanParameterAbc'):
+                    if pnode.attrib['VisibleName']==tup[0]:
+                        for node in pnode.iterfind('.//Value'):
+                            paramd['_'.join([gpnode.attrib['VisibleName'], tup[0]]).lower()]=' '.join([node.attrib[attr] for attr in tup[1]]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+
     #TODO: generate YYYYMMDD.HHMMSS timestamp string
     timestr=[node for node in tree.iter('TimeStampSaved')][0].text
     timestamp=fmtbrukertimestamp(timestr)
@@ -38,7 +100,7 @@ def get_xy__solo_gfrm_fn(gfn):
         except:
             pass
     return xyarr
-            
+
 
 
 def init_xy_file_dict(dp, fn, rcpdind_fold_fn__tocopy=[]):
@@ -57,7 +119,7 @@ def init_xy_file_dict(dp, fn, rcpdind_fold_fn__tocopy=[]):
         print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
     nm='Analysis__XRDS_Bruker_Integrate' if 'original' in gfold else 'Analysis__XRDS_Bruker_Processed'
     return {'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'rcpind':rcpind, 'analysis_name':nm}
-    
+
 def get_rcpdlist_xrdolfder(p):
     temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy')]
     g_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.gfrm')]
@@ -102,7 +164,7 @@ def get_rcpdlist_xrdolfder(p):
         while ts in [rcpdv['name'] for rcpdv in rcpdlist]:
             timestampssecs+=1
             ts=time.strftime('%Y%m%d.%H%M%S',time.gmtime(timestampssecs))
-        
+
         xyarr=get_xy__solo_gfrm_fn(gfn)
 
         rcpd['name']=ts
@@ -111,7 +173,7 @@ def get_rcpdlist_xrdolfder(p):
         rcpdind_fold_fn__tocopy+=[(rcpind, gfold, gfn)]
         #TODO: add default parameters like Bruker name
         rcpdlist+=[rcpd]
-    
+
     xyfiledlist=[init_xy_file_dict(dp, fn, rcpdind_fold_fn__tocopy=rcpdind_fold_fn__tocopy) for dp, fn in e_tups]
     return rcpdind_fold_fn__tocopy, rcpdlist, xyfiledlist#the fns in rcpdlist
     #xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
