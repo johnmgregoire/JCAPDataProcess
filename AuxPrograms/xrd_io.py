@@ -29,7 +29,6 @@ bstuplist= [\
     ('psi', './/DataEntityContainer/Data', 'VisibleName', 'Psi', './/Position', ['Value', 'Unit']), \
     ('phi', './/DataEntityContainer/Data', 'VisibleName', 'Phi', './/Position', ['Value', 'Unit']), \
     ('beam_translation', './/DataEntityContainer/Data', 'VisibleName', 'Beam Transl.', './/Position', ['Value', 'Unit']), \
-    ('beam_translation', './/DataEntityContainer/Data', 'VisibleName', 'Beam Transl.', './/Position', ['Value', 'Unit']), \
     ('track_distance', './/DataEntityContainer/Data', 'VisibleName', 'TrackDistance', './/Position', ['Value', 'Unit']), \
     ('motor_z', './/DataEntityContainer/Data', 'VisibleName', 'Z', './/Position', ['Value', 'Unit']), \
     ('scan_type', './/LogicData/DataEntityContainer', '{http://www.w3.org/2001/XMLSchema-instance}type', 'ScanSetup', '', ['VisibleName']), \
@@ -46,7 +45,7 @@ bstuplist= [\
 thetatuplist= [\
     ('Start', ['Value', 'Unit']), \
     ('Increment', ['Value', 'Unit']), \
-    ('End', ['Value', 'Unit']), \
+    ('Stop', ['Value', 'Unit']), \
     ]
 
 getxylist=lambda tree: [node.text.split(',')[:2] for node in tree.iter('Datum')]
