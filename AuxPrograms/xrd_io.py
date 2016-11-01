@@ -25,7 +25,7 @@ bstuplist= [\
     ('collimator', './/BeamPathContainerAbc/BankPositions/BankPosition', 'BankPosition', '4', './/MountedComponent', ['VisibleName']), \
     ('detector_type', './/BeamPathContainerAbc/BankPositions/BankPosition', 'BankPosition', '0', './/MountedComponent', ['VisibleName']), \
     ('theta', './/DataEntityContainer/Data', 'VisibleName', 'Theta', './/Position', ['Value', 'Unit']), \
-    ('2theta', './/DataEntityContainer/Data', 'VisibleName', 'Two Theta', './/Position', ['Value', 'Unit']), \
+    ('two_theta', './/DataEntityContainer/Data', 'VisibleName', 'Two Theta', './/Position', ['Value', 'Unit']), \
     ('psi', './/DataEntityContainer/Data', 'VisibleName', 'Psi', './/Position', ['Value', 'Unit']), \
     ('phi', './/DataEntityContainer/Data', 'VisibleName', 'Phi', './/Position', ['Value', 'Unit']), \
     ('beam_translation', './/DataEntityContainer/Data', 'VisibleName', 'Beam Transl.', './/Position', ['Value', 'Unit']), \
@@ -52,23 +52,26 @@ getxylist=lambda tree: [node.text.split(',')[:2] for node in tree.iter('Datum')]
 fmtbrukertimestamp=lambda s:s.partition('.')[0].replace('-','').replace(':','').replace('T','.')
 def get_bmsl_dict(p):
     paramd={}
-
+    updatefcn=lambda paramd, k, v:paramd.update([(k.replace('2','two_'), v)] if len(v)>0 else [])
     with open(p, 'rt') as f:
         tree = ElementTree.parse(f)
     for tup in bstuplist:
         if len(tup)==3: # xpath to node is unique
             keyname, tpath, tattr = tup
             for node in tree.iterfind(tpath):
-                paramd[keyname]=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                strval=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                updatefcn(paramd, keyname, strval)
         else: # xpath is not unique, find the correct node by matching parent attributes
             keyname, ppath, pattr, pval, tpath, tattr = tup
             for pnode in tree.iterfind(ppath):
                 if pnode.attrib[pattr]==pval:
                     if tpath=='': # match part of multi-attribute node
-                        paramd[keyname]=pnode.attrib[tattr[0]] if len(tattr)==1 else ' '.join([pnode.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                        strval=pnode.attrib[tattr[0]] if len(tattr)==1 else ' '.join([pnode.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                        updatefcn(paramd, keyname, strval)
                     else: # match parent attribute then iterate on children to find tag & value
                         for node in pnode.iterfind(tpath):
-                            paramd[keyname]=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                            strval=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                            updatefcn(paramd, keyname, strval)
 
     # spectial matching for theta/2theta setup. there's got to be a better way of crawling through these nodes
     for gpnode in tree.iterfind('.//ScanAxisList/ScanAxis'):
@@ -77,7 +80,9 @@ def get_bmsl_dict(p):
                 for pnode in gpnode.iterfind('.//ScanParameterAbc'):
                     if pnode.attrib['VisibleName']==tup[0]:
                         for node in pnode.iterfind('.//Value'):
-                            paramd['_'.join([gpnode.attrib['VisibleName'], tup[0]]).lower()]=' '.join([node.attrib[attr] for attr in tup[1]]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
+                            strval=' '.join([node.attrib[attr] for attr in tup[1]]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','').strip()
+                            keyname='_'.join([gpnode.attrib['VisibleName'], tup[0]]).lower()
+                            updatefcn(paramd, keyname, strval)
 
     #TODO: generate YYYYMMDD.HHMMSS timestamp string
     timestr=[node for node in tree.iter('TimeStampSaved')][0].text
