@@ -129,7 +129,8 @@ def get_rcpdlist_xrdolfder(p):
     rcpdind_fold_fn__tocopy=[]
     rcpind=-1#in case only gfrms
     for rcpind, (bfold, bfn) in enumerate(b_tups):
-        rcpd={'files_technique__XRDS':{'bsml_files':[], 'gfrm_files':OD([]), 'TEMP_gfrm_xy':OD([])}}
+        rcpd={'file_dlist':[]}
+        #{'files_technique__XRDS':{'bsml_files':[], 'gfrm_files':OD([]), 'TEMP_xy':OD([])}}
         bname=bfn[:-5]#strip .bsml
         popinds=[count for count, (dp, fn) in enumerate(g_tups) if os.path.split(dp)[1]==bname and fn.startswith(bname)]
         if len(popinds)==0:
@@ -138,19 +139,20 @@ def get_rcpdlist_xrdolfder(p):
         createtupfcn=lambda db_fn:tuple([eval(intstr.rstrip('.gfrm')) for intstr in db_fn[1].split('-')[-2:]]+list(db_fn))
         g__smpind_frameind_fold_fn=sorted([createtupfcn(g_tups.pop(i)) for i in popinds[::-1]])#sorted by sample ind then frame ind
         bsmld=get_bmsl_dict(os.path.join(bfold, bfn))
-        rcpd['files_technique__XRDS']['bsml_files']=['%s: xrds_bruker_bsml_file;' %bfn]#only 1 of these per rcp
+        rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'bsml_files',  'fn':bfn, 'fval':'xrds_bruker_bsml_file;'}]
+        #rcpd['files_technique__XRDS']['bsml_files']=['%s: xrds_bruker_bsml_file;' %bfn]#only 1 of these per rcp
         rcpdind_fold_fn__tocopy+=[(rcpind, bfold, bfn)]
         for count, (xstr, ystr) in enumerate(bsmld['xystr_list']):
             xyarr=numpy.float64([eval(xstr), eval(ystr)])
             for smpind, frameind, gfold, gfn in g__smpind_frameind_fold_fn:#possibly not all gfrm got use but they were part of the bsml so they won't get treated as separate runs
                 if smpind==count:
-                    if gfn in rcpd['files_technique__XRDS']['gfrm_files'].keys():
+                    if gfn in [tempd['fn'] for tempd in rcpd['file_dlist']]:
+                    #if gfn in rcpd['files_technique__XRDS']['gfrm_files'].keys():
                         print 'ERROR: mutliple gfrm found associated with the same bsml'
                         print bfold, bfn
                         print gfold, gfn
                         raiseerror
-                    rcpd['files_technique__XRDS']['gfrm_files'][gfn]='xrds_bruker_gfrm_file;'
-                    rcpd['files_technique__XRDS']['TEMP_gfrm_xy'][gfn]=xyarr
+                    rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr}]
                     rcpdind_fold_fn__tocopy+=[(rcpind, gfold, gfn)]
         rcpd['name']=bsmld['timestamp']
         rcpd['parameters']=copy.deepcopy(bsmld['paramd'])
@@ -158,7 +160,7 @@ def get_rcpdlist_xrdolfder(p):
 
     for gfold, gfn in g_tups:
         rcpind+=1
-        rcpd={'files_technique__XRDS':{'gfrm_files':OD([]), 'TEMP_gfrm_xy':OD([])}}
+        rcpd={'file_dlist':[]}
         timestampssecs=os.path.getmtime(os.path.join(gfold, gfn))
         ts=time.strftime('%Y%m%d.%H%M%S',time.gmtime(timestampssecs))
         while ts in [rcpdv['name'] for rcpdv in rcpdlist]:
@@ -168,17 +170,18 @@ def get_rcpdlist_xrdolfder(p):
         xyarr=get_xy__solo_gfrm_fn(gfn)
 
         rcpd['name']=ts
-        rcpd['files_technique__XRDS']['TEMP_gfrm_xy'][gfn]=xyarr
-        rcpd['files_technique__XRDS']['gfrm_files'][gfn]='xrds_bruker_gfrm_file;'
+
+        rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr}]
+        
         rcpdind_fold_fn__tocopy+=[(rcpind, gfold, gfn)]
         #TODO: add default parameters like Bruker name
         rcpdlist+=[rcpd]
 
     xyfiledlist=[init_xy_file_dict(dp, fn, rcpdind_fold_fn__tocopy=rcpdind_fold_fn__tocopy) for dp, fn in e_tups]
-    return rcpdind_fold_fn__tocopy, rcpdlist, xyfiledlist#the fns in rcpdlist
+    return {'rcpdind_fold_fn__tocopy':rcpdind_fold_fn__tocopy, 'rcpdlist':rcpdlist, 'auxfiledlist':xyfiledlist}#the fns in rcpdlist
     #xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
 
 
-#p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
-#rcpdind_pathstocopy, rcpdlist, xyfiledlist=get_rcpdlist_xrdolfder(p)
+p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
+#maindatad=get_rcpdlist_xrdolfder(p)
 #p=r'K:\experiments\xrds\Lan\MaterialsProject-2\Vanadates\35345_ZrV_550C_3h'
