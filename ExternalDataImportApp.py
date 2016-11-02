@@ -50,10 +50,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
        
 
 
-#        AnaFileSelectTreeWidget
-#        ExpSaveComboBox
-#        AnaSaveComboBox
 
+        for cb in [self.ExpSaveComboBox, self.AnaSaveComboBox]:
+            for count, opt in enumerate(['Do not save', 'Save in TEMP as .run', 'Save as .run', 'Save as .done']):
+                cb.insertItem(count, opt)
+            cb.setCurrentIndex(3)
 
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
@@ -66,8 +67,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
         self.runtreeclass=treeclass_filedict(self.RunSelectTreeWidget)
         
-
-        QObject.connect(self.AnaFileSelectTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
         
         
         self.profiledefintionfcns=[self.xrds_profile]
@@ -78,6 +77,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             
 
         
+        self.RcpTreeWidgetFcns=treeclass_filedict(self.RcpTreeWidget)
+        self.ExpTreeWidgetFcns=treeclass_filedict(self.ExpTreeWidget)
         self.AnaTreeWidgetFcns=treeclass_filedict(self.AnaTreeWidget)
 
         self.cleardata()
@@ -86,15 +87,98 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def xrds_profile(self):
         self.importfolderfcn=get_rcpdlist_xrdolfder
         self.createfiledictsfcn=self.createfiledicts_xrds
+        self.datatype='xrds'
         
     def raiseerror(self):
         raiseerror
-   
+    def xrds_copy_xy_to_ana(self, afd, anafolder):
+        p=os.path.join(afd['folderpath'], afd['fn'])
+        newp=os.path.join(anafolder, afd['anafn'])
+        with open(p, mode='r') as f:
+            lines=f.readlines()
+        lines=[l.strip().replace(' ', ',') for l in lines]
+        lines[0]=afd['fval'].partition(';')[2].partition(';')[0]
+        s='\n'.join(lines)
+        with open(newp, mode='w') as f:
+            f.write(s)
+            
     def createfiledicts_xrds(self):
-        return
-
+        self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
+        self.ana_filedict_tocopy=[]
+        self.all_rcp_dict={}
+        self.expdict={}
+        self.expdict['experiment_type']=self.datatype
+        self.anadict={}
+        nextana=1
+        anabool=int(self.AnaSaveComboBox.currentIndex())>0
+        for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
+            rcpd=self.maindatad['rcpdlist'][ind_rcp]
+            
+            rcpdict={}
+            runk='run__%d' %(runcount+1)
+            self.expdict[runk]={}
+            exprund=self.expdict[runk]
+            exprund['run_use']='data'
+            
+            exprund['rcp_file']=rcpd['name']+'.rcp'
+            
+            for k in ['name', 'parameters']:
+                rcpdict[k]=rcpd[k]
+                exprund[k]=rcpd[k]
+            
+            for fd in rcpd['file_dlist']:
+                if not fd['tech'] in rcpdict.keys():
+                    rcpdict[fd['tech']]={}
+                    exprund[fd['tech']]={}
+                if not fd['type'] in rcpdict[fd['tech']].keys():
+                    rcpdict[fd['tech']][fd['type']]={}
+                    exprund[fd['tech']][fd['type']]={}
+                expfnval=str(fd['treeitem'].text(0)).partition(':')[2].strip()
+                smp=expfnval.rpartition(';')[2].strip()
+                rcpdict[fd['tech']][fd['type']][fd['fn']]=expfnval
+                exprund[fd['tech']][fd['type']][fd['fn']]=expfnval
+                if anabool:
+                    item=fd['treeitem']
+                    if int(item.childCount())==0:
+                        continue
+                    for i in range(item.childCount()):
+                        an_name_item=item.child(i)
+                        if not bool(an_name_item.checkState(0)):
+                            continue
+                        an_name=str(an_name_item.text(0))
+                        anafiledlist=fd['aux_files'][an_name]
+                        ana__d=None
+                        for afd in anafiledlist:
+                            if not bool(afd['treeitem'].checkState(0)):
+                                continue
+                            if ana__d is None:
+                                anl=[k for k, v in self.anadict.iteritems() if k.startswith('ana__') and an_name==v['name']]
+                                if len(anl)==0:
+                                    anak='ana__%d' %nextana
+                                    nextana+=1
+                                    self.anadict[anak]={}
+                                    self.anadict[anak]['name']=an_name
+                                    self.anadict[anak]['technique']=self.datatype
+                                    ana__d=self.anadict[anak]
+                                else:
+                                    anak=anl[0]
+                                    ana__d=self.anadict[anak]
+                                anrunk='files_%s' %runk
+                                if not anrunk in ana__d.keys():
+                                    ana__d[anrunk]={}
+                                ana__d=ana__d[anrunk]
+                            newfn='%s_%s' %(anak, afd['fn'])
+                            afd['anafn']=newfn
+                            afd['copy_fcn']=self.xrds_copy_xy_to_ana
+                            ana__d[newfn]=afd['fval']+smp#ana file val expected to have all other info included already
+                            self.ana_filedict_tocopy+=[afd]
+            self.all_rcp_dict['rcp_file__%d' %(runcount+1)]=rcpdict
+        self.RcpTreeWidgetFcns.filltree(self.all_rcp_dict, startkey='', laststartswith='rcp_file__')
+        self.ExpTreeWidgetFcns.filltree(self.expdict, startkey='', laststartswith='run__')
+        self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='', laststartswith='ana__')
+        
     def edittreeitem(self, item, column):
-        self.editparams(self.AnaTreeWidget, item=item, column=column)
+        self.editparams(None, item=item, column=column)
         
     def editparams(self, widget, item=None, column=0):
         if item is None:
@@ -125,15 +209,16 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             if not idialog.exec_():
                 return
         item.setText(column,''.join([k, ans]))
-        kl=[k.partition(':')[0].strip()]
-        while not item.parent() is None:
-            item=item.parent()
-            kl=[str(item.text(0)).partition(':')[0].strip()]+kl
+        #below here is for modifying the dict from which the tree was made, but that is not needed in original operation owhere the tempana__ and ana files are editable but not .rcp, .exp, .ana trees
+#        kl=[k.partition(':')[0].strip()]
+#        while not item.parent() is None:
+#            item=item.parent()
+#            kl=[str(item.text(0)).partition(':')[0].strip()]+kl
 
-        d=self.anadict
-        while len(kl)>1:
-            d=d[kl.pop(0)]
-        d[kl[0]]=ans
+#        d=self.anadict
+#        while len(kl)>1:
+#            d=d[kl.pop(0)]
+#        d[kl[0]]=ans
 
     def importfolder(self, p=None):
         if p is None:
@@ -161,10 +246,19 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             mainitem=QTreeWidgetItem(['temprun__%d' %(count+1)], 0)
 
             self.runtreeclass.fillmainitem_with_dlistvalues(mainitem, rcpd['file_dlist'], k='fn', v='fval')
+            for fd in rcpd['file_dlist']:
+                if 'aux_files' in fd.keys():
+                    for an_name, auxfiledlist in fd['aux_files'].items():
+                        item=QTreeWidgetItem([an_name], 0)
+                        item.setExpanded(False)
+                        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+                        item.setCheckState(0, Qt.Checked)
+                        self.runtreeclass.fillmainitem_with_dlistvalues(item, auxfiledlist, k='fn', v='fval', checkbool=True)
+                        fd['treeitem'].addChild(item)
             self.RunSelectTreeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(True)
             
-        self.runtreeclassmaketoplevelchecked()
+        self.runtreeclass.maketoplevelchecked()
  
 
         self.foldernameLineEdit.setText(p)
@@ -173,7 +267,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
 
     def get_plate_from_folder_path(self, p):
-        dr, foldn=os.path.split(p)[1]
+        foldn=os.path.split(p)[1]
         serialstr=foldn.partition('_')[0]
         if len(serialstr)<3 or not serialstr.isdigit():
             return None
@@ -270,6 +364,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
  
     def saveana(self, dontclearyet=False, anatype=None, rundone=None):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
+        for afd in self.ana_filedict_tocopy:
+            afd['copy_fcn'](afd, anafolder)# could be shutil.copy if no changes required
+
 #        if not 'ana_version' in self.anafilestr:
 #            idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
 #            idialog.exec_()
@@ -328,41 +425,65 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
     def lookupsamples(self, xyfcns=[]):
         if len(xyfcns)==0:
-            for count, le in enumerate([self.CalcXLineEdit, self.CalcYLineEdit]):
-                s=str(le.text()).strip()
-                if count==0:
-                    fcn=lambda X:eval(s)
-                else:
-                    fcn=lambda Y:eval(s)
-                try:
-                    fcn(1.)
-                except:
-                    messageDialog(self, 'Error with platemap X,Y formula').exec_()
-                    return
-                xyfcns+=[fcn]
-        xf, yf=xyfcns
+            try:
+                fcnx=lambda X:eval(str(self.CalcXLineEdit.text()).strip())
+                fcnx(1.)
+                fcny=lambda Y:eval(str(self.CalcYLineEdit.text()).strip())
+                fcny(1.)
+            except:
+                messageDialog(self, 'Error with platemap X,Y formula').exec_()
+                return
+        else:
+            fcnx, fcny=xyfcns
+        
+        xall, yall=numpy.array([fd['xyarr'] for count, rcpd in enumerate(self.maindatad['rcpdlist']) for fd in rcpd['file_dlist'] if 'xyarr' in fd.keys()]).T
+        
+        xpmall=fcnx(xall)
+        ypmall=fcny(yall)
+        xypmall=list(numpy.array([xpmall, ypmall]).T)
+        
         pmx=numpy.array([d['x'] for d in self.platemapdlist])
         pmy=numpy.array([d['y'] for d in self.platemapdlist])
         pms=[d['sample_no'] for d in self.platemapdlist]
+        
+
         xyplotinfo=[]
         for count, rcpd in enumerate(self.maindatad['rcpdlist']):
             for fd in rcpd['file_dlist']:
                 if 'xyarr' in fd.keys():
-                    xv, yv=fd['xyarr']
-                    pmi=numpy.argmin((pmx-xf(xv))**2+(pmy-yf(yv))**2)
+                    xv, yv=xypmall.pop(0)
+                    pmi=numpy.argmin((pmx-xv)**2+(pmy-yv)**2)
                     smpstr='%d' %pms[pmi]
                     fd['fval']=';'.join([fd['fval'].partition(';')[0],smpstr])
-                    fd['treeitem'].setText(0, ': '.join([d['fn'], fd['fval']]))
-                    xyplotinfo+=[(xv, yv, smpstr)]
+                    fd['treeitem'].setText(0, ': '.join([fd['fn'], fd['fval']]))#the smpstr is kept track of in the tree widget so that it is user editable
+                    xyplotinfo+=[(xv, yv, pmx[pmi], pmy[pmi], smpstr)]
+        self.plot(xyplotinfo)
 
     def plot(self, xyplotinfo):
         
         self.plotw_plate.axes.cla()
         ax=self.plotw_plate.axes
-        for xv, yv, s in xyplotinfo:
+        xl=[]
+        yl=[]
+        for xv, yv, xp, yp, s in xyplotinfo:
             ax.plot(xv, yv, 'ko')
+            ax.plot([xv, xp], [yv, yp], 'r-')
             ax.text(xv, yv, s, ha='center', va='bottom')
-
+            xl+=[xv]
+            yl+=[yv]
+        
+        circ = pylab.Circle((50, 47.3), radius=50., edgecolor='k', facecolor='none')
+        ax.add_patch(circ)
+        
+        x0, x1=0, 100
+        y0, y1=0, 97.3
+        x0=min(x0, min(xl))
+        x1=max(x1, max(xl))
+        y0=min(y0, min(yl))
+        y1=max(y1, max(yl))
+        ax.set_xlim(x0, x1)
+        ax.set_ylim(y0, y1)
+        
         self.plotw_plate.fig.canvas.draw()
         
      
@@ -394,6 +515,9 @@ class treeclass_filedict():
     
     def getlistofchecktoplevelitems(self):
         return [str(self.treeWidget.topLevelItem(count).text(0)).strip().strip(':') for count in range(int(self.treeWidget.topLevelItemCount()))\
+            if bool(self.treeWidget.topLevelItem(count).checkState(0))]
+    def getindsofchecktoplevelitems(self):
+        return [count for count in range(int(self.treeWidget.topLevelItemCount()))\
             if bool(self.treeWidget.topLevelItem(count).checkState(0))]
     def maketoplevelchecked(self):
         for count in range(int(self.treeWidget.topLevelItemCount())):
@@ -427,11 +551,15 @@ class treeclass_filedict():
             mainitem.setExpanded(False)
             
         
-    def fillmainitem_with_dlistvalues(self, mainitem, dlist, k='k', v='v', updatedwithitems=True):
-         for d in dlist:
+    def fillmainitem_with_dlistvalues(self, mainitem, dlist, k='k', v='v', updatedwithitems=True, checkbool=None):
+        for d in dlist:
             item=QTreeWidgetItem([': '.join([str(d[k]), str(d[v])])], 0)
+            if not checkbool is None:
+                item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+                item.setCheckState(0, Qt.Checked if checkbool else Qt.Unchecked)
             mainitem.addChild(item)
-            d['treeitem']=item
+            if updatedwithitems:
+                d['treeitem']=item
     def nestedfill(self, d, parentitem, laststartswith='files_'):
         nondictkeys=sorted([k for k, v in d.iteritems() if not isinstance(v, dict)])
         for k in nondictkeys:
