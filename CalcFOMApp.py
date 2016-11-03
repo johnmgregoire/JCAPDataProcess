@@ -278,7 +278,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         auxexpanadict=readexpasdict(auxexpanapath, includerawdata=False, returnzipclass=True) if exp else readana(auxexpanapath, stringvalues=False, erroruifcn=None)
         rp=os.path.split(auxexpanapath)[0]
-        dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_K) if exp else (ANAFOLDERS_J+ANAFOLDERS_K)
+        dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
         rp=compareprependpath(dbpath_folds, rp)
         auxexpanadict['auxexpanapath_relative']=rp.replace(chr(92),chr(47))
         auxexpanadict['auxexpanapath']=auxexpanapath
@@ -334,7 +334,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.clearanalysis(anadict=anadict)
         #rp=self.exppath.replace('.pck', '.exp')
         rp=os.path.split(self.exppath)[0]
-        rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, rp)
+        rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_L, rp)
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
         print 'active experiment_path is %s' %(self.anadict['experiment_path'])
         self.anadict['experiment_name']=self.expfiledict['name']

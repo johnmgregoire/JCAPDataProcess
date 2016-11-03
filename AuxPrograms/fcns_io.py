@@ -92,12 +92,12 @@ def copyanafiles(src, dest):
             shutil.copy(os.path.join(src, fn), os.path.join(dest, fn))
 def selectexpanafile(parent, exp=True, markstr=None):#TODO support getting exp and ana from .zip
     if exp:
-        fold=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_K, '')
+        fold=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_L, '')
         ext='.exp'
         if markstr is None:
             markstr='open EXP'
     else:
-        fold=tryprependpath(ANAFOLDERS_J+ANAFOLDERS_K, '')
+        fold=tryprependpath(ANAFOLDERS_J+ANAFOLDERS_L, '')
         ext='.ana'
         if markstr is None:
             markstr='open ANA'
@@ -673,7 +673,7 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
 def prepend_root_exp_path(p, exp=True):
     parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
     for parentfold in [tryprependpath(EXPFOLDERS_J if exp else ANAFOLDERS_J, parentfoldtemp), \
-                            tryprependpath(EXPFOLDERS_K if exp else EXPFOLDERS_J, parentfoldtemp)]:
+                            tryprependpath(EXPFOLDERS_L if exp else EXPFOLDERS_J, parentfoldtemp)]:
         if len(parentfold)==0:
             continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
@@ -745,7 +745,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
     if runtodonesavep is None and savefolder is None:
         timename=timestampname()
         expfiledict['name']=timename
-        Kfold=tryprependpath(EXPFOLDERS_K, '')#one of these better exist
+        Kfold=tryprependpath(EXPFOLDERS_L, '')#one of these better exist
         savep=os.path.join(os.path.join(os.path.join(Kfold, experiment_type), timename+rundone), timename+'.exp')
 
         if savep is None or not os.path.isdir(os.path.split(os.path.split(savep)[0])[0]):
@@ -1560,7 +1560,7 @@ def getanadefaultfolder(erroruifcn=None):
 
     timename=time.strftime('%Y%m%d.%H%M%S')
 
-    folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), 'temp'), timename+'.incomplete')
+    folder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_L, ''), 'temp'), timename+'.incomplete')
 
     try:
         if not os.path.isdir(folder):
@@ -1585,7 +1585,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
         timename=os.path.split(srcfolder)[1].partition('.incomplete')[0]
     elif savefolder is None:
         timename=timestampname()
-        savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_K, ''), analysis_type), timename+rundone)
+        savefolder=os.path.join(os.path.join(tryprependpath(ANAFOLDERS_L, ''), analysis_type), timename+rundone)
     else:
         timename=os.path.split(savefolder)[1]
         if timename.count('.')>1:
@@ -1884,11 +1884,11 @@ def gen_pathd_absorrel_expanapath(p, desttype='eche', exp=False, only_check_temp
     if '.copied' in srcabs: #found probably on J maybe on K but if so copied which means can't be temp
         return None
     if only_check_temp:
-        kfold=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, '')
+        kfold=tryprependpath(EXPFOLDERS_L if exp else ANAFOLDERS_L, '')
         if os.path.normpath(srcabs).startswith(os.path.normpath(kfold)) and (not 'temp' in p) and ('.done' in srcabs):#p is on K and not in temp so probably in a good place
             return None
         return {}#if onyl checking in temp and it is in temp (or not on K) then can't provide a solution
-    deststartswith=tryprependpath(EXPFOLDERS_K if exp else ANAFOLDERS_K, desttype)
+    deststartswith=tryprependpath(EXPFOLDERS_L if exp else ANAFOLDERS_L, desttype)
     if os.path.normpath(srcabs).startswith(os.path.normpath(deststartswith)):#already in desired place, could be in subfolder and don't check that as of now
         if not ('.run' in p):#then presumably is .done in K and will go to J soon
             return None

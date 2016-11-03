@@ -111,9 +111,9 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
         
     
     def searchexp(self):
-        self.searchfcn(EXPFOLDERS_J+EXPFOLDERS_K, ana=False)
+        self.searchfcn(EXPFOLDERS_J+EXPFOLDERS_L, ana=False)
     def searchana(self):
-        self.searchfcn(ANAFOLDERS_J+ANAFOLDERS_K, ana=True)
+        self.searchfcn(ANAFOLDERS_J+ANAFOLDERS_L, ana=True)
     
     def searchfcn(self, searchfolds, ana=True):
         searchstr=str(self.searchLineEdit.text())

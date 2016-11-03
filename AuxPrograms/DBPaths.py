@@ -15,11 +15,11 @@ else:
 
     EXPFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\experiment', r'J:\hte_jcap_app_proto\experiment', ]
 
-    EXPFOLDERS_K=[r'\\htejcap.caltech.edu\share\proc\processes\experiment', r'L:\processes\experiment', ]
+    EXPFOLDERS_L=[r'\\htejcap.caltech.edu\share\proc\processes\experiment', r'L:\processes\experiment', ]
 
     ANAFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\analysis', r'J:\hte_jcap_app_proto\analysis']
 
-    ANAFOLDERS_K=[r'\\htejcap.caltech.edu\share\proc\processes\analysis', r'L:\processes\analysis', ]
+    ANAFOLDERS_L=[r'\\htejcap.caltech.edu\share\proc\processes\analysis', r'L:\processes\analysis', ]
 
     FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\FilterSmoothMaps', r'K:\users\hte\platemaps\FilterSmoothMaps', ]
 
@@ -32,7 +32,7 @@ else:
 
 
 
-    for l in [PLATEFOLDERS, RUNFOLDERS, EXPFOLDERS_J, EXPFOLDERS_K, ANAFOLDERS_J, ANAFOLDERS_K, FOMPROCESSFOLDERS]:
+    for l in [PLATEFOLDERS, RUNFOLDERS, EXPFOLDERS_J, EXPFOLDERS_L, ANAFOLDERS_J, ANAFOLDERS_L, FOMPROCESSFOLDERS]:
         for i in range(len(l))[::-1]:
             if not os.path.isdir(l[i]):
                 l.pop(i)

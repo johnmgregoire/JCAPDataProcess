@@ -434,7 +434,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         if self.anadict is None or len(self.anadict)==0:
             saveopt=0
         if saveopt>0:
-            rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_K, expfolderpath)
+            rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_L, expfolderpath)
             self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
             self.anadict['experiment_name']=expname
             self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')

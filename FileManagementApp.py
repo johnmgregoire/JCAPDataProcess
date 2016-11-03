@@ -45,8 +45,8 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         self.treeWidget=self.foldersTreeWidget
         self.toplevelitems=[]
         
-        self.anafolder=tryprependpath(ANAFOLDERS_K, '')
-        self.expfolder=tryprependpath(EXPFOLDERS_K, '')
+        self.anafolder=tryprependpath(ANAFOLDERS_L, '')
+        self.expfolder=tryprependpath(EXPFOLDERS_L, '')
         if len(self.anafolder)==0 and len(self.expfolder)==0:
             print 'cannot find exp or ana folder'
             return

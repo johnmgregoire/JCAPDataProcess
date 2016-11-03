@@ -70,7 +70,7 @@ class filesearchDialog(QDialog, Ui_filesearchDialog):
         self.foldersearchstr=str(self.foldernameLineEdit.text()).strip()
         searchtups=[]
         
-        for i, (cb, lab, fold) in enumerate(zip([self.exp_k_checkBox, self.exp_j_checkBox, self.ana_k_checkBox, self.ana_j_checkBox], ['EXP', 'EXP', 'ANA', 'ANA'], [tryprependpath(EXPFOLDERS_K, ''), tryprependpath(EXPFOLDERS_J, ''), tryprependpath(ANAFOLDERS_K, ''), tryprependpath(ANAFOLDERS_J, '')])):
+        for i, (cb, lab, fold) in enumerate(zip([self.exp_k_checkBox, self.exp_j_checkBox, self.ana_k_checkBox, self.ana_j_checkBox], ['EXP', 'EXP', 'ANA', 'ANA'], [tryprependpath(EXPFOLDERS_L, ''), tryprependpath(EXPFOLDERS_J, ''), tryprependpath(ANAFOLDERS_L, ''), tryprependpath(ANAFOLDERS_J, '')])):
             if len(fold)==0 or not cb.isChecked(): #didn't find exp or ana folder but found other one
                 self.toplevelitems+=[None]
                 continue
