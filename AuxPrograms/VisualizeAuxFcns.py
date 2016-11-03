@@ -60,6 +60,7 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
     if anakl is None:
         anakl=sort_dict_keys_by_counter(anafiledict, keystartswith='ana__')
     for anak in anakl:
+        foundafomfile=False
         anad=anafiledict[anak]
         anaint=int(anak.partition('ana__')[2])
         for anarunk, anarund in anad.iteritems():
@@ -85,7 +86,32 @@ def readandformat_anafomfiles(anafolder, anafiledict, l_fomdlist, l_fomnames, l_
                         pmkeys=platemap4keys_default
                     l_platemapkeys+=[pmkeys]
                     treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
-
+                    foundafomfile=True
+        if not foundafomfile:
+            fomdlist=[]
+            foundsmps=[]
+            for anarunk, anarund in anad.iteritems():
+                if not anarunk.startswith('files_run__'):
+                    continue
+                runint=eval(anarunk.partition('files_run__')[2])
+                for typek, typed in anarund.iteritems():
+                    newsmps=[filed['sample_no'] for filek, filed in typed.iteritems() if 'sample_no' in filed.keys() and filed['sample_no']>0 and not filed['sample_no'] in foundsmps]
+                    fomdlist+=[{'sample_no':smp, 'anaint':anaint, 'runint':runint} for smp in newsmps]
+                    foundsmps+=newsmps
+            if len(fomdlist)>0:
+                keys=fomdlist[0].keys()
+                l_fomdlist+=[fomdlist]
+                l_fomnames+=[keys]
+                csvheaderdict={}
+                csvheaderdict['anak']=anak
+                l_csvheaderdict+=[csvheaderdict]
+                if 'platemap_comp4plot_keylist' in anad.keys():
+                    pmkeys=anad['platemap_comp4plot_keylist'].split(',')
+                else:
+                    pmkeys=platemap4keys_default
+                l_platemapkeys+=[pmkeys]
+                treefcns.appendFom(keys, csvheaderdict, anak=anak, anad=anad)
+                    
 class legendformatwidget(QDialog):
     def __init__(self, parent=None, title=''):#, arr=None):
         super(legendformatwidget, self).__init__(parent)

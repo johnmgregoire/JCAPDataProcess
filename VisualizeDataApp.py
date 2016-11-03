@@ -991,8 +991,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         anarund=self.anafiledict[anak][anarunk]
         mainitem=self.widgetItems_pl_ru_te_ty_co[2]
         #allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
-        fn_filed_tosearch=[(fn, filed) for techk, techd in anarund.iteritems() for fn, filed in techd.iteritems() if techk.startswith('inter_') and filed['sample_no']==smp]#techk in allowedvals 
-        
+        fn_filed_tosearch=[(fn, filed) for techk, techd in anarund.iteritems() for fn, filed in techd.iteritems() \
+                 if 'sample_no' in filed.keys() and 'keys' in filed.keys() and filed['sample_no']==smp]#techk in allowedvals 
+            #remove techk.startswith('inter_') and  ion 20161103 to allow searching of misc_files
         for count, k in enumerate(arrkeys):
             if k=='None':
                 continue
@@ -1027,12 +1028,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         else:
             searchstrs=[str(self.SelectTreeFileFilterTopLevelItem.child(i).text(0)).strip() for i in range(self.SelectTreeFileFilterTopLevelItem.childCount()) if bool(self.SelectTreeFileFilterTopLevelItem.child(i).checkState(0))]
 
-        fn_filed_tosearch=[(fn, filed) for techk, techd in techitems for typek, typed in techd.iteritems() for fn, filed in typed.iteritems() if typek in typeallowedvals and filed['sample_no']==smp and (not (False in [s in fn for s in searchstrs]))]
+        fn_filed_tosearch=[(fn, filed) for techk, techd in techitems for typek, typed in techd.iteritems() for fn, filed in typed.iteritems() \
+                if typek in typeallowedvals and 'sample_no' in filed.keys() and filed['sample_no']==smp and (not (False in [s in fn for s in searchstrs]))]
         
         for count, k in enumerate(arrkeys):
             if k=='None':
                 continue
-            fn_filed_keyind=[(fn, filed, filed['keys'].index(k)) for fn, filed in fn_filed_tosearch if k in filed['keys']]
+            fn_filed_keyind=[(fn, filed, filed['keys'].index(k)) for fn, filed in fn_filed_tosearch if 'keys' in filed.keys() and k in filed['keys']]
             if len(fn_filed_keyind)>0:#ideally this is length 1 because if onlger that means foudn the same array multiple places and choosing the 1 found first
                 fn, filed, keyind=fn_filed_keyind[0]
                 selcolinds=[keyind]

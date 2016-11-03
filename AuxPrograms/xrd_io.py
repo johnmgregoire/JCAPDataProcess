@@ -122,20 +122,22 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
     an_name='Analysis__XRDS_Bruker_Integrate' if 'original' in dp else 'Analysis__XRDS_Bruker_Process'
     afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'misc_files', 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
-    if not 'aux_files' in fd.keys():
-        fd['aux_files']={}
-    if not an_name in fd['aux_files'].keys():
-        fd['aux_files'][an_name]=[]
-    fd['aux_files'][an_name]+=[afd]
+    if not 'ana_files' in fd.keys():
+        fd['ana_files']={}
+    if not an_name in fd['ana_files'].keys():
+        fd['ana_files'][an_name]=[]
+    fd['ana_files'][an_name]+=[afd]
     return False
     
 
 
 def get_rcpdlist_xrdolfder(p):
-    temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy')]
+    temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy') or fn.endswith('.eva') or fn.endswith('.txt')]
     g_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.gfrm')]
     b_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.bsml')]
     e_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.xy')]
+    m_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.eva')]
+    t_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.txt')]
     rcpdlist=[]
     #rcpdind_fold_fn__tocopy=[]
     rcpind=-1#in case only gfrms
@@ -186,7 +188,10 @@ def get_rcpdlist_xrdolfder(p):
         rcpdlist+=[rcpd]
     for dp, fn in e_tups:
         find_gfrm_error_bool=xy_file_dict_into_rcpdlist(dp, fn, rcpdlist)
-    return {'rcpdlist':rcpdlist}#the fns in rcpdlist
+    multirun_ana_files={}
+    multirun_ana_files['Analysis__Bruker_Eva']=[{'folderpath':dp, 'fn':fn, 'type':'misc_files', 'fval':'xrds_bruker_eva_file;'} for dp, fn in m_tups]
+    multirun_ana_files['Analysis__User_Notes']=[{'folderpath':dp, 'fn':fn, 'type':'misc_files', 'fval':'xrds_user_txt_file;'} for dp, fn in t_tups]
+    return {'rcpdlist':rcpdlist, 'multirun_ana_files':multirun_ana_files}#the fns in rcpdlist
     #xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
 
 
