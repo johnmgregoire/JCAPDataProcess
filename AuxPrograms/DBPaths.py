@@ -15,11 +15,11 @@ else:
 
     EXPFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\experiment', r'J:\hte_jcap_app_proto\experiment', ]
 
-    EXPFOLDERS_K=[r'\\htejcap.caltech.edu\share\home\processes\experiment', r'K:\processes\experiment', ]
+    EXPFOLDERS_K=[r'\\htejcap.caltech.edu\share\proc\processes\experiment', r'L:\processes\experiment', ]
 
     ANAFOLDERS_J=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\analysis', r'J:\hte_jcap_app_proto\analysis']
 
-    ANAFOLDERS_K=[r'\\htejcap.caltech.edu\share\home\processes\analysis', r'K:\processes\analysis', r'\\hte-nasv-02.htejcap.caltech.edu\home\processes\analysis', ]
+    ANAFOLDERS_K=[r'\\htejcap.caltech.edu\share\proc\processes\analysis', r'L:\processes\analysis', ]
 
     FOMPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\users\hte\platemaps\FilterSmoothMaps', r'K:\users\hte\platemaps\FilterSmoothMaps', ]
 
@@ -38,5 +38,3 @@ else:
                 l.pop(i)
         if len(l)==0:
             print 'WARNING: some DBPaths have no remaining options'
-
-
