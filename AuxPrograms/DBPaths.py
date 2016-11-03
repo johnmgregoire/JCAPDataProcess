@@ -26,6 +26,7 @@ else:
     PLATEMAPFOLDERS=[r'\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\map', r'J:\hte_jcap_app_proto\map', \
                            r'\\htejcap.caltech.edu\share\home\users\hte\platemaps', r'ERT',r'K:\users\hte\platemaps']
 
+    EXPERIMENT_DROP_FOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments', r'K:\experiments']
 
     XRFSPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments\xrfs\calibration_libraries', r'K:\experiments\xrfs\calibration_libraries', ]
 

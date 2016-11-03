@@ -153,12 +153,12 @@ can be performed</string>
     <rect>
      <x>10</x>
      <y>120</y>
-     <width>265</width>
+     <width>191</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>Choose RUNs to include:</string>
+    <string>Choose Data to include:</string>
    </property>
   </widget>
   <widget class="QTreeWidget" name="RunSelectTreeWidget">
@@ -371,7 +371,7 @@ can be performed</string>
     </rect>
    </property>
    <property name="text">
-    <string>X+47.3</string>
+    <string>Y+47.3</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="CalcYLineEdit">
@@ -384,7 +384,7 @@ can be performed</string>
     </rect>
    </property>
    <property name="text">
-    <string>Y+50</string>
+    <string>X+50</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_16">
@@ -433,6 +433,38 @@ can be performed</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="SaveFilesPushButton">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>90</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Considering the files already in the EXP, keep the files that meet all criteria</string>
+   </property>
+   <property name="text">
+    <string>Save RCP/EXP/ANA</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="AddMiscAnaPushButton">
+   <property name="geometry">
+    <rect>
+     <x>970</x>
+     <y>530</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Considering the files already in the EXP, keep the files that meet all criteria</string>
+   </property>
+   <property name="text">
+    <string>Add Misc File</string>
    </property>
   </widget>
  </widget>

@@ -84,7 +84,6 @@ def get_bmsl_dict(p):
                             keyname='_'.join([gpnode.attrib['VisibleName'], tup[0]]).lower()
                             updatefcn(paramd, keyname, strval)
 
-    #TODO: generate YYYYMMDD.HHMMSS timestamp string
     timestr=[node for node in tree.iter('TimeStampSaved')][0].text
     timestamp=fmtbrukertimestamp(timestr)
     try:
@@ -122,7 +121,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         numchars, fd=sorted([(numcharsincommin(dp, fd['folderpath']), fd)] for fd in fdlist)[-1]#choose one with beginning path most similar
         print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
     an_name='Analysis__XRDS_Bruker_Integrate' if 'original' in dp else 'Analysis__XRDS_Bruker_Process'
-    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
+    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'misc_files', 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
     if not 'aux_files' in fd.keys():
         fd['aux_files']={}
     if not an_name in fd['aux_files'].keys():
@@ -142,7 +141,6 @@ def get_rcpdlist_xrdolfder(p):
     rcpind=-1#in case only gfrms
     for rcpind, (bfold, bfn) in enumerate(b_tups):
         rcpd={'file_dlist':[]}
-        #{'files_technique__XRDS':{'bsml_files':[], 'gfrm_files':OD([]), 'TEMP_xy':OD([])}}
         bname=bfn[:-5]#strip .bsml
         popinds=[count for count, (dp, fn) in enumerate(g_tups) if os.path.split(dp)[1]==bname and fn.startswith(bname)]
         if len(popinds)==0:
@@ -152,8 +150,7 @@ def get_rcpdlist_xrdolfder(p):
         g__smpind_frameind_fold_fn=sorted([createtupfcn(g_tups.pop(i)) for i in popinds[::-1]])#sorted by sample ind then frame ind
         bsmld=get_bmsl_dict(os.path.join(bfold, bfn))
         rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'bsml_files',  'fn':bfn, 'fval':'xrds_bruker_bsml_file;', 'folderpath':bfold}]
-        #rcpd['files_technique__XRDS']['bsml_files']=['%s: xrds_bruker_bsml_file;' %bfn]#only 1 of these per rcp
-        #rcpdind_fold_fn__tocopy+=[(rcpind, bfold, bfn)]
+
         for count, (xstr, ystr) in enumerate(bsmld['xystr_list']):
             xyarr=numpy.float64([eval(xstr), eval(ystr)])
             for smpind, frameind, gfold, gfn in g__smpind_frameind_fold_fn:#possibly not all gfrm got use but they were part of the bsml so they won't get treated as separate runs
@@ -165,7 +162,7 @@ def get_rcpdlist_xrdolfder(p):
                         print gfold, gfn
                         raiseerror
                     rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
-                    #rcpdind_fold_fn__tocopy+=[(rcpind, gfold, gfn)]
+
         rcpd['name']=bsmld['timestamp']
         rcpd['parameters']=copy.deepcopy(bsmld['paramd'])
         rcpdlist+=[rcpd]
@@ -184,9 +181,8 @@ def get_rcpdlist_xrdolfder(p):
         rcpd['name']=ts
 
         rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
-        
-        #rcpdind_fold_fn__tocopy+=[(rcpind, gfold, gfn)]
-        #TODO: add default parameters like Bruker name
+        rcpd['parameters']={}#other default paremetrs could be added here but at least need dictionary defined so plate_id can be added 
+
         rcpdlist+=[rcpd]
     for dp, fn in e_tups:
         find_gfrm_error_bool=xy_file_dict_into_rcpdlist(dp, fn, rcpdlist)
@@ -194,6 +190,6 @@ def get_rcpdlist_xrdolfder(p):
     #xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
 
 
-p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
+#p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
 #maindatad=get_rcpdlist_xrdolfder(p)
 #p=r'K:\experiments\xrds\Lan\MaterialsProject-2\Vanadates\35345_ZrV_550C_3h'

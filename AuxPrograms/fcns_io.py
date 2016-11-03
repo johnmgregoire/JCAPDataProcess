@@ -740,7 +740,7 @@ def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None,
         return returnvalfcn(os.path.join(runp_fullpath, fn))
     return None
 
-def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None):#for the num headerlines and rows to be written to .exp, saverawdat must be true
+def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_type='temp', rundone='.run', runtodonesavep=None, savefolder=None, file_attr_and_existence_check=True):#for the num headerlines and rows to be written to .exp, saverawdat must be true
 
     if runtodonesavep is None and savefolder is None:
         timename=timestampname()
@@ -771,7 +771,8 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
     else:
         os.mkdir(folder)
     # if raw data is not saved and a fielname exists in an .rcp->.exp but the file is not real, there will be erros down the line.
-    saverawdat_expfiledict(saveexpfiledict, folder, saverawdat=saverawdat)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
+    if file_attr_and_existence_check or saverawdat:
+        saverawdat_expfiledict(saveexpfiledict, folder, saverawdat=saverawdat)#the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
 
     for rund in saveexpfiledict.itervalues():
         if isinstance(rund, dict) and 'run_path' in rund.keys():
@@ -1606,22 +1607,22 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
 #            print 'Error renaming ', srcfolder
     if not os.path.isdir(savefolder):
         os.mkdir(savefolder)
-
-    if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
-        for fn in os.listdir(srcfolder):
-            if fn.startswith('.') or '.db' in fn:
-                continue
-            if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
-                continue
+    if len(srcfolder)>0:
+        if os.path.normpath(srcfolder)!=os.path.normpath(savefolder):#may be the same folder in which case skip to writing the .ana
+            for fn in os.listdir(srcfolder):
+                if fn.startswith('.') or '.db' in fn:
+                    continue
+                if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
+                    continue
+                if movebool:
+                    shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
+                else:
+                    shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
             if movebool:
-                shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-            else:
-                shutil.copy(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
-        if movebool:
-            try:
-                os.rmdir(srcfolder)
-            except:
-                print 'The old folder still exists due to a problem deleting it: ', srcfolder
+                try:
+                    os.rmdir(srcfolder)
+                except:
+                    print 'The old folder still exists due to a problem deleting it: ', srcfolder
     savep=os.path.join(savefolder, '%s.ana' %timename)
     saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
     return savefolder

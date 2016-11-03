@@ -59,7 +59,7 @@ class Ui_ExternalImportDialog(object):
         self.ExpSaveComboBox.setGeometry(QtCore.QRect(690, 270, 267, 20))
         self.ExpSaveComboBox.setObjectName(_fromUtf8("ExpSaveComboBox"))
         self.label_14 = QtGui.QLabel(ExternalImportDialog)
-        self.label_14.setGeometry(QtCore.QRect(10, 120, 265, 21))
+        self.label_14.setGeometry(QtCore.QRect(10, 120, 191, 21))
         self.label_14.setObjectName(_fromUtf8("label_14"))
         self.RunSelectTreeWidget = QtGui.QTreeWidget(ExternalImportDialog)
         self.RunSelectTreeWidget.setGeometry(QtCore.QRect(10, 140, 551, 311))
@@ -134,6 +134,12 @@ class Ui_ExternalImportDialog(object):
         self.label_17.setGeometry(QtCore.QRect(290, 10, 51, 21))
         self.label_17.setAlignment(QtCore.Qt.AlignCenter)
         self.label_17.setObjectName(_fromUtf8("label_17"))
+        self.SaveFilesPushButton = QtGui.QPushButton(ExternalImportDialog)
+        self.SaveFilesPushButton.setGeometry(QtCore.QRect(170, 90, 131, 21))
+        self.SaveFilesPushButton.setObjectName(_fromUtf8("SaveFilesPushButton"))
+        self.AddMiscAnaPushButton = QtGui.QPushButton(ExternalImportDialog)
+        self.AddMiscAnaPushButton.setGeometry(QtCore.QRect(970, 530, 131, 21))
+        self.AddMiscAnaPushButton.setObjectName(_fromUtf8("AddMiscAnaPushButton"))
 
         self.retranslateUi(ExternalImportDialog)
         QtCore.QMetaObject.connectSlotsByName(ExternalImportDialog)
@@ -151,7 +157,7 @@ class Ui_ExternalImportDialog(object):
         self.ExpSaveComboBox.setToolTip(_translate("ExternalImportDialog", "This \"use\" is specified in the EXP \n"
 "and determines what types of analysis \n"
 "can be performed", None))
-        self.label_14.setText(_translate("ExternalImportDialog", "Choose RUNs to include:", None))
+        self.label_14.setText(_translate("ExternalImportDialog", "Choose Data to include:", None))
         self.RaiseErrorPushButton.setText(_translate("ExternalImportDialog", "err", None))
         self.foldernameLineEdit.setToolTip(_translate("ExternalImportDialog", "Comment string to be included in EXP", None))
         self.platemappathLineEdit.setToolTip(_translate("ExternalImportDialog", "Comment string to be included in EXP", None))
@@ -160,9 +166,13 @@ class Ui_ExternalImportDialog(object):
 "and determines what types of analysis \n"
 "can be performed", None))
         self.label_9.setText(_translate("ExternalImportDialog", "RCP file:", None))
-        self.CalcXLineEdit.setText(_translate("ExternalImportDialog", "X+47.3", None))
-        self.CalcYLineEdit.setText(_translate("ExternalImportDialog", "Y+50", None))
+        self.CalcXLineEdit.setText(_translate("ExternalImportDialog", "Y+47.3", None))
+        self.CalcYLineEdit.setText(_translate("ExternalImportDialog", "X+50", None))
         self.label_16.setText(_translate("ExternalImportDialog", "Equations for calculating platemap x,y from motor X,Y", None))
         self.plateidLineEdit.setToolTip(_translate("ExternalImportDialog", "Comment string to be included in EXP", None))
         self.label_17.setText(_translate("ExternalImportDialog", "plate_id:", None))
+        self.SaveFilesPushButton.setToolTip(_translate("ExternalImportDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None))
+        self.SaveFilesPushButton.setText(_translate("ExternalImportDialog", "Save RCP/EXP/ANA", None))
+        self.AddMiscAnaPushButton.setToolTip(_translate("ExternalImportDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None))
+        self.AddMiscAnaPushButton.setText(_translate("ExternalImportDialog", "Add Misc File", None))
 

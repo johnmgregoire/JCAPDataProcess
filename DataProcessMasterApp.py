@@ -17,7 +17,7 @@ from StackPlotApp import stackplotDialog
 from CombineFomApp import combinefomDialog
 from FileSearchApp import filesearchDialog
 from FileManagementApp import filemanDialog
-
+from ExternalDataImportApp import extimportDialog
 
 class MainMenu(QMainWindow):
     def __init__(self, previousmm, execute=True):#, TreeWidg):
@@ -30,6 +30,7 @@ class MainMenu(QMainWindow):
         self.combinefomui=None
         self.filesearchui=None
         self.filemanui=None
+        self.extimportui=None
         
         expuiButton=QPushButton()
         expuiButton.setText("Create/edit\nExperiment")
@@ -46,6 +47,10 @@ class MainMenu(QMainWindow):
         stackplotButton=QPushButton()
         stackplotButton.setText("Stack\nPlots")
         QObject.connect(stackplotButton, SIGNAL("pressed()"), self.stackui_exec)   
+        
+        extimportButton=QPushButton()
+        extimportButton.setText("External Data.\nCreate Rcp/Exp/Ana")
+        QObject.connect(extimportButton, SIGNAL("pressed()"), self.extimportui_exec)
         
         combinefomuiButton=QPushButton()
         combinefomuiButton.setText("Combine\nFOM files")
@@ -65,9 +70,10 @@ class MainMenu(QMainWindow):
         mainlayout.addWidget(calcuiButton, 0, 1)
         mainlayout.addWidget(visdataButton, 0, 2)
         mainlayout.addWidget(stackplotButton, 0, 3)
-        mainlayout.addWidget(combinefomuiButton, 0, 4)
-        mainlayout.addWidget(filesearchButton, 0, 5)
-        mainlayout.addWidget(filemanButton, 0, 6)
+        mainlayout.addWidget(extimportButton, 0, 4)
+        mainlayout.addWidget(combinefomuiButton, 0, 5)
+        mainlayout.addWidget(filesearchButton, 0, 6)
+        mainlayout.addWidget(filemanButton, 0, 7)
    
         window=QWidget();
         window.setLayout(mainlayout);
@@ -95,6 +101,11 @@ class MainMenu(QMainWindow):
             self.stackplotui=stackplotDialog(self, title='Stack Plots of FOM data')
         if show:
             self.stackplotui.show()
+    def extimportui_exec(self, show=True):
+        if self.extimportui is None:
+            self.extimportui=extimportDialog(self, title='Create RCP/EXP/ANA for non-HTE instruments')
+        if show:
+            self.extimportui.show()
     def combinefomui_exec(self):
         if self.combinefomui is None:
             self.combinefomui=combinefomDialog(self, title='Combine FOM from multiple files')
