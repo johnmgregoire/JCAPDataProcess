@@ -183,11 +183,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                 if not anrunk in ana__d.keys():
                                     ana__d[anrunk]={}
                                 ana__d=ana__d[anrunk]
-
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
                             newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
                             afd['anafn']=newfn
                             afd['copy_fcn']=self.xrds_copy_xy_to_ana
@@ -198,7 +193,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                             self.ana_filedict_tocopy+=[afd]
             self.all_rcp_dict['rcp_file__%d' %(runcount+1)]=rcpdict
         if anabool:
-<<<<<<< HEAD
             if 'multirun_ana_files' in self.maindatad.keys() and len(self.maindatad['multirun_ana_files'])>0:
                 for an_name, anafiledlist in self.maindatad['multirun_ana_files'].iteritems():
                     ana__d=None
@@ -261,25 +255,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             
             ans=userinputcaller(self, inputs=[('ana__X  key', str, anak), ('files_run__X  key', str, anarunk)], title='Enter location in .ana',  cancelallowed=True)
             if ans is None:
-=======
-            self.anadict['plate_ids']=self.plate_idstr
-            self.anadict['description']='%s on plate_id %s' %(','.join(set([anad['name'] for anak, anad in self.anadict.iteritems() if anak.startswith('ana__')])), self.plate_idstr)
-            self.anadict['ana_version']='3'
-        self.RcpTreeWidgetFcns.filltree(self.all_rcp_dict, startkey='', laststartswith='rcp_file__', updatedwithtoplevelitems=True)
-        self.ExpTreeWidgetFcns.filltree(self.expdict, startkey='exp_version', laststartswith='run__')
-        self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
-
-    def add_misc_to_ana(self, p=None, anak=None, anarunk=None):
-        if anak is None or anarunk is None:
-            if not 'ana__1' in self.anadict.keys():
-                return
-            l_anarunk=sort_dict_keys_by_counter(self.anadict['ana__1'], keystartswith='files_run__')
-            if len(l_anarunk)==0:
-                return
-
-            ans=userinputcaller(self, inputs=[('ana__ key', str, 'ana__1'), ('files_run__ key key', str, l_anarunk[0])], title='Enter location in .ana',  cancelallowed=True)
-            if readonly or ans is None or ans[0].strip()==v:
->>>>>>> origin/master
                 return
             anak=ans[0].strip()
             anarunk=ans[1].strip()
@@ -600,8 +575,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         self.plotw_plate.axes.set_aspect(1)
 
-        axrect=[0.88, 0.1, 0.04, 0.8]
-
         self.plotw_plate.fig.subplots_adjust(left=0.12, bottom=.12)
 
 
@@ -626,12 +599,8 @@ class treeclass_filedict():
     def filltree(self, d, startkey='ana_version', laststartswith='ana__', updatedwithtoplevelitems=False):
         self.treeWidget.clear()
         #assume startkey is not for dict and laststatswith is dict
-<<<<<<< HEAD
         if len(d)==0:
             return
-=======
-
->>>>>>> origin/master
         if len(startkey)>0:
             mainitem=QTreeWidgetItem([': '.join([startkey, d[startkey]])], 0)
             self.treeWidget.addTopLevelItem(mainitem)
