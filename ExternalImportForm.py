@@ -166,8 +166,8 @@ class Ui_ExternalImportDialog(object):
 "and determines what types of analysis \n"
 "can be performed", None))
         self.label_9.setText(_translate("ExternalImportDialog", "RCP file:", None))
-        self.CalcXLineEdit.setText(_translate("ExternalImportDialog", "Y+47.3", None))
-        self.CalcYLineEdit.setText(_translate("ExternalImportDialog", "X+50", None))
+        self.CalcXLineEdit.setText(_translate("ExternalImportDialog", "Y+50.", None))
+        self.CalcYLineEdit.setText(_translate("ExternalImportDialog", "X+47.3", None))
         self.label_16.setText(_translate("ExternalImportDialog", "Equations for calculating platemap x,y from motor X,Y", None))
         self.plateidLineEdit.setToolTip(_translate("ExternalImportDialog", "Comment string to be included in EXP", None))
         self.label_17.setText(_translate("ExternalImportDialog", "plate_id:", None))

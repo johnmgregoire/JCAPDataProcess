@@ -371,7 +371,7 @@ can be performed</string>
     </rect>
    </property>
    <property name="text">
-    <string>Y+47.3</string>
+    <string>Y+50.</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="CalcYLineEdit">
@@ -384,7 +384,7 @@ can be performed</string>
     </rect>
    </property>
    <property name="text">
-    <string>X+50</string>
+    <string>X+47.3</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_16">
