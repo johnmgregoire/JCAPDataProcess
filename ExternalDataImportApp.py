@@ -129,14 +129,20 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
             rcpdict={}
             rcpdict['experiment_type']=self.datatype
+            #rcpdict['technique_name']=self.datatype
             runk='run__%d' %(runcount+1)
             self.expdict[runk]={}
             exprund=self.expdict[runk]
             exprund['run_use']='data'
             exprund['plate_id']=self.plate_idstr
-            rcpd['parameters']['plate_id']=self.plate_idstr
+            rcpdict['parameters']['plate_id']=self.plate_idstr
+            rcpdict['plate_id']=self.plate_idstr
             exprund['rcp_file']=rcpd['name']+'.rcp'
-
+            if 'machine_name' in rcpd['parameters']:
+                rcpdict['computer_name']=rcpd['parameters']['machine_name']
+            else:
+                rcpdict['computer_name']='unknown'
+            
             for k in ['name', 'parameters']:
                 rcpdict[k]=rcpd[k]
                 exprund[k]=rcpd[k]
