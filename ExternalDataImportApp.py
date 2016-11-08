@@ -91,8 +91,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
     def xrds_profile(self):
         self.importfolderfcn=get_rcpdlist_xrdolfder
-        self.createfiledictsfcn=self.createfiledicts_xrds
+        self.createfiledictsfcn=self.createfiledicts
+        self.mod_smp_afd_fcn=self.mod_smp_afd__xrds
+        self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='xrds'
+        self.computernamedefault='HTE-XRDS-01'
 
     def raiseerror(self):
         raiseerror
@@ -113,7 +116,19 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         with open(newp, mode='w') as f:
             f.write(s)
 
-    def createfiledicts_xrds(self):
+    def mod_smp_afd__xrds(self, ana__d, afd, anak):                                
+        newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
+        afd['anafn']=newfn
+        afd['copy_fcn']=self.xrds_copy_xy_to_ana
+        return [afd]
+    
+    def mod_afd_fcn__std(self, ana__d, afd, anak):
+        newfn='%s_%s' %(anak, afd['fn'])
+        afd['anafn']=newfn
+        afd['copy_fcn']=self.stdcopy_afd
+        return [afd]
+                        
+    def createfiledicts(self):
         self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
         self.ana_filedict_tocopy=[]
         self.all_rcp_dict={}
@@ -150,7 +165,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             if 'machine_name' in rcpd['parameters']:
                 rcpdict['computer_name']=rcpd['parameters']['machine_name']
             else:
-                rcpdict['computer_name']='HTE-XRDS-01'
+                rcpdict['computer_name']=self.computernamedefault
             
             for k in ['name', 'parameters']:
                 rcpdict[k]=rcpd[k]
@@ -200,14 +215,14 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                 if not anrunk in ana__d.keys():
                                     ana__d[anrunk]={}
                                 ana__d=ana__d[anrunk]
-                            newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
-                            afd['anafn']=newfn
-                            afd['copy_fcn']=self.xrds_copy_xy_to_ana
-                            antypek=afd['type']
-                            if not antypek in ana__d.keys():
-                                ana__d[antypek]={}
-                            ana__d[antypek][newfn]=afd['fval']+smp#ana file val expected to have all other info included already
-                            self.ana_filedict_tocopy+=[afd]
+                                
+                            modafdlist=self.mod_smp_afd_fcn(ana__d, afd, anak)
+                            for modafd in modafdlist:
+                                antypek=modafd['type']
+                                if not antypek in ana__d.keys():
+                                    ana__d[antypek]={}
+                                ana__d[antypek][modafd['anafn']]=modafd['fval']+smp#ana file val expected to have all other info included already
+                                self.ana_filedict_tocopy+=[modafd]
             self.all_rcp_dict['rcp_file__%d' %(runcount+1)]=rcpdict
         if anabool:
             if 'multirun_ana_files' in self.maindatad.keys() and len(self.maindatad['multirun_ana_files'])>0:
@@ -232,14 +247,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                 ana__d[anrunk]={}
                             ana__d=ana__d[anrunk]
 
-                        newfn='%s_%s' %(anak, afd['fn'])
-                        afd['anafn']=newfn
-                        afd['copy_fcn']=self.stdcopy_afd
-                        antypek=afd['type']
-                        if not antypek in ana__d.keys():
-                            ana__d[antypek]={}
-                        ana__d[antypek][newfn]=afd['fval']
-                        self.ana_filedict_tocopy+=[afd]
+                        modafdlist=self.mod_multi_afd_fcn(ana__d, afd, anak)
+                        for modafd in modafdlist:
+                            antypek=modafd['type']
+                            if not antypek in ana__d.keys():
+                                ana__d[antypek]={}
+                            ana__d[antypek][modafd['anafn']]=modafd['fval']
+                            self.ana_filedict_tocopy+=[modafd]
                             
             ananames=[anad['name'] for anak, anad in self.anadict.iteritems() if anak.startswith('ana__')]
             if len(ananames)==0:
