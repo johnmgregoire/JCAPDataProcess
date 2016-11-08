@@ -1923,3 +1923,9 @@ def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-conta
                         needcopy_dlist+=[None]#an aux could be xrfs so not needed to be copied to this place but just can't be in temp
     return needcopy_dlist
 ###       
+
+def get_serial_plate_id(pid):
+    if isinstance(pid, int):
+        pid='%d' %pid
+    checksum=numpy.array([eval(ch) for ch in pid]).sum()%10
+    return '%s%d' %(pid, checksum)

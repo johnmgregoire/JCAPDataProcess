@@ -122,6 +122,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.expdict['exp_version']='3'
         self.expdict['description']='%d %s runs on plate_id %s' %(len(self.inds_rcpdlist), self.datatype, self.plate_idstr)
         self.anadict={}
+        
+        rcplab=str(self.rcplabelLineEdit.text())
+        rcplab=filterchars(rcplab, valid_chars = "-%s" % (string.ascii_letters))
+        if len(rcplab)==0:
+            rcplab='extimport'
+        self.rcpmainfoldname='_'.join([timestampname()[:8], rcplab, get_serial_plate_id(self.plate_idstr)])
+        
         nextana=1
         anabool=int(self.AnaSaveComboBox.currentIndex())>0
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
@@ -129,24 +136,28 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
             rcpdict={}
             rcpdict['experiment_type']=self.datatype
-            #rcpdict['technique_name']=self.datatype
+            rcpdict['technique_name']=self.datatype
             runk='run__%d' %(runcount+1)
             self.expdict[runk]={}
             exprund=self.expdict[runk]
             exprund['run_use']='data'
             exprund['plate_id']=self.plate_idstr
-            rcpdict['parameters']['plate_id']=self.plate_idstr
+#            if not 'parameters' in rcpdict.keys():
+#                rcpdict['parameters']={}
+           
             rcpdict['plate_id']=self.plate_idstr
             exprund['rcp_file']=rcpd['name']+'.rcp'
             if 'machine_name' in rcpd['parameters']:
                 rcpdict['computer_name']=rcpd['parameters']['machine_name']
             else:
-                rcpdict['computer_name']='unknown'
+                rcpdict['computer_name']='HTE-XRDS-01'
             
             for k in ['name', 'parameters']:
                 rcpdict[k]=rcpd[k]
                 exprund[k]=rcpd[k]
-
+            rcpdict['parameters']['plate_id']=self.plate_idstr
+            exprund['run_path']=r'/%s/%s/%s/%s' %(self.datatype, rcpdict['computer_name'].lower(), self.rcpmainfoldname, rcpdict['name']+'.done')
+            
             for fd in rcpd['file_dlist']:
                 if not fd['tech'] in rcpdict.keys():
                     rcpdict[fd['tech']]={}
@@ -279,7 +290,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         d=self.anadict[anak][anarunk]
         if not 'misc_files' in d.keys():
             d['misc_files']={}
-        d['misc_files'][newfn]='user_import_file;'
+        d['misc_files'][newfn]='xrds_user_import_file;'
         afd={}
         afd['folderpath']=fold
         afd['fn']=fn
@@ -379,10 +390,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         self.runtreeclass.maketoplevelchecked()
 
-
         self.foldernameLineEdit.setText(p)
         self.openplatemap(self.plate_idstr)
-
+        ellist=getelements_plateidstr(self.plate_idstr)
+        if ellist is None:
+            self.rcplabelLineEdit.setText('')
+        else:
+            self.rcplabelLineEdit.setText(''.join(ellist))
 
 
     def get_plate_from_folder_path(self, p):
@@ -445,19 +459,27 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         if dropfolder is None:
             messageDialog(self, 'Aborting SAVE because cannot find drop folder').exec_()
             return
+        
+        rcpmainfolder=os.path.join(dropfolder, self.rcpmainfoldname)
 
+        
+        if os.path.isdir(rcpmainfolder):
+            messageDialog(self, 'Aborting SAVE because %s folder exists' %rcpmainfoldname).exec_()
+            return
+        os.mkdir(rcpmainfolder)
+        
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
             rcpfiled=self.all_rcp_dict['rcp_file__%d' %(runcount+1)]
-            rcpname=rcpfiled['name']
-            rcpfolder=os.path.join(dropfolder, rcpname)
+            rcpname=rcpfiled['name']+'.done'
+            rcpfolder=os.path.join(rcpmainfolder, rcpname)
             if os.path.isdir(rcpfolder):
                 messageDialog(self, 'Aborting SAVE because at least 1 rcp drop folder exists').exec_()
                 return
 
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
             rcpfiled=self.all_rcp_dict['rcp_file__%d' %(runcount+1)]
-            rcpname=rcpfiled['name']
-            rcpfolder=os.path.join(dropfolder, rcpname)
+            rcpname=rcpfiled['name']+'.done'
+            rcpfolder=os.path.join(rcpmainfolder, rcpname)
             os.mkdir(rcpfolder)
 
             rcpd=self.maindatad['rcpdlist'][ind_rcp]

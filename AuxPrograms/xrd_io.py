@@ -197,4 +197,4 @@ def get_rcpdlist_xrdolfder(p):
 
 #p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
 #maindatad=get_rcpdlist_xrdolfder(p)
-#p=r'K:\experiments\xrds\Lan\MaterialsProject-2\Vanadates\35345_ZrV_550C_3h'
+#p=r'K:\experiments\xrds\user\Lan\MaterialsProject-2\Vanadates\35345_ZrV_550C_3h'

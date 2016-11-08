@@ -140,6 +140,15 @@ class Ui_ExternalImportDialog(object):
         self.AddMiscAnaPushButton = QtGui.QPushButton(ExternalImportDialog)
         self.AddMiscAnaPushButton.setGeometry(QtCore.QRect(970, 530, 131, 21))
         self.AddMiscAnaPushButton.setObjectName(_fromUtf8("AddMiscAnaPushButton"))
+        self.rcplabelLineEdit = QtGui.QLineEdit(ExternalImportDialog)
+        self.rcplabelLineEdit.setGeometry(QtCore.QRect(460, 10, 71, 21))
+        self.rcplabelLineEdit.setText(_fromUtf8(""))
+        self.rcplabelLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.rcplabelLineEdit.setObjectName(_fromUtf8("rcplabelLineEdit"))
+        self.label_18 = QtGui.QLabel(ExternalImportDialog)
+        self.label_18.setGeometry(QtCore.QRect(400, 10, 51, 21))
+        self.label_18.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_18.setObjectName(_fromUtf8("label_18"))
 
         self.retranslateUi(ExternalImportDialog)
         QtCore.QMetaObject.connectSlotsByName(ExternalImportDialog)
@@ -175,4 +184,6 @@ class Ui_ExternalImportDialog(object):
         self.SaveFilesPushButton.setText(_translate("ExternalImportDialog", "Save RCP/EXP/ANA", None))
         self.AddMiscAnaPushButton.setToolTip(_translate("ExternalImportDialog", "Considering the files already in the EXP, keep the files that meet all criteria", None))
         self.AddMiscAnaPushButton.setText(_translate("ExternalImportDialog", "Add Misc File", None))
+        self.rcplabelLineEdit.setToolTip(_translate("ExternalImportDialog", "Comment string to be included in EXP", None))
+        self.label_18.setText(_translate("ExternalImportDialog", "rcp label:", None))
 
