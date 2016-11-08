@@ -74,9 +74,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
 
 
-        self.profiledefintionfcns=[self.xrds_profile]
+        self.profiledefintionfcns=[self.xrds_profile_withq, self.xrds_profile, self.ssrl_profile_v1]
 
-        profiledesc=['Bruker XRDS data']
+        profiledesc=['Bruker XRDS with Q','Bruker XRDS data', 'SSRL v1']
         for i, l in enumerate(profiledesc):
             self.ProfileComboBox.insertItem(i, l)
 
@@ -88,15 +88,26 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         self.cleardata()
 
-
+    def ssrl_profile_v1(self):
+        self.importfolderfcn=get_externalimportdatad_ssrl_batchresults
+        self.createfiledictsfcn=self.createfiledicts
+        self.mod_smp_afd_fcn=self.mod_afd_fcn__std
+        self.mod_multi_afd_fcn=self.mod_afd_fcn__std
+        self.datatype='ssrl'
+        self.computernamedefault='HTE-SSRL-01'
+        
     def xrds_profile(self):
-        self.importfolderfcn=get_rcpdlist_xrdolfder
+        self.importfolderfcn=get_externalimportdatad_xrds_folder
         self.createfiledictsfcn=self.createfiledicts
         self.mod_smp_afd_fcn=self.mod_smp_afd__xrds
         self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='xrds'
         self.computernamedefault='HTE-XRDS-01'
-
+    
+    def xrds_profile_withq(self):
+        self.xrds_profile()
+        self.mod_smp_afd_fcn=self.mod_smp_afd__xrds_withq
+    
     def raiseerror(self):
         raiseerror
 
@@ -115,14 +126,44 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         s='\n'.join(lines)
         with open(newp, mode='w') as f:
             f.write(s)
-
-    def mod_smp_afd__xrds(self, ana__d, afd, anak):                                
+    
+    def xrds_copy_xy_to_ana_convert_to_q(self, afd, anafolder):
+        p=os.path.join(afd['folderpath'], afd['fn'])
+        newp=os.path.join(anafolder, afd['anafn'])
+        with open(p, mode='r') as f:
+            lines=f.readlines()
+        lines=[l.strip() for l in lines]
+        lines[0]=afd['fval'].partition(';')[2].partition(';')[0]
+        strtuplist=[l.split(' ') for l in lines[1:]]
+        ttvals=numpy.array([myeval(tt) for tt, z in strtuplist])
+        qvals=q_twotheta(ttvals)
+        lines=[lines[0]]
+        lines+=['%.3f,%s,%s' %(q, tt, z) for q, (tt, z) in zip(qvals, strtuplist)]
+        s='\n'.join(lines)
+        with open(newp, mode='w') as f:
+            f.write(s)
+            
+    def mod_smp_afd__xrds(self, afd, anak):                                
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
         afd['copy_fcn']=self.xrds_copy_xy_to_ana
         return [afd]
     
-    def mod_afd_fcn__std(self, ana__d, afd, anak):
+    def mod_smp_afd__xrds_withq(self, afd, anak):
+        newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
+        afd['anafn']=newfn
+        afd['fval']=afd['fval'].replace('two_theta,','q_nm,two_theta,')
+        afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
+#        afd2={}
+#        for k, v in afd.iteritems():
+#            afd2[k]=v
+#        afd2['anafn']=afd2['anafn'].replace('.csv', '_q.csv')
+#        afd2['type']='q_files'
+#        afd2['fval']=afd2['fval'].replace('two_theta','q_nm')
+#        afd2['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
+        return [afd]
+        
+    def mod_afd_fcn__std(self, afd, anak):
         newfn='%s_%s' %(anak, afd['fn'])
         afd['anafn']=newfn
         afd['copy_fcn']=self.stdcopy_afd
@@ -216,7 +257,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                     ana__d[anrunk]={}
                                 ana__d=ana__d[anrunk]
                                 
-                            modafdlist=self.mod_smp_afd_fcn(ana__d, afd, anak)
+                            modafdlist=self.mod_smp_afd_fcn(afd, anak)
                             for modafd in modafdlist:
                                 antypek=modafd['type']
                                 if not antypek in ana__d.keys():
@@ -247,7 +288,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                 ana__d[anrunk]={}
                             ana__d=ana__d[anrunk]
 
-                        modafdlist=self.mod_multi_afd_fcn(ana__d, afd, anak)
+                        modafdlist=self.mod_multi_afd_fcn(afd, anak)
                         for modafd in modafdlist:
                             antypek=modafd['type']
                             if not antypek in ana__d.keys():
@@ -363,12 +404,15 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
 
-    def importfolder(self, p=None):
+    def importfolder(self, p=None, plate_idstr=None, **kwargs):
         if p is None:
             p=mygetdir(parent=self, markstr='select folder containing all files for data import')
         if len(p)==0:
             return
-        pid=self.get_plate_from_folder_path(p)
+        if plate_idstr is None:
+            pid=self.get_plate_from_folder_path(p)
+        else:
+            pid=plate_idstr
         if pid is None:
             ans=userinputcaller(self, inputs=[('plate_id', str, '')], title='Enter plate_id',  cancelallowed=True)
             if ans is None or len(ans[0].strip())==0 or not ans[0].isdigit():
@@ -379,7 +423,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         self.cleardata()
         self.profiledefintionfcns[self.ProfileComboBox.currentIndex()]()#defines the functions
-        self.maindatad=self.importfolderfcn(p)
+        self.maindatad=self.importfolderfcn(p, **kwargs)
         self.import_folder=p
         if self.maindatad is None:
             return
@@ -417,7 +461,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         foldn=os.path.split(p)[1]
         serialstr=foldn.partition('_')[0]
         if len(serialstr)<3 or not serialstr.isdigit():
-            return None
+            serialstr=foldn.rpartition('_')[2]
+            if len(serialstr)<3 or not serialstr.isdigit():
+                return None
         return serialstr[:-1]
     def openplatemap(self, plate_idstr=None):
         if plate_idstr is None:
@@ -468,7 +514,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
 
     def savefiles(self):
-
+        if len(self.inds_rcpdlist)==0:
+            return
         dropfolder=tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(self.datatype, 'drop'))
         if dropfolder is None:
             messageDialog(self, 'Aborting SAVE because cannot find drop folder').exec_()
@@ -478,7 +525,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         
         if os.path.isdir(rcpmainfolder):
-            messageDialog(self, 'Aborting SAVE because %s folder exists' %rcpmainfoldname).exec_()
+            messageDialog(self, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
             return
         os.mkdir(rcpmainfolder)
         

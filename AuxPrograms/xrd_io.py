@@ -121,7 +121,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         numchars, fd=sorted([(numcharsincommin(dp, fd['folderpath']), fd)] for fd in fdlist)[-1]#choose one with beginning path most similar
         print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
     an_name='Analysis__XRDS_Bruker_Integrate' if 'original' in dp else 'Analysis__XRDS_Bruker_Process'
-    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'misc_files', 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
+    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'cuka_files', 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
     if not 'ana_files' in fd.keys():
         fd['ana_files']={}
     if not an_name in fd['ana_files'].keys():
@@ -131,7 +131,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
     
 
 
-def get_rcpdlist_xrdolfder(p):
+def get_externalimportdatad_xrds_folder(p):
     temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy') or fn.endswith('.eva') or fn.endswith('.txt')]
     g_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.gfrm')]
     b_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.bsml')]

@@ -930,3 +930,16 @@ def filterbydistancefromline(arr_of_xyz, xyz1, xyz2, critdist, betweenpoints=Tru
             inds=notnoninds[inds]
         return {'select_inds':inds, 'dist_from_line':distfromlin, 'norm_dist_along_line':lineparameter}
 
+def twotheta_q(q, wl=0.15418, units='deg'): #q is scattering vector in 1/nm.  wl is wavelength in nm. return float32 2Theta value in degrees unless units='rad'
+    if units=='rad':
+        return numpy.float32(2.0*numpy.arcsin(wl*q/(4.0*numpy.pi)))
+    else:
+        return numpy.float32(2.0*numpy.arcsin(wl*q/(4.0*numpy.pi))*180.0/numpy.pi)
+
+def d_q(q): #q is scattering vector in 1/nm.  wl is wavelength in nm. return float32 2Theta value in degrees unless units='rad'
+    return numpy.float32(2.0*numpy.pi/q)
+
+def q_twotheta(twotheta, wl=0.15418, units='deg'): #units are those of twotheta, wl in nm, q in 1/nm
+    if units=='deg':
+        twotheta*=(numpy.pi/180.0)
+    return 4*numpy.pi*numpy.sin(twotheta/2.0)/wl
