@@ -47,6 +47,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         (self.SaveFilesPushButton, self.savefiles), \
         (self.OpenPlatemapPushButton, self.openplatemap), \
         (self.AddMiscAnaPushButton, self.add_misc_to_ana), \
+        (self.AddToAnaPushButton, self.add_to_ana), \
         (self.RaiseErrorPushButton, self.raiseerror), \
         ]
 
@@ -95,6 +96,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='ssrl'
         self.computernamedefault='HTE-SSRL-01'
+        self.AddToAnaPushButton.setText('Create UDI')
+        self.AddToAnaPushButton.setVisible(True)
+        self.add_to_ana_fcn=self.create_udi
         
     def xrds_profile(self):
         self.importfolderfcn=get_externalimportdatad_xrds_folder
@@ -103,6 +107,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='xrds'
         self.computernamedefault='HTE-XRDS-01'
+        self.AddToAnaPushButton.setVisible(False)
     
     def xrds_profile_withq(self):
         self.xrds_profile()
@@ -111,6 +116,57 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def raiseerror(self):
         raiseerror
 
+    def add_to_ana(self):
+        self.add_to_ana_fcn()
+        
+    def create_udi(self):
+        #***
+        
+        anak='ana__%d' %self.nextana
+        anarunk='files_multi_run'
+        self.nextana+=1
+        self.anadict[anak]={}
+        self.anadict[anak]['name']='Analysis__Cretae_UDI'
+        self.anadict[anak]['technique']=self.datatype
+        self.anadict[anak]['plate_ids']=self.plate_idstr
+        self.anadict[anak][anarunk]={}
+        ana__d=self.anadict[anak]
+                                
+        newfn='%s_%s.udi' %(anak, self.plate_idstr)
+        d=self.anadict[anak][anarunk]
+        afd={}
+        #afd['folderpath']=fold
+        afd['type']='misc_files'
+        #afd['fn']=fn
+        afd['fval']='%s_udi_file;' %self.datatype
+        afd['anafn']=newfn
+        afd['copy_fcn']=self.copy_createudi
+        if not afd['type'] in d.keys():
+            d[afd['type']]={}
+        d[afd['type']][afd['anafn']]=afd['fval']
+        
+        afd['sample_no__ana_filedict_inds']=sorted([(afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and afd['type']=='pattern_files'])
+        #need to get compositions and xy data and only keep sample_no with this info
+        self.ana_filedict_tocopy+=[afd]
+    
+    def copy_createudi(self, afd, anafolder):
+        smplist=map(operator.itemgetter(0), afd['sample_no__ana_filedict_inds'])
+        afdinds=map(operator.itemgetter(0), afd['sample_no__ana_filedict_inds'])
+        smplist=[]
+        qarr=None
+        udi_dict={}
+        for smp, afdind in afd['sample_no__ana_filedict_inds']:
+            if compositionavailable:
+                qvals
+                if 'Q' in udi_dict.keys():
+                    if len(qvals)!=len(udi_dict['Q']) or ((udi_dict['Q']-qvals)**2).sum()>(.01*(qvals**2).sum()):#proxy for equivlanet q arrays
+                        continue
+                else:
+                    udi_dict['Q']=qvals
+                
+                smplist+=[smp]    
+        
+        writeudifile(os.path.join(anafolder, afd['anafn']), udi_dict)#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
     def stdcopy_afd(self, afd, anafolder):
         p=os.path.join(afd['folderpath'], afd['fn'])
         newp=os.path.join(anafolder, afd['anafn'])
@@ -143,17 +199,21 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         with open(newp, mode='w') as f:
             f.write(s)
             
-    def mod_smp_afd__xrds(self, afd, anak):                                
+    def mod_smp_afd__xrds(self, afd, anak, smpstr=None):                                
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
         afd['copy_fcn']=self.xrds_copy_xy_to_ana
+        if not smpstr is None:
+            afd['sample_no']=myeval(smpstr)
         return [afd]
     
-    def mod_smp_afd__xrds_withq(self, afd, anak):
+    def mod_smp_afd__xrds_withq(self, afd, anak, smpstr=None):
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
-        afd['fval']=afd['fval'].replace('two_theta,','q_nm,two_theta,')
+        afd['fval']=afd['fval'].replace('two_theta.deg,','q.nm,two_theta.deg,')
         afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
+        if not smpstr is None:
+            afd['sample_no']=myeval(smpstr)
 #        afd2={}
 #        for k, v in afd.iteritems():
 #            afd2[k]=v
@@ -163,12 +223,14 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 #        afd2['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
         return [afd]
         
-    def mod_afd_fcn__std(self, afd, anak):
+    def mod_afd_fcn__std(self, afd, anak, smpstr=None):
         newfn='%s_%s' %(anak, afd['fn'])
         afd['anafn']=newfn
         afd['copy_fcn']=self.stdcopy_afd
+        if not smpstr is None:
+            afd['sample_no']=myeval(smpstr)
         return [afd]
-                        
+
     def createfiledicts(self):
         self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
         self.ana_filedict_tocopy=[]
@@ -185,7 +247,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             rcplab='extimport'
         self.rcpmainfoldname='_'.join([timestampname()[:8], rcplab, get_serial_plate_id(self.plate_idstr)])
         
-        nextana=1
+        self.nextana=1
         anabool=int(self.AnaSaveComboBox.currentIndex())>0
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
             rcpd=self.maindatad['rcpdlist'][ind_rcp]
@@ -242,8 +304,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                             if ana__d is None:
                                 anl=[k for k, v in self.anadict.iteritems() if k.startswith('ana__') and an_name==v['name']]
                                 if len(anl)==0:
-                                    anak='ana__%d' %nextana
-                                    nextana+=1
+                                    anak='ana__%d' %self.nextana
+                                    self.nextana+=1
                                     self.anadict[anak]={}
                                     self.anadict[anak]['name']=an_name
                                     self.anadict[anak]['technique']=self.datatype
@@ -257,7 +319,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                     ana__d[anrunk]={}
                                 ana__d=ana__d[anrunk]
                                 
-                            modafdlist=self.mod_smp_afd_fcn(afd, anak)
+                            modafdlist=self.mod_smp_afd_fcn(afd, anak, smpstr=smp)
                             for modafd in modafdlist:
                                 antypek=modafd['type']
                                 if not antypek in ana__d.keys():
@@ -273,8 +335,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                         if ana__d is None:
                             anl=[k for k, v in self.anadict.iteritems() if k.startswith('ana__') and an_name==v['name']]
                             if len(anl)==0:
-                                anak='ana__%d' %nextana
-                                nextana+=1
+                                anak='ana__%d' %self.nextana
+                                self.nextana+=1
                                 self.anadict[anak]={}
                                 self.anadict[anak]['name']=an_name
                                 self.anadict[anak]['technique']=self.datatype
@@ -343,14 +405,17 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         fold, fn=os.path.split(p)#would be prudent to check if this filename is already in the anak but hopefully user doesn't do this
         newfn='%s_%s' %(anak, fn)
         d=self.anadict[anak][anarunk]
-        if not 'misc_files' in d.keys():
-            d['misc_files']={}
-        d['misc_files'][newfn]='xrds_user_import_file;'
         afd={}
         afd['folderpath']=fold
+        afd['type']='misc_files'
         afd['fn']=fn
+        afd['fval']='xrds_user_import_file;'
         afd['anafn']=newfn
         afd['copy_fcn']=self.stdcopy_afd
+        if not afd['type'] in d.keys():
+            d[afd['type']]={}
+        d[afd['type']][afd['anafn']]=afd['fval']
+        
         self.ana_filedict_tocopy+=[afd]
         if filltreebool:
             self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
@@ -604,7 +669,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         pmx=numpy.array([d['x'] for d in self.platemapdlist])
         pmy=numpy.array([d['y'] for d in self.platemapdlist])
         pms=[d['sample_no'] for d in self.platemapdlist]
-
+        critdist2=float(self.critdistSpinBox.value())**2
 
         xyplotinfo=[]
         for count, rcpd in enumerate(self.maindatad['rcpdlist']):
@@ -614,6 +679,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                     if numpy.isnan(xv) or numpy.isnan(yv):
                         continue
                     pmi=numpy.argmin((pmx-xv)**2+(pmy-yv)**2)
+                    if ((pmx[pmi]-xv)**2+(pmy[pmi]-yv)**2)>critdist2:
+                        xyplotinfo+=[(xv, yv, None, None, '')]
+                        continue
                     smpstr='%d' %pms[pmi]
                     fd['fval']=';'.join([fd['fval'].partition(';')[0],smpstr])
                     fd['treeitem'].setText(0, ': '.join([fd['fn'], fd['fval']]))#the smpstr is kept track of in the tree widget so that it is user editable
@@ -627,11 +695,15 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         xl=[]
         yl=[]
         for xv, yv, xp, yp, s in xyplotinfo:
+            xl+=[xv]
+            yl+=[yv]
+            if xp is None:
+                ax.plot(xv, yv, 'rx')
+                continue
             ax.plot(xv, yv, 'ko')
             ax.plot([xv, xp], [yv, yp], 'r-')
             ax.text(xv, yv, s, ha='center', va='bottom')
-            xl+=[xv]
-            yl+=[yv]
+            
         if len(xl)==0:
             self.plotw_plate.fig.canvas.draw()
             return

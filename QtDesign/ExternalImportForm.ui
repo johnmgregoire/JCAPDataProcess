@@ -438,7 +438,7 @@ can be performed</string>
   <widget class="QPushButton" name="SaveFilesPushButton">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>270</x>
      <y>90</y>
      <width>131</width>
      <height>21</height>
@@ -502,10 +502,53 @@ can be performed</string>
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QPushButton" name="AddToAnaPushButton">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>90</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Considering the files already in the EXP, keep the files that meet all criteria</string>
+   </property>
+   <property name="text">
+    <string>Addtl Analysis</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="critdistSpinBox">
+   <property name="geometry">
+    <rect>
+     <x>511</x>
+     <y>90</y>
+     <width>51</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>2.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_19">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>80</y>
+     <width>91</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>crit. distance for
+sample assignment</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
- <buttongroups>
-  <buttongroup name="TechTypeButtonGroup"/>
- </buttongroups>
 </ui>
