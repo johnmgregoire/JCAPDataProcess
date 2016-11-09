@@ -14,7 +14,8 @@ from Analysis_Master import *
 from datamanipulation import *
 
 
-xyfolder=r'K:\experiments\xrds\Lan\MaterialsProject-2\Manganates\30722_SbMnO_LAS_900C_3h\xy file'
+xyfolder=r'K:\experiments\xrds\Lan\Oxynitride\30801_TaLaON_postRTP\pmpy24p3_line\integration\bkg_subtraction'
+plateidstr=xyfolder.split(os.sep)[-4].split('_')[0][0:-1]
 
 Normalize=0.
 write_udi=1
@@ -56,17 +57,18 @@ elif len(naninds_xarr)>0 or len(naninds_yarr)>0:
     raise ValueError('Nans exist for positions, no replacement values are provided')
 
 
-plateidstr=xyfolder.split(os.sep)[-2].split('_')[0][0:-1]
 infofiled=importinfo(plateidstr)
 
 udi_dict={}
     
 udi_dict['ellabels']=[x for x in getelements_plateidstr(plateidstr) if x not in ['','O','Ar','N']]#,print_id=2 removed on 20161019 because no longer valid
-udi_dict['xy']=np.c_[xarr,yarr]
+udi_dict['X']=xarr
+udi_dict['Y']=yarr
 udi_dict['specind']=specinds
 udi_dict['sample_no']=[]
 udi_dict['plate_id']=[int(plateidstr)]
-udi_dict['mxy']=np.ones(np.shape(udi_dict['xy']))*np.nan
+udi_dict['mX']=np.ones(np.shape(udi_dict['X']))*np.nan
+udi_dict['mY']=np.ones(np.shape(udi_dict['Y']))*np.nan
 
 
 getplatemappath_plateid(plateidstr)
@@ -74,7 +76,7 @@ pmap_path=getplatemappath_plateid(plateidstr)
 pmpdl=readsingleplatemaptxt(pmap_path)
 
 pmpx,pmpy,smplist=[[iter_d[fom] for iter_d in pmpdl] for fom in ['x','y','sample_no']] 
-udi_dict['sample_no']=[smplist[np.argmin((np.array(pmpx)-udi_dict['xy'][row,0])**2+(np.array(pmpy)-udi_dict['xy'][row,1])**2)] for row in xrange(np.shape(udi_dict['xy'])[0])]
+udi_dict['sample_no']=[smplist[np.argmin((np.array(pmpx)-udi_dict['X'][row])**2+(np.array(pmpy)-udi_dict['Y'][row])**2)] for row in xrange(np.shape(udi_dict['X'])[0])]
 
 
 
