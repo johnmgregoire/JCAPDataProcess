@@ -1,140 +1,98 @@
-from xml.etree import ElementTree
-import os, numpy, copy, time
-from collections import OrderedDict as OD
+import os, numpy, time
+import h5py
+from fcns_ui import mygetdir
+p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24297_NbMnVO'
+pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24297_NbMnVO'
 
-
-def get_xy__solo_gfrm_fn(gfn):
-    xyarr=numpy.ones(2, dtype='float64')*numpy.nan
-    if gfn.count('pm')==2:
-        xstr, ystr=gfn.split('pm')[1:3]
-        xstr=xstr.lstrip('pmx').rstrip('_-')
-        ystr=ystr.lstrip('pmy').rstrip('_.gfrm')
-        try:
-            xyarr=numpy.float64([eval(xstr), eval(ystr)])
-        except:
-            pass
-    return xyarr
-
-
-
-def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
-    with open(os.path.join(dp, fn), mode='r') as f:
-        lines=f.readlines()
-    gfn=lines[0].partition('.gfrm')[0].rpartition(' ')[2]+'.gfrm'
-    fdlist=[fd for rcpd in rcpdlist for fd in rcpd['file_dlist'] if fd['fn']==gfn]
-    if len(fdlist)==0:
-        print 'cannot find .gfrm file for ', fn
-        return True
-    elif len(fdlist)==1:
-        fd=fdlist[0]
-    else:
-        numcharsincommin=lambda p1, p2: numpy.array([c1==c2 for c1, c2 in zip(os.path.normpath(p1), os.path.normpath(p2))]).sum(dtype='int32')
-        numchars, fd=sorted([(numcharsincommin(dp, fd['folderpath']), fd)] for fd in fdlist)[-1]#choose one with beginning path most similar
-        print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
-    an_name='Analysis__XRDS_Bruker_Integrate' if 'original' in dp else 'Analysis__XRDS_Bruker_Process'
-    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'misc_files', 'fval':'xrds_bruker_xy_csv_file;two_theta,intensity;1;%d;' %(len(lines)-1)}
-    if not 'ana_files' in fd.keys():
-        fd['ana_files']={}
-    if not an_name in fd['ana_files'].keys():
-        fd['ana_files'][an_name]=[]
-    fd['ana_files'][an_name]+=[afd]
-    return False
-    
-
-
+p, p_processed=p, pp
 def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocessed=True):#assume folder is for single .rcp
     if p_processed is None and askforprocessed:
         p_processed=str(mygetdir(parent=None, xpath=p,markstr='Folder containing processed data, e.g. pck2d' ))
         if p_processed is None or len(p_processed)==0:
             p_processed=None
-    
+    if p_processed is None:
+        return {}
+
     rcpd={'file_dlist':[]}
+    rcpd['parameters']={}
     an_name='Analysis__SSRL_batch_process'
     multirun_ana_files={an_name:[]}
-    
+
     p_files=os.listdir(p)
+    shellfns=[fn for fn in p_files if not '.' in fn]
+    shellfn=shellfns[0]
+    with open(os.path.join(p, shellfn), mode='r') as f:
+        lines=f.readlines()
+    for l in lines:
+        if l.startswith('#D'):
+            ts=time.strptime(l[2:].strip(), '%a %b %d %H:%M:%S %Y')
+            rcpd['name']=time.strftime('%Y%m%d.%H%M%S',ts)
+        if l.startswith('#S'):
+            scmd=l.partition('  ')[2].strip()
+            if len(scmd)>0:
+                rcpd['parameters']['spec_command']=scmd
+
+
     csvfns=[fn for fn in p_files if fn.endswith('.csv')]
     if len(csvfns)==1:#should only be 1 file that is the summary of spec info
         fn=csvfns[0]
-        multirun_ana_files[an_name]+=[{'folderpath':p, 'fn':fn, 'type':'fom_files', 'fval':'csv_fom_file;'}]
+        #multirun_ana_files[an_name]+=[{'folderpath':p, 'fn':fn, 'type':'fom_files', 'fval':'csv_fom_file;'}]
         rcpd['file_dlist']+=[{'tech':'files_technique__SSRL', 'type':'csv_summary_files',  'fn':fn, 'fval':'ssrl_spec_csv_file;', 'folderpath':p}]
-        
+
+    sysname=os.path.split(p_processed)[1]
+    h5path=os.path.join(os.path.join(p_processed, 'h5'), sysname+'.h5')
+    h5f=h5py.File(h5path, mode='r')
+    g=h5f[h5f.attrs['default_group']]
+    gd=g['deposition']
+    gr=gd['selectROI']
+    gs=g['spec']
+    #gr['compositions']
+    q=g['xrd']['qcounts'].attrs['q']
+    npts=len(q)
+    xrfcsvkeys=['sample_no,runint,plate_id']
+    xrfcsvkeys+=['%s.%s' %(tup[1], tup[0]) for tup in sorted(gs.attrs.items())]
+    roi_keys_to_copy=[tup[0] for tup in sorted(gs.attrs.items())]
+    xrfcsvkeys+=['%s.AtFrac' %el for el in gd.attrs['elements']]
+    xrfcsvfn=''.join([el for el in gd.attrs['elements']])
+    an_name='Analysis__SSRL_XRF_Comps'
+    headline=','.join(xrfcsvkeys)
+    multirun_ana_files[an_name]=[{'type':'fom_files', 'fn':xrfcsvfn, 'fval':'csv_fom_file;%s;1;%d' %(headline, len(gr['compositions'])), 'roi_keys_to_copy':roi_keys_to_copy, 'headline':headline}]
+
+
+    xy_images=numpy.array(zip(gd['pmp_x'][:], gd['pmp_y'][:]))
+
     imdir=os.path.join(p, 'images')
     if os.path.isdir(imdir):
-        imdir_files=os.listdir(p)
-        calibfns=sorted([fn for fn in imdir_files if fn.endswith('.calib')])
-        if len(calibfns)>0:#many but only need 1
-            fn=calibfns[0]
-            multirun_ana_files[an_name]+=[{'folderpath':imdir, 'fn':fn, 'type':'misc_files', 'fval':'ssrl_misc_file;'}]
-        tif_fns=[fn for fn in imdir_files if fn.endswith('.tif')]
-        how to get xyarr?
-        rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'xrd_image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir} for fn in tif_fns]
-    
-    if not p_processed is None:
-        
-    temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy') or fn.endswith('.eva') or fn.endswith('.txt')]
-    g_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.gfrm')]
-    b_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.bsml')]
-    e_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.xy')]
-    m_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.eva')]
-    t_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.txt')]
-    rcpdlist=[]
-    #rcpdind_fold_fn__tocopy=[]
-    rcpind=-1#in case only gfrms
-    for rcpind, (bfold, bfn) in enumerate(b_tups):
-        rcpd={'file_dlist':[]}
-        bname=bfn[:-5]#strip .bsml
-        popinds=[count for count, (dp, fn) in enumerate(g_tups) if os.path.split(dp)[1]==bname and fn.startswith(bname)]
-        if len(popinds)==0:
-            print 'cannot find .gfrm files for %s in %s' %(bfn, bfold)
-            raiseerror
-        createtupfcn=lambda db_fn:tuple([eval(intstr.rstrip('.gfrm')) for intstr in db_fn[1].split('-')[-2:]]+list(db_fn))
-        g__smpind_frameind_fold_fn=sorted([createtupfcn(g_tups.pop(i)) for i in popinds[::-1]])#sorted by sample ind then frame ind
-        bsmld=get_bmsl_dict(os.path.join(bfold, bfn))
-        rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'bsml_files',  'fn':bfn, 'fval':'xrds_bruker_bsml_file;', 'folderpath':bfold}]
+        imdir_files=os.listdir(imdir)
+    #        calibfns=sorted([fn for fn in imdir_files if fn.endswith('.calib')])
+    #        if len(calibfns)>0:#many but only need 1
+    #            fn=calibfns[0]
+    #            multirun_ana_files[an_name]+=[{'folderpath':imdir, 'fn':fn, 'type':'misc_files', 'fval':'ssrl_misc_file;'}]
+        tif_fns=sorted([fn for fn in imdir_files if fn.endswith('.tif')])
+        if len(tif_fns)==len(xy_images):
+            rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir, \
+                 'ana_files':{\
+                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'xrds_pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
+                     'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'xrds_pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
+                                    }, \
+                 } for count, (fn, xyarr) in enumerate(zip(tif_fns, xy_images))]
+    #get Analysis__SSRL_Integrate params from g['xrd'].attrs.items()
+    pck2dfolder=os.path.join(p_processed, 'pck2d')
+    pck2dvalsfn='pck2d_chi_q_vals.pck'
+    pck2dvalsp=os.path.join(os.path.split(p_processed)[0], pck2dvalsfn)
+    if os.path.isdir(pck2dfolder) and os.path.isfile(pck2dvalsp):
+        rcpd['file_dlist']+=[{'tech':'files_technique__SSRL', 'type':'pck2d_files',  'fn':pck2dvalsfn, 'fval':'ssrl_pck_file;', 'folderpath':os.path.split(pck2dvalsp)[0]}]
+        pck2d_fns=sorted([fn for fn in os.listdir(pck2dfolder) if fn.endswith('_chiq.pck')])#assuem this sorting gives the same ordering as the xys
+        rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'pck2d_files',  'fn':fn, 'fval':'ssrl_pck_file;', 'folderpath':pck2dfolder} for fn, xyarr in zip(pck2d_fns, xy_images)]
+    rcpdlist=[rcpd]
+    #h5f.close()#keep it open so don't need h5py in ExternalDataImportApp
+    return {'rcpdlist':rcpdlist, 'multirun_ana_files':multirun_ana_files, 'h5f':h5f}#the fns in rcpdlist
+#xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
 
-        for count, (xstr, ystr) in enumerate(bsmld['xystr_list']):
-            xyarr=numpy.float64([eval(xstr), eval(ystr)])
-            for smpind, frameind, gfold, gfn in g__smpind_frameind_fold_fn:#possibly not all gfrm got use but they were part of the bsml so they won't get treated as separate runs
-                if smpind==count:
-                    if gfn in [tempd['fn'] for tempd in rcpd['file_dlist']]:
-                    #if gfn in rcpd['files_technique__XRDS']['gfrm_files'].keys():
-                        print 'ERROR: mutliple gfrm found associated with the same bsml'
-                        print bfold, bfn
-                        print gfold, gfn
-                        raiseerror
-                    rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
 
-        rcpd['name']=bsmld['timestamp']
-        rcpd['parameters']=copy.deepcopy(bsmld['paramd'])
-        rcpdlist+=[rcpd]
 
-    for gfold, gfn in g_tups:
-        rcpind+=1
-        rcpd={'file_dlist':[]}
-        timestampssecs=os.path.getmtime(os.path.join(gfold, gfn))
-        ts=time.strftime('%Y%m%d.%H%M%S',time.gmtime(timestampssecs))
-        while ts in [rcpdv['name'] for rcpdv in rcpdlist]:
-            timestampssecs+=1
-            ts=time.strftime('%Y%m%d.%H%M%S',time.gmtime(timestampssecs))
-
-        xyarr=get_xy__solo_gfrm_fn(gfn)
-
-        rcpd['name']=ts
-
-        rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
-        rcpd['parameters']={}#other default paremetrs could be added here but at least need dictionary defined so plate_id can be added 
-
-        rcpdlist+=[rcpd]
-    for dp, fn in e_tups:
-        find_gfrm_error_bool=xy_file_dict_into_rcpdlist(dp, fn, rcpdlist)
-    multirun_ana_files={}
-    multirun_ana_files['Analysis__Bruker_Eva']=[{'folderpath':dp, 'fn':fn, 'type':'misc_files', 'fval':'xrds_bruker_eva_file;'} for dp, fn in m_tups]
-    multirun_ana_files['Analysis__User_Notes']=[{'folderpath':dp, 'fn':fn, 'type':'misc_files', 'fval':'xrds_user_txt_file;'} for dp, fn in t_tups]
-    return {'rcpdlist':rcpdlist, 'multirun_ana_files':multirun_ana_files}#the fns in rcpdlist
-    #xyfiledlist xy files are not in rcpdind_fold_fn__tocopy. they get copied to ana folder instead but only if rcpdlist is >=0 and the rcpind gets put into the exp
-
+#maindatad=get_externalimportdatad_ssrl_batchresults(p, p_processed=pp)
 
 #p=r'K:\experiments\xrds\Lan\drop\35345_ZrV_550C_3h'
-#maindatad=get_rcpdlist_xrdolfder(p)
+#h5f,maindatad=get_rcpdlist_xrdolfder(p)
 #p=r'K:\experiments\xrds\user\Lan\MaterialsProject-2\Vanadates\35345_ZrV_550C_3h'

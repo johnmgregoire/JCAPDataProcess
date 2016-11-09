@@ -81,25 +81,36 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         for i, l in enumerate(profiledesc):
             self.ProfileComboBox.insertItem(i, l)
 
-
+        
 
         self.RcpTreeWidgetFcns=treeclass_filedict(self.RcpTreeWidget)
         self.ExpTreeWidgetFcns=treeclass_filedict(self.ExpTreeWidget)
         self.AnaTreeWidgetFcns=treeclass_filedict(self.AnaTreeWidget)
 
         self.cleardata()
+        
+        self.ProfileComboBox.setCurrentIndex(2)
+        p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24297_NbMnVO'
+        pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24297_NbMnVO'
+        self.importfolder(p=p, p_processed=pp)
+        
 
     def ssrl_profile_v1(self):
+        from ssrl_io import *
         self.importfolderfcn=get_externalimportdatad_ssrl_batchresults
         self.createfiledictsfcn=self.createfiledicts
-        self.mod_smp_afd_fcn=self.mod_afd_fcn__std
-        self.mod_multi_afd_fcn=self.mod_afd_fcn__std
+        self.mod_smp_afd_fcn=self.stdcopy_afd
+        self.mod_multi_afd_fcn=self.stdcopy_afd
         self.datatype='ssrl'
         self.computernamedefault='HTE-SSRL-01'
         self.AddToAnaPushButton.setText('Create UDI')
         self.AddToAnaPushButton.setVisible(True)
         self.add_to_ana_fcn=self.create_udi
+        self.CalcXLineEdit.setText('X')
+        self.CalcYLineEdit.setText('Y')
+        self.copy_all_to_ana_fcn=self.copy_all_to_ana__ssrl
         
+                
     def xrds_profile(self):
         self.importfolderfcn=get_externalimportdatad_xrds_folder
         self.createfiledictsfcn=self.createfiledicts
@@ -107,6 +118,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='xrds'
         self.computernamedefault='HTE-XRDS-01'
+        self.copy_all_to_ana_fcn=self.copy_all_to_ana__xrds
         self.AddToAnaPushButton.setVisible(False)
     
     def xrds_profile_withq(self):
@@ -167,11 +179,65 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 smplist+=[smp]    
         
         writeudifile(os.path.join(anafolder, afd['anafn']), udi_dict)#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
-    def stdcopy_afd(self, afd, anafolder):
-        p=os.path.join(afd['folderpath'], afd['fn'])
-        newp=os.path.join(anafolder, afd['anafn'])
-        shutil.copy(p, newp)
-
+    
+    def copy_all_to_ana__ssrl(self, anatempfolder):        
+        for afd in self.ana_filedict_tocopy:
+            afd['copy_fcn'](afd, anatempfolder)# could be shutil.copy if no changes required
+        
+        headline='q.nm,intensity.counts'
+        h5f=self.maindatad['h5f']
+        g=h5f[h5f.attrs['default_group']]
+        gs=g['spec']
+        gd=g['deposition']
+        gr=gd['selectROI']
+        
+        q=g['xrd']['qcounts'].attrs['q']
+        qcounts=g['xrd']['qcounts'] 
+        
+        mainh5inds=[]
+        for k in ['qcounts_subbcknd', 'qcounts']:#do qcounts last so this is the default for mainh5inds below
+            temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no']) for afd in self.ana_filedict_tocopy if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
+            if len(temptups)==0:
+                continue
+            mainh5inds=map(operator.itemgetter(0), temptups)
+            fns=map(operator.itemgetter(1), temptups)
+            mainsmps=map(operator.itemgetter(2), temptups)
+            qcountsarr=g['xrd'][k][:, :][mainh5inds]
+            for fn, qc in zip(fns, qcountsarr):
+                lines=[headline]
+                lines+=['%.5e,%.5e' %t for t in zip(q, qc)]
+                s='\n'.join(lines)
+                with open(os.path.join(anatempfolder, fn), mode='w') as f:
+                    f.write(s)
+        
+        
+        
+        templ=[afd for afd in self.ana_filedict_tocopy if 'roi_keys_to_copy' in afd.keys()]
+        if len(mainh5inds)==0 or len(templ)!=1:
+            h5f.close()
+            return
+        afd=templ[0]
+        fom_columns=[mainsmps]
+        fom_columns+=[[0]*len(mainsmps)]#runint
+        fom_columns+=[[self.plate_idstr]*len(mainsmps)]
+        fmtlist=['%d', '%d', '%s']
+        fmtlist+=['%.4e']*len(afd['roi_keys_to_copy'])
+        for sk in afd['roi_keys_to_copy']:
+            fom_columns+=[gs[sk][:][mainh5inds]]
+        comps=gr['compositions'][:, :][mainh5inds]
+        fmtlist+=['%.3f']*comps.shape[1]
+        for arr in comps.T:
+            fom_columns+=[arr]
+        
+        self.anadict[afd['anak']]['files_multi_run'][afd['type']][afd['anafn']]=';'.join([afd['fval'].rpartition(';')[0], '%d' %len(mainsmps)])
+        lines=[afd['headline']]
+        fmstr=','.join(fmtlist)
+        lines+=[fmstr %tup for tup in zip(*fom_columns)]
+        s='\n'.join(lines)
+        with open(os.path.join(anatempfolder, afd['anafn']), mode='w') as f:
+            f.write(s)
+       
+        
     def xrds_copy_xy_to_ana(self, afd, anafolder):
         p=os.path.join(afd['folderpath'], afd['fn'])
         newp=os.path.join(anafolder, afd['anafn'])
@@ -198,13 +264,17 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         s='\n'.join(lines)
         with open(newp, mode='w') as f:
             f.write(s)
+    
+    def evalsmpstr_afd(self, afd, smpstr):
+        if not (smpstr is None or len(smpstr)==0 or smpstr=='0'):
+            afd['sample_no']=myeval(smpstr)
             
     def mod_smp_afd__xrds(self, afd, anak, smpstr=None):                                
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
+        afd['anak']=anak
         afd['copy_fcn']=self.xrds_copy_xy_to_ana
-        if not smpstr is None:
-            afd['sample_no']=myeval(smpstr)
+        self.evalsmpstr_afd(afd, smpstr)
         return [afd]
     
     def mod_smp_afd__xrds_withq(self, afd, anak, smpstr=None):
@@ -212,25 +282,19 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         afd['anafn']=newfn
         afd['fval']=afd['fval'].replace('two_theta.deg,','q.nm,two_theta.deg,')
         afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
-        if not smpstr is None:
-            afd['sample_no']=myeval(smpstr)
-#        afd2={}
-#        for k, v in afd.iteritems():
-#            afd2[k]=v
-#        afd2['anafn']=afd2['anafn'].replace('.csv', '_q.csv')
-#        afd2['type']='q_files'
-#        afd2['fval']=afd2['fval'].replace('two_theta','q_nm')
-#        afd2['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
+        self.evalsmpstr_afd(afd, smpstr)
         return [afd]
         
     def mod_afd_fcn__std(self, afd, anak, smpstr=None):
         newfn='%s_%s' %(anak, afd['fn'])
         afd['anafn']=newfn
         afd['copy_fcn']=self.stdcopy_afd
-        if not smpstr is None:
-            afd['sample_no']=myeval(smpstr)
+        self.evalsmpstr_afd(afd, smpstr)
         return [afd]
 
+
+
+        
     def createfiledicts(self):
         self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
         self.ana_filedict_tocopy=[]
@@ -512,7 +576,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             mainitem.setExpanded(True)
 
         self.runtreeclass.maketoplevelchecked()
-
+        
         self.foldernameLineEdit.setText(p)
         self.openplatemap(self.plate_idstr)
         ellist=getelements_plateidstr(self.plate_idstr)
@@ -635,12 +699,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             rp=compareprependpath(EXPFOLDERS_J+EXPFOLDERS_L, expfolderpath)
             self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
             self.anadict['experiment_name']=expname
-            self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
-
+            
             anatempfolder=getanadefaultfolder()
+            
+            self.copy_all_to_ana_fcn(anatempfolder)
+
+            self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
             anafilestr=self.AnaTreeWidgetFcns.createtxt()
-            for afd in self.ana_filedict_tocopy:
-                afd['copy_fcn'](afd, anatempfolder)# could be shutil.copy if no changes required
             anafolder=saveana_tempfolder(anafilestr, anatempfolder, anadict=None, analysis_type='temp' if saveopt==1 else self.datatype, rundone='.done' if saveopt==3 else '.run')
 
 #        if saveopt>1:#everything now in the folder so copy to non-temp if necessary
