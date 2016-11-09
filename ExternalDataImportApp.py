@@ -89,18 +89,15 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         self.cleardata()
         
-        self.ProfileComboBox.setCurrentIndex(2)
-        p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24297_NbMnVO'
-        pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24297_NbMnVO'
-        self.importfolder(p=p, p_processed=pp)
+        self.ProfileComboBox.setCurrentIndex(0)
         
 
     def ssrl_profile_v1(self):
         from ssrl_io import *
         self.importfolderfcn=get_externalimportdatad_ssrl_batchresults
         self.createfiledictsfcn=self.createfiledicts
-        self.mod_smp_afd_fcn=self.stdcopy_afd
-        self.mod_multi_afd_fcn=self.stdcopy_afd
+        self.mod_smp_afd_fcn=self.mod_afd_fcn__std
+        self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='ssrl'
         self.computernamedefault='HTE-SSRL-01'
         self.AddToAnaPushButton.setText('Create UDI')
@@ -131,59 +128,117 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def add_to_ana(self):
         self.add_to_ana_fcn()
         
-    def create_udi(self):
-        #***
-        
+    def create_udi(self, opttionsearchstr_comps=None, opttionsearchstr_xrd=None):
+        if len(self.anadict)==0:
+            return
         anak='ana__%d' %self.nextana
         anarunk='files_multi_run'
         self.nextana+=1
         self.anadict[anak]={}
-        self.anadict[anak]['name']='Analysis__Cretae_UDI'
+        self.anadict[anak]['name']='Analysis__Create_UDI'
         self.anadict[anak]['technique']=self.datatype
         self.anadict[anak]['plate_ids']=self.plate_idstr
         self.anadict[anak][anarunk]={}
         ana__d=self.anadict[anak]
                                 
         newfn='%s_%s.udi' %(anak, self.plate_idstr)
-        d=self.anadict[anak][anarunk]
-        afd={}
-        #afd['folderpath']=fold
-        afd['type']='misc_files'
-        #afd['fn']=fn
-        afd['fval']='%s_udi_file;' %self.datatype
-        afd['anafn']=newfn
-        afd['copy_fcn']=self.copy_createudi
-        if not afd['type'] in d.keys():
-            d[afd['type']]={}
-        d[afd['type']][afd['anafn']]=afd['fval']
+        ana__d=ana__d[anarunk]
+        afd_udi={}
+        #afd_udi['folderpath']=fold
+        afd_udi['anak']=anak
+        afd_udi['type']='misc_files'
+        #afd_udi['fn']=fn
+        afd_udi['fval']='%s_udi_file;' %self.datatype
+        afd_udi['anafn']=newfn
+        afd_udi['copy_fcn']=self.copy_createudi
+        if not afd_udi['type'] in ana__d.keys():
+            ana__d[afd_udi['type']]={}
+        ana__d[afd_udi['type']][afd_udi['anafn']]=afd_udi['fval']
         
-        afd['sample_no__ana_filedict_inds']=sorted([(afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and afd['type']=='pattern_files'])
+        xrdanak_anname_options=[(k, self.anadict[k]['name']) for k in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__') if True in ['pattern_files' in d.keys() for k2, d in self.anadict[k].iteritems() if isinstance(d, dict)]]
+        xrdanaoptions=['-'.join(tup) for tup in xrdanak_anname_options]
+        if not opttionsearchstr_xrd is None:
+            xrdselectind=0
+            for s in anaoptions:
+                if opttionsearchstr_xrd in s:
+                    break
+                xrdselectind+=1
+            if xrdselectind==len(xrdanaoptions):
+                print 'udi xrd search option not found'
+                return
+        elif len(xrdanaoptions)==1:
+            xrdselectind=0
+        else:
+            xrdselectind=userselectcaller(self, options=xrdanaoptions, title='Select xrd data source for udi',  cancelallowed=True)
+            if xrdselectind is None:
+                return
+        
+        anak_xrd, analaysis_name__patterns=xrdanak_anname_options[xrdselectind]
+
+        udi_dict={'ana_file_type':'pattern_files', 'anak':anak_xrd, 'q_key':'q.nm', 'intensity_key':'intensity.counts', 'analaysis_name__patterns':analaysis_name__patterns}
+        
+        kl=[k for k in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')  if 'files_multi_run' in self.anadict[k].keys() and 'fom_files' in self.anadict[k]['files_multi_run'].keys()]
+        anak_anname_options=[(k, csvfn) for k in kl for csvfn, csvfval in self.anadict[k]['files_multi_run']['fom_files'].items() if csvfval.count('.AtFrac')>1]
+        anaoptions=['-'.join(tup) for tup in anak_anname_options]
+        if len(anaoptions)==0:
+            print 'no comp data found'
+            return
+        if not opttionsearchstr_comps is None:
+            selectind=0
+            for s in anaoptions:
+                if opttionsearchstr_comps in s:
+                    break
+                selectind+=1
+            if selectind==len(anaoptions):
+                print 'udi comp search option not found'
+                return
+        else:
+            #anaoptions+=['platemap']
+            selectind=userselectcaller(self, options=anaoptions, title='Select composition source for udi',  cancelallowed=True)
+            if selectind is None:
+                return
+#            if selectind==len(anaoptions)-1:
+#                #platemp
+#                selectind=None
+            #start programming ability to import comps from aux ana but thsi should be doen elsewhere
+#            elif selectind==len(anaoptions)-2:
+#                p=selectexpanafile(self, exp=False, markstr='Select .ana/.pck to import, or .zip file')
+#                if len(p)==0:
+#                    return
+#                auxanadict=readana(p, stringvalues=True, erroruifcn=None)
+#                auxanadict=[for k in sort_dict_keys_by_counter(auxanadict, keystartswith='ana__') if 'files_multi_run' in auxanadict[k].keys() and 'fom_files' in auxanadict[k]['files_multi_run'].keys()]
+#                fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True, zipclass=anazipclass)
+                
+        anak_comps, csvfn_comps=anak_anname_options[selectind]
+        udi_dict['anak_comps']=anak_comps
+        udi_dict['fom_file_comps']=csvfn_comps
+        udi_dict['fomname_split_comps']='.AtFrac'
+        afd_udi['udi_dict']=udi_dict
+        
+        self.anadict[anak]['parameters']={}
+        for k, v in udi_dict.iteritems():
+            self.anadict[anak]['parameters'][k]=v
+        afd_udi['sample_no__ana_filedict_inds']=sorted([(afd['sample_no'], count, ) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and afd['type']=='pattern_files'])
         #need to get compositions and xy data and only keep sample_no with this info
-        self.ana_filedict_tocopy+=[afd]
+        self.ana_filedict_tocopy+=[afd_udi]
+        self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
     
     def copy_createudi(self, afd, anafolder):
-        smplist=map(operator.itemgetter(0), afd['sample_no__ana_filedict_inds'])
-        afdinds=map(operator.itemgetter(0), afd['sample_no__ana_filedict_inds'])
-        smplist=[]
-        qarr=None
-        udi_dict={}
-        for smp, afdind in afd['sample_no__ana_filedict_inds']:
-            if compositionavailable:
-                qvals
-                if 'Q' in udi_dict.keys():
-                    if len(qvals)!=len(udi_dict['Q']) or ((udi_dict['Q']-qvals)**2).sum()>(.01*(qvals**2).sum()):#proxy for equivlanet q arrays
-                        continue
-                else:
-                    udi_dict['Q']=qvals
-                
-                smplist+=[smp]    
-        
-        writeudifile(os.path.join(anafolder, afd['anafn']), udi_dict)#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
+        ananame=os.path.split(anafolder)[1].rpartition('.')[0]
+        udi_dict=afd['udi_dict']
+        udi_dict['ana_name']=ananame
+        udi_dict['ana_name_comps']=ananame
+        udi_dict['plate_id']=self.plate_idstr
+        for k, v in udi_dict.iteritems():
+            self.anadict[afd['anak']]['parameters'][k]=v
+        anadict_with_filed=copy.copy(self.anadict)
+        convertfilekeystofiled(anadict_with_filed)
+        create_udi_anas(os.path.join(anafolder, afd['anafn']), udi_dict, anadict=anadict_with_filed,anadict_comps=anadict_with_filed, anafolder=anafolder, anafolder_comps=anafolder)
     
-    def copy_all_to_ana__ssrl(self, anatempfolder):        
-        for afd in self.ana_filedict_tocopy:
-            afd['copy_fcn'](afd, anatempfolder)# could be shutil.copy if no changes required
-        
+    
+    def copy_all_to_ana__ssrl(self, anatempfolder):
+
+        finished_inds_ana_filedict_tocopy=[]
         headline='q.nm,intensity.counts'
         h5f=self.maindatad['h5f']
         g=h5f[h5f.attrs['default_group']]
@@ -196,29 +251,37 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         
         mainh5inds=[]
         for k in ['qcounts_subbcknd', 'qcounts']:#do qcounts last so this is the default for mainh5inds below
-            temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no']) for afd in self.ana_filedict_tocopy if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
+            temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
             if len(temptups)==0:
                 continue
             mainh5inds=map(operator.itemgetter(0), temptups)
             fns=map(operator.itemgetter(1), temptups)
             mainsmps=map(operator.itemgetter(2), temptups)
-            qcountsarr=g['xrd'][k][:, :][mainh5inds]
-            for fn, qc in zip(fns, qcountsarr):
+            finished_inds_ana_filedict_tocopy+=map(operator.itemgetter(3), temptups)
+            
+            temptups=sorted([(afd['h5arrind'], afd['anafn'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if (not 'sample_no' in afd.keys()) and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
+            nosmp_mainh5inds=map(operator.itemgetter(0), temptups)
+            nosmp_fns=map(operator.itemgetter(1), temptups)
+            finished_inds_ana_filedict_tocopy+=map(operator.itemgetter(2), temptups)
+            
+            qcountsarr=g['xrd'][k][:, :][mainh5inds+nosmp_mainh5inds]
+            for fn, qc in zip(fns+nosmp_fns, qcountsarr):
                 lines=[headline]
                 lines+=['%.5e,%.5e' %t for t in zip(q, qc)]
                 s='\n'.join(lines)
                 with open(os.path.join(anatempfolder, fn), mode='w') as f:
                     f.write(s)
+            
         
+        templ=[(afd, count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'roi_keys_to_copy' in afd.keys()]
         
-        
-        templ=[afd for afd in self.ana_filedict_tocopy if 'roi_keys_to_copy' in afd.keys()]
         if len(mainh5inds)==0 or len(templ)!=1:
             h5f.close()
             return
-        afd=templ[0]
+        afd, ind=templ[0]
+        finished_inds_ana_filedict_tocopy+=[ind]
         fom_columns=[mainsmps]
-        fom_columns+=[[0]*len(mainsmps)]#runint
+        fom_columns+=[[1]*len(mainsmps)]#runint
         fom_columns+=[[self.plate_idstr]*len(mainsmps)]
         fmtlist=['%d', '%d', '%s']
         fmtlist+=['%.4e']*len(afd['roi_keys_to_copy'])
@@ -236,8 +299,30 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         s='\n'.join(lines)
         with open(os.path.join(anatempfolder, afd['anafn']), mode='w') as f:
             f.write(s)
-       
         
+        for anak in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__'):
+            if self.anadict[anak]['name']=='Analysis__SSRL_Integrate':
+                self.anadict[anak]['parameters']={}
+                for k, v in g['xrd'].attrs.items():
+                    self.anadict[anak]['parameters'][k]=str(v)
+            elif self.anadict[anak]['name']=='Analysis__SSRL_Process':
+                self.anadict[anak]['parameters']={'method':'legacy spline-based baseline detection'}
+        
+        h5f.close()
+        
+        for count, afd in enumerate(self.ana_filedict_tocopy):
+            if count in finished_inds_ana_filedict_tocopy:
+                continue
+            afd['copy_fcn'](afd, anatempfolder)
+
+            
+        
+       
+    def stdcopy_afd(self, afd, anafolder):
+        p=os.path.join(afd['folderpath'], afd['fn'])
+        newp=os.path.join(anafolder, afd['anafn'])
+        shutil.copy(p, newp)
+
     def xrds_copy_xy_to_ana(self, afd, anafolder):
         p=os.path.join(afd['folderpath'], afd['fn'])
         newp=os.path.join(anafolder, afd['anafn'])
@@ -281,6 +366,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
         afd['fval']=afd['fval'].replace('two_theta.deg,','q.nm,two_theta.deg,')
+        afd['anak']=anak
         afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
         self.evalsmpstr_afd(afd, smpstr)
         return [afd]
@@ -289,11 +375,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         newfn='%s_%s' %(anak, afd['fn'])
         afd['anafn']=newfn
         afd['copy_fcn']=self.stdcopy_afd
+        afd['anak']=anak
         self.evalsmpstr_afd(afd, smpstr)
         return [afd]
-
-
-
         
     def createfiledicts(self):
         self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
@@ -707,9 +791,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
             anafilestr=self.AnaTreeWidgetFcns.createtxt()
             anafolder=saveana_tempfolder(anafilestr, anatempfolder, anadict=None, analysis_type='temp' if saveopt==1 else self.datatype, rundone='.done' if saveopt==3 else '.run')
-
-#        if saveopt>1:#everything now in the folder so copy to non-temp if necessary
-#            saveana_tempfolder(None, anafolder, anadict=None, skipana=False, analysis_type=self.datatype, rundone='.done' if saveopt==3 else '.run')
 
 
     def lookupsamples(self, xyfcns=[]):

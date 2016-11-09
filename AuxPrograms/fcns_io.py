@@ -268,7 +268,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
     tuplist=[]
     while len(lines)>0:
         tuplist+=[createnestparamtup(lines)]
-        headerdict=dict(\
+    headerdict=dict(\
         [createdict_tup(tup) for tup in tuplist])
     return d, headerdict
 
@@ -443,7 +443,7 @@ def createfileattrdict(fileattrstr, fn=''):
     d['num_header_lines']=int(type_keys_heads_rows[2].strip())
     d['num_data_rows']=int(type_keys_heads_rows[3].strip())
     if len(type_keys_heads_rows)==5:#only valid sample_no str should be in file attributes
-        if fn.startswith('0_'):#to avoid issue with uvis data having sample_no for ref files
+        if fn.startswith('0_') or len(type_keys_heads_rows[-1].strip())==0:#to avoid issue with uvis data having sample_no for ref files
             d['sample_no']=0
         else:
             d['sample_no']=int(type_keys_heads_rows[-1].strip())
@@ -1764,33 +1764,51 @@ def get_data_rcp_dict__echerunfile(run_path, file_name):
         d[k]=v
     return d
 
-def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id(optional)
+def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id
     metastrlist=[];mtrpnstrlist=[]
     compstrlist=[]
     depstrlist=[]
     countstrlist=[]
-    els=udi_dict['ellabels']
-    elstr=','.join(els)
-    metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Deposition=X,Y,sample_no,plate_id', 'Composition=%s' %(elstr),'Motorpns=%s' %(','.join(udi_dict['Motorpns'])),'Normalize=%s' %(udi_dict['Normalize']),\
-    'CompType=%s' %(udi_dict['CompType'])]
+    if 'ellabels' in udi_dict.keys() and 'comps' in udi_dict.keys():
+        els=udi_dict['ellabels']
+        elstr=','.join(els)
+        metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Composition=%s' %(elstr)]
+        for lab, carr in zip(els, udi_dict['comps'].T):
+            compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
+    
+    if 'xy' in udi_dict.keys():
+        metastrlist+=['Deposition=X,Y']
+        if 'plate_id' in udi_dict.keys():
+            if isinstance(udi_dict['plate_id'], list) and isinstance(udi_dict['plate_id'][0], int):
+                udi_dict['plate_id']=['%d' %v for v in udi_dict['plate_id']]
+            elif not isinstance(udi_dict['plate_id'], list):
+                if isinstance(udi_dict['plate_id'], int):
+                    udi_dict['plate_id']='%d' %udi_dict['plate_id']
+                udi_dict['plate_id']=[udi_dict['plate_id']]*len(udi_dict['xy'])
+        for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f')]+\
+                ([('sample_no=', udi_dict['sample_no'], '%d')] if 'sample_no' in udi_dict.keys() else [])+\
+                ([('plate_id=', udi_dict['plate_id'], '%s')] if 'plate_id' in udi_dict.keys() else []):
+            depstrlist+=[lab+','.join([fmt %v for v in arr])]
+            
+
+    
+   
+    if 'Motorpns' in udi_dict.keys() and 'mxy' in udi_dict.keys():
+        metastrlist+=['Motorpns=%s' %(','.join(udi_dict['Motorpns']))]
+        for lab, arr, fmt in [('mX=', udi_dict['mxy'][:, 0], '%.2f'), ('mY=', udi_dict['mxy'][:, 1], '%.2f')]+\
+                ([('specind=', udi_dict['specind'], '%d')] if 'specind' in udi_dict.keys() else []):
+            if not  numpy.any(numpy.isnan(arr)):
+                mtrpnstrlist+=[lab+','.join([fmt %v for v in arr])]
+    
+    if 'Normalize' in udi_dict.keys():
+        metastrlist+=['Normalize=%s' %(udi_dict['Normalize'])]
+    
+    if 'CompType' in udi_dict.keys():
+        metastrlist+=['CompType=%s' %(udi_dict['CompType'])]
+    
     qcounts=udi_dict['Iarr']
     metastrlist+=['N=%d' %len(qcounts)]
     
-    for lab, arr, fmt in [('mX=', udi_dict['mxy'][:, 0], '%.2f'), ('mY=', udi_dict['mxy'][:, 1], '%.2f'),('specind=', udi_dict['specind'], '%d')]:
-        if not  numpy.any(numpy.isnan(arr)):
-            mtrpnstrlist+=[lab+','.join([fmt %v for v in arr])]
-
-        
-    for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f'), ('sample_no=', udi_dict['sample_no'], '%.0f'), ('plate_id=', [udi_dict['plate_id']], '%d'),\
-    ]:
-        depstrlist+=[lab+','.join([fmt %v for v in arr])]
-
-
-
-    for lab, carr in zip(els, udi_dict['comps'].T):
-
-        compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
-
     for i in range(len(qcounts)+1):
         if i==0:
             #countstrlist+=['Q=']
@@ -1803,9 +1821,9 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
         countstrlist+=[l+','.join(['%.5e' %v for v in arr1])]
 
     metastr='\n'.join(['// Metadata']+metastrlist)
-    mtrpndata='\n'.join(['// Motorpns data']+mtrpnstrlist)
-    depstr='\n'.join(['// Deposition data']+depstrlist)
-    compstr='\n'.join(['// Composition data']+compstrlist)
+    mtrpndata='\n'.join(['// Motorpns data']+mtrpnstrlist) if len(mtrpnstrlist)>0 else ''
+    depstr='\n'.join(['// Deposition data']+depstrlist) if len(depstrlist)>0 else ''
+    compstr='\n'.join(['// Composition data']+compstrlist) if len(compstrlist)>0 else ''
     countstr='\n'.join(['//Integrated counts data']+countstrlist)
 
     filestr='\n\n'.join([metastr, mtrpndata, depstr, compstr, countstr])
@@ -1814,6 +1832,49 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     f.write(filestr)
     f.close()
 
+
+def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_comps=None, anafolder_comps=None):
+    #TODO open anadict and anadict_comps if they are paths
+    
+    csvp=os.path.join(anafolder_comps, udi_dict['fom_file_comps'])
+    csvfiled=anadict_comps[udi_dict['anak_comps']]['files_multi_run']['fom_files'][udi_dict['fom_file_comps']]
+    compsfomd=readcsvdict(csvp, csvfiled, returnheaderdict=False)
+    compkeys=[k for k in csvfiled['keys'] if udi_dict['fomname_split_comps'] in k]
+    udi_dict['ellabels']=[k.partition(udi_dict['fomname_split_comps'])[0] for k in compkeys]
+    
+    smp_fn_filed=sorted([(filed['sample_no'], fn, filed) for anarunk in [anarunk for anarunk in anadict[udi_dict['anak']].keys() if anarunk.startswith('files_')] \
+              for fn, filed in anadict[udi_dict['anak']][anarunk][udi_dict['ana_file_type']].items() \
+                  if 'sample_no' in filed.keys() and filed['sample_no'] in compsfomd['sample_no'] and 'keys' in filed.keys() and udi_dict['q_key'] in filed['keys'] and udi_dict['intensity_key'] in filed['keys']])
+    if len(smp_fn_filed)==0:
+        return
+    
+    smps=[smp for smp, fn, filed in smp_fn_filed]
+    udi_dict['sample_no']=numpy.array(smps)
+    compsmplist=list(compsfomd['sample_no'])
+    inds_compsfomd=[compsmplist.index(smp) for smp in smps]
+    udi_dict['comps']=numpy.array([compsfomd[k][inds_compsfomd] for k in compkeys]).T
+    
+    udi_dict['Iarr']=[]
+    for smp, fn, filed in smp_fn_filed:
+        p=os.path.join(anafolder, fn)
+        datad=readcsvdict(p, filed, returnheaderdict=False)
+        qvals=datad[udi_dict['q_key']]
+        if 'Q' in udi_dict.keys():
+            if len(qvals)!=len(udi_dict['Q']) or ((udi_dict['Q']-qvals)**2).sum()>(.01*(qvals**2).sum()):#proxy for equivlanet q arrays
+                print 'incommensute q arrays - cancelling udi'
+                return
+        else:
+            udi_dict['Q']=qvals
+        udi_dict['Iarr']+=[datad[udi_dict['intensity_key']]]
+    udi_dict['Iarr']=numpy.array(udi_dict['Iarr'])
+    
+    pmap_path=getplatemappath_plateid(str(udi_dict['plate_id']))
+    pmdlist=readsingleplatemaptxt(pmap_path)
+    pmsmps=[d['sample_no'] for d in pmdlist]
+    udi_dict['xy']=numpy.array([[pmdlist[pmsmps.index(smp)]['x'], pmdlist[pmsmps.index(smp)]['y']] for smp in smps])
+    
+    writeudifile(udipath, udi_dict)
+    
 def readudi(fl,fltyp='src'):
     def getval(valstr,dtype=numpy.float32,sep=','):
         if sep in valstr:

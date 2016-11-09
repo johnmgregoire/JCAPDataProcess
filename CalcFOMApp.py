@@ -514,7 +514,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if len(p)==0:
             return
         anadict=readana(p, stringvalues=True, erroruifcn=None)#don't allow erroruifcn because dont' want to clear temp ana folder until exp successfully opened and then clearanalysis and then copy to temp folder, so need the path defintion to be exclusively in previous line
-        print anadict.keys()
+
         if not 'experiment_path' in anadict.keys():
             return
 #        if anadict['ana_version']!='3':
