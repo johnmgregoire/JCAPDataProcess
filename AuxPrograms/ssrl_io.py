@@ -72,8 +72,8 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
         if len(tif_fns)==len(xy_images):
             rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir, \
                  'ana_files':{\
-                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'xrds_pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
-                     'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'xrds_pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
+                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
+                     'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
                                     }, \
                  } for count, (fn, xyarr) in enumerate(zip(tif_fns, xy_images))]
     #get Analysis__SSRL_Integrate params from g['xrd'].attrs.items()
@@ -81,7 +81,7 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
     pck2dvalsfn='pck2d_chi_q_vals.pck'
     pck2dvalsp=os.path.join(os.path.split(p_processed)[0], pck2dvalsfn)
     if os.path.isdir(pck2dfolder) and os.path.isfile(pck2dvalsp):
-        rcpd['file_dlist']+=[{'tech':'files_technique__SSRL', 'type':'pck2d_files',  'fn':pck2dvalsfn, 'fval':'ssrl_pck_file;', 'folderpath':os.path.split(pck2dvalsp)[0]}]
+        rcpd['file_dlist']+=[{'tech':'files_technique__SSRL', 'type':'pck2d_files',  'fn':pck2dvalsfn, 'fval':'ssrl_vals_pck_file;', 'folderpath':os.path.split(pck2dvalsp)[0]}]
         pck2d_fns=sorted([fn for fn in os.listdir(pck2dfolder) if fn.endswith('_chiq.pck')])#assuem this sorting gives the same ordering as the xys
         rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'pck2d_files',  'fn':fn, 'fval':'ssrl_pck_file;', 'folderpath':pck2dfolder} for fn, xyarr in zip(pck2d_fns, xy_images)]
     rcpdlist=[rcpd]

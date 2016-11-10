@@ -121,7 +121,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         numchars, fd=sorted([(numcharsincommin(dp, fd['folderpath']), fd)] for fd in fdlist)[-1]#choose one with beginning path most similar
         print 'multiple gfrm matches for xy file %s  in folder %s with gfrm %s' %(fn, dp, gfn)
     an_name='Analysis__XRDS_Bruker_Integrate' if 'original' in dp else 'Analysis__XRDS_Bruker_Process'
-    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'pattern_files', 'fval':'xrds_pattern_csv_file;two_theta.deg,intensity.counts;1;%d;' %(len(lines)-1)}
+    afd={'folderpath':dp, 'fn':fn, 'fn_gfrm':gfn, 'type':'pattern_files', 'fval':'pattern_csv_file;two_theta.deg,intensity.counts;1;%d;' %(len(lines)-1)}
     if not 'ana_files' in fd.keys():
         fd['ana_files']={}
     if not an_name in fd['ana_files'].keys():
