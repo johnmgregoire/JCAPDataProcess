@@ -159,7 +159,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         xrdanaoptions=['-'.join(tup) for tup in xrdanak_anname_options]
         if not opttionsearchstr_xrd is None:
             xrdselectind=0
-            for s in anaoptions:
+            for s in xrdanaoptions:
                 if opttionsearchstr_xrd in s:
                     break
                 xrdselectind+=1
@@ -231,7 +231,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         udi_dict['plate_id']=self.plate_idstr
         for k, v in udi_dict.iteritems():
             self.anadict[afd['anak']]['parameters'][k]=v
-        anadict_with_filed=copy.copy(self.anadict)
+        anadict_with_filed=copy.deepcopy(self.anadict)
         convertfilekeystofiled(anadict_with_filed)
         create_udi_anas(os.path.join(anafolder, afd['anafn']), udi_dict, anadict=anadict_with_filed,anadict_comps=anadict_with_filed, anafolder=anafolder, anafolder_comps=anafolder)
     
@@ -760,7 +760,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             for fd in rcpd['file_dlist']:
                 shutil.copy(os.path.join(fd['folderpath'], fd['fn']), os.path.join(rcpfolder, fd['fn']))
 
-            rcppath=os.path.join(rcpfolder, rcpname+'.rcp')
+            rcppath=os.path.join(rcpfolder, rcpname.replace('.done', '.rcp'))
             filestr=self.RcpTreeWidgetFcns.createtxt(parentitem=rcpfiled['treeitem'])
             with open(rcppath, mode='w') as f:
                 f.write(filestr)
