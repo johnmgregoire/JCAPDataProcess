@@ -387,7 +387,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.expdict['experiment_type']=self.datatype
         self.expdict['exp_version']='3'
         self.expdict['description']='%d %s runs on plate_id %s' %(len(self.inds_rcpdlist), self.datatype, self.plate_idstr)
+        self.expdict['created_by']=self.datatype
+        self.expdict['access']='hte'
+
         self.anadict={}
+        self.anadict['created_by']=self.datatype
+        self.anadict['access']='hte'
+        self.anadict['analysis_type']=self.datatype
         
         rcplab=str(self.rcplabelLineEdit.text())
         rcplab=filterchars(rcplab, valid_chars = "-%s" % (string.ascii_letters))
@@ -403,6 +409,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             rcpdict={}
             rcpdict['experiment_type']=self.datatype
             rcpdict['technique_name']=self.datatype
+            
+            rcpdict['rcp_version']='2'
+            if not self.pmidstr is None:
+                rcpdict['screening_map_id']=self.pmidstr
+            
             runk='run__%d' %(runcount+1)
             self.expdict[runk]={}
             exprund=self.expdict[runk]
@@ -679,12 +690,14 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 return None
         return serialstr[:-1]
     def openplatemap(self, plate_idstr=None):
+        
         if plate_idstr is None:
             pmpath=mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='select platemap')
             if len(pmpath)==0:
                 return None
+            self.pmidstr=None
         else:
-            pmpath, pmidstr=getplatemappath_plateid(plate_idstr, return_pmidstr=True)
+            pmpath, self.pmidstr=getplatemappath_plateid(plate_idstr, return_pmidstr=True)
             self.platemapdlist=readsingleplatemaptxt(pmpath, \
                         erroruifcn=\
                     lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, plate_idstr)))
@@ -785,7 +798,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             self.anadict['experiment_name']=expname
             
             anatempfolder=getanadefaultfolder()
-            
+            self.anadict['name']=os.path.split(anatempfolder)[1].rpartition('.')[0]
             self.copy_all_to_ana_fcn(anatempfolder)
 
             self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
