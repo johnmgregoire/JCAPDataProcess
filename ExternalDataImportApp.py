@@ -115,7 +115,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.mod_multi_afd_fcn=self.mod_afd_fcn__std
         self.datatype='xrds'
         self.computernamedefault='HTE-XRDS-01'
-        self.copy_all_to_ana_fcn=self.copy_all_to_ana__xrds
+        self.copy_all_to_ana_fcn=self.copy_all_to_ana__std
         self.AddToAnaPushButton.setVisible(False)
     
     def xrds_profile_withq(self):
@@ -315,8 +315,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 continue
             afd['copy_fcn'](afd, anatempfolder)
 
-            
-        
+    def copy_all_to_ana__std(self, anatempfolder):
+        for count, afd in enumerate(self.ana_filedict_tocopy):
+            afd['copy_fcn'](afd, anatempfolder)
        
     def stdcopy_afd(self, afd, anafolder):
         p=os.path.join(afd['folderpath'], afd['fn'])
