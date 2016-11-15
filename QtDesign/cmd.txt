@@ -26,4 +26,4 @@ pyuic4 -x Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\OpenFromInfoForm
 C:\Users\gregoire>pyuic "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\StackPlotForm.ui" -o "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\StackPlotForm.py"
 
 
-"D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\ExternalImportForm.ui" -o "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\ExternalImportForm.py"
+pyuic "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\ExternalImportForm.ui" -o "D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\ExternalImportForm.py"

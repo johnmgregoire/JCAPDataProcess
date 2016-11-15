@@ -57,7 +57,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         for cb in [self.ExpSaveComboBox, self.AnaSaveComboBox]:
             for count, opt in enumerate(['Do not save', 'Save in TEMP as .run', 'Save as .run', 'Save as .done']):
                 cb.insertItem(count, opt)
-            cb.setCurrentIndex(1)
+            cb.setCurrentIndex(3)
 
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
