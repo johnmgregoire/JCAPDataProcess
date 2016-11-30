@@ -72,8 +72,8 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
         if len(tif_fns)==len(xy_images):
             rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir, \
                  'ana_files':{\
-                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
-                     'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'pattern_csv_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
+                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'ssrl_csv_pattern_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
+                     'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'ssrl_csv_pattern_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
                                     }, \
                  } for count, (fn, xyarr) in enumerate(zip(tif_fns, xy_images))]
     #get Analysis__SSRL_Integrate params from g['xrd'].attrs.items()
