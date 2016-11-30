@@ -1,6 +1,7 @@
 from xml.etree import ElementTree
 import os, numpy, copy, time
-from collections import OrderedDict as OD
+#from collections import OrderedDict as OD
+from fcns_math import myeval
 p=r'K:\users\hte\ProjectSummaries\Oxynitrides\La-Ta-O-N\15635\xrd\postacid\20160715\data\postacid.bsml'
 
 #for node in tree.findall('.//TimePerStep'):
@@ -148,7 +149,7 @@ def get_externalimportdatad_xrds_folder(p):
         if len(popinds)==0:
             print 'cannot find .gfrm files for %s in %s' %(bfn, bfold)
             raiseerror
-        createtupfcn=lambda db_fn:tuple([eval(intstr.rstrip('.gfrm')) for intstr in db_fn[1].split('-')[-2:]]+list(db_fn))
+        createtupfcn=lambda db_fn:tuple([myeval(intstr.rstrip('.gfrm')) for intstr in db_fn[1].split('-')[-2:]]+list(db_fn))
         g__smpind_frameind_fold_fn=sorted([createtupfcn(g_tups.pop(i)) for i in popinds[::-1]])#sorted by sample ind then frame ind
         bsmld=get_bmsl_dict(os.path.join(bfold, bfn))
         rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'bsml_files',  'fn':bfn, 'fval':'xrds_bruker_bsml_file;', 'folderpath':bfold}]
