@@ -478,7 +478,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
     if not savefolder is None:
         openfnc=lambda fn:open(os.path.join(savefolder, fn+'.dat'), mode='wb')
         #savefcn=lambda d, keys:numpy.float64([d[k] for k in keys]).tofile(f)
-
+    filedeletedbool=False
     readfcn=readdatafiledict[expfiledict['experiment_type']]
     for k, rund in expfiledict.iteritems():
         if not k.startswith('run__'):
@@ -489,7 +489,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
 
         if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
             runp=tryprependpath(RUNFOLDERS, runp)
-        filedeletedbool=False
+        
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
             zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
