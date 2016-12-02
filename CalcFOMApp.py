@@ -837,7 +837,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                         idialog=messageDialog(self, 'Aborting Save: Aux exp/ana in temp or not on K')
                         idialog.exec_()
                         return
-                    idialog=messageDialog(self, 'Need to copy EXP and/or ANA to %s to continue' %anatype)
+                    idialog=messageDialog(self, 'Need to copy EXP and/or ANA to %s to continue\nOK to attempt copy, Cancel to abort save.' %anatype)
                     if not idialog.exec_():
                         return
                     for d_needcopy in needcopy_dlist: 
