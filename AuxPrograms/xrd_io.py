@@ -53,7 +53,8 @@ getxylist=lambda tree: [node.text.split(',')[:2] for node in tree.iter('Datum')]
 fmtbrukertimestamp=lambda s:s.partition('.')[0].replace('-','').replace(':','').replace('T','.')
 def get_bmsl_dict(p):
     paramd={}
-    updatefcn=lambda paramd, k, v:paramd.update([(k.replace('2','two_'), v)] if len(v)>0 else [])
+    updatefcn=lambda paramd, k, v:paramd.update([(k.replace('2','two_'), v.replace('JCAP-XRDS-01', 'HTE-XRDS-01').replace('jcap-xrds-01', 'hte-xrds-01'))] \
+                                                                        if len(v)>0 else [])
     with open(p, 'rt') as f:
         tree = ElementTree.parse(f)
     for tup in bstuplist:
