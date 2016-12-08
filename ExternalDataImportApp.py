@@ -112,6 +112,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.CalcXLineEdit.setText('X')
         self.CalcYLineEdit.setText('Y')
         self.copy_all_to_ana_fcn=self.copy_all_to_ana__ssrl
+        self.openmessage='select folder containing spec file and a subfolder "images"'
         
                 
     def xrds_profile(self):
@@ -123,6 +124,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.computernamedefault='HTE-XRDS-01'
         self.copy_all_to_ana_fcn=self.copy_all_to_ana__std
         self.AddToAnaPushButton.setVisible(False)
+        self.openmessage='select folder containing all files for data import'
     
     def xrds_profile_withq(self):
         self.xrds_profile()
@@ -636,8 +638,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         d[kl[0]]=ans
 
     def importfolder(self, p=None, plate_idstr=None, **kwargs):
+        self.cleardata()
+        self.profiledefintionfcns[self.ProfileComboBox.currentIndex()]()#defines the functions
+        
         if p is None:
-            p=mygetdir(parent=self, markstr='select folder containing all files for data import')
+            p=mygetdir(parent=self, markstr=self.openmessage)
         if len(p)==0:
             return
         if plate_idstr is None:
@@ -652,8 +657,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.plate_idstr=pid
 
 
-        self.cleardata()
-        self.profiledefintionfcns[self.ProfileComboBox.currentIndex()]()#defines the functions
+        
         self.maindatad=self.importfolderfcn(p, **kwargs)
         self.import_folder=p
         if self.maindatad is None:
