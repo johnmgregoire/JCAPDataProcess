@@ -58,7 +58,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             for count, opt in enumerate(['Do not save', 'Save in TEMP as .run', 'Save as .run', 'Save as .done']):
                 cb.insertItem(count, opt)
             cb.setCurrentIndex(3)
-
+        
+        QObject.connect(self.ExpSaveComboBox,SIGNAL("activated(QString)"), self.restrictanasave)
+        
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
 
@@ -91,7 +93,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         
         self.ProfileComboBox.setCurrentIndex(0)
         
-
+    def restrictanasave(self):
+        if self.AnaSaveComboBox.currentIndex()<=self.ExpSaveComboBox.currentIndex():
+            return
+        self.AnaSaveComboBox.setCurrentIndex(self.ExpSaveComboBox.currentIndex())
+        
     def ssrl_profile_v1(self):
         from ssrl_io import *
         self.importfolderfcn=get_externalimportdatad_ssrl_batchresults
@@ -173,9 +179,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             if xrdselectind is None:
                 return
         
-        anak_xrd, analaysis_name__patterns=xrdanak_anname_options[xrdselectind]
+        anak_xrd, analysis_name__patterns=xrdanak_anname_options[xrdselectind]
 
-        udi_dict={'ana_file_type':'pattern_files', 'anak':anak_xrd, 'q_key':'q.nm', 'intensity_key':'intensity.counts', 'analaysis_name__patterns':analaysis_name__patterns}
+        udi_dict={'ana_file_type':'pattern_files', 'anak':anak_xrd, 'q_key':'q.nm', 'intensity_key':'intensity.counts', 'pattern_source_analysis_name':analysis_name__patterns}
         
         kl=[k for k in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')  if 'files_multi_run' in self.anadict[k].keys() and 'fom_files' in self.anadict[k]['files_multi_run'].keys()]
         anak_anname_options=[(k, csvfn) for k in kl for csvfn, csvfval in self.anadict[k]['files_multi_run']['fom_files'].items() if csvfval.count('.AtFrac')>1]

@@ -219,7 +219,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return False
         
         if inkjetconcentrationadjustment=='ask_if_appropriate':
-            idialog=messageDialog(self, 'Non standard ink deposition:\nShould platemap compositions be modified?')
+            idialog=messageDialog(self, 'Non standard ink deposition:\nShould platemap compositions be modified?\n"OK" will calculate comps now and for\nall future imports until program closed.')
             if not idialog.exec_():
                 return False
         
