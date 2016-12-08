@@ -154,7 +154,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         afd_udi['anak']=anak
         afd_udi['type']='misc_files'
         #afd_udi['fn']=fn
-        afd_udi['fval']='udi_instance_file'
+        afd_udi['fval']='ssrl_udi_file'
         afd_udi['anafn']=newfn
         afd_udi['copy_fcn']=self.copy_createudi
         if not afd_udi['type'] in ana__d.keys():
