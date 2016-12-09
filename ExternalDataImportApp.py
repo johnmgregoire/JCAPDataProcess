@@ -254,11 +254,11 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         gd=g['deposition']
         gr=gd['selectROI']
         
-        q=g['xrd']['qcounts'].attrs['q']
-        qcounts=g['xrd']['qcounts'] 
-        
+
         mainh5inds=[]
         for k in ['qcounts_subbcknd', 'qcounts']:#do qcounts last so this is the default for mainh5inds below
+            q=g['xrd'][k].attrs['q']
+        
             temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
             if len(temptups)==0:
                 continue
