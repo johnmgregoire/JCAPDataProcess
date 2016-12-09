@@ -40,14 +40,16 @@ extimportui.ProfileComboBox.setCurrentIndex(2)
 saveoption=3# use 3 for .done in ssrl folder
 extimportui.ExpSaveComboBox.setCurrentIndex(saveoption)#.done in ssrl folder
 extimportui.AnaSaveComboBox.setCurrentIndex(saveoption)#.done in ssrl folder
+
 pp_parentdir=r'F:\SSRLFeb2015\Processed'
 pp_parentfn=lambda x: os.path.join(pp_parentdir,x)
 
 p_parentdir=r'F:\SSRLFeb2015\2015Feb'
 p_parentfn=lambda x: os.path.join(p_parentdir,x)
 
-dirl = [x for x in os.listdir(pp_parentdir) if os.path.isdir(pp_parentfn(x))]
+dirl = [x for x in os.listdir(pp_parentdir) if os.path.isdir(pp_parentfn(x)) if x not in ['24073_CuVO','24084_CuVO','24095_MnVO','24107_MnVO']]
 for dirn in dirl:
+    print dirn
     p=p_parentfn(dirn)
     pp=pp_parentfn(dirn)
     if os.path.exists(p) and os.path.exists(pp):
@@ -55,4 +57,5 @@ for dirn in dirl:
         extimportui.createfiles_runprofilefcn()
         extimportui.create_udi(opttionsearchstr_xrd='Process', opttionsearchstr_comps='')#use the qcounts_subbcknd xrd data and the only comps data
         extimportui.savefiles()
-#extimportui.exec_()
+#        extimportui.exec_()
+#    break
