@@ -37,18 +37,22 @@ extimportui.ProfileComboBox.setCurrentIndex(2)
 #p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24297_NbMnVO'
 #pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24297_NbMnVO'
 
-saveoption=2# use 3 for .done in ssrl folder
+saveoption=3# use 3 for .done in ssrl folder
 extimportui.ExpSaveComboBox.setCurrentIndex(saveoption)#.done in ssrl folder
 extimportui.AnaSaveComboBox.setCurrentIndex(saveoption)#.done in ssrl folder
+pp_parentdir=r'F:\SSRLFeb2015\Processed'
+pp_parentfn=lambda x: os.path.join(pp_parentdir,x)
 
-            
-p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24073_CuVO'
-pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24073_CuVO'
+p_parentdir=r'F:\SSRLFeb2015\2015Feb'
+p_parentfn=lambda x: os.path.join(p_parentdir,x)
 
-        
-extimportui.importfolder(p=p, p_processed=pp)
-extimportui.createfiles_runprofilefcn()
-extimportui.create_udi(opttionsearchstr_xrd='Process', opttionsearchstr_comps='')#use the qcounts_subbcknd xrd data and the only comps data
-
-#extimportui.savefiles()
-extimportui.exec_()
+dirl = [x for x in os.listdir(pp_parentdir) if os.path.isdir(pp_parentfn(x))]
+for dirn in dirl:
+    p=p_parentfn(dirn)
+    pp=pp_parentfn(dirn)
+    if os.path.exists(p) and os.path.exists(pp):
+        extimportui.importfolder(p=p, p_processed=pp)
+        extimportui.createfiles_runprofilefcn()
+        extimportui.create_udi(opttionsearchstr_xrd='Process', opttionsearchstr_comps='')#use the qcounts_subbcknd xrd data and the only comps data
+        extimportui.savefiles()
+#extimportui.exec_()

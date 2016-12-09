@@ -656,9 +656,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             pid=ans[0]
         self.plate_idstr=pid
 
-
-        
-        self.maindatad=self.importfolderfcn(p, **kwargs)
+        self.maindatad=self.importfolderfcn(p, parent=self, **kwargs)
         self.import_folder=p
         if self.maindatad is None:
             return
