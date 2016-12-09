@@ -133,7 +133,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
     
 
 
-def get_externalimportdatad_xrds_folder(p):
+def get_externalimportdatad_xrds_folder(p, parent=None):
     temptuplist=[(dirpath, fn) for dirpath, dirnames, filenames in os.walk(p) for fn in filenames if fn.endswith('.gfrm') or fn.endswith('.bsml') or fn.endswith('.xy') or fn.endswith('.eva') or fn.endswith('.txt')]
     g_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.gfrm')]
     b_tups=[(dp, fn) for dp, fn in temptuplist if fn.endswith('.bsml')]

@@ -5,9 +5,9 @@ p=r'K:\experiments\xrds\user\SSRLFeb2015\2015Feb\24297_NbMnVO'
 pp=r'K:\experiments\xrds\user\SSRLFeb2015\Processed\24297_NbMnVO'
 
 p, p_processed=p, pp
-def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocessed=True):#assume folder is for single .rcp
+def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocessed=True, parent=None):#assume folder is for single .rcp
     if p_processed is None and askforprocessed:
-        p_processed=str(mygetdir(parent=None, xpath=p,markstr='Folder containing processed data, i.e. parent folder of "pck2d"' ))
+        p_processed=str(mygetdir(parent=parent, xpath=p,markstr='Folder containing processed data, i.e. parent folder of "pck2d"' ))
         if p_processed is None or len(p_processed)==0:
             p_processed=None
     if p_processed is None:
