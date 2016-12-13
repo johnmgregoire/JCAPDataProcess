@@ -183,7 +183,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 newanafolder=self.anafolder.rpartition('.')[0]+'.done'#this reapleces .run with .done but more generally .anything with .done
                 movebool=True
                 newanafn=self.anafn
-            saveana_tempfolder(None, self.anafolder, erroruifcn=None, skipana=True, anadict=None, movebool=movebool, savefolder=newanafolder)#move files if necessary but don't create .ana or .exp yet. Do this first so image files get put only into new folder
+            saveana_tempfolder(None, self.anafolder, erroruifcn=None, skipana=True, anadict=None, movebool=movebool, savefolder=newanafolder, saveanafile=False)#move files if necessary but don't create .ana or .exp yet. Do this first so image files get put only into new folder
             self.newanapath=os.path.join(newanafolder, newanafn)
         else:#writing files and new ana into existing folder
             newanafn=self.anafn

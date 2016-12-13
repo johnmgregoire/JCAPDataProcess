@@ -1574,7 +1574,7 @@ def getanadefaultfolder(erroruifcn=None):
 
 def timestampname():
     return time.strftime('%Y%m%d.%H%M%S')
-def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', movebool=True, savefolder=None):
+def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, anadict=None, analysis_type='temp', rundone='.run', movebool=True, savefolder=None, saveanafile=True):
 
     if srcfolder.endswith('.incomplete') and savefolder is None:
         rootfold, typefold=os.path.split(os.path.split(srcfolder)[0])
@@ -1623,8 +1623,9 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
                     os.rmdir(srcfolder)
                 except:
                     print 'The old folder still exists due to a problem deleting it: ', srcfolder
-    savep=os.path.join(savefolder, '%s.ana' %timename)
-    saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
+    if saveanafile:
+        savep=os.path.join(savefolder, '%s.ana' %timename)
+        saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
     return savefolder
 
 def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
