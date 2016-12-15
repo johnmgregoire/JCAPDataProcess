@@ -69,8 +69,8 @@ logfilepath=batchfilepath.rpartition('.')[0]+'.log'
 runsrcfolder=tryprependpath(RUNFOLDERS, '', testfile=False, testdir=True).rstrip(os.sep)
 
 #update these to uvis when ready to run for real
-expdestchoice=r'uvis'
-anadestchoice=r'uvis'
+expdestchoice=r'temp'
+anadestchoice=r'temp'
 
 #use these to create .exp or .ana even if in batch file
 forceexp=False
@@ -96,8 +96,17 @@ def updatelog(i, s):
     loglines[i]=';'.join(lst)
     with open(logfilepath, mode='w') as f:
         f.write('\n'.join(loglines))
-        
+ 
 
+def batch_getplotcompbool(fn):       
+    pT=os.path.join(runsrcfolder, fn)
+    serialno=pT.rpartition('_')[2]
+    plateidstr=serialno[:-1]
+    with open(os.path.join(projectroot,'BatchProcesses','uvis_quatcomp_maps.txt'),'r') as uv_mapfs:
+         plotcompbool=1 if getscreeningmapid_plateidstr(plateidstr) in uv_mapfs.readline().split(',') else 0
+    return plotcompbool
+    
+    
 def batch_pvdbool(fn):
     pT=os.path.join(runsrcfolder, fn)
     serialno=pT.rpartition('_')[2]
@@ -183,6 +192,9 @@ for batchcount, batchline in enumerate(batchlines):
                     continue
                 pvdbool=tupbool[0]
             
+            plotcompbool=batch_getplotcompbool(rawfn)
+            visdataui.inkjetconcentrationadjustment=True if plotcompbool else False
+            
             anabool=False
             if forceana or not 'ana_path' in batchline:
                 if expbool:
@@ -243,8 +255,9 @@ for batchcount, batchline in enumerate(batchlines):
                         visdataui.importana(p=idialog.newanapath)
                 batchidialog=saveimagesbatchDialog(None, comboind_strlist)
                 
+                
                 fnsearchle='plate_id__'
-                if not pvdbool:#if PVD bool then don't save composition plots
+                if plotcompbool:#if PVD bool then don't save composition plots
                     fnsearchle+=',code__'
                 batchidialog.filenamesearchLineEdit.setText(fnsearchle)
                 batchidialog.ExitRoutine()
@@ -261,7 +274,7 @@ for batchcount, batchline in enumerate(batchlines):
                 batchidialog.plotstyleoverrideCheckBox.setChecked(True)
                 batchidialog.prependfilenameLineEdit.setText(str(vmin)+'to'+str(vmax))
                 fnsearchle='plate_id__&bg_repr'
-                if not pvdbool:#if PVD bool then don't save composition plots
+                if plotcompbool:#if PVD bool then don't save composition plots
                     fnsearchle+=',code__&bg_repr'
                 batchidialog.filenamesearchLineEdit.setText(fnsearchle)
                 batchidialog.doneCheckBox.setChecked(False)
