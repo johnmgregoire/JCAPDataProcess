@@ -1010,6 +1010,19 @@ def get_multielementink_concentrationinfo(printd, els):#None if nothing to repor
 #    if s is None and not erroruifcn is None:
 #        s=erroruifcn('Enter Platemap ID')
 #    return s
+    
+def getscreeningmapid_plateidstr(plateidstr, erroruifcn=None):
+    p=getinfopath_plateid(plateidstr)
+    s=None
+    if not p is None:
+        with open(p, mode='r') as f:
+            filestr=f.read(10000)
+        searchstr='screening_map_id:'
+        if searchstr in filestr:
+            s=filestr.partition(searchstr)[2].partition('\n')[0].strip()
+    if s is None and not erroruifcn is None:
+        s=erroruifcn('Enter Screening Map ID')
+    return s
 
 def generate_filtersmoothmapdict_mapids(platemapids, requirepckforallmapids=True):#gives 2 layers nested dict, first layer of keys are mapids strings, second layer are filter names and those values are the file path to the .pck
 #find pcks with matching mapid in the root folder or 1 level of subfolders. onyl matches mapid before the first '-'
