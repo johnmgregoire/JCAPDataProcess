@@ -712,7 +712,16 @@ def buildanapath(analysis_path_folder):
     
 def buildrunpath(runp):
     #if user makes .exp with a folder on K or intr computer and this run_path is used but the file is gone opr path changed to ..copied, then should bepossible to find this run as a .zip on J but that is not attempted here
-    return tryprependpath(RUNFOLDERS, runp)
+    p=tryprependpath(RUNFOLDERS, runp)
+    if len(p)==0:
+        foldrel, oldrcpfn=os.path.split(runp)
+        fold=tryprependpath(RUNFOLDERS, foldrel)
+        if len(fold)==0:
+            return ''
+        newfns=[fn for fn in os.listdir(fold) if fn.startswith(oldrcpfn[:15])]
+        if len(newfns)==1:
+            p=os.path.join(fold, newfns[0])
+    return p
 
 def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
 
@@ -2009,16 +2018,26 @@ def get_serial_plate_id(pid):
     checksum=numpy.array([eval(ch) for ch in pid]).sum()%10
     return '%s%d' %(pid, checksum)
 
-def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maindict=[], include_inte_wt_at_subdicts=True):
+def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maindict=[], include_inte_wt_at_subdicts=True, include_transitionslist_bool=False, read_sample_no_bool=False):
+    d={}
     closezip=False
     if zipclass is None:#only close zip if opened it here (not if it was passed)
         zipclass=gen_zipclass(p)
         closezip=bool(zipclass)
     if zipclass:
         lines=zipclass.read(p).split('\r')
+        if read_sample_no_bool:
+            sp=os.path.join(os.path.split(p)[0], 'sample_no.txt')
+            slines=zipclass.readlines(sp)
     else:
         with open(p, mode='r') as f:
             lines=f.read().split('\r')
+        if read_sample_no_bool:
+            sp=os.path.join(os.path.split(p)[0], 'sample_no.txt')
+            with open(sp, mode='r') as f:
+                slines=f.readlines()
+    if read_sample_no_bool:
+        d['sample_no']=[int(s.strip()) for s in slines if len(s.strip())>0]
     keys=None
     for count, l in enumerate(lines):
         if l.startswith('Inte,'):
@@ -2028,30 +2047,31 @@ def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maind
     if keys is None:
         return None
     
-    d={}
+    
     if len(select_columns_headings__maindict)>0:
         selcolinds=[keys.index(s) for s in select_columns_headings__maindict]
         strarr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=str)
         for k, a in zip(select_columns_headings__maindict, strarr):
             if '.' in a[0] or 'NaN' in a:
-                d[k]=numpy.float32(a)
-            elif a[0].isdigit():
-                d[k]=numpy.int32(a)
+                d[k]=numpy.float32([v.strip() for v in a])
+            elif a[0].strip().isdigit():
+                d[k]=numpy.int32([v.strip() for v in a])
             elif includestrvals:
-                d[k]=a
-    column_headings_sub_dict=['Inte', 'Wt%', 'At%']
-    section_start_inds=[keys.index(s) for s in column_headings_sub_dict]
-    num_transition_columns=section_start_inds[1]-section_start_inds[0]-1
-    for starti, section_key in zip(section_start_inds, column_headings_sub_dict):
-        d[section_key]={}
-        d2=d[section_key]
-        selcolinds=range(starti+1, starti+1+num_transition_columns)
-        arr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=float)
-        for ki, a in zip(selcolinds, arr):
-            d2[keys[ki]]=a
+                d[k]=numpy.array([v.strip() for v in a])
+    if include_inte_wt_at_subdicts:
+        column_headings_sub_dict=['Inte', 'Wt%', 'At%']
+        section_start_inds=[keys.index(s) for s in column_headings_sub_dict]
+        num_transition_columns=section_start_inds[1]-section_start_inds[0]-1
+        if include_transitionslist_bool:
+            starti=section_start_inds[0]
+            d['transitionslist']=keys[starti+1:starti+1+num_transition_columns]
+        for starti, section_key in zip(section_start_inds, column_headings_sub_dict):
+            d[section_key]={}
+            d2=d[section_key]
+            selcolinds=range(starti+1, starti+1+num_transition_columns)
+            arr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=float)
+            for ki, a in zip(selcolinds, arr):
+                d2[keys[ki]]=a
     if closezip:
         zipclass.close()
     return d
-
-p=r'C:\Users\gregoire\Downloads\20170106.132913.csv'
-d=read_xrfs_batch_summary_csv(p)

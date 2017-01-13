@@ -41,6 +41,7 @@ matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 from CA_CP_basics import *
 from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
+from xrfs_basics import *
 from FOM_process_basics import *
 from FOM_process_merge import *
 from import_scipy_foruvis import *
@@ -48,13 +49,15 @@ from eche_spectral import Analysis__SpectralPhoto
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax(), Analysis__SpectralPhoto(), \
-   Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS()\
+   Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS(), \
+   Analysis__XRFS_EDAX(), \
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
             Analysis__FOM_Merge_Aux_Ana(), \
             Analysis__FOM_Merge_PlatemapComps(), \
             Analysis__Filter_Linear_Projection(), \
+            Analysis__Process_B_Relative_To_A_Matching_Sample(), \
             Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
 #NumNonPckBasedFilterSmooth=len(FOMProcessClasses)
 

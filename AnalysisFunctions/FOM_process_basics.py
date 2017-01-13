@@ -454,3 +454,70 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)
 
+
+
+
+class Analysis__Process_B_Relative_To_A_Matching_Sample(Analysis_Master_nointer):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':2, 'runints_A':1, 'method':'A_minus_B'}
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__Process_B_Relative_To_A_Matching_Sample'
+        self.requiredkeys=[]
+        self.optionalkeys=[]
+        self.requiredparams=[]
+        self.fomnames=[]
+        self.plotparams=dict({}, plot__1={})
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+    
+    
+    def getgeneraltype(self):#make this fucntion so it is inhereted
+        return 'process_fom'
+        
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+        return self.getapplicablefomfiles(anadict)
+        
+    def getapplicablefomfiles(self, anadict):
+        if not anadict is None and self.params['select_ana'] in anadict.keys() and 'plot_parameters' in anadict[self.params['select_ana']]:
+            self.plotparams=copy.deepcopy(anadict[self.params['select_ana']]['plot_parameters'])
+            
+        self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)#has to be called filedlist tro work with other analysis fcns
+
+        self.description='process %s' %self.params['select_ana']
+        return self.filedlist
+    
+    def check_input(self, critfracapplicable=0):
+        fracapplicable=1.*len(self.filedlist)/self.num_ana_considered
+        return fracapplicable>critfracapplicable, \
+        '%d ana__, %.2f of those available, do not meet requirements' %(self.num_ana_considered-len(self.filedlist), 1.-fracapplicable)
+    def check_output(self, critfracnan=0.9):
+        return True, \
+        'No output check for Process FOM'
+
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
+        self.initfiledicts()
+        for filed in self.filedlist:
+            self.strkeys_fomdlist=[]
+#            if numpy.isnan(filed['sample_no']):
+#                if self.debugmode:
+#                    raiseTEMP
+#                continue
+            fn=filed['fn']
+            try:
+                fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+                self.fomnames=list(set(fomd.keys()).difference(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))#this is to emulate otherAnalysisClass for self.writefom()
+                process_keys=filed['process_keys']
+                along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
+                #dataarr=self.readdata(os.path.join(destfolder, fn), len(filed['keys']), None, num_header_lines=filed['num_header_lines'], zipclass=None)
+                self.fomdlist=self.process_fomd(fomd, process_keys, along_for_the_ride_keys)#this function "transposes" data to emulate AnalysisClass
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                print 'skipped filter/smooth of file ', fn
+                self.fomdlist=[]
+                continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
+            
