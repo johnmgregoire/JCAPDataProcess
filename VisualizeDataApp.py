@@ -292,7 +292,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             rund['platemapsamples']=[d['sample_no'] for d in rund['platemapdlist']]
             multielementink_concentrationinfo_bool=bool(self.inkjetconcentrationadjustment)
             ans=getelements_plateidstr(str(rund['parameters']['plate_id']), multielementink_concentrationinfo_bool=multielementink_concentrationinfo_bool)
-            if multielementink_concentrationinfo_bool:
+            if multielementink_concentrationinfo_bool and not ans is None:
                 els, tup_multielementink=ans
                 if not tup_multielementink is None:
                     errorbool, tupormessage=tup_multielementink
