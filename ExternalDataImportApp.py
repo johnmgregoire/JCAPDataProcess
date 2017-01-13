@@ -182,8 +182,12 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 return
         
         anak_xrd, analysis_name__patterns=xrdanak_anname_options[xrdselectind]
-
-        udi_dict={'ana_file_type':'pattern_files', 'anak':anak_xrd, 'q_key':'q.nm', 'intensity_key':'intensity.counts', 'pattern_source_analysis_name':analysis_name__patterns}
+        
+        fval=[d['pattern_files'].values()[0] for k2, d in self.anadict[anak_xrd].iteritems() if isinstance(d, dict) and 'pattern_files' in d.keys()][0]
+        
+        qkey, intkey=fval.split(';')[1].split(',')[:2]
+        
+        udi_dict={'ana_file_type':'pattern_files', 'anak':anak_xrd, 'q_key':qkey, 'intensity_key':intkey, 'pattern_source_analysis_name':analysis_name__patterns}
         
         kl=[k for k in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')  if 'files_multi_run' in self.anadict[k].keys() and 'fom_files' in self.anadict[k]['files_multi_run'].keys()]
         anak_anname_options=[(k, csvfn) for k in kl for csvfn, csvfval in self.anadict[k]['files_multi_run']['fom_files'].items() if csvfval.count('.AtFrac')>1]
@@ -247,7 +251,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def copy_all_to_ana__ssrl(self, anatempfolder):
 
         finished_inds_ana_filedict_tocopy=[]
-        headline='q.nm,intensity.counts'
         h5f=self.maindatad['h5f']
         g=h5f[h5f.attrs['default_group']]
         gs=g['spec']
@@ -256,7 +259,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         
 
         mainh5inds=[]
-        for k in ['qcounts_subbcknd', 'qcounts']:#do qcounts last so this is the default for mainh5inds below
+        for k, headline in zip(['qcounts_subbcknd', 'qcounts'], ['q.nm,intensity.counts', 'q.nm_processed,intensity.counts_processed']):#do qcounts last so this is the default for mainh5inds below
             q=g['xrd'][k].attrs['q']
         
             temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
