@@ -8,7 +8,7 @@ from fcns_math import *
 from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
-
+from FOM_process_basics import FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING
 
 
 def getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek, runklist=None, requiredparams=[], specificuse='data', specifictech=None, specifictype=None):
@@ -84,7 +84,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
             runzipclass=gen_zipclass(runp)
             p=os.path.join(runp, fn)
             
-            filed['batch_summary']=read_xrfs_batch_summary_csv(p, zipclass=zipclass, select_columns_headings__maindict=self.fomnames, \
+            filed['batch_summary']=read_xrfs_batch_summary_csv(p, select_columns_headings__maindict=self.fomnames, \
                                                                                         include_inte_wt_at_subdicts=True, include_transitionslist_bool=True, read_sample_no_bool=True)
             
         #            except:
@@ -99,34 +99,33 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
             for tr in filed['batch_summary']['transitionslist']:#to preserve order
                 if not tr in alltransitions:
                     alltransitions+=[tr]
-        batchdictkey_appendstr=[(k, self.paramd[k.strip('%')]) for k in ['Inte', 'Wt%', 'At%']]
+        batchdictkey_appendstr=[(k, self.params[k.strip('%')+'_append']) for k in ['Inte', 'Wt%', 'At%']]
         trfoms=[tr+s for k, s in batchdictkey_appendstr for tr in alltransitions]
-        
+        self.fomnames=trfoms+self.fomnames 
         #go through each file and make the fomdlist entries for each samples_no therein, which may contain duplicate sample_no but those should be differentiated by runint
         self.fomdlist=[]
         for filed in self.filedlist:
             fomd={}
-            trfomsmissing=copy.copy(trfoms)
+            trfomsmissing=copy.copy(self.fomnames)
             for batchdictkey, appendstr in batchdictkey_appendstr:
                 for tk in filed['batch_summary']['transitionslist']:
                     savek=tk+appendstr
-                    trfomsmissing.pop(trfomspop.index(savek))
+                    trfomsmissing.pop(trfomsmissing.index(savek))
                     fomd[savek]=filed['batch_summary'][batchdictkey][tk]
             for savek in filed['batch_summary'].keys():
                 if savek in trfomsmissing:#for example StagX
-                    trfomsmissing.pop(savek)
-                    fomd[savek]=filed['batch_summary'][tk]
+                    trfomsmissing.pop(trfomsmissing.index(savek))
+                    fomd[savek]=filed['batch_summary'][savek]
             
             fomd['sample_no']=filed['batch_summary']['sample_no']
             
             #this zips the fomd arrays into tuple lists. the second line makes a dict for eachof those, adding to it a list of NaN tuples for the missing keys, and the 1st adn 3rd lines add to that dict the common values
             self.fomdlist+=[dict(\
-            dict(zip(allkeys, tup)+[(missk, numpy.nan) for missk in trfomsmissing]), \
+            dict(zip(self.fomnames+['sample_no'], tup)+[(missk, numpy.nan) for missk in trfomsmissing]), \
             plate_id=filed['plate_id'], runint=int(filed['run'].partition('run__')[2]))\
-                                        for tup in zip(*[fomd[k] for k in allkeys])]
+                                        for tup in zip(*[fomd[k] for k in self.fomnames+['sample_no']])]
             
-
-        self.fomnames=trfoms+self.fomnames 
+        self.csvheaderdict['plot_parameters']['plot__1']['fom_name']=trfoms[0]
         allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
         
 
