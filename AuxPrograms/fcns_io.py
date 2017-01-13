@@ -58,6 +58,10 @@ class ZipClass():#TODO: zipclass instances are kept open in a few places and clo
         with self.zipopenfcn(fn) as f:
             ans=f.readlines()
         return ans
+    def read(self, fn):
+        with self.zipopenfcn(fn) as f:
+            ans=f.read()
+        return ans
     def loadpck(self, fn):
         with self.zipopenfcn(fn) as f:
             ans=pickle.load(f)
@@ -1724,7 +1728,7 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
             zipclass.close()
         return anadict
 
-def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested
+def create_techd_for_xrfs_exp(techd, openandreadlinesfcn):#not tested. 20170112 - this deifnitely has issues like  doesn't hjave these attributes, and looks like it is meant to add sample_no to each spectrum file but in example I see the sample_no is already there
     if not ('batch_summary_files' in techd.keys() and 'spectrum_files' in techd.keys() and len(techd['batch_summary_files'])==1):
         return techd#assume all fileattr lines have file_type;keys;numhead;numdata and there's no way to get sample_no so just leave the techd along
     batchcsv_fn, batchcsv_fileattrstr=techd['batch_summary_files'].items()[0]
@@ -2004,3 +2008,50 @@ def get_serial_plate_id(pid):
         pid='%d' %pid
     checksum=numpy.array([eval(ch) for ch in pid]).sum()%10
     return '%s%d' %(pid, checksum)
+
+def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maindict=[], include_inte_wt_at_subdicts=True):
+    closezip=False
+    if zipclass is None:#only close zip if opened it here (not if it was passed)
+        zipclass=gen_zipclass(p)
+        closezip=bool(zipclass)
+    if zipclass:
+        lines=zipclass.read(p).split('\r')
+    else:
+        with open(p, mode='r') as f:
+            lines=f.read().split('\r')
+    keys=None
+    for count, l in enumerate(lines):
+        if l.startswith('Inte,'):
+            keys=l.strip().split(',')
+            lines=lines[count+1:]
+            break
+    if keys is None:
+        return None
+    
+    d={}
+    if len(select_columns_headings__maindict)>0:
+        selcolinds=[keys.index(s) for s in select_columns_headings__maindict]
+        strarr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=str)
+        for k, a in zip(select_columns_headings__maindict, strarr):
+            if '.' in a[0] or 'NaN' in a:
+                d[k]=numpy.float32(a)
+            elif a[0].isdigit():
+                d[k]=numpy.int32(a)
+            elif includestrvals:
+                d[k]=a
+    column_headings_sub_dict=['Inte', 'Wt%', 'At%']
+    section_start_inds=[keys.index(s) for s in column_headings_sub_dict]
+    num_transition_columns=section_start_inds[1]-section_start_inds[0]-1
+    for starti, section_key in zip(section_start_inds, column_headings_sub_dict):
+        d[section_key]={}
+        d2=d[section_key]
+        selcolinds=range(starti+1, starti+1+num_transition_columns)
+        arr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=float)
+        for ki, a in zip(selcolinds, arr):
+            d2[keys[ki]]=a
+    if closezip:
+        zipclass.close()
+    return d
+
+p=r'C:\Users\gregoire\Downloads\20170106.132913.csv'
+d=read_xrfs_batch_summary_csv(p)
