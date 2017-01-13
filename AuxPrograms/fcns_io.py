@@ -134,9 +134,11 @@ def getsamplenum_fn(fn):
     elif fn[0].isdigit():
         if fn.startswith('0_'):
             return 0
-        return int(fn.partition('_')[0])
-    else:
-        print 'problem extracting sample number from ', fn
+        try:
+            return int(fn.partition('_')[0])
+        except:
+            pass
+    print 'problem extracting sample number from ', fn
     return 0
 
 def writecsv_smpfomd(p, csvfilstr,headerdict=dict([('csv_version', '1')]), replaceheader=False):#replaceheader is to the headerdict portino of the header and replace with headdict. csvfilestr is ignored in this case
