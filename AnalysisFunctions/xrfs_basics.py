@@ -100,7 +100,8 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
                 if not tr in alltransitions:
                     alltransitions+=[tr]
         batchdictkey_appendstr=[(k, self.params[k.strip('%')+'_append']) for k in ['Inte', 'Wt%', 'At%']]
-        trfoms=[tr+s for k, s in batchdictkey_appendstr for tr in alltransitions]
+        keymodfcn=lambda k, a:'%s.%s%s' %(k[:-1], k[-1:], a)
+        trfoms=[keymodfcn(tr, s) for k, s in batchdictkey_appendstr for tr in alltransitions]
         self.fomnames=trfoms+self.fomnames 
         #go through each file and make the fomdlist entries for each samples_no therein, which may contain duplicate sample_no but those should be differentiated by runint
         self.fomdlist=[]
@@ -109,7 +110,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
             trfomsmissing=copy.copy(self.fomnames)
             for batchdictkey, appendstr in batchdictkey_appendstr:
                 for tk in filed['batch_summary']['transitionslist']:
-                    savek=tk+appendstr
+                    savek=keymodfcn(tk, appendstr)
                     trfomsmissing.pop(trfomsmissing.index(savek))
                     fomd[savek]=filed['batch_summary'][batchdictkey][tk]
             for savek in filed['batch_summary'].keys():
