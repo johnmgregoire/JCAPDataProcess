@@ -302,7 +302,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         
         for filed in self.filedlist:
             filed.update(reqparams_list[0])
-        self.processnewparams()
+        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
         return self.filedlist
         
         
@@ -457,25 +457,21 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 
 
 
-class Analysis__Process_B_Relative_To_A_Matching_Sample(Analysis_Master_nointer):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
+class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':2, 'runints_A':1, 'method':'A_minus_B'}
+        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'method':'B_over_A', 'relative_key_append':'_RelRatio'}
         self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__Process_B_Relative_To_A_Matching_Sample'
+        self.supported_methods=['B_minus_A', 'B_over_A']
+        self.analysis_name='Analysis__Process_B_vs_A_ByRun'
         self.requiredkeys=[]
         self.optionalkeys=[]
         self.requiredparams=[]
         self.fomnames=[]
         self.plotparams=dict({}, plot__1={})
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-    
-    
-    def getgeneraltype(self):#make this fucntion so it is inhereted
-        return 'process_fom'
-        
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
-        return self.getapplicablefomfiles(anadict)
+
+
         
     def getapplicablefomfiles(self, anadict):
         if not anadict is None and self.params['select_ana'] in anadict.keys() and 'plot_parameters' in anadict[self.params['select_ana']]:
@@ -483,41 +479,112 @@ class Analysis__Process_B_Relative_To_A_Matching_Sample(Analysis_Master_nointer)
             
         self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)#has to be called filedlist tro work with other analysis fcns
 
-        self.description='process %s' %self.params['select_ana']
+        if len(self.filedlist)>0:
+            self.description='process B relative to A in %s' %self.params['select_ana']
+            self.processnewparams()
         return self.filedlist
     
-    def check_input(self, critfracapplicable=0):
-        fracapplicable=1.*len(self.filedlist)/self.num_ana_considered
-        return fracapplicable>critfracapplicable, \
-        '%d ana__, %.2f of those available, do not meet requirements' %(self.num_ana_considered-len(self.filedlist), 1.-fracapplicable)
-    def check_output(self, critfracnan=0.9):
-        return True, \
-        'No output check for Process FOM'
 
+    def processnewparams(self, calcFOMDialogclass=None):
+        self.fomnames=[]
+        if len(self.filedlist)!=1:
+            self.filedlist=[]
+            return
+            
+        if not self.params['method'] in self.supported_methods:
+            self.filedlist=[]
+            self.params=copy.copy(self.dfltparams)
+            return
+        methodind=self.supported_methods.index(self.params['method'])
+        self.relfcn=[\
+        (lambda a,b:b-a), \
+        (lambda a,b:b/a), \
+        ][methodind]
+        
+        dfltvals=[\
+            '_RelDiff', \
+            '_RelRatio', \
+            ]
+        if len(self.params['relative_key_append'])==0 or self.params['relative_key_append'] in dfltvals:
+            self.params['relative_key_append']=dfltvals[methodind]
+        
+        filed=self.filedlist[0]
+        
+        processkeys=filed['process_keys']
+        for count, (paramkey) in enumerate([('fom_keys_A'), ('fom_keys_B')]):#B goes second so its sel_processkeys available after loop
+            if self.params[paramkey]=='ALL':
+                sel_processkeys=processkeys
+            elif not (self.params[paramkey]=='NONE'):
+                searchstrs=self.params[paramkey].split(',')
+                sel_processkeys=sorted([([ss in k for ss in searchstrs].index(True), k) for k in processkeys if True in [ss in k for ss in searchstrs]])
+                if len(sel_processkeys)==0:
+                    self.params[paramkey]='NONE'
+                sel_processkeys=map(operator.itemgetter(1), sel_processkeys)#so that order of the search strings user enteres is maintained
+            if self.params[paramkey]=='NONE':
+                continue
+            self.params[paramkey]=','.join(sel_processkeys)
+        
+        if self.params['fom_keys_B']=='None' or self.params['fom_keys_A']=='None' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
+            self.filedlist=[]
+            self.params=copy.copy(self.dfltparams)
+            return
+        
+        try:
+            self.runints_A=[int(s.strip()) for s in self.params['runints_A'].split(',')]
+            self.runints_B=[int(s.strip()) for s in self.params['runints_B'].split(',')]
+        except:
+            self.params=copy.copy(self.dfltparams)
+            return
+        self.fomnames=[k+self.params['relative_key_append'] for k in sel_processkeys]
+            
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
+        self.fomdlist=[]
+        self.strkeys_fomdlist=[]
         for filed in self.filedlist:
-            self.strkeys_fomdlist=[]
-#            if numpy.isnan(filed['sample_no']):
+            
+
+            fn=filed['fn']
+            #try:
+            fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+            if 'plot_parameters' in self.csvheaderdict.keys():
+                plotcount=0
+                for k, v in self.csvheaderdict['plot_parameters'].iteritems():
+                    if isinstance(v, dict) and 'fom_name' in v.keys():
+                        v['fom_name']=self.fomnames[plotcount]
+                        if plotcount<len(self.fomnames)-1:
+                            plotcount+=1
+            
+            inds_b=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_B]
+            if not (False in [runint in self.runints_B for runint in self.runints_A]):#runints for A are subset of B so matchup line by line
+                inds_a=inds_b
+            else:
+                inds_a=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_A]
+                smps_a=list(fomd['sample_no'][inds_a])
+                inds_b=[i for i in inds_b if fomd['sample_no'][i] in smps_a]#only keep b inds that have a matching sample in a
+                inds_a=[smps_a.index(smp) for smp in fomd['sample_no'][inds_b]]
+            if len(inds_a)==0 or len(inds_b)==0:
+                print 'no foms calculated for ', fn
+                continue
+            newfomd={}
+            for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING:
+                newfomd[k]=fomd[k][inds_b]
+            for k, ka, kb in zip(self.fomnames, self.params['fom_keys_A'].split(','), self.params['fom_keys_B'].split(',')):
+                ka=ka.strip()
+                kb=kb.strip()
+                newfomd[k]=self.relfcn(fomd[ka][inds_a], fomd[kb][inds_b])
+            
+            allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
+            self.fomdlist=[dict(zip(allkeys, tup))\
+                                    for tup in zip(*[newfomd[k] for k in allkeys])]
+#            except:
 #                if self.debugmode:
 #                    raiseTEMP
+#                print 'skipped filter/smooth of file ', fn
+#                self.fomdlist=[]
 #                continue
-            fn=filed['fn']
-            try:
-                fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
-                self.fomnames=list(set(fomd.keys()).difference(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))#this is to emulate otherAnalysisClass for self.writefom()
-                process_keys=filed['process_keys']
-                along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
-                #dataarr=self.readdata(os.path.join(destfolder, fn), len(filed['keys']), None, num_header_lines=filed['num_header_lines'], zipclass=None)
-                self.fomdlist=self.process_fomd(fomd, process_keys, along_for_the_ride_keys)#this function "transposes" data to emulate AnalysisClass
-            except:
-                if self.debugmode:
-                    raiseTEMP
-                print 'skipped filter/smooth of file ', fn
-                self.fomdlist=[]
-                continue
             if len(self.fomdlist)==0:
                 print 'no foms calculated for ', fn
                 continue
-            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
-            
+
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)
