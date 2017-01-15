@@ -214,6 +214,7 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                 for pid in allplateids:
                     
                     pmpath, pmidstr=getplatemappath_plateid(str(pid), return_pmidstr=True)
+                    #pmpath, pmidstr=r'J:\hte_jcap_app_proto\map\0068-04-0100-mp.txt', '69'#for 1-off override
                     platemapdlist=readsingleplatemaptxt(pmpath, erroruifcn=None)
                     
                     els, tup_multielementink=getelements_plateidstr(str(pid), multielementink_concentrationinfo_bool=True)
