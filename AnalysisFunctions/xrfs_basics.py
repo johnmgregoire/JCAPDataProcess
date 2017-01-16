@@ -60,10 +60,11 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
-        self.num_files_considered, self.filedlist=getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek, specificuse=None, specifictech='XRFS', specifictype='batch_summary_files')
+        self.num_files_considered, self.filedlist=getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek, runklist=runklist, specificuse=None, specifictech='XRFS', specifictype='batch_summary_files')
         self.description='reformatting of XRFS batch_summary_files'
 #        if len(self.filedlist)>0:
 #            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
+        self.fomnames=['StgLabel', 'StagX', 'StagY', 'StagZ', 'StagR']#to reset this after function used
         return self.filedlist
     
     def processnewparams(self, calcFOMDialogclass=None):
