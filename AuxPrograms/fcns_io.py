@@ -1116,7 +1116,9 @@ def readrcpfrommultipleruns(pathlist, rcpdictadditions=None):
 
 def rcpdtuple_remstr(remstr):
     remdlist=eval(remstr.strip())
-    tupl=[('run_comment__%d:' %(count+1), [('%s: "%s"' %(k, str(v)), []) for k, v in remd.iteritems()]) for count, remd in enumerate(remdlist) if not '(type new note here)' in remd.values()]
+    tupl=[('run_comment__%d:' %(count+1), [\
+     (('%s: "%s"' %(k, str(v))) if k=='comment' else ('%s: %s' %(k, str(v))), [])\
+            for k, v in remd.iteritems()]) for count, remd in enumerate(remdlist) if not '(type new note here)' in remd.values()]
     return tupl
 def rcplines_folder(foldp):
     fns=[fn for fn in os.listdir(foldp) if fn.endswith('.rcp')]
