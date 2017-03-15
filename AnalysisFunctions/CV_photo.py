@@ -1,4 +1,4 @@
-import numpy, copy,sys,os
+import numpy, copy, sys, os
 if __name__ == "__main__":
     sys.path.append(os.path.split(os.getcwd())[0])
 
@@ -6,20 +6,31 @@ sys.path.append(os.path.split(os.path.realpath(__file__))[0])
 
 from fcns_math import *
 from fcns_io import *
+import json
+from scipy.optimize import curve_fit
+#from scipy.optimize import minimize_scalar
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
+
 # import matplotlib.pyplot as plt
 
 
 #this take a filedlist based on required keys in raw data and then finds samples where a required prior analysis was completed and encodes the path to the intermediate data in anadict
-def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech='', gui_mode_bool=False):
+def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
+        filedlist,
+        anadict,
+        requiredanalysis='Analysis__Iphoto',
+        tech='',
+        gui_mode_bool=False):
     anak_ftklist=[(anak, [ftk for ftk in anav.keys() if 'files_run__' in ftk]) for anak, anav in anadict.iteritems()\
            if anak.startswith('ana__') and anav['name']==requiredanalysis and True in ['files_' in ftk for ftk in anav.keys()]]
 
-    if len(tech)>0:
+    if len(tech) > 0:
         #if tech=None then don't filter by technique. also if techniuqe not in anad then technique qill not be matched and the ==2 below will require only 1 Iphoto in the existing .ana.
         #otherwise this will require techniques to match so that Iphoto on different techniques in the existing .ana won't cause an excess of matches that exceed the ==2 requirement
-        anak_ftklist=[(anak,ftkl) for anak, ftkl in anak_ftklist if (not 'technique' in anadict[anak].keys()) or anadict[anak]['technique']==tech]
+        anak_ftklist = [(anak, ftkl) for anak, ftkl in anak_ftklist
+                        if (not 'technique' in anadict[anak].keys()
+                            ) or anadict[anak]['technique'] == tech]
     #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
     ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk
     #this used to use [anak, ftk, typek, fnk] but anadict is not available in perform() so use filename because it is the same .ana so should be in same folder
@@ -37,41 +48,52 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(filedlist, anadict, require
     filedlist2=[dict(filed, ana__inter_filed=interfns[0], ana__inter_rawlen_filed=interfns[1]) \
           for filed, interfns in zip(filedlist, interfnks_filedlist) if len(interfns)==2]#2 is 1 for inter_files and then for inter_rawlenfiles. if less than 2 then the analysis wasn't done or failed, if >2 then analysis done multiple times
 
-    if gui_mode_bool and len(filedlist2)==0 and len(anak_ftklist)>0:#the ==2 requirement was not met, which may mean that there was more than 1 Iphoto for that technique
-        print 'When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:' %(requiredanalysis, tech)
+    if gui_mode_bool and len(filedlist2) == 0 and len(
+            anak_ftklist
+    ) > 0:  #the ==2 requirement was not met, which may mean that there was more than 1 Iphoto for that technique
+        print 'When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:' % (
+            requiredanalysis, tech)
         print [anak for anak, ftkl in anak_ftklist]
-    return filedlist2#inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
+    return filedlist2  #inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
 
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
+        self.analysis_fcn_version = '2'  # version 2 replaces polynomial fit with 4-parameter logistic regression
         self.dfltparams=dict([\
-  ('poly_fit_order', 3), ('num_cycles_omit_start', 0), \
+  ('weight', False), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
-  ('i_at_pmax_tolerance', 0.01), ('num_points_slope_calc', 3), \
-  ('pct_ewe_range_slope', 15), ('i_photo_base', 1E-8), \
-  ('num_sweeps_to_fit', 1), ('use_sweeps_from_end', True), \
-  ('isc_frac_limit', 0.02) \
+  ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
+  ('use_sweeps_from_end', True), ('v_extend_upper', 0.1),
+  ('v_extend_lower', 0.1), ('v_interp_step', 0.001) \
                                        ])
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__Pphotomax'
+        self.params = copy.copy(self.dfltparams)
+        self.analysis_name = 'Analysis__Pphotomax'
         # assume intermediate and raw data available
-        self.requiredkeys=['t(s)', 'Ewe(V)']#, 't(s)_dark', 'Ewe(V)_dark', 'I(A)_dark', 't(s)_ill', 'Ewe(V)_ill', 'I(A)_ill', 'IllumBool']#these intermediate keys are not tested for explicitly, ontly through the custom getapplicablefilenames below
-        self.optionalkeys=[]
-        self.requiredparams=['reference_e0', 'redox_couple_type']
-        # Voc is almost always extrapolated, Vmicro will require i_photo_base parameter from previous analysis of Iphotomin_in_range
-        self.fomnames=['Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Iphotomin.A', 'Vmicro.V', 'Fill_factor']
-        self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='Ewe(V)'
-        self.plotparams['plot__1']['series__1']='I(A)'
-        self.plotparams['plot__1']['series__2']='IllumBool'
-        self.plotparams['plot__2']={}
-        self.plotparams['plot__2']['x_axis']='Ewe(V)_fitrng'
-        self.plotparams['plot__2']['series__1']='I(A)_fitrng'
-        self.plotparams['plot__2']['series__2']='I(A)_voclinfitrng'
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='Pmax.W', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        self.requiredkeys = [
+            't(s)', 'Ewe(V)'
+        ]  #, 't(s)_dark', 'Ewe(V)_dark', 'I(A)_dark', 't(s)_ill', 'Ewe(V)_ill', 'I(A)_ill', 'IllumBool']#these intermediate keys are not tested for explicitly, ontly through the custom getapplicablefilenames below
+        self.optionalkeys = []
+        self.requiredparams = ['reference_e0', 'redox_couple_type']
+        # for logistic fit, lim(iphoto) approaches 0/1 as potential -> -infinity/+infinity, Voc here is the intercept between fitted function and iphotobase
+        self.fomnames = [
+            'Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Fill_factor', 'RSS'
+        ]
+        self.plotparams = dict({}, plot__1={})
+        self.plotparams['plot__1']['x_axis'] = 'Ewe(V)'
+        self.plotparams['plot__1']['series__1'] = 'I(A)'
+        self.plotparams['plot__1']['series__2'] = 'IllumBool'
+        self.plotparams['plot__2'] = {}
+        self.plotparams['plot__2']['x_axis'] = 'Ewe(V)_fitrng'
+        self.plotparams['plot__2']['series__1'] = 'I(A)_predfit'
+        self.plotparams['plot__2']['series__2'] = 'P(W)_predfit'
+        self.csvheaderdict = dict({}, csv_version='1', plot_parameters={})
+        self.csvheaderdict['plot_parameters']['plot__1'] = dict(
+            {},
+            fom_name='Pmax.W',
+            colormap='jet',
+            colormap_over_color='(0.5,0.,0.)',
+            colormap_under_color='(0.,0.,0.)')
 
     # this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     # def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None):
@@ -79,211 +101,282 @@ class Analysis__Pphotomax(Analysis_Master_inter):
     #     self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys)
     #     self.description='%s on %s' %(','.join(self.fomnames), techk)
     #     return self.filedlist
-    def getgeneraltype(self):#make this fucntion so it is inhereted
+    def getgeneraltype(self):  #make this fucntion so it is inhereted
         return 'analysis_of_ana'
 
-    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
-        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
+    def getapplicablefilenames(self,
+                               expfiledict,
+                               usek,
+                               techk,
+                               typek,
+                               runklist=None,
+                               anadict=None,
+                               calcFOMDialogclass=None):
+        self.num_files_considered, self.filedlist = stdgetapplicablefilenames(
+            expfiledict,
+            usek,
+            techk,
+            typek,
+            runklist=runklist,
+            requiredkeys=self.requiredkeys,
+            requiredparams=self.requiredparams)
         #this is the only place that require dprevious analysis is specified. It is assumed that if this analysis complete and files are present, we know that certain keys exist without explicitely testing for them
-        self.filedlist=ECHEPHOTO_checkcompletedanalysis_inter_filedlist(self.filedlist, anadict, requiredanalysis='Analysis__Iphoto', tech=techk, gui_mode_bool=self.gui_mode_bool)
+        self.filedlist = ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
+            self.filedlist,
+            anadict,
+            requiredanalysis='Analysis__Iphoto',
+            tech=techk,
+            gui_mode_bool=self.gui_mode_bool)
 
-        self.description='%s on %s' %(','.join(self.fomnames), techk)
+        self.description = '%s on %s' % (','.join(self.fomnames), techk)
         return self.filedlist
 
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
-        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files', 'misc_files'])
-        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
+    def perform(self,
+                destfolder,
+                expdatfolder=None,
+                writeinterdat=True,
+                anak='',
+                zipclass=None,
+                anauserfomd={},
+                expfiledict=None):
+        self.initfiledicts(
+            runfilekeys=['inter_rawlen_files', 'inter_files', 'misc_files'])
+        closeziplist = self.prepare_filedlist(
+            self.filedlist,
+            expfiledict,
+            expdatfolder=expdatfolder,
+            expfolderzipclass=zipclass,
+            fnk='fn')
 
-        self.fomdlist=[]
+        self.fomdlist = []
         for filed in self.filedlist:
-            datadict={}
+            datadict = {}
             if numpy.isnan(filed['sample_no']):
                 if self.debugmode:
                     raiseTEMP
                 continue
-            fn=filed['fn']
+            fn = filed['fn']
 
             try:
                 #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
-                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
+                dataarr = filed['readfcn'](*filed['readfcn_args'],
+                                           **filed['readfcn_kwargs'])
                 for k, v in zip(self.requiredkeys, dataarr):
-                    datadict[k]=v
-                for interfiled in [filed['ana__inter_filed'], filed['ana__inter_rawlen_filed']]:
-                    tempdataarr=self.readdata(os.path.join(destfolder, interfiled['fn']), len(interfiled['keys']), range(len(interfiled['keys'])), num_header_lines=interfiled['num_header_lines'])#no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
+                    datadict[k] = v
+                for interfiled in [
+                        filed['ana__inter_filed'],
+                        filed['ana__inter_rawlen_filed']
+                ]:
+                    tempdataarr = self.readdata(
+                        os.path.join(destfolder, interfiled['fn']),
+                        len(interfiled['keys']),
+                        range(len(interfiled['keys'])),
+                        num_header_lines=interfiled['num_header_lines']
+                    )  #no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
                     for k, v in zip(interfiled['keys'], tempdataarr):
-                        datadict[k]=v
-                fomtuplist, rawlend, interlend, miscfilestr=self.fomtuplist_rawlend_interlend(datadict, filed)#is stdgetapplicable names all self.requiredparams are put into filed so could parse them out here but most efficient to pass by reference the whole filed and the caclulcations treat it is a paramd
+                        datadict[k] = v
+                fomtuplist, rawlend, interlend, miscfilestr = self.fomtuplist_rawlend_interlend(
+                    datadict, filed
+                )
             except:
                 if self.debugmode:
                     raiseTEMP
-                fomtuplist, rawlend, interlend, miscfilestr=[(k, numpy.nan) for k in self.fomnames], {}, {}, None
+                fomtuplist, rawlend, interlend, miscfilestr = [(
+                    k, numpy.nan) for k in self.fomnames], {}, {}, None
                 pass
 
-
-            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            if not numpy.isnan(filed['sample_no']
+                               ):  #do not save the fom but can save inter data
+                self.fomdlist += [
+                    dict(
+                        fomtuplist,
+                        sample_no=filed['sample_no'],
+                        plate_id=filed['plate_id'],
+                        run=filed['run'],
+                        runint=int(filed['run'].partition('run__')[2]))
+                ]
             if destfolder is None:
                 continue
-            if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnr)
-                kl=saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
+            if len(rawlend.keys()) > 0:
+                fnr = '%s__%s_rawlen.txt' % (anak, os.path.splitext(fn)[0])
+                p = os.path.join(destfolder, fnr)
+                kl = saveinterdata(p, rawlend, savetxt=True)
+                self.runfiledict[filed['run']]['inter_rawlen_files'][
+                    fnr] = '%s;%s;%d;%d;%d' % (
+                        'eche_inter_rawlen_file', ','.join(kl), 1,
+                        len(rawlend[kl[0]]), filed['sample_no'])
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fni)
-                kl=saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
-            if not miscfilestr is None and isinstance(miscfilestr, str) and len(miscfilestr)>0:
-                fnm='%s__%s_polycoeff.txt' %(anak,os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnm)
+                fni = '%s__%s_interlen.txt' % (anak, os.path.splitext(fn)[0])
+                p = os.path.join(destfolder, fni)
+                kl = saveinterdata(p, interlend, savetxt=True)
+                self.runfiledict[filed['run']]['inter_files'][
+                    fni] = '%s;%s;%d;%d;%d' % (
+                        'eche_inter_interlen_file', ','.join(kl), 1,
+                        len(interlend[kl[0]]), filed['sample_no'])
+            if not miscfilestr is None and isinstance(
+                    miscfilestr, str) and len(miscfilestr) > 0:
+                fnm = '%s__%s_fitcoeff.txt' % (anak, os.path.splitext(fn)[0])
+                p = os.path.join(destfolder, fnm)
                 with open(p, mode='w') as f:
                     f.write(miscfilestr)
-                self.runfiledict[filed['run']]['misc_files'][fnm]='eche_polycoeff_file;%d' %filed['sample_no']
+                self.runfiledict[filed['run']]['misc_files'][
+                    fnm] = 'eche_polycoeff_file;%d' % filed['sample_no']
 
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
             zc.close()
+
     def fomtuplist_rawlend_interlend(self, datadict, paramd):
-        d=datadict
-        interd={}
-        rawlend={}
+        d = datadict
+        interd = {}
+        rawlend = {}
 
         # get trimmed t(s), Ewe(V) using rawselectinds
-        ewetrim=[v for i, v in enumerate(d['Ewe(V)']) if i in d['rawselectinds']]
-        ttrim=[v for i, v in enumerate(d['t(s)']) if i in d['rawselectinds']]
-        illdiff=d['I(A)_illdiff']
+        ewetrim = [v for i, v in enumerate(d['Ewe(V)']) if i in d['rawselectinds']]
+        ttrim = [v for i, v in enumerate(d['t(s)']) if i in d['rawselectinds']]
+        illdiff = d['I(A)_illdiff']
 
         # extract sweep direction from dE/dt
-        deltaE=numpy.subtract(ewetrim[1:], ewetrim[:-1])
-        deltaE=numpy.sign(numpy.append(deltaE[0], deltaE)) # assume starting direction is the same as 2nd point
+        deltaE = numpy.subtract(ewetrim[1:], ewetrim[:-1])
+        deltaE = numpy.sign(numpy.append(
+            deltaE[0],
+            deltaE))  # assume starting direction is the same as 2nd point
 
-        anodstartinds=numpy.where(deltaE[1:]>deltaE[:-1])[0]
-        cathstartinds=numpy.where(deltaE[1:]<deltaE[:-1])[0]
+        anodstartinds = numpy.where(deltaE[1:] > deltaE[:-1])[0]
+        cathstartinds = numpy.where(deltaE[1:] < deltaE[:-1])[0]
 
-        if deltaE[0]>0:
-            anodstartinds=numpy.append(0, anodstartinds)
+        if deltaE[0] > 0:
+            anodstartinds = numpy.append(0, anodstartinds)
         else:
-            cathstartinds=numpy.append(0, cathstartinds)
+            cathstartinds = numpy.append(0, cathstartinds)
 
-        anodendinds, cathendinds = map(lambda inds: [i-1 for i in inds if i>0], [cathstartinds, anodstartinds])
+        anodendinds, cathendinds = map(
+            lambda inds: [i - 1 for i in inds if i > 0],
+            [cathstartinds, anodstartinds])
 
-        if deltaE[-1]>0:
-            anodendinds=numpy.append(anodendinds, len(deltaE)-1).astype(int)
+        if deltaE[-1] > 0:
+            anodendinds = numpy.append(anodendinds,
+                                       len(deltaE) - 1).astype(int)
         else:
-            cathendinds=numpy.append(cathendinds, len(deltaE)-1).astype(int)
+            cathendinds = numpy.append(cathendinds,
+                                       len(deltaE) - 1).astype(int)
 
         ## construct list of start, end t(s) tuples for each anodic and cathodic sweep (generalizes for >1 CV cycles)
-        anodstartendinds = [(start, end) for start, end in zip(anodstartinds, anodendinds)]
-        cathstartendinds = [(start, end) for start, end in zip(cathstartinds, cathendinds)]
+        anodstartendinds = [(start, end)
+                            for start, end in zip(anodstartinds, anodendinds)]
+        cathstartendinds = [(start, end)
+                            for start, end in zip(cathstartinds, cathendinds)]
 
         anodt_tpl, catht_tpl = map(lambda startendinds: [(ttrim[start], ttrim[end]) for (start, end) in startendinds], \
             [anodstartendinds, cathstartendinds])
 
         ## for now, number of sweeps to fit from start or end of measurement will be 'consecutive' (i.e. fit to first three anodic sweeps, but never first + third)
         if self.params['use_sweeps_from_end']:
-            anodt_tpl, catht_tpl = map(lambda t_tpl: t_tpl[-1*self.params['num_sweeps_to_fit']:], [anodt_tpl, catht_tpl])
+            anodt_tpl, catht_tpl = map(
+                lambda t_tpl: t_tpl[-1 * self.params['num_sweeps_to_fit']:],
+                [anodt_tpl, catht_tpl])
         else:
-            anodt_tpl, catht_tpl = map(lambda t_tpl: t_tpl[:self.params['num_sweeps_to_fit']], [anodt_tpl, catht_tpl])
+            anodt_tpl, catht_tpl = map(
+                lambda t_tpl: t_tpl[:self.params['num_sweeps_to_fit']],
+                [anodt_tpl, catht_tpl])
 
         ## time tuples for chosen sweep direction (or both)
-        sweepdir=self.params['sweep_direction']
-        time_tpl = numpy.append(anodt_tpl, catht_tpl) if sweepdir==0 else anodt_tpl if sweepdir<0 else catht_tpl
+        sweepdir = self.params['sweep_direction']
+        time_tpl = numpy.append(
+            anodt_tpl, catht_tpl
+        ) if sweepdir == 0 else anodt_tpl if sweepdir < 0 else catht_tpl
         rangefunc = lambda t: any([t >= tstart and t < tend for tstart, tend in time_tpl])
         ## create _dark and _ill interd keys from fitted range
         cyc_start = self.params['num_cycles_omit_start']
-        cyc_end = None if self.params['num_cycles_omit_end']==0 else -1*self.params['num_cycles_omit_end']
+        cyc_end = None if self.params[
+            'num_cycles_omit_end'] == 0 else -1 * self.params[
+                'num_cycles_omit_end']
 
-        ttrim_fitrng = [ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
-        ewetrim_fitrng = [ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
-        iphoto_fitrng = [illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
+        ttrim_fitrng = numpy.array([ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
+        ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
+        iphoto_fitrng = numpy.array([illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
 
-        fit = numpy.polyfit(x=ewetrim_fitrng, y=iphoto_fitrng, deg=self.params['poly_fit_order'], full=True)
-        fitcoeff = fit[0]
-        fitresiduals = fit[1]
-        fittedfunc = lambda x: numpy.polyval(fitcoeff, x)
-        miscfilestr=','.join(['%.3e' %v for v in fitcoeff]) #if this algorithm can "fail" and return NaN for foms then make miscfilestr=None
+        # Fitting
+        fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + numpy.exp((A - t) / k))))
+        weight = self.params['weight']
+        ywt = 1/(iphoto_fitrng**weight) if weight else None
 
-        interd['Ewe(V)_fitrng'] = numpy.array([d['Ewe(V)'][i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
-        interd['I(A)_fitrng'] = fittedfunc(interd['Ewe(V)_fitrng'])
-        interd['t(s)_fitrng'] = numpy.array([d['t(s)'][i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
-        rawinds=numpy.arange(len(d['t(s)']))
-        interd['rawselectinds'] = numpy.array([rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v])
+        try: # if this algorithm can "fail" and return NaN for foms then make miscfilestr=None
+            popt, pcov = curve_fit(fpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt)
 
-        rawlend['I(A)_fit'] = fittedfunc(d['Ewe(V)'])
-        rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
+        except:  # fail case, can't converge fit
+            fomtuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
+                    ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), \
+                    ('RSS', numpy.nan)]
+            miscfilestr = None
+            return fomtuplist, rawlend, interd, miscfilestr
 
+        fittedfunc = lambda x: fpl(x, *popt)
+        fitcoeff = popt
+        fiterrs = pcov.diagonal()**0.5
+        fitresiduals = iphoto_fitrng - fittedfunc(ewetrim_fitrng)
+        rss = numpy.sum(fitresiduals**2)
+
+        jsondict = {
+            'coeffs': fitcoeff.tolist(),
+            'errors': fiterrs.tolist(),
+            'covariance': pcov.tolist(),
+            'function': 'fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + numpy.exp((A - t) / k))))'
+        }
+        miscfilestr = json.dumps(jsondict)
+
+        # fom calculations on trimmed data (limited sweeps and cycles)
         eo = paramd['reference_e0']
+        ewe_eo = eo - ewetrim_fitrng
+        iphoto = fittedfunc(ewetrim_fitrng)
         isc = fittedfunc(eo)
-        ## fom values are calculated from fitted Ewe(V) range instead of full range
-        ewe = interd['Ewe(V)_fitrng']
-        ewe_eo = ewe-eo
-        iphoto = interd['I(A)_fitrng']
-        ## index of minimum Iphoto in range or polynomial root 'nearest' eo, use rcp value 'redox_couple_type' to determine which side of eo
-        iminsign = 1 if paramd['redox_couple_type']=='O2/H2O' else -1
-        iminind = numpy.argmin(iphoto) if all(iphoto>0) else numpy.argmax(iphoto) if all(iphoto<0) else None
-        iphotomin = 0 if iminind==None else iphoto[iminind]
-        pphoto = iphoto*ewe_eo*(-1*iminsign)
-        pmaxind = numpy.argmax([v for i, v in enumerate(pphoto) if iphoto[i]>0]) if iminsign > 0 else numpy.argmin([v for i, v in enumerate(pphoto) if iphoto[i]<0])
-        pphotomax = pphoto[pmaxind]
-        iatpmax = interd['I(A)_fitrng'][pmaxind]
+        iminsign = 1 if paramd['redox_couple_type'] == 'O2/H2O' else -1
+        pphoto = iphoto * ewe_eo * iminsign
 
-        vocfitlen = self.params['num_points_slope_calc']
+        # interpolate voltage stepping for higher res, less quantized vatpmax
+        minewe = numpy.round(numpy.min(d['Ewe(V)']), 3)
+        maxewe = numpy.round(numpy.max(d['Ewe(V)']), 3)
+        vstep = self.params['v_interp_step']
+        extlo = self.params['v_extend_lower']
+        exthi = self.params['v_extend_upper']
+        ewesmooth = numpy.arange(start=minewe-extlo, \
+                                   stop=maxewe+exthi, \
+                                   step=vstep)
+        iphotosmooth = fittedfunc(ewesmooth)
+        pphotosmooth = iphotosmooth * (eo-ewesmooth) * iminsign
+        pmaxind = numpy.argmax(pphotosmooth)
+        pphotomax = pphotosmooth[pmaxind]
+        iatpmax = iphotosmooth[pmaxind]
+        vatpmax = iminsign*(eo-ewesmooth)[pmaxind]
 
-        ## Limit ewe range for Voc extrapolation based on
-        iphoto_outinds = [i for i, v in enumerate(interd['I(A)_fitrng']) if v <= isc*self.params['isc_frac_limit']] if iminsign > 0 else \
-                            [i for i, v in enumerate(interd['I(A)_fitrng']) if v >= isc*self.params['isc_frac_limit']]
-        voc_ewelim = max(ewe[iphoto_outinds]) if iminsign > 0 else \
-                        min(ewe[iphoto_outinds])
-        ewe_vocrng = [v for v in ewe if v >= voc_ewelim] if iminsign > 0 else \
-                        [v for v in ewe if v <= voc_ewelim]
-        ewe_vocrng = [v for v in ewe_vocrng if v >= voc_ewelim and v < numpy.percentile(ewe_vocrng, self.params['pct_ewe_range_slope'])] if iminsign > 0 else \
-                        [v for v in ewe_vocrng if v <= voc_ewelim and v > numpy.percentile(ewe_vocrng, self.params['pct_ewe_range_slope'])]
+        # rawlend assignments
+        rawinds = numpy.arange(len(d['t(s)']))
+        rawlend['I(A)_pred'] = fittedfunc(d['Ewe(V)'])
+        rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (d['Ewe(V)'] - eo) * (
+            -1 * iminsign)
+        rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
+        # interd assignemnts
+        interd['Ewe(V)_fitrng'] = ewetrim_fitrng
+        interd['I(A)_fitrng'] = iphoto_fitrng
+        interd['t(s)_fitrng'] = ttrim_fitrng
+        interd['I(A)_residuals_fitrng'] = fitresiduals
+        interd['I(A)_pred_fitrng'] = iphoto
+        interd['P(W)_pred_fitrng'] = pphoto
+        interd['rawselectinds'] = numpy.array(
+            [rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v and i in d['rawselectinds']])
 
-
-        ## Voc linear fit to # of consecutive points along Ewe(V)_fitrng;
-        voclinfits = []
-        for i in range(len(ewe_vocrng)-vocfitlen):
-            linfit = numpy.polyfit(x=ewe_vocrng[i:i+vocfitlen], y=fittedfunc(ewe_vocrng[i:i+vocfitlen]), deg=1)
-            voclinfits += [linfit.tolist()]
-        maxslopeind = numpy.argmax(numpy.array([i[0] for i in voclinfits]))
-        voccoeff = voclinfits[maxslopeind]
-        # print voccoeff
-        # plt.plot(ewe, iphoto)
-        # plt.plot(ewe, numpy.polyval(voccoeff, ewe))
-        # plt.show()
-        interd['I(A)_voclinfitrng'] = numpy.polyval(numpy.poly1d(voccoeff), ewe)
-
-        ## CX says prototyping reports photoanode and photocathode Voc both as positive values
-        voc = numpy.absolute(eo-(-1*voccoeff[1]/voccoeff[0]))
+        ## Voc/FF calculation: report both photoanode and photocathode Voc as positive values
         iphotobase = self.params['i_photo_base']
-        vmicro = numpy.nan if iphotobase==0 else numpy.absolute(eo-interd['Ewe(V)_fitrng'][numpy.argmin((iphoto-iphotobase)**2)])
-        vatpmax = numpy.absolute(ewe_eo[pmaxind])
-        fillfactor = numpy.absolute(pphotomax/(voc*isc)) if iatpmax<=(isc*(1+self.params['i_at_pmax_tolerance'])) and numpy.absolute(pphotomax)<numpy.absolute(voc*isc) else numpy.nan
+        voc = eo - ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)]
+        fillfactor = numpy.absolute(pphotomax / (voc * isc))
 
-        fomtuplist=[]
-        fomtuplist+=[('Pmax.W', pphotomax), ('Vpmax.V', vatpmax), ('Ipmax.A', iatpmax), \
-                ('Voc.V', voc), ('Isc.A', isc), ('Iphotomin.A', iphotomin), ('Vmicro.V', vmicro), \
-                ('Fill_factor', fillfactor)]
+        # NaN those crazy fillfactors, leave this alone and report RSS
+        # if fillfactor>1:
+        #     fillfactor = numpy.nan
+        #     voc = numpy.nan
+
+        fomtuplist = [('Pmax.W', pphotomax), ('Vpmax.V', vatpmax), ('Ipmax.A', iatpmax), \
+                ('Voc.V', voc), ('Isc.A', isc), ('Fill_factor', fillfactor), \
+                ('RSS', rss)]
 
         return fomtuplist, rawlend, interd, miscfilestr
-
-
-#c=Analysis__Pphotomax()
-#c.debugmode=True
-##p_exp='/home/dan/htehome/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
-##p_ana='/home/dan/htehome/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
-#p_exp='//htejcap.caltech.edu/share/home/processes/experiment/temp/20150904.112552.done/20150904.112552.exp'
-#p_ana='//htejcap.caltech.edu/share/home/processes/analysis/temp/20150904.113437.done/20150904.113437.ana'
-#expd=readexpasdict(p_exp)
-#usek='data'
-#techk='CV3'
-#typek='pstat_files'
-#anadict=readana(p_ana, stringvalues=True, erroruifcn=None)
-#filenames=c.getapplicablefilenames(expd, usek, techk, typek, runklist=['run__1', 'run__2'], anadict=anadict)
-#c.perform(os.path.split(p_ana)[0], expdatfolder=os.path.split(p_exp)[0], writeinterdat=False, anak='ana__2')
-#print 'THESE FOM FILES WRITTEN'
-#for k, v in c.multirunfiledict.items():
-#    print k, v
-#print 'THESE FOMs CALCULATED'
-#print c.fomdlist
