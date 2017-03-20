@@ -64,8 +64,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
   ('weight', False), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
   ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
-  ('use_sweeps_from_end', True), ('v_extend_upper', 0.1),
-  ('v_extend_lower', 0.1), ('v_interp_step', 0.001) \
+  ('use_sweeps_from_end', True), ('v_extend_upper', 0.1), \
+  ('v_extend_lower', 0.1), ('v_interp_step', 0.001), \
+  ('allow_nan_iphoto_pct', 0.1) \
                                        ])
         self.params = copy.copy(self.dfltparams)
         self.analysis_name = 'Analysis__Pphotomax'
@@ -157,33 +158,33 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 continue
             fn = filed['fn']
 
-            try:
+            # try:
                 #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
-                dataarr = filed['readfcn'](*filed['readfcn_args'],
-                                           **filed['readfcn_kwargs'])
-                for k, v in zip(self.requiredkeys, dataarr):
+            dataarr = filed['readfcn'](*filed['readfcn_args'],
+                                       **filed['readfcn_kwargs'])
+            for k, v in zip(self.requiredkeys, dataarr):
+                datadict[k] = v
+            for interfiled in [
+                    filed['ana__inter_filed'],
+                    filed['ana__inter_rawlen_filed']
+            ]:
+                tempdataarr = self.readdata(
+                    os.path.join(destfolder, interfiled['fn']),
+                    len(interfiled['keys']),
+                    range(len(interfiled['keys'])),
+                    num_header_lines=interfiled['num_header_lines']
+                )  #no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
+                for k, v in zip(interfiled['keys'], tempdataarr):
                     datadict[k] = v
-                for interfiled in [
-                        filed['ana__inter_filed'],
-                        filed['ana__inter_rawlen_filed']
-                ]:
-                    tempdataarr = self.readdata(
-                        os.path.join(destfolder, interfiled['fn']),
-                        len(interfiled['keys']),
-                        range(len(interfiled['keys'])),
-                        num_header_lines=interfiled['num_header_lines']
-                    )  #no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
-                    for k, v in zip(interfiled['keys'], tempdataarr):
-                        datadict[k] = v
-                fomtuplist, rawlend, interlend, miscfilestr = self.fomtuplist_rawlend_interlend(
-                    datadict, filed
-                )
-            except:
-                if self.debugmode:
-                    raiseTEMP
-                fomtuplist, rawlend, interlend, miscfilestr = [(
-                    k, numpy.nan) for k in self.fomnames], {}, {}, None
-                pass
+            fomtuplist, rawlend, interlend, miscfilestr = self.fomtuplist_rawlend_interlend(
+                datadict, filed
+            )
+            # except:
+            #     if self.debugmode:
+            #         raiseTEMP
+            #     fomtuplist, rawlend, interlend, miscfilestr = [(
+            #         k, numpy.nan) for k in self.fomnames], {}, {}, None
+            #     pass
 
             if not numpy.isnan(filed['sample_no']
                                ):  #do not save the fom but can save inter data
@@ -296,15 +297,29 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
         iphoto_fitrng = numpy.array([illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
 
+        # take care of Iphoto NaN
+        allowed_nan_cycs = self.params['allow_nan_iphoto_pct'] * len(iphoto_fitrng)
+        naninds = numpy.where(numpy.isnan(iphoto_fitrng))[0]
+        if len(naninds) < allowed_nan_cycs:
+            ttrim_fitrng = numpy.array([v for i,v in enumerate(ttrim_fitrng) if not i in naninds])
+            ewetrim_fitrng = numpy.array([v for i,v in enumerate(ewetrim_fitrng) if not i in naninds])
+            iphoto_fitrng = numpy.array([v for i,v in enumerate(iphoto_fitrng) if not i in naninds])
+        else:
+            fomtuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
+                    ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), \
+                    ('RSS', numpy.nan)]
+            miscfilestr = None
+            return fomtuplist, rawlend, interd, miscfilestr
+
         # Fitting
         fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + numpy.exp((A - t) / k))))
         weight = self.params['weight']
         ywt = 1/(iphoto_fitrng**weight) if weight else None
 
         try: # if this algorithm can "fail" and return NaN for foms then make miscfilestr=None
-            popt, pcov = curve_fit(fpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt)
+            popt, pcov = curve_fit(fpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=2000)
 
-        except:  # fail case, can't converge fit
+        except RuntimeError:  # fail case, can't converge fit
             fomtuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
                     ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), \
                     ('RSS', numpy.nan)]
