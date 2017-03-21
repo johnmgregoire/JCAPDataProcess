@@ -244,7 +244,10 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         self.fomnames=['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
                              for idx in xrange(len(self.params['abs_range']))]+['max_abs']
         self.fomnames+=['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
-        
+        self.fomnames+=['1-T-R_av_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]
+        self.fomnames+=['1-T-R_av_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) \
+                             for idx in xrange(len(self.params['abs_range']))]
+                                 
         if self.params['window_length'] %2!=1:
             self.params['window_length']+=1
             
@@ -481,6 +484,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
                 nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
                 fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
+                fomd[key.replace('abs','1-T-R_av')]=numpy.mean(inter_selindd['1-T-R_smth'][nonaninds])
             for sig_str,sigkey in zip(['T','R','TplusR'],['T_smth','R_smth','1-T-R_smth']):
                 fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
                          
@@ -863,20 +867,21 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
 class Analysis__BG(Analysis_Master_inter):
     def __init__(self):
         self.analysis_name='Analysis__BG'
-        self.analysis_fcn_version='1.1'
+        self.analysis_fcn_version='2.0'
         self.dfltparams=(
                         dict([('lower_wl',390),('upper_wl',940), 
                                #data params
                               ('num_knots',8),('min_knotdist',0.05),('tol',1e-06),('maxtol',1e-03),
                                #fitting params
-                              ('merge_linsegslopediff_percent',10.),('max_merge_differentialTP',10000.),
+                              ('merge_linsegslopediff_percent',4.),('max_merge_differentialTP',10000.),
                               #params for merging linsegs
                               ('DA_min_allowedslope',-1),('IA_min_allowedslope',-0.5),('DF_min_allowedslope',-0.75),('IF_min_allowedslope',-0.5),('min_finseglength',0.1),
                               #parameters before entering bg identification
                               ('min_bgTP_diff',0.2),('min_bkgrdslope',-0.05),('min_bgbkgrdslopediff',0.4),('min_bgTP_finseg_diff',0.3),('min_bgfinalseglength',0.2),
                               #params for bg and bkgrd
-                              ('analysis_types','DA,IA'),('maxbgspersmp',4),('chkoutput_types','DA,IA'),
-                              ('abs_minallowedslope',-numpy.inf),('max_absolute_2ndderiv',numpy.inf),('use_absderivs_forpeaks',False)
+                              ('analysis_types','DA,IA'),('maxbgspersmp',2),('chkoutput_types','DA,IA'),
+                              ('abs_minallowedslope',-1.e+13),('max_absolute_2ndderiv',1.e+13),('use_absderivs_forpeaks',False),
+                              ('calcbg_abscissa', False)
                               #Params for using derivates of absorption spectrum to identify peaks
                               ])
                         )
@@ -916,10 +921,15 @@ class Analysis__BG(Analysis_Master_inter):
 
         if numpy.array([str(x).strip()=='' for x in self.params.values()]).any() or set(self.params['chkoutput_types'])>set(self.params['analysis_types']):
             self.rtn_defaults
-      
+        
         self.fomnames=[item for sublist in [[x+'_abs_expl_'+y,x+'_bg_'+y,x+'_bgcode_'+y,x+'_bg_repr',x+'_bgcode_repr',x+'_bgslope_repr',x+'_bkgrdslope_repr',x+'_bgcode0'+'_only']\
                              for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
-                             for item in sublist]+[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
+                             for item in sublist]+[xfom for bgtyp in self.params['analysis_types'] for xfom in [bgtyp+'_fit_minslope',bgtyp+'_tol',bgtyp+'_rel_rss']]
+        if self.params['calcbg_abscissa']:
+            extn='_a'
+            self.fomnames+=[item for sublist in [[x+extn+'_abs_expl_'+y,x+extn+'_bg_'+y,x+extn+'_bgcode_'+y,x+extn+'_bg_repr',x+extn+'_bgcode_repr',x+extn+'_bgslope_repr',x+extn+'_bgcode0'+'_only']\
+                             for x in self.params['analysis_types'] for y in [str(idx) for idx in xrange(self.params['maxbgspersmp'])]]\
+                             for item in sublist]
                                  
         self.fom_chkqualitynames=[bgtyp+'_bg_0' for bgtyp in self.params['chkoutput_types']]
         self.histfomnames=[bgtyp+'_fit_minslope' for bgtyp in self.params['analysis_types']]
@@ -928,8 +938,8 @@ class Analysis__BG(Analysis_Master_inter):
         self.plotparams['plot__1']['x_axis']='hv'#this is a single key from raw or inter data
         self.plotparams['plot__1']['series__1']=self.params['analysis_types'][0]
         self.csvheaderdict={'csv_version':'1','plot_parameters':{}}
-        np_ana=5
-        for idx in xrange(len(self.params['analysis_types'])):
+        np_ana=6
+        for idx in xrange(len(self.params['analysis_types'])):            
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_0',\
             colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+2)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bg_repr',\
@@ -937,9 +947,24 @@ class Analysis__BG(Analysis_Master_inter):
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+3)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgcode_repr',\
             colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+4)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bgslope_repr',\
-            colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+            colormap='jet', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
             self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+5)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'bkgrdslope_repr',\
             colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+            self.csvheaderdict['plot_parameters']['plot__'+str(np_ana*idx+6)]=dict({}, fom_name=self.params['analysis_types'][idx]+'_'+'rel_rss',\
+            colormap='jet', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+        nplots=np_ana*(idx+1)
+        if self.params['calcbg_abscissa']:
+            for idx in xrange(len(self.params['analysis_types'])):            
+                np_ana=4
+                extn='_a'
+                self.csvheaderdict['plot_parameters']['plot__'+str(nplots+np_ana*idx+1)]=dict({}, fom_name=self.params['analysis_types'][idx]+extn+'_'+'bg_0',\
+                colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+                self.csvheaderdict['plot_parameters']['plot__'+str(nplots+np_ana*idx+2)]=dict({}, fom_name=self.params['analysis_types'][idx]+extn+'_'+'bg_repr',\
+                colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+                self.csvheaderdict['plot_parameters']['plot__'+str(nplots+np_ana*idx+3)]=dict({}, fom_name=self.params['analysis_types'][idx]+extn+'_'+'bgcode_repr',\
+                colormap='jet_r', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
+                self.csvheaderdict['plot_parameters']['plot__'+str(nplots+np_ana*idx+4)]=dict({}, fom_name=self.params['analysis_types'][idx]+extn+'_'+'bgslope_repr',\
+                colormap='jet', colormap_over_color='(0.5,0.5,0.5)', colormap_under_color='(0.,0.,0.)')
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=\
