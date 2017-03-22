@@ -138,15 +138,15 @@ def stdcheckoutput(fomdlist, fomnames):
     nancount=[(not k in fomdlist) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
     return nancount, 1.*nancount/(len(fomdlist)*len(fomnames))
     
-def refadjust(data,min_mthd_allowed,max_mthd_allowed,min_limit=0.,max_limit=1.):
+def refadjust(data,min_mthd_allowed,max_mthd_allowed,min_limit=0.01,max_limit=0.99):
     min_rescaled=False;max_rescaled=False
     mini=numpy.nanmin(data)
     if mini>=min_mthd_allowed and mini<=min_limit:
-        data=data-mini+min_limit+0.01
+        data=data-mini+min_limit
         min_rescaled=True
     maxi=numpy.nanmax(data)
     if maxi<=max_mthd_allowed and maxi>=max_limit:
-        data=data/(maxi+0.01)
+        data=data/(maxi+0.02)
         max_rescaled=True
     return min_rescaled,max_rescaled,data
     
