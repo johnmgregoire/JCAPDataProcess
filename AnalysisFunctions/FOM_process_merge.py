@@ -10,7 +10,7 @@ from FOM_process_basics import FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, Analysis
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'.AtFrac', 'remove_samples_not_in_aux':1, 'aux_ana_path':'RecentlyAdded', 'aux_ana_ints':'ALL', 'match_plate_id':1}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_path':'RecentlyAdded', 'aux_ana_ints':'ALL', 'match_plate_id':1}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
         self.requiredkeys=[]
