@@ -460,9 +460,9 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'method':'B_over_A', 'relative_key_append':'_RelRatio'}
+        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
         self.params=copy.copy(self.dfltparams)
-        self.supported_methods=['B_minus_A', 'B_over_A']
+        self.supported_methods=['B_minus_A', 'B_over_A', 'B_minus_A_over_A']
         self.analysis_name='Analysis__Process_B_vs_A_ByRun'
         self.requiredkeys=[]
         self.optionalkeys=[]
@@ -490,20 +490,32 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
         if len(self.filedlist)!=1:
             self.filedlist=[]
             return
-            
-        if not self.params['method'] in self.supported_methods:
+        
+        err=False
+        try:
+            if ',' in self.params['AandBoffset']:
+                self.offsetlist=[float(s.strip()) for s in self.params['AandBoffset'].split(',')]
+            else:
+                self.offsetlist=float(self.params['AandBoffset'].strip())
+        except:
+            err=True
+        if not err:
+            err=not self.params['method'] in self.supported_methods
+        if err:
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
         methodind=self.supported_methods.index(self.params['method'])
         self.relfcn=[\
-        (lambda a,b:b-a), \
-        (lambda a,b:b/a), \
+        (lambda a,b, offset:b-a), \
+        (lambda a,b, offset:(b-offset)/(a-offset)), \
+        (lambda a,b, offset:(b-a)/(a-offset)), \
         ][methodind]
         
         dfltvals=[\
             '_RelDiff', \
             '_RelRatio', \
+            '_RelFracDiff', \
             ]
         if len(self.params['relative_key_append'])==0 or self.params['relative_key_append'] in dfltvals:
             self.params['relative_key_append']=dfltvals[methodind]
@@ -528,7 +540,9 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
-        
+        if isinstance(self.offsetlist, float):
+            self.offsetlist=[self.offsetlist]*(self.params['fom_keys_B'].count(',')+1)
+            
         try:
             self.runints_A=[int(s.strip()) for s in self.params['runints_A'].split(',')]
             self.runints_B=[int(s.strip()) for s in self.params['runints_B'].split(',')]
@@ -569,10 +583,11 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             newfomd={}
             for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING:
                 newfomd[k]=fomd[k][inds_b]
-            for k, ka, kb in zip(self.fomnames, self.params['fom_keys_A'].split(','), self.params['fom_keys_B'].split(',')):
+            
+            for k, ka, kb, offset in zip(self.fomnames, self.params['fom_keys_A'].split(','), self.params['fom_keys_B'].split(','), self.offsetlist):
                 ka=ka.strip()
                 kb=kb.strip()
-                newfomd[k]=self.relfcn(fomd[ka][inds_a], fomd[kb][inds_b])
+                newfomd[k]=self.relfcn(fomd[ka][inds_a], fomd[kb][inds_b], offset)
             
             allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
             self.fomdlist=[dict(zip(allkeys, tup))\
