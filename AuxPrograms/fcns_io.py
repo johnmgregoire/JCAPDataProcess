@@ -279,7 +279,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
     return d, headerdict
 
 def get_xrfs_stds_csv(startswithstr='', searchstr='.csv', transkey='transition', nmolcpskey='nmol.CPS'):
-    
+
     fold=tryprependpath(XRFSPROCESSFOLDERS, '', testfile=False, testdir=True)
     if fold is None:
         return None
@@ -296,7 +296,7 @@ def get_xrfs_stds_csv(startswithstr='', searchstr='.csv', transkey='transition',
     arr=readtxt_selectcolumns('', selcolinds=inds, delim=',', num_header_lines=1, floatintstr=str, zipclass=None, lines=lines)
     xrfs_stds_dict=dict([(trans.strip(), float(nmolcps.strip())) for trans, nmolcps in arr.T])
     return xrfs_stds_dict, csvfn
-    
+
 def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
@@ -495,7 +495,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
 
         if ((not zipbool) and not os.path.isdir(runp)) or (zipbool and not os.path.isfile(runp)):
             runp=tryprependpath(RUNFOLDERS, runp)
-        
+
         if zipbool:
             archive=zipfile.ZipFile(runp, 'r')
             zipopenfcn=lambda fn:archive.open(fn, 'r')#rund['rcp_file'].partition('/')[0]+'/'+
@@ -711,7 +711,7 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
     return os.path.join(p, fnl[0])#shouldn't be multiple .exp but if so take the first one found
 def buildanapath(analysis_path_folder):
     return buildexppath(analysis_path_folder, ext_str='.ana')
-    
+
 def buildrunpath(runp):
     #if user makes .exp with a folder on K or intr computer and this run_path is used but the file is gone opr path changed to ..copied, then should bepossible to find this run as a .zip on J but that is not attempted here
     p=tryprependpath(RUNFOLDERS, runp)
@@ -929,7 +929,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_
         return (p, pmidstr) if return_pmidstr else p
     p=os.path.join(pmfold, fns[0])
     return (p, pmidstr) if return_pmidstr else p
-    
+
 def getinfopath_plateid(plateidstr, erroruifcn=None):
     p=''
     fld=os.path.join(tryprependpath(PLATEFOLDERS, ''), plateidstr)
@@ -971,8 +971,8 @@ def getelements_plateidstr(plateidstr_or_filed, multielementink_concentrationinf
         printd=infofiled['prints'][print_key_or_keyword]
     if not 'elements' in printd.keys():
         return None
-    els=[x for x in printd['elements'].split(',') if x not in exclude_elements_list] 
-    
+    els=[x for x in printd['elements'].split(',') if x not in exclude_elements_list]
+
     if multielementink_concentrationinfo_bool:
         return els, get_multielementink_concentrationinfo(printd,els)
     return els
@@ -1025,7 +1025,7 @@ def get_multielementink_concentrationinfo(printd, els):#None if nothing to repor
 #    if s is None and not erroruifcn is None:
 #        s=erroruifcn('Enter Platemap ID')
 #    return s
-    
+
 def getscreeningmapid_plateidstr(plateidstr, erroruifcn=None):
     p=getinfopath_plateid(plateidstr)
     s=None
@@ -1806,7 +1806,7 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
         metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Composition=%s' %(elstr)]
         for lab, carr in zip(els, udi_dict['comps'].T):
             compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
-    
+
     if 'xy' in udi_dict.keys():
         metastrlist+=['Deposition=X,Y']
         if 'plate_id' in udi_dict.keys():
@@ -1820,26 +1820,26 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
                 ([('sample_no=', udi_dict['sample_no'], '%d')] if 'sample_no' in udi_dict.keys() else [])+\
                 ([('plate_id=', udi_dict['plate_id'], '%s')] if 'plate_id' in udi_dict.keys() else []):
             depstrlist+=[lab+','.join([fmt %v for v in arr])]
-            
 
-    
-   
+
+
+
     if 'Motorpns' in udi_dict.keys() and 'mxy' in udi_dict.keys():
         metastrlist+=['Motorpns=%s' %(','.join(udi_dict['Motorpns']))]
         for lab, arr, fmt in [('mX=', udi_dict['mxy'][:, 0], '%.2f'), ('mY=', udi_dict['mxy'][:, 1], '%.2f')]+\
                 ([('specind=', udi_dict['specind'], '%d')] if 'specind' in udi_dict.keys() else []):
             if not  numpy.any(numpy.isnan(arr)):
                 mtrpnstrlist+=[lab+','.join([fmt %v for v in arr])]
-    
+
     if 'Normalize' in udi_dict.keys():
         metastrlist+=['Normalize=%s' %(udi_dict['Normalize'])]
-    
+
     if 'CompType' in udi_dict.keys():
         metastrlist+=['CompType=%s' %(udi_dict['CompType'])]
-    
+
     qcounts=udi_dict['Iarr']
     metastrlist+=['N=%d' %len(qcounts)]
-    
+
     for i in range(len(qcounts)+1):
         if i==0:
             #countstrlist+=['Q=']
@@ -1866,25 +1866,25 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
 
 def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_comps=None, anafolder_comps=None):
     #TODO open anadict and anadict_comps if they are paths
-    
+
     csvp=os.path.join(anafolder_comps, udi_dict['fom_file_comps'])
     csvfiled=anadict_comps[udi_dict['anak_comps']]['files_multi_run']['fom_files'][udi_dict['fom_file_comps']]
     compsfomd=readcsvdict(csvp, csvfiled, returnheaderdict=False)
     compkeys=[k for k in csvfiled['keys'] if udi_dict['fomname_split_comps'] in k]
     udi_dict['ellabels']=[k.partition(udi_dict['fomname_split_comps'])[0] for k in compkeys]
-    
+
     smp_fn_filed=sorted([(filed['sample_no'], fn, filed) for anarunk in [anarunk for anarunk in anadict[udi_dict['anak']].keys() if anarunk.startswith('files_')] \
               for fn, filed in anadict[udi_dict['anak']][anarunk][udi_dict['ana_file_type']].items() \
                   if 'sample_no' in filed.keys() and filed['sample_no'] in compsfomd['sample_no'] and 'keys' in filed.keys() and udi_dict['q_key'] in filed['keys'] and udi_dict['intensity_key'] in filed['keys']])
     if len(smp_fn_filed)==0:
         return
-    
+
     smps=[smp for smp, fn, filed in smp_fn_filed]
     udi_dict['sample_no']=numpy.array(smps)
     compsmplist=list(compsfomd['sample_no'])
     inds_compsfomd=[compsmplist.index(smp) for smp in smps]
     udi_dict['comps']=numpy.array([compsfomd[k][inds_compsfomd] for k in compkeys]).T
-    
+
     udi_dict['Iarr']=[]
     for smp, fn, filed in smp_fn_filed:
         p=os.path.join(anafolder, fn)
@@ -1898,14 +1898,14 @@ def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_com
             udi_dict['Q']=qvals
         udi_dict['Iarr']+=[datad[udi_dict['intensity_key']]]
     udi_dict['Iarr']=numpy.array(udi_dict['Iarr'])
-    
+
     pmap_path=getplatemappath_plateid(str(udi_dict['plate_id']))
     pmdlist=readsingleplatemaptxt(pmap_path)
     pmsmps=[d['sample_no'] for d in pmdlist]
     udi_dict['xy']=numpy.array([[pmdlist[pmsmps.index(smp)]['x'], pmdlist[pmsmps.index(smp)]['y']] for smp in smps])
-    
+
     writeudifile(udipath, udi_dict)
-    
+
 def readudi(fl,fltyp='src'):
     def getval(valstr,dtype=numpy.float32,sep=','):
         if sep in valstr:
@@ -1938,14 +1938,14 @@ def readudi(fl,fltyp='src'):
         datad['comps']=numpy.array([filed['Composition data'][x] for x in filed['Metadata']['Composition']])
         datad=dict(datad.items()+filed['Metadata'].items()+[(mkey,filed['Motorpns data'][mkey]) for mkey in filed['Motorpns data'].keys() if mkey not in ['mX,mY']]+\
         [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
-    
+
     return datad
 
 
 def sort_dict_keys_by_counter(d, keystartswith='ana__'):
     try:
         sorttups=sorted([(int(k[len(keystartswith):]), k) for k in d.keys() if k.startswith(keystartswith)])
-        kl=map(operator.itemgetter(1), sorttups) 
+        kl=map(operator.itemgetter(1), sorttups)
     except:
         kl=sorted([k for k in d.keys() if k.startswith(keystartswith)])
     return kl
@@ -1989,9 +1989,9 @@ def gen_pathd_absorrel_expanapath(p, desttype='eche', exp=False, only_check_temp
     dest=os.path.join(deststartswith, foldname)
     destrel=(r'/'+os.path.join(desttype, foldname)).replace(chr(92),chr(47))
     return {'destabs':dest, 'destrel':destrel, 'srcabs':srcabs, 'srcrel':p}
-    
-    
-    
+
+
+
 def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-containing paths are not on J or in anatype folder
     needcopy_dlist=[]
     for k, v in anad.iteritems():
@@ -2014,7 +2014,7 @@ def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-conta
                         #needcopy_dlist+=[d]
                         needcopy_dlist+=[None]#an aux could be xrfs so not needed to be copied to this place but just can't be in temp
     return needcopy_dlist
-###       
+###
 
 def get_serial_plate_id(pid):
     if isinstance(pid, int):
@@ -2045,13 +2045,13 @@ def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maind
     keys=None
     for count, l in enumerate(lines):
         if l.startswith('Inte,'):
-            keys=l.strip().split(',')
+            keys=l.strip().replace(' ','').split(',')
             lines=lines[count+1:]
             break
     if keys is None:
         return None
-    
-    
+
+
     if len(select_columns_headings__maindict)>0:
         selcolinds=[keys.index(s) for s in select_columns_headings__maindict]
         strarr=readtxt_selectcolumns('', selcolinds=selcolinds, delim=',', num_header_lines=0, lines=lines, floatintstr=str)
