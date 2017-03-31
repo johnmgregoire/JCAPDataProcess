@@ -5,6 +5,7 @@ if __name__ == "__main__":
 
 from fcns_math import *
 from fcns_io import *
+from fcns_ui import mygetopenfile
 from FOM_process_basics import FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, Analysis_Master_FOM_Process#, stdgetapplicablefomfiles
 
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
@@ -30,14 +31,14 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             if calcFOMDialogclass is None or not 'ana__1' in calcFOMDialogclass.anadict.keys():
                 self.filedlist=[]
                 return self.filedlist
-        else:
+        elif self.params['aux_ana_path']!='custom':
             if calcFOMDialogclass is None or len(calcFOMDialogclass.aux_ana_dlist)==0:
                 self.filedlist=[]
                 return self.filedlist
             if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
                 self.params['aux_ana_path']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_path not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
         #do not check if aux ana contains any valid foms - let user change params and validate there
-        if len(self.getapplicablefomfiles(anadict))>0:
+        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']!='custom':#only run params for custom when user changes to "custom"
             self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=False)
         return self.filedlist
     
@@ -45,10 +46,39 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         self.fomnames=[]
         if recalc_filedlist:#the parmas can change what fom files are in filedlist whcih determines which fom names must not be duplicated so need to reevaluate this every time params change
             self.getapplicablefomfiles(calcFOMDialogclass.anadict)
+        
+        custom_load_csv_bool=False
         if self.params['aux_ana_path']=='self':
             auxd=copy.deepcopy(calcFOMDialogclass.anadict)
             convertfilekeystofiled(auxd)
             self.auxpath=calcFOMDialogclass.tempanafolder
+        elif self.params['aux_ana_path']=='custom':
+            custom_load_csv_bool=True
+            auxd={}
+            auxd['custom']={}
+            auxd['custom']['files_multi_run']={}
+            auxd['custom']['files_multi_run']['fom_files']={}
+            
+            try:
+                p=mygetopenfile(parent=(None if (calcFOMDialogclass is None) else calcFOMDialogclass), markstr='Select .csv with 1 header line inlcuding sample_no')
+                if p is None or len(p)==0:
+                    raise ValueError()
+                self.auxpath, fnk=os.path.split(p)
+                fileattrd=dict({}, fn=fnk, num_header_lines=1)#the 'keys' get defined within this trial reading
+                readcsvdict(p, fileattrd)
+                if not 'sample_no' in fileattrd['keys']:
+                    print 'sample_no required as a column in .csv'
+                    raise ValueError()
+                if False in [k==filterchars(k) for k in fileattrd['keys']]:
+                    print 'a key in the selected .csv hs an illegal character'
+                    raise ValueError()
+            except:
+                print 'error reading custom .csv file'
+                self.params=copy.copy(self.dfltparams)
+                self.filedlist=[]
+                return
+                
+            auxd['custom']['files_multi_run']['fom_files'][fnk]=fileattrd
         else:
             if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
                 self.params=copy.copy(self.dfltparams)#no aux_ana meet search so return to default, will also happen if there are no aux_ana open
@@ -59,15 +89,19 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     self.params['aux_ana_path']=auxd['auxexpanapath_relative']
                     break
             self.auxpath=os.path.split(auxd['auxexpanapath'])[0]
-        if self.params['aux_ana_ints']=='ALL':
-            anak_list=sort_dict_keys_by_counter(auxd, keystartswith='ana__')
+        
+        if custom_load_csv_bool:
+            anak_list=['custom']
         else:
-            anaintstrlist=self.params['aux_ana_ints'].split(',')
-            anaintstrlist=[s.strip() for s in anaintstrlist]
-            anak_list=[k for k in sort_dict_keys_by_counter(auxd, keystartswith='ana__') if k.partition('ana__')[2] in anaintstrlist]
-            
-        anak_list=[k for k in anak_list\
-           if ('files_multi_run' in auxd[k].keys()) and ('fom_files' in auxd[k]['files_multi_run'].keys())]
+            if self.params['aux_ana_ints']=='ALL':
+                anak_list=sort_dict_keys_by_counter(auxd, keystartswith='ana__')
+            else:
+                anaintstrlist=self.params['aux_ana_ints'].split(',')
+                anaintstrlist=[s.strip() for s in anaintstrlist]
+                anak_list=[k for k in sort_dict_keys_by_counter(auxd, keystartswith='ana__') if k.partition('ana__')[2] in anaintstrlist]
+                
+            anak_list=[k for k in anak_list\
+               if ('files_multi_run' in auxd[k].keys()) and ('fom_files' in auxd[k]['files_multi_run'].keys())]
            
         if self.params['select_aux_keys']=='ALL':
             keysearchlist=['']
@@ -78,7 +112,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         keysfcn=lambda filed, notallowedkeys: [k for k in filed['keys'] if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
                                                                                                                    (not k in notallowedkeys) and \
                                                                                                                 (True in [s in k for s in keysearchlist])]
-        keystestfcn=lambda filed: len(set(filed['keys']).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
+        if custom_load_csv_bool:
+            reqdkeysset=['plate_id'] if self.params['match_plate_id'] else []
+            reqdkeysset=set(reqdkeysset+['sample_no'])
+        else:
+            reqdkeysset=FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING
+        keystestfcn=lambda filed: len(set(filed['keys']).intersection(reqdkeysset))==len(reqdkeysset)
         
         existkeys=[k for filed in self.filedlist for k in filed['process_keys']]#don't allow aux key overlap with existing keys in any of the fom csvs in play
         
@@ -92,11 +131,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     existkeys+=[self.auxfiledlist[-1]]#aux keys can be from multipleana__ blocks but only 1 ana_file
                 
         auxkeylist=[k for filed in self.auxfiledlist for k in filed['process_keys']]
-        if len(auxkeylist)==0:
-            print 'cannot find any unique aux fom keys'
-            self.params=copy.copy(self.dfltparams)
-            self.filedlist=[]
-            return
+#allow this to pass so the params can be changed to, e.g. "custom". If "perform" happens under this condition then the new .csv will be the same as the old.
+#        if len(auxkeylist)==0:
+#            print 'cannot find any unique aux fom keys'
+#            self.params=copy.copy(self.dfltparams)
+#            self.filedlist=[]
+#            return
         self.params['select_aux_keys']=','.join(auxkeylist)
 
 
@@ -105,9 +145,9 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         
         matchplateidbool=bool(self.params['match_plate_id'])
         if matchplateidbool:
-            matchplateidfcn=lambda idarr:idarr
+            matchplateidfcn=lambda tempfomd:tempfomd['plate_id']
         else:
-            matchplateidfcn=lambda idarr:['']*len(idarr)#use emtpy strings so that matching tups look the same but plate_id is always empty string so it always matches
+            matchplateidfcn=lambda tempfomd:['']*len(tempfomd['sample_no'])#use emtpy strings so that matching tups look the same but plate_id is always empty string so it always matches
         for filed in self.filedlist:
             
 
@@ -121,12 +161,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
                 
                 newfomd={}
-                fomd_plt_smp_list=zip(matchplateidfcn(fomd['plate_id']), fomd['sample_no'])
+                fomd_plt_smp_list=zip(matchplateidfcn(fomd), fomd['sample_no'])
                 
                 if self.params['remove_samples_not_in_aux']:
                     plt_smp_list=set(fomd_plt_smp_list)
                     for auxfomd in auxfomd_list:
-                        plt_smp_list=plt_smp_list.intersection(zip(matchplateidfcn(auxfomd['plate_id']), auxfomd['sample_no']))
+                        plt_smp_list=plt_smp_list.intersection(zip(matchplateidfcn(auxfomd), auxfomd['sample_no']))
                     plt_smp_list=sorted(list(plt_smp_list))
                     inds=[fomd_plt_smp_list.index(tup) for tup in plt_smp_list]
                     for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
@@ -140,11 +180,11 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 self.fomnames=process_keys
                 self.strkeys_fomdlist=['aux_anak']
                 newfomd['aux_anak']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#S8 is ana__NNN
-                if not matchplateidbool:
+                if 'plate_id' in auxfomd.keys() and not matchplateidbool:
                     self.strkeys_fomdlist+=['aux_plate_id']
                     newfomd['aux_plate_id']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#plate_id presumably no more than 8 characters long
                 for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
-                    auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(matchplateidfcn(auxfomd['plate_id']), auxfomd['sample_no'])) if tup in plt_smp_list]).T
+                    auxfomdinds, fomdinds=numpy.array([[count, plt_smp_list.index(tup)] for count, tup in enumerate(zip(matchplateidfcn(auxfomd), auxfomd['sample_no'])) if tup in plt_smp_list]).T
                     #newfomd['aux_anaint'][fomdinds]=int(auxfiled['ana'].partition('__')[2])
                     newfomd['aux_anak'][fomdinds]=auxfiled['ana']
                     if len(auxfomdinds)==0:#if no matching plate,sample then skip this column merge
@@ -153,7 +193,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     for k in auxfiled['process_keys']:
                         newfomd[k]=numpy.ones(len(newfomd['sample_no']), dtype='float64')*numpy.nan
                         newfomd[k][fomdinds]=auxfomd[k][auxfomdinds]
-                    if not matchplateidbool:#if not matching by plate_id then the aux plate_id could be different so need to save it. This will arise for parent/child merges
+                    if 'plate_id' in auxfomd.keys() and not matchplateidbool:#if not matching by plate_id then the aux plate_id could be different so need to save it. This will arise for parent/child merges
                         newfomd['aux_plate_id'][fomdinds]=numpy.array(auxfomd['plate_id'][auxfomdinds],dtype='|S8')
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]

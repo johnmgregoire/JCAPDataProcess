@@ -560,7 +560,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         inputs=[(k, type(v), (isinstance(v, str) and (v,) or (str(v),))[0]) for k, v in paramsd.iteritems() if not isinstance(v, dict)]
         if len(inputs)==0:
             return
-        ans, changedbool=userinputcaller(self, inputs=inputs, title='Enter Calculation Parameters', returnchangedbool=True)
+        ans=userinputcaller(self, inputs=inputs, title='Enter Calculation Parameters', returnchangedbool=True)
+        if ans is None:
+            return
+        ans, changedbool=ans
         somethingchanged=False
         for (k, tp, v), newv, chb in zip(inputs, ans, changedbool):
             if chb:
