@@ -88,6 +88,10 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
             filed['batch_summary']=read_xrfs_batch_summary_csv(p, select_columns_headings__maindict=self.fomnames, \
                                                                                         include_inte_wt_at_subdicts=True, include_transitionslist_bool=True, read_sample_no_bool=True)
             
+
+            if 'StgLabel' in self.fomnames and not ('StgLabel' in filed['batch_summary'].keys()):
+                self.fomnames.pop('StgLabel')
+            
         #            except:
 #                if self.debugmode:
 #                    raiseTEMP
