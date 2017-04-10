@@ -2022,7 +2022,7 @@ def get_serial_plate_id(pid):
     checksum=numpy.array([eval(ch) for ch in pid]).sum()%10
     return '%s%d' %(pid, checksum)
 
-def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maindict=[], include_inte_wt_at_subdicts=True, include_transitionslist_bool=False, read_sample_no_bool=False):
+def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maindict=[], include_inte_wt_at_subdicts=True, include_transitionslist_bool=False, read_sample_no_bool=False, includestrvals=False):
     d={}
     closezip=False
     if zipclass is None:#only close zip if opened it here (not if it was passed)
