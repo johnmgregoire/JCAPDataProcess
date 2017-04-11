@@ -38,9 +38,9 @@ def getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek,
 
     filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
     filedlist=[dict(d, run_foms=expfiledict[d['run']]['run_foms'] if 'run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
-    
+
     return num_files_considered, filedlist
-    
+
 
 
 class Analysis__XRFS_EDAX(Analysis_Master_nointer):
@@ -58,7 +58,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
         #self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek, runklist=runklist, specificuse=None, specifictech='XRFS', specifictype='batch_summary_files')
         self.description='reformatting of XRFS batch_summary_files'
@@ -66,32 +66,32 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
 #            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
         self.fomnames=['StgLabel', 'StagX', 'StagY', 'StagZ', 'StagR']#to reset this after function used
         return self.filedlist
-    
+
     def processnewparams(self, calcFOMDialogclass=None):
         return
-    
+
     def perform(self, destfolder, expdatfolder=None, writeinterdat=False, anak='', zipclass=None, expfiledict=None, anauserfomd={}):#zipclass intended to be the class with open zip archive if expdatfolder is a .zip so that the archive is not repeatedly opened
         self.initfiledicts()
         self.strkeys_fomdlist=[]
-        
+
         #go through the files once to read data and sample_no.txt
         for filed in self.filedlist:
             fn=filed['fn']
-            
+
 
             runp=expfiledict[filed['run']]['run_path']
-            
+
             runp=buildrunpath(runp)
             runzipclass=gen_zipclass(runp)
             p=os.path.join(runp, fn)
-            
+
             filed['batch_summary']=read_xrfs_batch_summary_csv(p, select_columns_headings__maindict=self.fomnames, \
                                                                                         include_inte_wt_at_subdicts=True, include_transitionslist_bool=True, read_sample_no_bool=True)
-            
+
 
             if 'StgLabel' in self.fomnames and not ('StgLabel' in filed['batch_summary'].keys()):
-                self.fomnames.pop('StgLabel')
-            
+                self.fomnames.remove('StgLabel')
+
         #            except:
 #                if self.debugmode:
 #                    raiseTEMP
@@ -107,7 +107,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
         batchdictkey_appendstr=[(k, self.params[k.strip('%')+'_append']) for k in ['Inte', 'Wt%', 'At%']]
         keymodfcn=lambda k, a:'%s.%s%s' %(k[:-1], k[-1:], a)
         trfoms=[keymodfcn(tr, s) for k, s in batchdictkey_appendstr for tr in alltransitions]
-        self.fomnames=trfoms+self.fomnames 
+        self.fomnames=trfoms+self.fomnames
         #go through each file and make the fomdlist entries for each samples_no therein, which may contain duplicate sample_no but those should be differentiated by runint
         self.fomdlist=[]
         for filed in self.filedlist:
@@ -122,19 +122,17 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
                 if savek in trfomsmissing:#for example StagX
                     trfomsmissing.pop(trfomsmissing.index(savek))
                     fomd[savek]=filed['batch_summary'][savek]
-            
+
             fomd['sample_no']=filed['batch_summary']['sample_no']
-            
+
             #this zips the fomd arrays into tuple lists. the second line makes a dict for eachof those, adding to it a list of NaN tuples for the missing keys, and the 1st adn 3rd lines add to that dict the common values
             self.fomdlist+=[dict(\
             dict(zip(self.fomnames+['sample_no'], tup)+[(missk, numpy.nan) for missk in trfomsmissing]), \
             plate_id=filed['plate_id'], runint=int(filed['run'].partition('run__')[2]))\
                                         for tup in zip(*[fomd[k] for k in self.fomnames+['sample_no']])]
-            
+
         self.csvheaderdict['plot_parameters']['plot__1']['fom_name']=trfoms[0]
         allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
-        
+
 
         self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
-
-
