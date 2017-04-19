@@ -8,9 +8,6 @@ from fcns_io import *
 from Analysis_Master import *
 
 
-
-
-
 #    def stdgetapplicablefomfiles(anadict, params={}):
 #    
 #    if 'select_ana_keys' in params.keys() and params['select_ana_keys'].startswith('ana__'):#filter to only use refs from user-specified list

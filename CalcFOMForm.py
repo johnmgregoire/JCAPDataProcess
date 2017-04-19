@@ -349,8 +349,11 @@ class Ui_CalcFOMDialog(object):
         self.UpdatePlotPushButton.setSizePolicy(sizePolicy)
         self.UpdatePlotPushButton.setObjectName(_fromUtf8("UpdatePlotPushButton"))
         self.OpenAuxExpAnaPushButton = QtGui.QPushButton(CalcFOMDialog)
-        self.OpenAuxExpAnaPushButton.setGeometry(QtCore.QRect(400, 80, 101, 23))
+        self.OpenAuxExpAnaPushButton.setGeometry(QtCore.QRect(400, 70, 101, 21))
         self.OpenAuxExpAnaPushButton.setObjectName(_fromUtf8("OpenAuxExpAnaPushButton"))
+        self.AttachMiscPushButton = QtGui.QPushButton(CalcFOMDialog)
+        self.AttachMiscPushButton.setGeometry(QtCore.QRect(400, 90, 101, 21))
+        self.AttachMiscPushButton.setObjectName(_fromUtf8("AttachMiscPushButton"))
 
         self.retranslateUi(CalcFOMDialog)
         QtCore.QMetaObject.connectSlotsByName(CalcFOMDialog)
@@ -447,4 +450,6 @@ class Ui_CalcFOMDialog(object):
         self.UpdatePlotPushButton.setText(_translate("CalcFOMDialog", "Update Plots", None))
         self.OpenAuxExpAnaPushButton.setToolTip(_translate("CalcFOMDialog", "Perform the selected analysis", None))
         self.OpenAuxExpAnaPushButton.setText(_translate("CalcFOMDialog", "SelectAuxEXP/ANA", None))
+        self.AttachMiscPushButton.setToolTip(_translate("CalcFOMDialog", "Perform the selected analysis", None))
+        self.AttachMiscPushButton.setText(_translate("CalcFOMDialog", "Attach Files to ana", None))
 

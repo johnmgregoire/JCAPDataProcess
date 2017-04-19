@@ -1204,9 +1204,9 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
    <property name="geometry">
     <rect>
      <x>400</x>
-     <y>80</y>
+     <y>70</y>
      <width>101</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -1214,6 +1214,22 @@ ONLY WORKS ON MOST RECENT &quot;Analyze Data&quot;</string>
    </property>
    <property name="text">
     <string>SelectAuxEXP/ANA</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="AttachMiscPushButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>90</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Perform the selected analysis</string>
+   </property>
+   <property name="text">
+    <string>Attach Files to ana</string>
    </property>
   </widget>
  </widget>

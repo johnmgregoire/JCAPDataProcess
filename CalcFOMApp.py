@@ -133,6 +133,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.UpdatePlotPushButton, self.plotwithcaution), \
         (self.OpenAuxExpAnaPushButton, self.openauxexpana), \
         (self.RaiseErrorPushButton, self.raiseerror), \
+        (self.AttachMiscPushButton, self.attachfilestoana), \
         ]
         #(self.UndoExpPushButton, self.undoexpfile), \
         for button, fcn in button_fcn:
@@ -722,6 +723,33 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.plot_generatedata(plotbool=True)
         return False#false means no error
 
+    def attachfilestoana(self, anak=None, pathlist=None):
+        if anak is None:
+            ans=userinputcaller(self, inputs=[('ana key', str, self.gethighestanak(getnextone=False))], title='Enter ana__# to attach files',  cancelallowed=True)
+            if ans is None or not ans[0].strip() in self.anadict.keys():
+                return
+            anak=ans[0].strip()
+            anad=self.anadict[anak]
+        if pathlist is None:
+            pathlist=mygetopenfiles(self, markstr='select files to add as misc_files')
+            if pathlist is None or len(pathlist)==0:
+                return
+        fns=[os.path.split(p)[1] for p in pathlist]
+        newfns=[('' if fn.startswith(anak) else (anak+'__'))+fn for fn in fns]
+        if not 'files_multi_run' in anad.keys():
+            anad['files_multi_run']={}
+        if not 'misc_files' in anad['files_multi_run'].keys():
+            anad['files_multi_run']['misc_files']={}
+        for p, newfn in zip(pathlist, newfns):
+            vs=1
+            newp=os.path.join(self.tempanafolder, newfn)
+            while os.path.exists(newp):
+                vs+=1
+                a, b=os.path.splitext(newfn)
+                newp=os.path.join(self.tempanafolder, '%s_v%d%s' %(a, vs, b))
+            shutil.copy(p, newp)
+            anad['files_multi_run']['misc_files'][os.path.split(newp)[1]]='user_misc_file;'
+        self.updateana()
         
     def updateana(self):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
