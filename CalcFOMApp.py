@@ -573,12 +573,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if somethingchanged:#soem analysis classes have different files applicable depending on user-enter parameters so update here but don't bother deleting if numfiles goes to 0
             self.processeditedparams()
     def processeditedparams(self):
-        self.analysisclass.processnewparams(calcFOMDialogclass=self)
-        nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict, calcFOMDialogclass=self))
         if 'process_fom' in self.analysisclass.getgeneraltype():
+            #processnewparams happens in getapplicablefilenames
+            self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict, calcFOMDialogclass=self)
             selind=int(self.FOMProcessNamesComboBox.currentIndex())
             self.FOMProcessNamesComboBox.setItemText(selind, '%s(%s)' %(str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0], self.analysisclass.params['select_ana']))
         else:
+            self.analysisclass.processnewparams(calcFOMDialogclass=self)
+            nfiles=len(self.analysisclass.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict, calcFOMDialogclass=self))
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
         self.getactiveanalysisclass()#this is only to update the description if necessary

@@ -2,11 +2,15 @@ import numpy, copy,sys,os
 if __name__ == "__main__":
     sys.path.append(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0])
     sys.path.append(os.path.join(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0], 'AuxPrograms'))
-
+    sys.path.append(os.path.join(PyCodePath,'PythonCompositionPlots'))
 from fcns_math import *
 from fcns_io import *
 from Analysis_Master import *
 
+
+
+from myternaryutility import TernaryPlot
+TernaryPlotInstance=TernaryPlot((1, 1, 1), outline=False)
 
 #    def stdgetapplicablefomfiles(anadict, params={}):
 #    
@@ -96,7 +100,14 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
         return 'process_fom'
         
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
-        return self.getapplicablefomfiles(anadict)
+        self.getapplicablefomfiles(anadict)
+        self.processnewparams() 
+        '''
+        the 'process_fom' types of analysis must call processnewparams during getapplicable filenames because usually the ana__k needs 
+        to be updated in getapplicablefilenames before prcoessing new params and if there is an error therin the fieldlist will be set to [] so 
+        getapplicablefilenames does not need to be run again
+        '''
+        return self.filedlist
         
     def getapplicablefomfiles(self, anadict):
         if not anadict is None and self.params['select_ana'] in anadict.keys() and 'plot_parameters' in anadict[self.params['select_ana']]:
@@ -224,7 +235,9 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
             self.filedlist=[]
             return []
         self.platemapdlist_runint=dict([(int(runk.partition('__')[2]), rund['platemapdlist']) for runk, rund in expfiledict.iteritems() if runk.startswith('run__')])
-        return self.getapplicablefomfiles(anadict)
+        self.getapplicablefomfiles(anadict)
+        self.processnewparams() 
+        return self.filedlist
     
     def process_fomd(self, fomd, process_keys, along_for_the_ride_keys):
         compdelta=self.params['crit_comp_dist']
@@ -471,10 +484,10 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 
 class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
+        self.analysis_fcn_version='1.1'
+        self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'keys_to_keep':'NONE', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
         self.params=copy.copy(self.dfltparams)
-        self.supported_methods=['B_minus_A', 'B_over_A', 'B_minus_A_over_A']
+        self.supported_methods=['B_minus_A', 'B_over_A', 'B_minus_A_over_A', 'B_comp_dist_wrt_A']
         self.analysis_name='Analysis__Process_B_vs_A_ByRun'
         self.requiredkeys=[]
         self.optionalkeys=[]
@@ -522,20 +535,21 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
         (lambda a,b, offset:b-a), \
         (lambda a,b, offset:(b-offset)/(a-offset)), \
         (lambda a,b, offset:(b-a)/(a-offset)), \
+        (lambda a,b, offset:b-a), \
         ][methodind]
         
         dfltvals=[\
             '_RelDiff', \
             '_RelRatio', \
             '_RelFracDiff', \
+            '_RelDiff', \
             ]
         if len(self.params['relative_key_append'])==0 or self.params['relative_key_append'] in dfltvals:
             self.params['relative_key_append']=dfltvals[methodind]
         
         filed=self.filedlist[0]
-        
         processkeys=filed['process_keys']
-        for count, (paramkey) in enumerate([('fom_keys_A'), ('fom_keys_B')]):#B goes second so its sel_processkeys available after loop
+        for count, (paramkey) in enumerate(['keys_to_keep', 'fom_keys_A', 'fom_keys_B']):#B goes second so its sel_processkeys available after loop
             if self.params[paramkey]=='ALL':
                 sel_processkeys=processkeys
             elif not (self.params[paramkey]=='NONE'):
@@ -548,7 +562,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 continue
             self.params[paramkey]=','.join(sel_processkeys)
         
-        if self.params['fom_keys_B']=='None' or self.params['fom_keys_A']=='None' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
+        if self.params['fom_keys_B']=='NONE' or self.params['fom_keys_A']=='NONE' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
@@ -593,14 +607,42 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 print 'no foms calculated for ', fn
                 continue
             newfomd={}
-            for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING:
-                newfomd[k]=fomd[k][inds_b]
             
             for k, ka, kb, offset in zip(self.fomnames, self.params['fom_keys_A'].split(','), self.params['fom_keys_B'].split(','), self.offsetlist):
                 ka=ka.strip()
                 kb=kb.strip()
                 newfomd[k]=self.relfcn(fomd[ka][inds_a], fomd[kb][inds_b], offset)
             
+            if self.params['method']=='B_comp_dist_wrt_A':
+                kdist='Comp_Dist'
+                newfomd[kdist]=numpy.array([newfomd[k]**2 for k in self.fomnames]).sum(axis=0)/2.**0.5
+                num_els=len(self.fomnames)
+                
+                if num_els==3:
+                    pylab.figure()
+                    ellabels=[s.partition('.')[0] for s in self.params['fom_keys_A'].split(',')]
+                    startcomps=numpy.array([fomd[ka][inds_a] for ka in self.params['fom_keys_A'].split(',')]).T
+                    try:
+                        TernaryPlotInstance.ax.figure.clf()
+                        TernaryPlotInstance.ellabels=ellabels
+                        TernaryPlotInstance.outline()
+                        TernaryPlotInstance.label()
+                        #TODO TernaryPlotInstance.compdistplot(startcomps, newfomd[kdist])
+                        compdistfn=anak+'__Comp_Dist.png'
+                        self.multirunfiledict['image_files']={}
+                        self.multirunfiledict['image_files'][compdistfn]='python_visualizer_png_image;'
+                    except:
+                        print 'Ternary composition distance image failed.'
+                self.fomnames+=[kdist]#do this last so fomnames is 1 for each element up to here
+            if self.params['keys_to_keep']=='NONE':
+                keystocopy=[]
+            else:
+                keystocopy=[k.strip() for k in self.params['keys_to_keep'].split(',') if len(k.strip())>0]
+            
+            self.fomnames=keystocopy+self.fomnames
+            for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+keystocopy:
+                newfomd[k]=fomd[k][inds_b]
+                
             allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
             self.fomdlist=[dict(zip(allkeys, tup))\
                                     for tup in zip(*[newfomd[k] for k in allkeys])]
