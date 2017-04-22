@@ -621,14 +621,19 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 if num_els==3:
                     pylab.figure()
                     ellabels=[s.partition('.')[0] for s in self.params['fom_keys_A'].split(',')]
-                    startcomps=numpy.array([fomd[ka][inds_a] for ka in self.params['fom_keys_A'].split(',')]).T
+                    acomps=numpy.array([fomd[ka][inds_a] for ka in self.params['fom_keys_A'].split(',')]).T
+                    diffcomps=numpy.array([newfomd[k] for k in self.fomnames]).T
+                    comps2=acomps+diffcomps#tacomps doesn't take into account offset but diff does
                     try:
-                        TernaryPlotInstance.ax.figure.clf()
+                        fig=TernaryPlotInstance.ax.figure
+                        fig.clf()
+                        TernaryPlotInstance.ax=fig.add_axes([0.05, 0.05, 0.65, 0.9])
+                        TernaryPlotInstance.prepax(outline=True)
                         TernaryPlotInstance.ellabels=ellabels
-                        TernaryPlotInstance.outline()
                         TernaryPlotInstance.label()
-                        #TODO TernaryPlotInstance.compdistplot(startcomps, newfomd[kdist])
+                        TernaryPlotInstance.hsdiffplot(acomps, comps2)
                         compdistfn=anak+'__Comp_Dist.png'
+                        fig.savefig(os.path.join(destfolder, compdistfn))
                         self.multirunfiledict['image_files']={}
                         self.multirunfiledict['image_files'][compdistfn]='python_visualizer_png_image;'
                     except:
