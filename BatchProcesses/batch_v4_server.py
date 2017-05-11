@@ -14,9 +14,11 @@ from VisualizeDataApp import visdataDialog
 from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
+from DBPaths import *
+
 
 if len(sys.argv) == 1:
-    execfile("batch.py")
+    execfile("suram_batchtest.py")
 else:
     execfile(sys.argv[1])
 
@@ -36,7 +38,8 @@ class MainMenu(QMainWindow):
 
     def visui_exec(self, show=True):
         if self.visdataui is None:
-            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data', GUIMODE=False)
+            #use GUIMODE=True to see any messages or dialog boxes
         if show:
             self.visdataui.show()
 
@@ -53,6 +56,7 @@ form=MainMenu(None)
 expui=form.expui
 calcui=form.calcui
 visdataui=form.visdataui
+
 
 def getbatchlinepath(linestr, key='TR_path'):
     return linestr.partition(key)[2].strip(':').strip().partition(';')[0].strip()
@@ -84,11 +88,14 @@ def batch_getplotcompbool(fn):
 
 def batch_pvdbool(fn):
     pT=os.path.join(runsrcfolder, fn)
+    print fn
     serialno=pT.rpartition('_')[2]
     plateidstr=serialno[:-1]
     infofn=plateidstr+'.info'
     p=tryprependpath(PLATEFOLDERS, os.path.join(plateidstr, infofn), testfile=True, testdir=False)
-
+    print PLATEFOLDERS
+    print plateidstr
+    print 'p vali is:',p
     if len(p)==0:
         if skiponerror:
             return 'ERROR - info file not found for %s' %plateidstr, False
@@ -165,12 +172,14 @@ def run_batch():
                     expbool=False
                     if forceexp or not 'exp_path' in batchline:
                         rawfn=getbatchlinepath(batchline, key=batchlinekey).lstrip(os.sep)
+                        print rawfn
                         logstr, tupbool=batch_exp(rawfn)
                         if not tupbool:#error so False passed or empty tuple
                             continue
                         expfiledict, exppath=tupbool
                         updatelog(batchcount, logstr, loglines)
                         expbool=True
+                    
                     elif getpvdbool:
                         rawfn=getbatchlinepath(batchline, key=batchlinekey)
 
