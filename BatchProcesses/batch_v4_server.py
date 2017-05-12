@@ -34,7 +34,7 @@ class MainMenu(QMainWindow):
         self.setWindowTitle('HTE Experiment and FOM Data Processing')
         self.expui=expDialog(self, title='Create/Edit an Experiment')
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', guimode=False)
-        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data', GUIMODE=False)
 
     def visui_exec(self, show=True):
         if self.visdataui is None:
@@ -88,14 +88,10 @@ def batch_getplotcompbool(fn):
 
 def batch_pvdbool(fn):
     pT=os.path.join(runsrcfolder, fn)
-    print fn
     serialno=pT.rpartition('_')[2]
     plateidstr=serialno[:-1]
     infofn=plateidstr+'.info'
     p=tryprependpath(PLATEFOLDERS, os.path.join(plateidstr, infofn), testfile=True, testdir=False)
-    print PLATEFOLDERS
-    print plateidstr
-    print 'p vali is:',p
     if len(p)==0:
         if skiponerror:
             return 'ERROR - info file not found for %s' %plateidstr, False
@@ -172,7 +168,6 @@ def run_batch():
                     expbool=False
                     if forceexp or not 'exp_path' in batchline:
                         rawfn=getbatchlinepath(batchline, key=batchlinekey).lstrip(os.sep)
-                        print rawfn
                         logstr, tupbool=batch_exp(rawfn)
                         if not tupbool:#error so False passed or empty tuple
                             continue
