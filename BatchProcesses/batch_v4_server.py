@@ -18,7 +18,7 @@ from DBPaths import *
 
 
 if len(sys.argv) == 1:
-    execfile("suram_batchtest.py")
+    execfile("batch.py")
 else:
     execfile(sys.argv[1])
 
