@@ -280,8 +280,8 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 
 class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='1.2'
-        self.dfltparams={'select_ana': 'ana__1', 'nmol_CPS_list':'','nmol_CPS_lib_file': '.csv', 'transition_list_for_stds':'ALL', 'transition_list_for_comps':'ALL', 'transition_ratio_list':'NONE', 'bcknd_CPS_sample_nos':'nonpositive'}#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
+        self.analysis_fcn_version='1.3'
+        self.dfltparams={'select_ana': 'ana__1', 'nmol_CPS_list':'','nmol_CPS_lib_file': '.csv', 'transition_list_for_stds':'ALL', 'transition_list_for_comps':'ALL', 'transition_ratio_list':'NONE', 'bcknd_CPS_sample_nos':'nonpositive', 'bcknd_CPS_by_trans':'None'}#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Process_XRFS_Stds'
         self.requiredkeys=[]
@@ -452,20 +452,27 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 xrffomd, csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 self.fomdlist=[dict(zip(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, tup)) for tup in zip(*[xrffomd[k] for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING])]
                 
-                if self.params['bcknd_CPS_sample_nos']=='nonpositive':
-                    inds=list(numpy.where(xrffomd['sample_no']<=0)[0])
+                bckndcps_by_trans=[0.]*len(transition_list_csvkeys)
+                bcknd_inds_boolorlist=False
+                if self.params['bcknd_CPS_by_trans']!='None':
+                    templist=[float(s.strip()) for s in self.params['bcknd_CPS_by_trans'].split(',')]
+                    if len(templist)==len(transition_list_csvkeys):
+                        bckndcps_by_trans=templist
+                    else:
+                        print 'bcknd_CPS_by_trans not used since it does not match transition list:', templist, transition_list_csvkeys
+                elif self.params['bcknd_CPS_sample_nos']=='nonpositive':
+                    bcknd_inds_boolorlist=list(numpy.where(xrffomd['sample_no']<=0)[0])
                 else:
                     try:
                         selsmps=[int(s.strip()) for s in self.params['bcknd_CPS_sample_nos'].split(',')]
                         smplist=list(xrffomd['sample_no'])
-                        inds=[smplist.index(smp) for smp in selsmps if smp in smplist]
+                        bcknd_inds_boolorlist=[smplist.index(smp) for smp in selsmps if smp in smplist]
                     except:
-                        inds=[]
+                        bcknd_inds_boolorlist=False
                 
-                if len(inds)>0:
-                    bckndcps_by_trans=[xrffomd[k][inds].mean() for k in transition_list_csvkeys]
-                else:
-                    bckndcps_by_trans=[0.]*len(transition_list_csvkeys)
+                if bcknd_inds_boolorlist:
+                    bckndcps_by_trans=[xrffomd[k][bcknd_inds_boolorlist].mean() for k in transition_list_csvkeys]
+                
                 nmol_bysample_bytrans=numpy.float32([(xrffomd[k]-bckndcps)*nmolcps for k, bckndcps, nmolcps in zip(transition_list_csvkeys, bckndcps_by_trans, nmolcpsarr)]).T
                 nmol_bysample_bytrans[nmol_bysample_bytrans<0.]=0.
                 [fomd.update(zip(self.fomnames, [nmolarr.sum()]+list(nmolarr)+list(compsfcn(nmolarr))+list(ratiofcn(nmolarr)))) for fomd, nmolarr in zip(self.fomdlist, nmol_bysample_bytrans)]

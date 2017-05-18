@@ -136,7 +136,7 @@ if not select_procana_fcn(calcui, 'Process_XRFS_Stds'):
 
 trliststr=','.join(trlistforquant)
 bckndcpsstr=','.join(['%.3e' %v for v in bckndcps])
-updateanalysisparams(calcui, {'select_ana': 'ana__2', 'transition_list_for_stds':trliststr, 'transition_list_for_comps':trliststr,  'bcknd_CPS_sample_nos':bckndcpsstr})#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
+updateanalysisparams(calcui, {'select_ana': 'ana__2', 'transition_list_for_stds':trliststr, 'transition_list_for_comps':trliststr,  'bcknd_CPS_by_trans':bckndcpsstr})#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
 #calcui.exec_();raiseerror
 calcuierror=calcui.analyzedata()#ana__3
 if calcuierror:
