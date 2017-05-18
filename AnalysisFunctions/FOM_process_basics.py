@@ -280,7 +280,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 
 class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='1.1'
+        self.analysis_fcn_version='1.2'
         self.dfltparams={'select_ana': 'ana__1', 'nmol_CPS_list':'','nmol_CPS_lib_file': '.csv', 'transition_list_for_stds':'ALL', 'transition_list_for_comps':'ALL', 'transition_ratio_list':'NONE', 'bcknd_CPS_sample_nos':'nonpositive'}#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Process_XRFS_Stds'
@@ -394,18 +394,20 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             nmolcps_list=[0]*len(transition_list_for_stds)
             
         if 0 in nmolcps_list:#need to get at least 1 value from file - don't abort anywhere in here because want to give user option to change parameters if default params returns zeros for nmol/cps values
-            fileparamstr='-'.join([(fmt %sv)[:4] for fmt,sv in zip(['%d', '%d', '%s', '%s', '%.1f'], [filed[k] for k in self.requiredparams])])
+            fileparamstr='-'.join([(fmt %sv)[:4].strip() for fmt,sv in zip(['%d', '%d', '%s', '%s', '%.1f'], [filed[k] for k in self.requiredparams])])
             tup=get_xrfs_stds_csv(startswithstr=fileparamstr, searchstr=self.params['nmol_CPS_lib_file'])
+
             if not tup is None:
-                xrfs_stds_dict, csvfn=tup
+                self.xrfs_stds_dict, csvfn=tup
                 self.params['nmol_CPS_lib_file']=csvfn
                 for i in range(len(nmolcps_list)):
                     nmcps=nmolcps_list[i]
-                    tr=filed['trans_list'][i]
-                    if nmcps>0 or not tr in xrfs_stds_dict.keys():
+                    tr=transition_list_for_stds[i]
+                    if nmcps>0 or not tr in self.xrfs_stds_dict.keys():
+                        if not tr in self.xrfs_stds_dict.keys():
+                            print 'missing %s in xrfs stds' %tr
                         continue
-                    nmolcps_list[i]=xrfs_stds_dict[tr]
-        
+                    nmolcps_list[i]=self.xrfs_stds_dict[tr]
         self.params['nmol_CPS_list']=','.join(['%.4f' %v if v>0. else '0' for v in nmolcps_list])
             
 
