@@ -15,7 +15,9 @@ from DBPaths import *
 
 #batchfolder=r'K:\users\sksuram\uvis_batchtests'
 #batchinput_fn='15589.txt'
-expname=r'xrfs\20170511.155931'
+expname=r'xrfs\20170518.122412'
+anadestchoice=r'temp'#r'xrfs'
+saveextension='run'
 
 class MainMenu(QMainWindow):
     def __init__(self, previousmm, execute=True):#, TreeWidg):
@@ -51,11 +53,6 @@ visdataui=form.visdataui
 
 exppath=buildexppath(expname)
 print exppath
-#update these to uvis when ready to run for real
-
-anadestchoice=r'temp'#r'xrfs'
-
-
 
     
 def select_ana_fcn(calcui, analabel):
@@ -178,7 +175,7 @@ if calcuierror:
     calcui.exec_();raiseerror
     
 
-anasavefolder=calcui.saveana(dontclearyet=True, anatype=anadestchoice, rundone='.run')
+anasavefolder=calcui.saveana(dontclearyet=True, anatype=anadestchoice, rundone='.'+saveextension)
 
 calcui.show()
 

@@ -283,10 +283,10 @@ def get_xrfs_stds_csv(startswithstr='', searchstr='.csv', transkey='transition',
     fold=tryprependpath(XRFSPROCESSFOLDERS, '', testfile=False, testdir=True)
     if fold is None:
         return None
-    csvfns=[fn for fn in os.listdir(fold) if fn.startswith(startswithstr) and searchstr in fn]
+    csvfns=sorted([(fn.partition('__')[2][:8], fn) for fn in os.listdir(fold) if fn.startswith(startswithstr) and searchstr in fn])#sort by 8 character date after the __
     if len(csvfns)==0:
         return None
-    csvfn=csvfns[0]
+    csvfn=csvfns[-1][1]
     with open(os.path.join(fold, csvfn), mode='r') as f:
         lines=f.readlines()
     colheads=[sv.strip() for sv in lines[0].split(',')]
