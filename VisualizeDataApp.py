@@ -159,6 +159,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.SelectTreeFileFilterTopLevelItem.addChild(item)
     
     def importfrominfo(self):
+        if not self.GUIMODE:#this is for users to find exp/ana so not valid for non gui mode
+            return
         idialog=openfrominfoDialog(self, runtype='', exp=True, ana=True, run=False)
         idialog.exec_()
         if idialog.selecttype=='ana':
@@ -173,8 +175,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 return
             self.anafiledict, anazipclass=readana(p, stringvalues=False, erroruifcn=None, returnzipclass=True)
             if len(self.anafiledict)==0:
-                idialog=messageDialog(self, 'Aborting import of ana - Failed to read \n%s' %p)
-                idialog.exec_()
+                msg='Aborting import of ana - Failed to read \n%s' %p
+                if self.GUIMODE:
+                    idialog=messageDialog(self, msg)
+                    idialog.exec_()
+                else:
+                    print msg
                 return
             if p.endswith('.ana') or p.endswith('.pck'):
                 self.anafolder=os.path.split(p)[0]
@@ -210,6 +216,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.fillxyoptions(clear=True)
 
     def process_multielementink(self, rund, errorbool, tupormessage, inkjetconcentrationadjustment='ask_if_appropriate'):
+        if self.GUIMODE and inkjetconcentrationadjustment=='ask_if_appropriate':
+            print 'code should be modified to call process_multielementink with different value for inkjetconcentrationadjustment'
         if errorbool:
             if inkjetconcentrationadjustment=='ask_if_appropriate':#don't display error messgage if set to True for batch purposes
                 idialog=messageDialog(self, tupormessage)
@@ -277,8 +285,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     pmlines, pmpath=get_lines_path_file(p=pmpath)
                     
                     if len(pmpath)==0:
-                        idialog=messageDialog(self, 'invalid platemap for %s' %rund['parameters']['plate_id'])
-                        idialog.exec_()
+                        msg='invalid platemap for %s' %rund['parameters']['plate_id']
+                        if self.GUIMODE:
+                            idialog=messageDialog(self, msg)
+                            idialog.exec_()
+                        else:
+                            print msg
                         rund['platemapdlist']=[]
                         return#just try to cancel things so user can open file again
                     else:
@@ -315,8 +327,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             elif masterels==els:
                 continue
             elif set(masterels)==set(els):
-                idialog=messageDialog(self, 'Would you like to modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
-                if idialog.exec_():
+                if self.GUIMODE:
+                    idialog=messageDialog(self, 'Would you like to modify platemap so %s permuted to match previous plate with elements %s?' %(','.join(els), ','.join(masterels)))
+                    doit=idialog.exec_()
+                else:
+                    doit=True
+                if doit:
                     rund['platemapdlist']=[dict(d, origA=d['A'], origB=d['B'], origC=d['C'], origD=d['D'], origE=d['E'], origF=d['F'], origG=d['G'], origH=d['H']) for d in rund['platemapdlist']]
                     channelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:max(4, len(masterels))]
                     for d in rund['platemapdlist']:
@@ -327,8 +343,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 else:
                     masterels=['A', 'B', 'C', 'D']#this will keep any subsequent .exp from matching the masterels and when plots are made they are just vs the platemap channels not the printed elements
             else:#this patholigcal case of having different sets of elements in the same exp/ana is not handled for >4 element prints
-                idialog=messageDialog(self, 'WARNING: %s has elements %s but elements %s were already loaded' %(runk,','.join(els), ','.join(masterels)))
-                idialog.exec_()
+                if self.GUIMODE:
+                    idialog=messageDialog(self, 'WARNING: %s has elements %s but elements %s were already loaded' %(runk,','.join(els), ','.join(masterels)))
+                    idialog.exec_()
                 masterels=['A', 'B', 'C', 'D']
 
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
@@ -539,8 +556,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                                 if not k in fomnames:
                                     fomnames+=[k]
                     except:
-                        idialog=messageDialog(self, 'Platemap not valid ')
-                        idialog.exec_()
+                        msg='Platemap not valid '
+                        if self.GUIMODE:
+                            idialog=messageDialog(self, msg)
+                            idialog.exec_()
+                        else:
+                            print msg
                         return
     
     def fillxyoptions(self, clear=False):
@@ -698,7 +719,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.analysisclass.filedlist=[d for d in self.analysisclass.filedlist if not (False in [s in d['fn'] for s in searchstrs])]
         
         checkbool, checkmsg=self.analysisclass.check_input(critfracapplicable=.001)
-        if not checkbool:
+        if self.GUIMODE and not checkbool:
             idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
             if not idialog.exec_():
                 return
@@ -732,7 +753,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         return runk
         
     def loadcsv(self):
-    
+        if not self.GUIMODE:
+            print 'loadcsv only intended for use in GUIMODE'
         newrunk=self.gethighestrunk(getnextone=True)#create a new run, maybe wouldn't need to if somethign already loaded but usually thsi will be used to load only .csv so need to create a run for toehr mechanics to work
         
         pmpath=str(self.platemapfilenameLineEdit.text()).split(',')[-1]#last used platemap or empty if non loaded
@@ -1113,8 +1135,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 continue
             if count==0:
                 print len(xd['arr']), len(yd['arr'])
-                idialog=messageDialog(self, 'ERROR: %s and %s are length %d and %d after reading from \n%s\n%s' %(xd['k'], yd['k'], len(xd['arr']), len(yd['arr']), xd['path'], yd['path']))
-                idialog.exec_()
+                msg='ERROR: %s and %s are length %d and %d after reading from \n%s\n%s' %(xd['k'], yd['k'], len(xd['arr']), len(yd['arr']), xd['path'], yd['path'])
+                if self.GUIMODE:                
+                    idialog=messageDialog(self, msg)
+                    idialog.exec_()
+                else:
+                    print msg
                 return None
         getval=lambda k:self.fomplotd[k][self.selectind]
         lab=self.customlegendfcn(getval('sample_no'), self.getellabels_pm4keys(self.l_platemap4keys[i0]), getval('comps'), getval('code'), getval('fom'), getval('xy'))
@@ -1334,8 +1360,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         idtupsarr=numpy.array([self.fomplotd['fomdlist_index0'][inds],self.fomplotd['fomdlist_index1'][inds]]).T
 
         if len(inds)==0:
-            idialog=messageDialog(self, 'Nothing to plot, all FOMs probably NaN. Existing plots to remain unchanged.')
-            idialog.exec_()
+            if self.GUIMODE:
+                idialog=messageDialog(self, 'Nothing to plot, all FOMs probably NaN. Existing plots to remain unchanged.')
+                idialog.exec_()
             return
         elif self.fomplotd['fomname']=='comp.color':
             cols=QuaternaryPlotInstance.rgb_comp(comps)
@@ -1417,9 +1444,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         pmkeys=self.l_platemap4keys[idtupsarr[0][0]]#get the first pmkeys and then check if the others are the same. this is just ABCD unless changed by platemap_comp4plot_keylist
         pmkeys_consistent_bools=[self.l_platemap4keys[idtup[0]]==pmkeys for idtup in idtupsarr]
         if False in pmkeys_consistent_bools:
-            idialog=messageDialog(self, 'Trying to plot FOMs from ana__ with different 4-element lists. Continue?')
-            if not idialog.exec_():
-                return
+            if self.GUIMODE:
+                idialog=messageDialog(self, 'Trying to plot FOMs from ana__ with different 4-element lists. Continue?')
+                if not idialog.exec_():
+                    return
             els=['X', 'X', 'X', 'X']
             print 'Trying to plot FOMs from ana__ with different 4-element lists'
         else:
@@ -1875,8 +1903,12 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     
     def save_all_std_plots(self, batchidialog=None):
         if 'copied' in os.path.split(self.anafolder)[1]:
-            idialog=messageDialog(self, 'Cannot batch-save plots on a .copied folder. Save a single plot first then batch.')
-            idialog.exec_()
+            msg='Cannot batch-save plots on a .copied folder. Save a single plot first then batch.'
+            if self.GUIMODE:
+                idialog=messageDialog(self, msg)
+                idialog.exec_()
+            else:
+                print msg
             return
         if batchidialog is None:
             comboind_strlist=[]

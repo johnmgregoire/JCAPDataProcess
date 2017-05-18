@@ -14,6 +14,8 @@ from VisualizeDataApp import visdataDialog
 from fcns_io import *
 from SaveImagesApp import *
 from VisualizeBatchFcns import batch_plotuvisrefs
+from DBPaths import *
+
 
 if len(sys.argv) == 1:
     execfile("batch.py")
@@ -32,11 +34,12 @@ class MainMenu(QMainWindow):
         self.setWindowTitle('HTE Experiment and FOM Data Processing')
         self.expui=expDialog(self, title='Create/Edit an Experiment')
         self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', guimode=False)
-        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+        self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data', GUIMODE=False)
 
     def visui_exec(self, show=True):
         if self.visdataui is None:
-            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data')
+            self.visdataui=visdataDialog(self, title='Visualize Raw, Intermediate and FOM data', GUIMODE=False)
+            #use GUIMODE=True to see any messages or dialog boxes
         if show:
             self.visdataui.show()
 
@@ -53,6 +56,7 @@ form=MainMenu(None)
 expui=form.expui
 calcui=form.calcui
 visdataui=form.visdataui
+
 
 def getbatchlinepath(linestr, key='TR_path'):
     return linestr.partition(key)[2].strip(':').strip().partition(';')[0].strip()
@@ -88,7 +92,6 @@ def batch_pvdbool(fn):
     plateidstr=serialno[:-1]
     infofn=plateidstr+'.info'
     p=tryprependpath(PLATEFOLDERS, os.path.join(plateidstr, infofn), testfile=True, testdir=False)
-
     if len(p)==0:
         if skiponerror:
             return 'ERROR - info file not found for %s' %plateidstr, False
@@ -171,6 +174,7 @@ def run_batch():
                         expfiledict, exppath=tupbool
                         updatelog(batchcount, logstr, loglines)
                         expbool=True
+                    
                     elif getpvdbool:
                         rawfn=getbatchlinepath(batchline, key=batchlinekey)
 
