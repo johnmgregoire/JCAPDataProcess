@@ -59,14 +59,14 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version = '2'  # version 2 replaces polynomial fit with 4-parameter logistic regression
+        self.analysis_fcn_version = '3'  # version 3 don't detect redox couple, use calc_vs_HER instead
         self.dfltparams=dict([\
   ('weight', False), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
   ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
   ('use_sweeps_from_end', True), ('v_extend_upper', 0.1), \
   ('v_extend_lower', 0.1), ('v_interp_step', 0.001), \
-  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -5) \
+  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -5), ('calc_vs_HER', 0) \
                                        ])
         self.params = copy.copy(self.dfltparams)
         self.analysis_name = 'Analysis__Pphotomax'
@@ -75,7 +75,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             't(s)', 'Ewe(V)'
         ]  #, 't(s)_dark', 'Ewe(V)_dark', 'I(A)_dark', 't(s)_ill', 'Ewe(V)_ill', 'I(A)_ill', 'IllumBool']#these intermediate keys are not tested for explicitly, ontly through the custom getapplicablefilenames below
         self.optionalkeys = []
-        self.requiredparams = ['reference_e0', 'redox_couple_type']
+        self.requiredparams = ['reference_e0', 'reference_vrhe', 'redox_couple_type']
         # for logistic fit, lim(iphoto) approaches 0/1 as potential -> -infinity/+infinity, Voc here is the intercept between fitted function and iphotobase
         self.fomnames = [
             'Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Fill_factor', 'RSS'
@@ -356,12 +356,19 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         miscfilestr = json.dumps(jsondict)
 
         # fom calculations on trimmed data (limited sweeps and cycles)
-        eo = paramd['reference_e0']
-        ewe_eo = eo - ewetrim_fitrng
+        vrhe = paramd['reference_vrhe']
+        # eo = paramd['reference_e0']
+        eo = vrhe + 1.229 # don't detect OER/HER from rcp, just assume OER and check calc_vs_HER param
+        if self.params['calc_vs_HER']:
+            ewe_eo = ewetrim_fitrng - vrhe
+            isc = fittedfunc(-1*vrhe)
+        else:
+            ewe_eo = eo - ewetrim_fitrng
+            isc = fittedfunc(eo)
         iphoto = fittedfunc(ewetrim_fitrng)
-        isc = fittedfunc(eo)
-        iminsign = 1 if paramd['redox_couple_type'] == 'O2/H2O' else -1
-        pphoto = iphoto * ewe_eo * iminsign
+
+        #iminsign = 1 if paramd['redox_couple_type'] == 'O2/H2O' else -1
+        pphoto = iphoto * ewe_eo #* iminsign
 
         # interpolate voltage stepping for higher res, less quantized vatpmax
         minewe = numpy.round(numpy.min(d['Ewe(V)']), 3)
@@ -373,17 +380,26 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                                    stop=maxewe+exthi, \
                                    step=vstep)
         iphotosmooth = fittedfunc(ewesmooth)
-        pphotosmooth = iphotosmooth * (eo-ewesmooth) * iminsign
-        pmaxind = numpy.argmax(pphotosmooth)
-        pphotomax = pphotosmooth[pmaxind]
-        iatpmax = iphotosmooth[pmaxind]
-        vatpmax = iminsign*(eo-ewesmooth)[pmaxind]
+        if self.params['calc_vs_HER']:
+            pphotosmooth = iphotosmooth * (ewesmooth - vrhe) #* iminsign
+            pmaxind = numpy.argmin(pphotosmooth)
+            pphotomax = pphotosmooth[pmaxind]
+            iatpmax = iphotosmooth[pmaxind]
+            vatpmax = (ewesmooth - vrhe)[pmaxind] #*iminsign
+        else:
+            pphotosmooth = iphotosmooth * (eo-ewesmooth) #* iminsign
+            pmaxind = numpy.argmax(pphotosmooth)
+            pphotomax = pphotosmooth[pmaxind]
+            iatpmax = iphotosmooth[pmaxind]
+            vatpmax = (eo-ewesmooth)[pmaxind] #*iminsign
 
         # rawlend assignments
         rawinds = numpy.arange(len(d['t(s)']))
         rawlend['I(A)_pred'] = fittedfunc(d['Ewe(V)'])
-        rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (d['Ewe(V)'] - eo) * (
-            -1 * iminsign)
+        if self.params['calc_vs_HER']:
+            rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (d['Ewe(V)'] - vrhe) #* (iminsign)
+        else:
+            rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (eo - d['Ewe(V)']) #* (iminsign)
         rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
         # interd assignemnts
         interd['Ewe(V)_fitrng'] = ewetrim_fitrng
@@ -396,11 +412,15 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             [rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v and i in d['rawselectinds']])
 
         ## Voc/FF calculation: report both photoanode and photocathode Voc as positive values
-        iphotobase = self.params['i_photo_base']
-        voc = eo - ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)]
+        if self.params['calc_vs_HER']:
+            iphotobase = -1.0*self.params['i_photo_base']
+            voc = ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)] - vrhe
+        else:
+            iphotobase = self.params['i_photo_base']
+            voc = eo - ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)]
         fillfactor = numpy.absolute(pphotomax / (voc * isc))
 
-        # NaN those crazy fillfactors, leave this alone and report RSS
+        # NaN those crazy fillfactors ### leave this alone and report RSS
         # if fillfactor>1:
         #     fillfactor = numpy.nan
         #     voc = numpy.nan
