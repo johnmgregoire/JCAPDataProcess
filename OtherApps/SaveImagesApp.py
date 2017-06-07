@@ -150,8 +150,9 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
         return ''.join([c for c in s if c in valid_chars])
     
     def updateoptionsfrombatchidialog(self, batchidialog, lastbatchiteration=False):
-        prependstr=self.filterchars(str(batchidialog.prependfilenameLineEdit.text()))
-        self.prependfilenameLineEdit.setText(prependstr+str(self.prependfilenameLineEdit.text()))
+        prependstr=str(batchidialog.prependfilenameLineEdit.text())
+        combinedprependstr=self.filterchars(prependstr+str(self.prependfilenameLineEdit.text()))
+        self.prependfilenameLineEdit.setText(combinedprependstr)
         
         self.overwriteCheckBox.setChecked(batchidialog.overwriteCheckBox.isChecked())
         self.epsCheckBox.setChecked(batchidialog.epsCheckBox.isChecked())
@@ -195,7 +196,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
             if not bool(d['item'].checkState(0)):
                 continue
             pngfn, garb, pngattr=str(d['item'].text(0)).partition(': ')
-            pngfn=prependstr+pngfn
+            pngfn=self.filterchars(prependstr+pngfn)
             existfns=os.listdir(newanafolder)
             fn_attr_list=[(pngfn, pngattr)]
             if self.epsCheckBox.isChecked():
