@@ -945,6 +945,8 @@ def getinfopath_plateid(plateidstr, erroruifcn=None):
 def importinfo(plateidstr):
     fn=plateidstr+'.info'
     p=tryprependpath(PLATEFOLDERS, os.path.join(plateidstr, fn), testfile=True, testdir=False)
+    if not os.path.isfile(p):
+        return None
     with open(p, mode='r') as f:
         lines=f.readlines()
     infofiled=filedict_lines(lines)
@@ -955,6 +957,8 @@ def getelements_plateidstr(plateidstr_or_filed, multielementink_concentrationinf
         infofiled=plateidstr_or_filed
     else:
         infofiled=importinfo(plateidstr_or_filed)
+        if infofiled is None:
+            return None
     requiredkeysthere=lambda infofiled: ('screening_print_id' in infofiled.keys()) if print_key_or_keyword=='screening_print_id' \
                                                            else (print_key_or_keyword in infofiled['prints'].keys())
     while not ('prints' in infofiled.keys() and requiredkeysthere(infofiled)):
@@ -1424,7 +1428,7 @@ def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines
             delim=','
         else:
             delim='\t'
-    if len(lines)==0:
+    if len(lines)<=1:
         if returnsmp:
             return None, {}
         else:
@@ -1810,10 +1814,13 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     if 'xy' in udi_dict.keys():
         metastrlist+=['Deposition=X,Y']
         if 'plate_id' in udi_dict.keys():
-            if isinstance(udi_dict['plate_id'], list) and isinstance(udi_dict['plate_id'][0], int):
-                udi_dict['plate_id']=['%d' %v for v in udi_dict['plate_id']]
-            elif not isinstance(udi_dict['plate_id'], list):
-                if isinstance(udi_dict['plate_id'], int):
+            if isinstance(udi_dict['plate_id'], (list, numpy.ndarray)) and isinstance(udi_dict['plate_id'][0], (int, float, str)):
+                if isinstance(udi_dict['plate_id'][0], str):
+                    udi_dict['plate_id']=list(udi_dict['plate_id'])
+                else:
+                    udi_dict['plate_id']=['%d' %v for v in udi_dict['plate_id']]
+            elif not isinstance(udi_dict['plate_id'], (list, numpy.ndarray)):
+                if isinstance(udi_dict['plate_id'], (int, float)):
                     udi_dict['plate_id']='%d' %udi_dict['plate_id']
                 udi_dict['plate_id']=[udi_dict['plate_id']]*len(udi_dict['xy'])
         for lab, arr, fmt in [('X=', udi_dict['xy'][:, 0], '%.2f'), ('Y=', udi_dict['xy'][:, 1], '%.2f')]+\

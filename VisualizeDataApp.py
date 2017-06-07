@@ -436,17 +436,26 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #                    for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
 #                        d[el]=d[oldlet]
         self.ellabelsLineEdit.setText(','.join(self.ellabels))
-    def openontheflyfolder(self, folderpath=None, platemappath=None):#assume on -the-fly will never involve a .zip
+    def openontheflyfolder(self, folderpath=None, platemappath=None, plateidstr=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
         if folderpath is None or len(folderpath)==0:
             return
         self.ellabels=['A', 'B', 'C', 'D']
         if platemappath is None:
-            plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
+            if plateidstr is None:
+                plateidstr=os.path.split(os.path.split(folderpath)[0])[1].rpartition('_')[2][:-1]
             els=getelements_plateidstr(plateidstr)
+            while els is None:
+                ans=userinputcaller(self, inputs=[('plate_id', str, '')], title='Enter plate_id for the on-the-fly folder',  cancelallowed=True)
+                if ans is None:
+                    plateidstr=None
+                    break
+                plateidstr=ans[0]
+                els=getelements_plateidstr(plateidstr)
+
             selectpmfcn=lambda s, xpath:mygetopenfile(parent=self, xpath=xpath, markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id']))
-            if self.defaultplatemapCheckBox.isChecked():
+            if self.defaultplatemapCheckBox.isChecked() and not plateidstr is None:
                 pmpath=getplatemappath_plateid(plateidstr, erroruifcn=selectpmfcn)
             else:
                 pmpath=selectpmfcn('for onthefly,', PLATEMAPFOLDERS[0])
@@ -472,7 +481,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict['run__1']['files_technique__onthefly']={}
         self.expfiledict['run__1']['files_technique__onthefly']['all_files']={}
         self.expfiledict['run__1']['parameters']={}
-        self.expfiledict['run__1']['parameters']['plate_id']=0
+        self.expfiledict['run__1']['parameters']['plate_id']=0 if plateidstr is None else int(plateidstr)
         
         self.platemapfilenameLineEdit.setText(os.path.normpath(platemappath))
         self.remap_platemaplabels(newellabels=els)#if els weren't found the argument will be None so ellables will still be the default from earlier in this function and the remap wont' do anything to a standard platemap
@@ -1191,13 +1200,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             xyinfodlist+=[infod]
         return xyinfodlist
 
-    def get_xy_plate_info_browsersamples(self, saveudibool=True):
+    def get_xy_plate_info_browsersamples(self, saveudibool=True, ternary_el_inds_for_udi_export=None, savep=None):
         browsestr=str(self.browser.toPlainText())
         lines=browsestr.split('\n')
         keys=lines[0].split('\t')
         keys=[k.strip() for k in keys]
         if not ('plate_id' in keys and 'sample_no' in keys):
-            messageDialog(self, 'aborting: broswer must have plate_id and sample_no columns').exec_()
+            messageDialog(self, 'aborting: browser must have plate_id and sample_no columns').exec_()
             return None
         pi=keys.index('plate_id')
         si=keys.index('sample_no')
@@ -1205,6 +1214,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         smplist=numpy.int32([l.split('\t')[si] for l in lines[1:]])
         pltlist=numpy.int32([l.split('\t')[pi] for l in lines[1:]])
         xyinfodlist=self.getxydata_smplist(smplist, pltlist)
+        
         if xyinfodlist is None or not (False in [d is None for d in xyinfodlist]):
             messageDialog(self, 'aborting: select x and y keys with good data').exec_()
             return None
@@ -1229,30 +1239,44 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 udidict['Q']=arr2d.mean(axis=0)
             else:
                 udidict['Iarr']=arr2d
-        for k in ['comps', 'xy', 'plate_id', 'sample_no']:
+        for k in ['comps', 'xy']:
             udidict[k]=numpy.float32([d[k] for d in xyinfodlist])
-
-        opts=[','.join(l) for l in itertools.combinations(self.ellabels, 3)]
-        highest3stdtups=sorted([(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))])[-3:]
-        print opts
-        print [(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))]
-        print highest3stdtups
-        elinds=sorted([i for stddev, i in highest3stdtups])#has to eb sorted because that is how combinations does it
-        selectstr=','.join([self.ellabels[i] for i in elinds])
-        print selectstr
-        selectind=opts.index(selectstr)
-        lab='\n'.join(['%d: %s' %tup for tup in enumerate(opts)])
-        ans=userinputcaller(self, inputs=[(lab, int, `selectind`)], title='Enter option for 3 elements to use',  cancelallowed=True)
-        if ans is None or ans[0]<0 or ans[0]>=len(opts):
-            return
-        elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3)) if i==ans[0]][0]
-        udidict['ellabels']=[self.ellabels[i] for i in elinds]
-        udidict['comps']=udidict['comps'][:, elinds]
-        udidict['comps']=numpy.array([c/c.sum() for c in udidict['comps']])
-        p=mygetsavefile(parent=self, markstr='Select path for udi file')
-        if p is None or len(p)==0:
-            return
-        writeudifile(p, udidict)
+        for k in ['plate_id', 'sample_no']:
+            udidict[k]=numpy.int32([d[k] for d in xyinfodlist])
+        comps=copy.copy(udidict['comps'])
+        if ternary_el_inds_for_udi_export is None:
+            opts=[','.join(l) for l in itertools.combinations(self.ellabels, 3)]
+            highest3stdtups=sorted([(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))])[-3:]
+            print opts
+            print [(udidict['comps'][:, i].std(), i) for i in range(len(self.ellabels))]
+            print highest3stdtups
+            elinds=sorted([i for stddev, i in highest3stdtups])#has to eb sorted because that is how combinations does it
+            selectstr=','.join([self.ellabels[i] for i in elinds])
+            print selectstr
+            selectind=opts.index(selectstr)
+            lab='\n'.join(['%d: %s' %tup for tup in enumerate(opts)])
+            ans=userinputcaller(self, inputs=[(lab, int, `selectind`)], title='Enter option for 3 elements to use',  cancelallowed=True)
+            if ans is None or ans[0]<0 or ans[0]>=len(opts):
+                return
+            elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3)) if i==ans[0]][0]
+            l_elinds=elinds
+        elif ternary_el_inds_for_udi_export=='ALL':
+            l_elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3))]
+        else:
+            l_elinds=[ternary_el_inds_for_udi_export[:3]]
+        for elinds in l_elinds:
+            udidict['ellabels']=[self.ellabels[i] for i in elinds]
+            udidict['comps']=comps[:, elinds]
+            udidict['comps']=numpy.array([c/c.sum() for c in udidict['comps']])
+            if savep is None:
+                savep=mygetsavefile(parent=self, markstr='select start path and <els>.udi will be appended' if ternary_el_inds_for_udi_export=='ALL' else 'Select path for udi file')
+            if savep is None or len(savep)==0:
+                return
+            if ternary_el_inds_for_udi_export=='ALL':
+                p=''.join([savep]+udidict['ellabels']+['.udi'])
+            else:
+                p=savep
+            writeudifile(p, udidict)
         
     def getellabels_pm4keys(self, pmkeys):
         if not (False in [pmk in self.ellabels for pmk in pmkeys]):#pmkeys has a libreal interpreation and could already be ellabels in which case do nothing here
@@ -1844,8 +1868,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.addValuesXY(remove=True)
     
     def addallsamples(self):
-        self.addrem_select_fomplotdinds(select_fomplotd_inds=range(len(self.fomplotd['sample_no'])))#only 1 of index, smplist, xy, comp should be not None
-
+        self.addrem_select_fomplotdinds(select_fomplotd_inds=range(len(self.fomplotd['sample_no'])))
+    
+    def remallsamples(self):
+        self.addrem_select_fomplotdinds(select_fomplotd_inds=range(len(self.fomplotd['sample_no'])), remove=True)
+        
     def getxystyle_user(self):
         inputs=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if not (k.startswith('right_') or k.startswith('select_'))]
         inputs+=[(k, type(v), str(v)) for k, v in self.xyplotstyled.iteritems() if k.startswith('select_')]
