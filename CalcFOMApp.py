@@ -1455,7 +1455,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.analysisclass.params['method']='B_over_A'
         self.analysisclass.params['fom_keys_A']='1.e-5'
         self.analysisclass.params['fom_keys_B']='photo'
-        self.analysisclass.params['relative_key_append']='mAcm2'
+        self.analysisclass.params['relative_key_append']='_mAcm2'
         
         self.processeditedparams()
         
