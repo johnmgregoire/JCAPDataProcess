@@ -171,11 +171,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, \
                                       self.batch_analyzethenprocess_allsubspace, self.batch_analyze_fcn_same_techclass, \
-                                      self.batch_merge_atfrac_from_aux]
+                                      self.batch_merge_atfrac_from_aux, self.batch_set_params_for_photo_mAcm2_scaling]
                                       
         batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name',\
                          'Run Analysis + Process all w/ same root name', 'Run select Analysis on all similar techniques', \
-                         'Merge AtFrac from an Aux ANA, each ana__']
+                         'Merge AtFrac from an Aux ANA, each ana__', 'setup parameters for scaling Iphoto to mAcm2']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
             
@@ -1443,8 +1443,32 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             selfclasslocal.analysisclass.params['aux_ana_ints']=auxanaintstr#only use the latest aux ana__ assuming that is the "best" or most complete composition analysis
             selfclasslocal.analysisclass.params['aux_ana_name']=os.path.split(self.aux_ana_dlist[0]['auxexpanapath_relative'])[1]
         self.batch_processallana(additionalfcn_runeachiteration=additionalfcn_runeachiteration)
+    def batch_set_params_for_photo_mAcm2_scaling(self):
+        if not self.select_procana_fcn('Process_B_vs_A_ByRun'):
+            print 'quitting because Process_B_vs_A_ByRun not available'
+            return
+        runintliststr=','.join([k[5:] for k in sort_dict_keys_by_counter(self.expfiledict, keystartswith='run__')])
+       
+        self.analysisclass.params['runints_A']=runintliststr
+        self.analysisclass.params['runints_B']=runintliststr
+        self.analysisclass.params['keys_to_keep']='photo'
+        self.analysisclass.params['method']='B_over_A'
+        self.analysisclass.params['fom_keys_A']='1.e-5'
+        self.analysisclass.params['fom_keys_B']='photo'
+        self.analysisclass.params['relative_key_append']='mAcm2'
         
+        self.processeditedparams()
         
+    def select_procana_fcn(self, analabel):
+        cb=self.FOMProcessNamesComboBox
+        #print cb.count()
+        for i in range(1, int(cb.count())):
+            #print (str(cb.itemText(i)).partition('(')[0].partition('__')[2])
+            if (str(cb.itemText(i)).partition('(')[0].partition('__')[2])==analabel:
+                cb.setCurrentIndex(i)
+                self.getactiveanalysisclass()
+                return True
+        return False
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

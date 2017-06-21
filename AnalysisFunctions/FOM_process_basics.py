@@ -58,7 +58,7 @@ def stdgetapplicablefomfiles(anadict, params={}):
     anak_list=[anak for anak, anav in anadict.iteritems()\
            if (anak==params['select_ana'].strip()) and ('files_multi_run' in anav.keys()) and ('fom_files' in anav['files_multi_run'].keys())]#only 1 anak allowed but still keep as list and below list could have multiple fom_files in the same ana__x
 
-    if 'select_fom_keys' in params.keys() and not params['select_fom_keys'].startswith('ALL')>0:
+    if 'select_fom_keys' in params.keys() and not params['select_fom_keys'].startswith('ALL'):
         selkeyslist=params['select_fom_keys'].split(',')
         selkeyslist=[s.strip() for s in selkeyslist]
         keystestfcn=lambda tagandkeys: (True in [k in tagandkeys.split(';')[1].split(',') for k in selkeyslist]) and len(set(tagandkeys.split(';')[1].split(',')).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
@@ -492,6 +492,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 
 
 class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
+#fom_keys_A can be list of floats same length as fom_keys_B to use constant scaling factors, in which case runints_A is not used and is set equal to runints_B.
     def __init__(self):
         self.analysis_fcn_version='1.1'
         self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'keys_to_keep':'NONE', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
@@ -518,8 +519,16 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             self.processnewparams()
         return self.filedlist
     
-
+    def checkforlistofnumbers(self, liststring):
+        l=[]
+        for s in liststring.split(','):
+            try:
+                l+=[float(s.strip())]
+            except:
+                return False
+        return l
     def processnewparams(self, calcFOMDialogclass=None):
+ 
         self.fomnames=[]
         if len(self.filedlist)!=1:
             self.filedlist=[]
@@ -558,8 +567,13 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
         
         filed=self.filedlist[0]
         processkeys=filed['process_keys']
-        for count, (paramkey) in enumerate(['keys_to_keep', 'fom_keys_A', 'fom_keys_B']):#B goes second so its sel_processkeys available after loop
-            if self.params[paramkey]=='ALL':
+        for count, (paramkey) in enumerate(['keys_to_keep', 'fom_keys_B', 'fom_keys_A']):#B goes first so sel_processkeys_for_naming available for A
+            if count==2 and self.checkforlistofnumbers(self.params[paramkey]):
+                if len(sel_processkeys_for_naming)>1 and not ',' in self.params[paramkey]:#if input 1 float use it for all B keys
+                    self.params[paramkey]=','.join([self.params[paramkey].strip()]*len(sel_processkeys_for_naming))
+                self.params['runints_A']=self.params['runints_B']
+                continue #fom_keys_A is a list of numbers so don't change this parameter and proceed
+            elif self.params[paramkey]=='ALL':
                 sel_processkeys=processkeys
             elif not (self.params[paramkey]=='NONE'):
                 searchstrs=self.params[paramkey].split(',')
@@ -570,13 +584,15 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             if self.params[paramkey]=='NONE':
                 continue
             self.params[paramkey]=','.join(sel_processkeys)
+            if count==1:#use B for naming
+                sel_processkeys_for_naming=sel_processkeys
         
         if self.params['fom_keys_B']=='NONE' or self.params['fom_keys_A']=='NONE' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
         if isinstance(self.offsetlist, float):
-            self.offsetlist=[self.offsetlist]*(self.params['fom_keys_B'].count(',')+1)
+            self.offsetlist=[self.offsetlist]*len(sel_processkeys_for_naming)
             
         try:
             self.runints_A=[int(s.strip()) for s in self.params['runints_A'].split(',')]
@@ -584,7 +600,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
         except:
             self.params=copy.copy(self.dfltparams)
             return
-        self.fomnames=[k+self.params['relative_key_append'] for k in sel_processkeys]
+        self.fomnames=[k+self.params['relative_key_append'] for k in sel_processkeys_for_naming]
             
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
@@ -617,10 +633,12 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 continue
             newfomd={}
             
-            for k, ka, kb, offset in zip(self.fomnames, self.params['fom_keys_A'].split(','), self.params['fom_keys_B'].split(','), self.offsetlist):
-                ka=ka.strip()
+            floatlist_or_False=self.checkforlistofnumbers(self.params['fom_keys_A'])
+            ka_list=floatlist_or_False if floatlist_or_False else self.params['fom_keys_A'].split(',')
+            for k, ka, kb, offset in zip(self.fomnames, ka_list, self.params['fom_keys_B'].split(','), self.offsetlist):
+                aval=ka if isinstance(ka, float) else fomd[ka.strip()][inds_a]
                 kb=kb.strip()
-                newfomd[k]=self.relfcn(fomd[ka][inds_a], fomd[kb][inds_b], offset)
+                newfomd[k]=self.relfcn(aval, fomd[kb][inds_b], offset)
             
             if self.params['method']=='B_comp_dist_wrt_A':
                 kdist='Comp_Dist'
