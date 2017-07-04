@@ -1936,16 +1936,23 @@ def readudi(fl,fltyp='src'):
                             print 'Error encountered for line %s' %(line)
 #                        continue
         datad={}
-        print filed['Motorpns data'].keys()
         Ikeys=filed['Integrated counts data'].keys()
         Ikeys.remove('Q')
         datad['Iarr']=numpy.array([filed['Integrated counts data'][idx] for idx in sorted(Ikeys,key=lambda x: int(x.split('I')[-1])) if idx.startswith('I')])
-        datad['mxy']=numpy.array([filed['Motorpns data'][x] for x in ['mX','mY']]).T
+        try:
+            datad['mxy']=numpy.array([filed['Motorpns data'][x] for x in ['mX','mY']]).T
+        except:
+            pass
         datad['xy']=numpy.array([filed['Deposition data'][x] for x in ['X','Y']]).T
         datad['comps']=numpy.array([filed['Composition data'][x] for x in filed['Metadata']['Composition']])
-        datad=dict(datad.items()+filed['Metadata'].items()+[(mkey,filed['Motorpns data'][mkey]) for mkey in filed['Motorpns data'].keys() if mkey not in ['mX,mY']]+\
+        try:
+            datad=dict(datad.items()+filed['Metadata'].items()+[(mkey,filed['Motorpns data'][mkey]) for mkey in filed['Motorpns data'].keys() if mkey not in ['mX,mY']]+\
         [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
-
+        except:
+            datad=dict(datad.items()+filed['Metadata'].items()+\
+        [(dkey,filed['Deposition data'][dkey]) for dkey in filed['Deposition data'].keys() if dkey not in ['X','Y']]+[('Q',filed['Integrated counts data']['Q'])])
+        datad['ellabels']=datad.pop('Elements',None)
+        datad['comps']=datad['comps'].T
     return datad
 
 
