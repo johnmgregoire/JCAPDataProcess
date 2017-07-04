@@ -1258,13 +1258,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             ans=userinputcaller(self, inputs=[(lab, int, `selectind`)], title='Enter option for 3 elements to use',  cancelallowed=True)
             if ans is None or ans[0]<0 or ans[0]>=len(opts):
                 return
-            elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3)) if i==ans[0]][0]
+            elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3)) if i==ans[0]]
             l_elinds=elinds
+            print l_elinds
         elif ternary_el_inds_for_udi_export=='ALL':
             l_elinds=[indstup for i, indstup in enumerate(itertools.combinations(range(len(self.ellabels)), 3))]
         else:
             l_elinds=[ternary_el_inds_for_udi_export[:3]]
         for elinds in l_elinds:
+            print self.ellabels
             udidict['ellabels']=[self.ellabels[i] for i in elinds]
             udidict['comps']=comps[:, elinds]
             udidict['comps']=numpy.array([c/c.sum() for c in udidict['comps']])
