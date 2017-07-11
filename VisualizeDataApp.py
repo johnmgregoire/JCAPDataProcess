@@ -1016,7 +1016,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def extractxy_ana(self, arrkeys, anaint, runint, smp):
         xyy=[None, None, None]
         anak='ana__%d' %anaint
-        anarunk='files_run__%d' %runint
+        anarunk='files_multi_run' if runint is None else 'files_run__%d' %runint
         if not anarunk in self.anafiledict[anak].keys():
             return xyy
         anarund=self.anafiledict[anak][anarunk]
@@ -1120,6 +1120,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             return None
         if anaint>0:
             xyydlist=self.extractxy_ana(arrkeys, anaint, runint, smp)
+            xyydlist2=self.extractxy_ana(arrkeys, anaint, None, smp)
+            for count, (d1, d2) in enumerate(zip(xyydlist, xyydlist2)):
+                if d1 is None and not d2 is None:
+                    xyydlist[count]=xyydlist2[count]
         else:
             xyydlist=[None, None, None]
         if runint>0:
