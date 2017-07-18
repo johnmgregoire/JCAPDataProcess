@@ -30,7 +30,7 @@ anasaveextension='.run'
 
 
 #providing these paths will skip the generation of the exp/ana
-expname=r'eche\20170717.102636.done'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
+expname=None#r'eche\20170717.102636.done'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
 anarunpath=None#r'L:\processes\analysis\eche\20170717.155712.run\20170717.155712.ana'
 
 expdestchoice='eche'
