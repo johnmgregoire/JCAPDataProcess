@@ -83,7 +83,7 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(filedlist, expfiledict, ana
 
 class Analysis__SpectralPhoto(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
+        self.analysis_fcn_version='2'
         self.dfltparams=dict([\
                     ('photo_analysis_ana_fcn', 'Analysis__Iphoto'), ('optical_power_mw', 'illumination_intensity') \
                                        ])
@@ -180,7 +180,7 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                     iph=photofomd['I.A_photo']
                     wl=photofomd['WL.nm_illum']
                     pmw=photofomd['P.mW_illum']
-                    photofomd['EQE']=1.2398e6*iph*wl*pmw# the constant is hc/e in units of mW nm / A
+                    photofomd['EQE']=1.2398e6*iph/(wl*pmw)# the constant is hc/e in units of mW nm / A
             floatkeys=['E.eV_illum', 'WL.nm_illum']+([k for k in ['P.mW_illum', 'EQE'] if k in photofomd.keys()])+list(fomkeyset)
             intkeys=['runint','anaint']
             num_wavelengths=len(photofomd_wl.keys())

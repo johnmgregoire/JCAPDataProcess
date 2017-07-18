@@ -1443,22 +1443,33 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             selfclasslocal.analysisclass.params['aux_ana_ints']=auxanaintstr#only use the latest aux ana__ assuming that is the "best" or most complete composition analysis
             selfclasslocal.analysisclass.params['aux_ana_name']=os.path.split(self.aux_ana_dlist[0]['auxexpanapath_relative'])[1]
         self.batch_processallana(additionalfcn_runeachiteration=additionalfcn_runeachiteration)
-    def batch_set_params_for_photo_mAcm2_scaling(self):
+    def batch_set_params_for_photo_mAcm2_scaling(self, measurement_area=None):
         if not self.select_procana_fcn('Process_B_vs_A_ByRun'):
             print 'quitting because Process_B_vs_A_ByRun not available'
             return
-        runintliststr=','.join([k[5:] for k in sort_dict_keys_by_counter(self.expfiledict, keystartswith='run__')])
-       
+        runklist=[k for k in sort_dict_keys_by_counter(self.expfiledict, keystartswith='run__') if self.expfiledict[k]['run_use']=='data' and 'eche' in self.expfiledict[k]['run_path']]
+        runintliststr=','.join([k[5:] for k in runklist])
+
+        if measurement_area is None:
+            areas=[self.expfiledict[runk]['parameters']['measurement_area'] for runk in runklist]
+            if 0. in areas or False in [areas[0]==v for v in areas]:
+                measurement_area=userinputcaller(self, inputs=[('measurement area in mm2: ', float, 0.)], title='Inconsistent or 0 area in exp',  cancelallowed=False)[0]
+            else:
+                measurement_area=areas[0]
+        macm2divisor=1.e-5*measurement_area
+
+        self.analysisclass.params['select_ana']=self.gethighestanak()
         self.analysisclass.params['runints_A']=runintliststr
         self.analysisclass.params['runints_B']=runintliststr
-        self.analysisclass.params['keys_to_keep']='photo'
+        self.analysisclass.params['keys_to_keep']='Voc.V,Vpmax.V,Fill_factor'
         self.analysisclass.params['method']='B_over_A'
-        self.analysisclass.params['fom_keys_A']='1.e-5'
-        self.analysisclass.params['fom_keys_B']='photo'
+        self.analysisclass.params['fom_keys_A']='%.3e' %macm2divisor
+        self.analysisclass.params['fom_keys_B']='I.A,Pmax,Ipmax,Isc'
         self.analysisclass.params['relative_key_append']='_mAcm2'
-        
         self.processeditedparams()
-        
+        if 'Pmax' in self.analysisclass.params['fom_keys_B']:
+            self.analysisclass.params['relative_key_append']=','.join(['_mWcm2' if 'Pmax' in k else '_mAcm2' for k in self.analysisclass.params['fom_keys_B'].split(',')])
+            self.processeditedparams()
     def select_procana_fcn(self, analabel):
         cb=self.FOMProcessNamesComboBox
         #print cb.count()

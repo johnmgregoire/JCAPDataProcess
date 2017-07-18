@@ -493,8 +493,9 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
 
 class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is within a single fom csv. if want to combine fom csvs use Analysis__FOM_Merge_Aux_Ana first
 #fom_keys_A can be list of floats same length as fom_keys_B to use constant scaling factors, in which case runints_A is not used and is set equal to runints_B.
+# in v 1.2 method can be a list of methods, but B_comp_dist_wrt_A will only work as intended as a standalone method
     def __init__(self):
-        self.analysis_fcn_version='1.1'
+        self.analysis_fcn_version='1.2'
         self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'keys_to_keep':'NONE', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
         self.params=copy.copy(self.dfltparams)
         self.supported_methods=['B_minus_A', 'B_over_A', 'B_minus_A_over_A', 'B_comp_dist_wrt_A']
@@ -540,21 +541,22 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 self.offsetlist=[float(s.strip()) for s in self.params['AandBoffset'].split(',')]
             else:
                 self.offsetlist=float(self.params['AandBoffset'].strip())
+            self.methodlist=[s.strip() for s in self.params['method'].split(',')]
+            err=False in [methodstr in self.supported_methods for methodstr in self.methodlist]
         except:
             err=True
-        if not err:
-            err=not self.params['method'] in self.supported_methods
+
         if err:
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
-        methodind=self.supported_methods.index(self.params['method'])
-        self.relfcn=[\
+        methodinds=[self.supported_methods.index(methodstr) for methodstr in self.methodlist]
+        self.relfcns=[[\
         (lambda a,b, offset:b-a), \
         (lambda a,b, offset:(b-offset)/(a-offset)), \
         (lambda a,b, offset:(b-a)/(a-offset)), \
         (lambda a,b, offset:b-a), \
-        ][methodind]
+        ][methodind] for methodind in methodinds]
         
         dfltvals=[\
             '_RelDiff', \
@@ -563,7 +565,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             '_RelDiff', \
             ]
         if len(self.params['relative_key_append'])==0 or self.params['relative_key_append'] in dfltvals:
-            self.params['relative_key_append']=dfltvals[methodind]
+            self.params['relative_key_append']=dfltvals[methodinds[0]]
         
         filed=self.filedlist[0]
         processkeys=filed['process_keys']
@@ -587,7 +589,12 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             if count==1:#use B for naming
                 sel_processkeys_for_naming=sel_processkeys
         
-        if self.params['fom_keys_B']=='NONE' or self.params['fom_keys_A']=='NONE' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
+        if len(self.relfcns)==1:
+            num_methods_ok=True
+            self.relfcns=[self.relfcns[0]]*(self.params['fom_keys_B'].count(',')+1)
+        else:
+            num_methods_ok=len(self.relfcns)==(self.params['fom_keys_B'].count(',')+1)
+        if (not num_methods_ok) or self.params['fom_keys_B']=='NONE' or self.params['fom_keys_A']=='NONE' or self.params['fom_keys_B'].count(',')!=self.params['fom_keys_A'].count(','):
             self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
@@ -598,9 +605,14 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             self.runints_A=[int(s.strip()) for s in self.params['runints_A'].split(',')]
             self.runints_B=[int(s.strip()) for s in self.params['runints_B'].split(',')]
         except:
+            self.filedlist=[]
             self.params=copy.copy(self.dfltparams)
             return
-        self.fomnames=[k+self.params['relative_key_append'] for k in sel_processkeys_for_naming]
+        if (self.params['relative_key_append'].count(',')+1)==len(sel_processkeys_for_naming):
+            appendlist=self.params['relative_key_append'].split(',')
+        else: # don't raise error if append list wrong length, just use the 1st. If length 1 then this also works
+            appendlist=[self.params['relative_key_append'].partition(',')[0]]*len(sel_processkeys_for_naming)
+        self.fomnames=[k+s.strip() for k, s in zip(sel_processkeys_for_naming, appendlist)]
             
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
@@ -635,12 +647,12 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             
             floatlist_or_False=self.checkforlistofnumbers(self.params['fom_keys_A'])
             ka_list=floatlist_or_False if floatlist_or_False else self.params['fom_keys_A'].split(',')
-            for k, ka, kb, offset in zip(self.fomnames, ka_list, self.params['fom_keys_B'].split(','), self.offsetlist):
+            for k, ka, kb, offset, relfcn in zip(self.fomnames, ka_list, self.params['fom_keys_B'].split(','), self.offsetlist, self.relfcns):
                 aval=ka if isinstance(ka, float) else fomd[ka.strip()][inds_a]
                 kb=kb.strip()
-                newfomd[k]=self.relfcn(aval, fomd[kb][inds_b], offset)
+                newfomd[k]=relfcn(aval, fomd[kb][inds_b], offset)
             
-            if self.params['method']=='B_comp_dist_wrt_A':
+            if self.params['method']=='B_comp_dist_wrt_A':#only do this if method is not a list of methods, i.e. comp dist should only be doen as a standalone method
                 kdist='Comp_Dist'
                 newfomd[kdist]=numpy.array([newfomd[k]**2 for k in self.fomnames]).sum(axis=0)/2.**0.5
                 num_els=len(self.fomnames)
