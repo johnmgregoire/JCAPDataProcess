@@ -679,7 +679,7 @@ def compareprependpath(preppendfolderlist, p, replaceslash=True):
 def prepend_root_exp_path(p, exp=True):
     parentfoldtemp, subfold=os.path.split(p)#in tryprependpath, parentfoldtemp has its leading and trailing slashes removed
     for parentfold in [tryprependpath(EXPFOLDERS_J if exp else ANAFOLDERS_J, parentfoldtemp), \
-                            tryprependpath(EXPFOLDERS_L if exp else EXPFOLDERS_J, parentfoldtemp)]:
+                            tryprependpath(EXPFOLDERS_L if exp else ANAFOLDERS_L, parentfoldtemp)]:
         if len(parentfold)==0:
             continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
@@ -696,7 +696,10 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
     fn=os.path.split(p)[1][:15]+ext_str #15 characters in YYYYMMDD.HHMMSS
 
     if (not os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) or not os.path.isabs(p):
-        p=prepend_root_exp_path(p)
+        if ext_str=='.exp':
+            p=prepend_root_exp_path(p)
+        else:
+            p=prepend_root_exp_path(p, exp=False)
 
     #from here down : turn an exp folder into an exp file
     if os.path.isfile(os.path.join(p, fn)):
