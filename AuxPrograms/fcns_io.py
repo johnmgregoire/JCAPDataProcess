@@ -809,7 +809,7 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
 def strrep_filedict(filedict):
     keys=[k for k in filedict.keys() if 'version' in k]#assume this is not a dictionary
     keys+=sorted([k for k, v in filedict.iteritems() if not isinstance(v, dict) and not 'version' in k])
-    sl=[k+': '+str(filedict[k]) for k in keys]
+    sl=['' if len(k)==0 else (k+': '+str(filedict[k])) for k in keys]
     dkeys=[k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k]
     dkeys+=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
     return ('\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])).strip()
