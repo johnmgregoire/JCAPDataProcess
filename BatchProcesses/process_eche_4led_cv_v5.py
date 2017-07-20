@@ -34,7 +34,7 @@ anasaveextension='.run'
 expname=None#r'eche\20170717.102636.done'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
 ananame=None#r'L:\processes\analysis\eche\20170717.155712.run\20170717.155712.ana'
 
-#expname=r'eche\20170719.165705.done
+#expname=r'eche\20170719.165705.done'
 #ananame=r'L:\processes\analysis\eche\20170719.165637.run'
 
 expdestchoice='eche'
@@ -255,19 +255,20 @@ for i in stdplotinds:
                     print k
             vmin=max(0, visdataui.fomplotd['fom'].min())*0.99
             vmax=min(0.8, visdataui.fomplotd['fom'].max())*1.01
-            visdataui.vminmaxLineEdit.setText('%.3f,%.3f' %(vmin, vmax))
-            visdataui.plotfom()
-            visdataui.vminmaxLineEdit.setText('')
-            imagesidialog=visdataui.savefigs(justreturndialog=True)
-            imagesidialog.widget_plow_dlist[0]['item'].setCheckState(0, Qt.Checked)#plate
-            imagesidialog.widget_plow_dlist[1]['item'].setCheckState(0, Qt.Unchecked)#code
-            imagesidialog.widget_plow_dlist[2]['item'].setCheckState(0, Qt.Unchecked)#xy
-            if i==stdplotinds[-1] and 'done' in anasaveextension:#if need to convert to .done and skipped the fill factor plot, try this - not tested
-                imagesidialog.doneCheckBox.setChecked(Qt.Checked)
-                imagesidialog.ExitRoutine()
-                visdataui.importana(p=imagesidialog.newanapath)
-            else:
-                imagesidialog.ExitRoutine()
+            if not numpy.all((visdataui.fomplotd['fom']<vmin)|(visdataui.fomplotd['fom']>vmax)):                
+                visdataui.vminmaxLineEdit.setText('%.3f,%.3f' %(vmin, vmax))
+                visdataui.plotfom()
+                visdataui.vminmaxLineEdit.setText('')
+                imagesidialog=visdataui.savefigs(justreturndialog=True)
+                imagesidialog.widget_plow_dlist[0]['item'].setCheckState(0, Qt.Checked)#plate
+                imagesidialog.widget_plow_dlist[1]['item'].setCheckState(0, Qt.Unchecked)#code
+                imagesidialog.widget_plow_dlist[2]['item'].setCheckState(0, Qt.Unchecked)#xy
+                if i==stdplotinds[-1] and 'done' in anasaveextension:#if need to convert to .done and skipped the fill factor plot, try this - not tested
+                    imagesidialog.doneCheckBox.setChecked(Qt.Checked)
+                    imagesidialog.ExitRoutine()
+                    visdataui.importana(p=imagesidialog.newanapath)
+                else:
+                    imagesidialog.ExitRoutine()
         elif i==stdplotinds[-1] and 'done' in anasaveextension:#if need to convert to .done and skipped the fill factor plot, try this resave of last image- not tested
             imagesidialog=visdataui.savefigs(justreturndialog=True)
             imagesidialog.doneCheckBox.setChecked(Qt.Checked)
