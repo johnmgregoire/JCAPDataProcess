@@ -58,6 +58,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         (self.FilenameFilterPushButton, self.createfilenamefilter), \
         (self.UpdateFiltersPushButton, self.updatefiltereddata), \
         (self.UpdatePlotPushButton, self.plotfom), \
+        (self.FilterFomPlotBySelectionPushButton, self.replot_with_sample_selection_filter), \
         (self.ontheflyPushButton, self.performontheflyfom), \
         (self.customxystylePushButton, self.getxystyle_user), \
         (self.customxylegendPushButton, self.getcustomlegendfcn), \
@@ -93,7 +94,6 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"), self.filterandplotfomdata)
         QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"), self.plot_preparestandardplot)
-
         QObject.connect(self.compPlotMarkSelectionsCheckBox,SIGNAL("released()"), self.plotfom)
         
         for count, c in enumerate(AnalysisClasses):
@@ -853,7 +853,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if plotbool:
             self.fomstats()
             self.plotfom()
-    
+    def replot_with_sample_selection_filter(self, plotbool=True):
+        filterinds=[i for i, tup in enumerate(zip(self.fomplotd['fomdlist_index0'], self.fomplotd['fomdlist_index1'])) if tup in self.select_idtups]
+        for k in self.fomplotd.keys():
+            if isinstance(self.fomplotd[k], numpy.ndarray):
+                self.fomplotd[k]=self.fomplotd[k][filterinds]
+        if plotbool:
+            self.fomstats()
+            self.plotfom()
 #    #can point the activate fom checkbox to here but user has to click "OK" to refilter data to ensure that the scope fo the plot matches the checked fitler boxes. can just re-filter without much loss of speed
 #    def updatefomchoiceandplot(self):
 #        fomname=str(self.fomplotchoiceComboBox.currentText())
