@@ -59,15 +59,15 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version = '3'  # version 3 don't detect redox couple, use calc_vs_HER instead
+        self.analysis_fcn_version = '4'  # version 4 include 0-asymptote and asymmetric models, output sigmoid model coefficients as FOMs
         self.dfltparams=dict([\
   ('weight', False), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
   ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
   ('use_sweeps_from_end', True), ('v_extend_upper', 0.1), \
   ('v_extend_lower', 0.1), ('v_interp_step', 0.001), \
-  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -5), ('calc_vs_HER', 0) \
-                                       ])
+  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -3), ('calc_vs_HER', 0), ('function_type', 'sigmoid') \
+                                       ]) # sweep direction -1 means anodic somehow...!!! dE/dt>0
         self.params = copy.copy(self.dfltparams)
         self.analysis_name = 'Analysis__Pphotomax'
         # assume intermediate and raw data available
@@ -78,8 +78,15 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.requiredparams = ['reference_e0', 'reference_vrhe', 'redox_couple_type']
         # for logistic fit, lim(iphoto) approaches 0/1 as potential -> -infinity/+infinity, Voc here is the intercept between fitted function and iphotobase
         self.fomnames = [
-            'Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Fill_factor', 'RSS'
+            'Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Fill_factor', 'RSS',
+            'sigFit_upper.A',  'sigFit_inflection.V',  'sigFit_shape.V',
+            'sigFit_upper_err.A',  'sigFit_inflection_err.V',  'sigFit_shape_err.V'
         ]
+        if self.params['function_type']=='sigmoid_asymmetric':
+            self.fomnames+=['sigFit_shape2.V', 'sigFit_shape2_err.V']
+        elif self.params['function_type']=='sigmoid':
+            self.fomnames+=['sigFit_lower.A', 'sigFit_lower_err.A']
+
         self.plotparams = dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis'] = 'Ewe(V)'
         self.plotparams['plot__1']['series__1'] = 'I(A)'
@@ -240,6 +247,23 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ttrim = d['t(s)_ill']
         illdiff = d['I(A)_illdiff']
 
+        # placeholder params
+        shape=numpy.nan
+        shape_err=numpy.nan
+        shape2=numpy.nan
+        shape2_err=numpy.nan
+        inflec=numpy.nan
+        inflec_err=numpy.nan
+        upper=numpy.nan
+        upper_err=numpy.nan
+        lower=numpy.nan
+        lower_err=numpy.nan
+
+        nantuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
+                ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), ('RSS', numpy.nan), \
+                ('sigFit_lower.A', lower), ('sigFit_upper.A', upper), ('sigFit_inflection.V', inflec), ('sigFit_shape.V', shape), ('sigFit_shape2.V', shape2), \
+                ('sigFit_lower_err.A', lower_err), ('sigFit_upper_err.A', upper_err), ('sigFit_inflection_err.V', inflec_err), ('sigFit_shape_err.V', shape_err), ('sigFit_shape2_err.V', shape2_err)]
+
         # take care of NaNs
         allowed_nan_cycs = self.params['allow_nan_iphoto_pct'] * len(illdiff)
         naninds = numpy.where(numpy.isnan(illdiff))[0]
@@ -248,9 +272,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             ewetrim = numpy.array([v for i,v in enumerate(ewetrim) if not i in naninds])
             illdiff = numpy.array([v for i,v in enumerate(illdiff) if not i in naninds])
         else:
-            fomtuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
-                    ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), \
-                    ('RSS', numpy.nan)]
+            fomtuplist = nantuplist
             miscfilestr = None
             return fomtuplist, rawlend, interd, miscfilestr
 
@@ -314,33 +336,78 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
         iphoto_fitrng = numpy.array([illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
 
-        # Fitting
-        fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + numpy.exp((A - t) / k))))
+        # Four Parameter Logistic Curve Fitting
+        # 0 x:t input (V)
+        # 1 A:k slope/shape-related (V)
+        # 2 B:A inflection point (V)
+        # 3 C:Cu upper asymptote (A)
+        # 4 D:Cl lower asymptote (A)
+
+        fpl= lambda t, Cl, Cu, A, k: (Cl + ((Cu-Cl)/(1+numpy.exp((A-t)/k))))
+        tpl= lambda t, Cu, A, k: (Cu/(1+numpy.exp((A-t)/k)))
+        fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))
+
+        if self.params['function_type']=='sigmoid_0asymptote':
+            fitfn = tpl
+            fnstring = 'lambda t, Cu, A, k: (Cu/(1+np.exp((A-t)/k)))'
+        elif self.params['function_type']=='sigmoid_asymmetric':
+            fitfn = fpl_2shapes
+            fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))'
+        else:
+            fitfn = fpl
+            fnstring = 'lambda x, A, B, C, D: (D + ((C - D) / (1 + numpy.exp((B - x) / A))))'
+
+
+
         weight = self.params['weight']
         ywt = 1/(iphoto_fitrng**weight) if weight else None
 
-
-        weight = self.params['weight']
         mintol = self.params['log_ftol']
         maxtol = self.params['max_log_ftol']
-        tolind=0
         tollist=numpy.logspace(mintol, maxtol, maxtol-mintol+1)
+        initpars=None
 
+        if self.params['function_type']=='sigmoid_asymmetric':
+            tolind=0
+            while tolind<len(tollist):
+                try:
+                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind])
+                    initpars=[topt[0], topt[1], topt[2], 1]
+                    break
+                except RuntimeError:
+                    tolind+=1
+                    pass
+            if tolind==len(tollist):
+                fomtuplist = nantuplist
+                miscfilestr = None
+
+            # tolind=0
+            # while tolind<len(tollist):
+            #     try:
+            #         popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=[topt[0], topt[1], topt[2], 1], sigma=ywt, maxfev=10000, ftol=tollist[tolind])
+            #         break
+            #     except RuntimeError:
+            #         tolind+=1
+            #         pass
+            # if tolind==len(tollist):
+            #     fomtuplist = nantuplist
+            #     miscfilestr = None
+            #     return fomtuplist, rawlend, interd, miscfilestr
+
+        tolind=0
         while tolind<len(tollist):
             try:
-                popt, pcov = curve_fit(fpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=2000, ftol=tollist[tolind])
+                popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=initpars, sigma=ywt, maxfev=10000, ftol=tollist[tolind])
                 break
             except RuntimeError:
                 tolind+=1
                 pass
         if tolind==len(tollist):
-            fomtuplist = [('Pmax.W', numpy.nan), ('Vpmax.V', numpy.nan), ('Ipmax.A', numpy.nan), \
-                    ('Voc.V', numpy.nan), ('Isc.A', numpy.nan), ('Fill_factor', numpy.nan), \
-                    ('RSS', numpy.nan)]
+            fomtuplist = nantuplist
             miscfilestr = None
             return fomtuplist, rawlend, interd, miscfilestr
 
-        fittedfunc = lambda x: fpl(x, *popt)
+        fittedfunc = lambda x: fitfn(x, *popt)
         fitcoeff = popt
         fiterrs = pcov.diagonal()**0.5
         fitresiduals = iphoto_fitrng - fittedfunc(ewetrim_fitrng)
@@ -351,7 +418,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             'errors': fiterrs.tolist(),
             'covariance': pcov.tolist(),
             'log_ftol': tollist[tolind],
-            'function': 'fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + numpy.exp((A - t) / k))))'
+            'function': fnstring
         }
         miscfilestr = json.dumps(jsondict)
 
@@ -411,22 +478,51 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd['rawselectinds'] = numpy.array(
             [rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v and i in d['rawselectinds']])
 
+        if self.params['function_type']=='sigmoid_0asymptote':
+            shape=fitcoeff[2]
+            shape_err=fiterrs[2]
+            inflec=fitcoeff[1]
+            inflec_err=fiterrs[1]
+            upper=fitcoeff[0]
+            upper_err=fiterrs[0]
+        elif self.params['function_type']=='sigmoid_asymmetric':
+            shape=fitcoeff[2]
+            shape_err=fiterrs[2]
+            shape2=fitcoeff[3]
+            shape2_err=fiterrs[3]
+            inflec=fitcoeff[1]
+            inflec_err=fiterrs[1]
+            upper=fitcoeff[0]
+            upper_err=fiterrs[0]
+        else: # sigmoid
+            shape=fitcoeff[3]
+            shape_err=fiterrs[3]
+            inflec=fitcoeff[2]
+            inflec_err=fiterrs[2]
+            upper=fitcoeff[1]
+            upper_err=fiterrs[1]
+            lower=fitcoeff[0]
+            lower_err=fiterrs[0]
+
         ## Voc/FF calculation: report both photoanode and photocathode Voc as positive values
         if self.params['calc_vs_HER']:
             iphotobase = -1.0*self.params['i_photo_base']
             voc = ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)] - vrhe
+            inflec = inflec - vrhe
         else:
             iphotobase = self.params['i_photo_base']
             voc = eo - ewesmooth[numpy.argmin((iphotosmooth-iphotobase)**2)]
+            inflec = eo - inflec
         fillfactor = numpy.absolute(pphotomax / (voc * isc))
 
-        # NaN those crazy fillfactors ### leave this alone and report RSS
-        # if fillfactor>1:
-        #     fillfactor = numpy.nan
-        #     voc = numpy.nan
+        # NaN those crazy fillfactors
+        if vatpmax > voc:
+            voc = numpy.nan
+            ff = numpy.nan
 
         fomtuplist = [('Pmax.W', pphotomax), ('Vpmax.V', vatpmax), ('Ipmax.A', iatpmax), \
-                ('Voc.V', voc), ('Isc.A', isc), ('Fill_factor', fillfactor), \
-                ('RSS', rss)]
+                ('Voc.V', voc), ('Isc.A', isc), ('Fill_factor', fillfactor), ('RSS', rss), \
+                ('sigFit_lower.A', lower), ('sigFit_upper.A', upper), ('sigFit_inflection.V', inflec), ('sigFit_shape.V', shape), ('sigFit_shape2.V', shape2), \
+                ('sigFit_lower_err.A', lower_err), ('sigFit_upper_err.A', upper_err), ('sigFit_inflection_err.V', inflec_err), ('sigFit_shape_err.V', shape_err), ('sigFit_shape2_err.V', shape2_err)]
 
         return fomtuplist, rawlend, interd, miscfilestr
