@@ -263,9 +263,9 @@ Posn:</string>
   <widget class="QLineEdit" name="xyLineEdit">
    <property name="geometry">
     <rect>
-     <x>1170</x>
+     <x>1160</x>
      <y>10</y>
-     <width>111</width>
+     <width>81</width>
      <height>20</height>
     </rect>
    </property>
@@ -276,7 +276,7 @@ Posn:</string>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>1330</x>
+     <x>1300</x>
      <y>0</y>
      <width>46</width>
      <height>31</height>
@@ -290,7 +290,7 @@ No(s):</string>
   <widget class="QLineEdit" name="sampleLineEdit">
    <property name="geometry">
     <rect>
-     <x>1370</x>
+     <x>1340</x>
      <y>10</y>
      <width>111</width>
      <height>20</height>
@@ -329,7 +329,7 @@ No(s):</string>
   <widget class="QPushButton" name="remxy">
    <property name="geometry">
     <rect>
-     <x>1300</x>
+     <x>1270</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -342,7 +342,7 @@ No(s):</string>
   <widget class="QPushButton" name="addxy">
    <property name="geometry">
     <rect>
-     <x>1280</x>
+     <x>1250</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -355,7 +355,7 @@ No(s):</string>
   <widget class="QPushButton" name="remSample">
    <property name="geometry">
     <rect>
-     <x>1500</x>
+     <x>1470</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -368,7 +368,7 @@ No(s):</string>
   <widget class="QPushButton" name="addSample">
    <property name="geometry">
     <rect>
-     <x>1480</x>
+     <x>1450</x>
      <y>10</y>
      <width>21</width>
      <height>23</height>
@@ -1117,7 +1117,7 @@ scatter</string>
    <property name="geometry">
     <rect>
      <x>1570</x>
-     <y>10</y>
+     <y>20</y>
      <width>31</width>
      <height>23</height>
     </rect>
@@ -1171,8 +1171,8 @@ scatter</string>
   <widget class="QPushButton" name="saveudiPushButton">
    <property name="geometry">
     <rect>
-     <x>1530</x>
-     <y>20</y>
+     <x>1560</x>
+     <y>0</y>
      <width>41</width>
      <height>23</height>
     </rect>
@@ -1184,7 +1184,7 @@ scatter</string>
   <widget class="QPushButton" name="addallsamplesPushButton">
    <property name="geometry">
     <rect>
-     <x>1530</x>
+     <x>1500</x>
      <y>0</y>
      <width>31</width>
      <height>23</height>
@@ -1271,6 +1271,19 @@ intervs</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="FilterFomPlotBySelectionPushButton">
+   <property name="geometry">
+    <rect>
+     <x>1500</x>
+     <y>20</y>
+     <width>71</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>plot selected</string>
    </property>
   </widget>
  </widget>
