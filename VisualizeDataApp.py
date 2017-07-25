@@ -1326,6 +1326,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for count, (ax, (xarr, yarr), (sxarr, syarr), xl, yl) in enumerate(zip([self.plotw_xy.axes, self.plotw_xy.twaxes], self.plotdata, self.selectpointdata, [arrkeys[0], arrkeys[0]], [arrkeys[1], arrkeys[2]])):
             if len(xarr)==0:
                 continue
+
             somethingplotted=True
             if count==0:
                 styled=dict([(k, v) for k, v in self.xyplotstyled.iteritems() if not 'sel' in k and not 'right_' in k and v!=''])
@@ -1336,11 +1337,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             ax.plot(xarr, yarr, **styled)
             ax.set_xlabel(xl)
             ax.set_ylabel(yl)
+            
             if len(sxarr)==0:
                 continue
             selstyled=dict([(k.partition('select_')[2], v) for k, v in self.xyplotstyled.iteritems() if 'select_' in k and v!=''])
             selstyled['marker']=self.xyplotstyled['marker']
             ax.plot(sxarr, syarr, **selstyled)
+
             
         leg=self.plotw_xy.axes.legend(loc=0)
         #leg.draggable()
@@ -1349,6 +1352,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             
         autotickformat(self.plotw_xy.axes, x=1, y=1)
         autotickformat(self.plotw_xy.twaxes, x=0, y=1)
+        if self.lockrightyCheckBox.isChecked() and somethingplotted:
+            self.plotw_xy.twaxes.set_ylim(self.plotw_xy.axes.get_ylim())
         self.plotw_xy.fig.canvas.draw()
     
     def getcustomlegendfcn(self):

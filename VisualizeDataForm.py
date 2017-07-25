@@ -202,7 +202,7 @@ class Ui_VisDataDialog(object):
         self.customxylegendPushButton.setGeometry(QtCore.QRect(10, 400, 61, 31))
         self.customxylegendPushButton.setObjectName(_fromUtf8("customxylegendPushButton"))
         self.overlayselectCheckBox = QtGui.QCheckBox(VisDataDialog)
-        self.overlayselectCheckBox.setGeometry(QtCore.QRect(210, 360, 81, 17))
+        self.overlayselectCheckBox.setGeometry(QtCore.QRect(210, 350, 81, 17))
         self.overlayselectCheckBox.setObjectName(_fromUtf8("overlayselectCheckBox"))
         self.SelectTreeWidget = QtGui.QTreeWidget(VisDataDialog)
         self.SelectTreeWidget.setGeometry(QtCore.QRect(370, 30, 201, 171))
@@ -352,6 +352,10 @@ class Ui_VisDataDialog(object):
         self.FilterFomPlotBySelectionPushButton = QtGui.QPushButton(VisDataDialog)
         self.FilterFomPlotBySelectionPushButton.setGeometry(QtCore.QRect(1500, 20, 71, 23))
         self.FilterFomPlotBySelectionPushButton.setObjectName(_fromUtf8("FilterFomPlotBySelectionPushButton"))
+        self.lockrightyCheckBox = QtGui.QCheckBox(VisDataDialog)
+        self.lockrightyCheckBox.setGeometry(QtCore.QRect(210, 370, 81, 21))
+        self.lockrightyCheckBox.setChecked(True)
+        self.lockrightyCheckBox.setObjectName(_fromUtf8("lockrightyCheckBox"))
 
         self.retranslateUi(VisDataDialog)
         self.plateTabWidget.setCurrentIndex(0)
@@ -449,4 +453,6 @@ class Ui_VisDataDialog(object):
         self.label_19.setText(_translate("VisDataDialog", "comp\n"
 "intervs", None))
         self.FilterFomPlotBySelectionPushButton.setText(_translate("VisDataDialog", "plot selected", None))
+        self.lockrightyCheckBox.setText(_translate("VisDataDialog", "right-y lock\n"
+"range", None))
 

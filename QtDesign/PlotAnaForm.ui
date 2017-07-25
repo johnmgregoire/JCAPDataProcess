@@ -709,7 +709,7 @@ x-y legend</string>
    <property name="geometry">
     <rect>
      <x>210</x>
-     <y>360</y>
+     <y>350</y>
      <width>81</width>
      <height>17</height>
     </rect>
@@ -1284,6 +1284,23 @@ intervs</string>
    </property>
    <property name="text">
     <string>plot selected</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="lockrightyCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>370</y>
+     <width>81</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>right-y lock
+range</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

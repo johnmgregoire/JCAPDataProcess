@@ -5,6 +5,10 @@ import numpy
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+if __name__ == "__main__":
+    import os, sys
+    projectpath=os.path.split(os.path.abspath(__file__))[0]
+    sys.path.append(os.path.join(projectpath,'AuxPrograms'))
 
 from fcns_math import *
 from fcns_io import *
@@ -212,7 +216,7 @@ class combinefomDialog(QDialog):
 
 
         self.cb=QCheckBox()
-        self.cb.setText('check=union\nuncheck=intersection\nof Samples')
+        self.cb.setText('check=union\nuncheck=intersection\nof sample_no')
  
         mainlayout=QGridLayout()
 
@@ -230,31 +234,35 @@ class combinefomDialog(QDialog):
         
     def save(self):
         dpl=mygetopenfiles(parent=self, markstr='FOM .txt files', filename='.txt')
-        
+        smpkeys=['sample_no', 'Sample']
         keylists=[]
         dropdl=[]
         for dp in dpl:
             if dp=='':
                 dropdl+=[None]
                 continue
-            f=open(dp, mode='r')
-            dr=csv.DictReader(f, delimiter='\t')
+            with open(dp, mode='r') as f:
+                lines=f.readlines()
+            
+            templist=[(i, [l.startswith(k) for k in smpkeys].index(True)) for i, l in enumerate(lines) if True in [l.startswith(k) for k in smpkeys]]
+            if len(templist)==0:
+                print 'sample_no not found as left-most column for %s' %dp
+            headingslineind, smpkeyind=templist[0]
+            smpkey=smpkeys[smpkeyind]
+            delim=lines[headingslineind][len(smpkey)]
+            arr=readtxt_selectcolumns(dp, delim=delim, num_header_lines=headingslineind+1, floatintstr=str, zipclass=False)
             dropd={}
-            for l in dr:
-                for kr in l.keys():
-                    k=kr.strip()
-                    if not k in dropd.keys():
-                        dropd[k]=[]
-                    dropd[k]+=[l[kr].strip()]
-#            for k in dropd.keys():
-#                dropd[k]=numpy.array(dropd[k])
-            f.close()
+            kl=lines[headingslineind].split(delim)
+            kl=[k.strip() for k in kl]
+            for k, a in zip(kl, arr):
+                if k==smpkey:
+                    k='sample_no'
+                dropd[k]=list(a)
+
             dropdl+=[dropd]
             f=open(dp, mode='r')
             l=f.readlines()[0]
             f.close()
-            kl=l.split('\t')
-            kl=[k.strip() for k in kl]
             keylists+=[kl]
             #keylists+=[list(dropd.keys())]
         
@@ -262,7 +270,7 @@ class combinefomDialog(QDialog):
         idialog.exec_()
         keylistsselected=idialog.keylistsselected
 
-        smplists=[d['Sample'] for d in dropdl]
+        smplists=[d['sample_no'] for d in dropdl]
         smpinters=set(smplists[0])
         unionbool=self.cb.isChecked()
         for sl in smplists:
@@ -275,7 +283,7 @@ class combinefomDialog(QDialog):
         inds=numpy.argsort(seval)
         smpinters=smpinters[inds]
         
-        lines=[['Sample']]
+        lines=[['sample_no']]
         for kl in keylistsselected:
             lines[0]+=kl
         for s in smpinters:
@@ -289,7 +297,7 @@ class combinefomDialog(QDialog):
             lines+=[ll]
 
         
-        s='\n'.join(['\t'.join([v for v in ll]) for ll in lines])
+        s='\n'.join([','.join([v for v in ll]) for ll in lines])
         
         sp=mygetsavefile(parent=self, xpath=os.path.split(dpl[0])[0],markstr='savefile', filename='combinedfom.txt' )
         
