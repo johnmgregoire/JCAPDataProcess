@@ -153,6 +153,12 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             expfolderzipclass=zipclass,
             fnk='fn')
 
+        self.fomnames = [
+            'Pmax.W', 'Vpmax.V', 'Ipmax.A', 'Voc.V', 'Isc.A', 'Fill_factor', 'RSS',
+            'sigFit_upper.A',  'sigFit_inflection.V',  'sigFit_shape.V',
+            'sigFit_upper_err.A',  'sigFit_inflection_err.V',  'sigFit_shape_err.V'
+        ]
+
         if self.params['function_type']=='sigmoid_asymmetric':
             self.fomnames+=['sigFit_shape2.V', 'sigFit_shape2_err.V']
         if self.params['function_type']=='sigmoid':
@@ -330,9 +336,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         elif self.params['sweep_direction']=='both':
             sweepdirproxy = 0
         sweepdir = sweepdirproxy
-        time_tpl = numpy.append(
-            anodt_tpl, catht_tpl
-        ) if sweepdir == 0 else anodt_tpl if sweepdir < 0 else catht_tpl
+        time_tpl = anodt_tpl + catht_tpl \
+            if sweepdir == 0 else anodt_tpl if sweepdir < 0 else catht_tpl
         rangefunc = lambda t: any([t >= tstart and t < tend for tstart, tend in time_tpl])
         ## create _dark and _ill interd keys from fitted range
         cyc_start = self.params['num_cycles_omit_start']
@@ -353,14 +358,15 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 
         fpl= lambda t, Cl, Cu, A, k: (Cl + ((Cu-Cl)/(1+numpy.exp((A-t)/k))))
         tpl= lambda t, Cu, A, k: (Cu/(1+numpy.exp((A-t)/k)))
-        fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))
+        # fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))
+        fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))
 
         if self.params['function_type']=='sigmoid_0asymptote':
             fitfn = tpl
             fnstring = 'lambda t, Cu, A, k: (Cu/(1+np.exp((A-t)/k)))'
         elif self.params['function_type']=='sigmoid_asymmetric':
             fitfn = fpl_2shapes
-            fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))'
+            fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))'
         else:
             fitfn = fpl
             fnstring = 'lambda x, A, B, C, D: (D + ((C - D) / (1 + numpy.exp((B - x) / A))))'
