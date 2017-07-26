@@ -62,7 +62,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         self.analysis_fcn_version = '4'  # version 4 include 0-asymptote and asymmetric models, output sigmoid model coefficients as FOMs
         self.dfltparams=dict([\
   ('weight', False), ('num_cycles_omit_start', 0), \
-  ('num_cycles_omit_end', 0), ('sweep_direction', -1), \
+  ('num_cycles_omit_end', 0), ('sweep_direction', 'anodic'), \
   ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
   ('use_sweeps_from_end', True), ('v_extend_upper', 0.1), \
   ('v_extend_lower', 0.1), ('v_interp_step', 0.001), \
@@ -82,10 +82,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             'sigFit_upper.A',  'sigFit_inflection.V',  'sigFit_shape.V',
             'sigFit_upper_err.A',  'sigFit_inflection_err.V',  'sigFit_shape_err.V'
         ]
-        if self.params['function_type']=='sigmoid_asymmetric':
-            self.fomnames+=['sigFit_shape2.V', 'sigFit_shape2_err.V']
-        elif self.params['function_type']=='sigmoid':
-            self.fomnames+=['sigFit_lower.A', 'sigFit_lower_err.A']
+
 
         self.plotparams = dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis'] = 'Ewe(V)'
@@ -155,6 +152,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             expdatfolder=expdatfolder,
             expfolderzipclass=zipclass,
             fnk='fn')
+
+        if self.params['function_type']=='sigmoid_asymmetric':
+            self.fomnames+=['sigFit_shape2.V', 'sigFit_shape2_err.V']
+        if self.params['function_type']=='sigmoid':
+            self.fomnames+=['sigFit_lower.A', 'sigFit_lower_err.A']
 
         self.fomdlist = []
         for filed in self.filedlist:
@@ -321,7 +323,13 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 [anodt_tpl, catht_tpl])
 
         ## time tuples for chosen sweep direction (or both)
-        sweepdir = self.params['sweep_direction']
+        if self.params['sweep_direction']=='anodic':
+            sweepdirproxy = -1
+        elif self.params['sweep_direction']=='cathodic':
+            sweepdirproxy = 1
+        elif self.params['sweep_direction']=='both':
+            sweepdirproxy = 0
+        sweepdir = sweepdirproxy
         time_tpl = numpy.append(
             anodt_tpl, catht_tpl
         ) if sweepdir == 0 else anodt_tpl if sweepdir < 0 else catht_tpl
@@ -380,19 +388,6 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             if tolind==len(tollist):
                 fomtuplist = nantuplist
                 miscfilestr = None
-
-            # tolind=0
-            # while tolind<len(tollist):
-            #     try:
-            #         popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=[topt[0], topt[1], topt[2], 1], sigma=ywt, maxfev=10000, ftol=tollist[tolind])
-            #         break
-            #     except RuntimeError:
-            #         tolind+=1
-            #         pass
-            # if tolind==len(tollist):
-            #     fomtuplist = nantuplist
-            #     miscfilestr = None
-            #     return fomtuplist, rawlend, interd, miscfilestr
 
         tolind=0
         while tolind<len(tollist):
