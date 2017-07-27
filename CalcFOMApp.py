@@ -639,7 +639,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     killana=True
                 if killana:
                     removefiles(self.tempanafolder, [k for d in \
-                            ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in d.values() for k in typed.keys()])
+                            ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.values()) for typed in d.values() for k in typed.keys()])
                 
         if killana:
             return checkmsg#anadict not been modified yet

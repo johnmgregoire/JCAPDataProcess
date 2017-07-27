@@ -689,7 +689,7 @@ def prepend_root_exp_path(p, exp=True):
         subfoldl=[s for s in os.listdir(parentfold) if s.startswith(subfold)]
         if len(subfoldl)>0:
             return os.path.join(parentfold, subfoldl[0])
-    print 'cannot find folder %s in %s' %(subfold, parentfold)
+    #print 'cannot find folder %s in %s' %(subfold, parentfold)
     return p
 def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path of the .exp ascii file , which is different from the experiment_path in an .ana file which is the folder path
     p=experiment_path_folder
