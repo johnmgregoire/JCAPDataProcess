@@ -48,8 +48,8 @@ class Analysis__Imin(Analysis_Master_nointer):
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
     def fomtuplist_dataarr(self, dataarr, filed):
         return [(self.fomnames[0], numpy.min(dataarr[0]))]
-        
-        
+
+
 class Analysis__Ifin(Analysis_Master_nointer):
     def __init__(self):
         self.analysis_fcn_version='1'
@@ -119,7 +119,7 @@ class Analysis__Iave(Analysis_Master_nointer):
         self.plotparams['plot__1']['series__1']='I(A)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
     def avefcn(self, x, t):
         if self.params['from_end']:
             x=x[::-1]
@@ -127,7 +127,7 @@ class Analysis__Iave(Analysis_Master_nointer):
         x=x[numpy.abs(t-t[0])<self.params['duration_s']]
         x=removeoutliers_meanstd(x, self.params['num_pts_outlier_window']//2, self.params['num_std_dev_outlier'])
         return [(self.fomnames[0], x.mean())]
-        
+
     def fomtuplist_dataarr(self, dataarr, filed):
         x, t=dataarr
         return self.avefcn(x, t)
@@ -163,20 +163,20 @@ class Analysis__Etaave(Analysis_Master_inter, Analysis__Iave):#this order is imp
         self.plotparams['plot__1']['series__1']='Eta(V)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
-    
+
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         t=dataarr[1]
         eta=referenceshiftfcn(dataarr[0], filed['reference_e0'], filed['redox_couple_type'])
         return self.avefcn(eta, t), dict([('Eta(V)', eta)]), {}
-        
+
 class Analysis__Iphoto(Analysis_Master_inter):
     def __init__(self):
         self.analysis_fcn_version='1'
         self.dfltparams=dict([\
   ('frac_illum_segment_start', 0.4), ('frac_illum_segment_end', 0.95), \
   ('frac_dark_segment_start', 0.4), ('frac_dark_segment_end', 0.95), \
-  ('illum_key', 'Toggle'), ('illum_time_shift_s', 0.), ('illum_threshold', 0.5), \
-  ('illum_invert', 0), ('num_illum_cycles', 2), ('from_end', True)\
+  ('illum_key', 'Ach.V'), ('illum_time_shift_s', 0.), ('illum_threshold', -1), \
+  ('illum_invert', 1), ('num_illum_cycles', 2), ('from_end', True)\
                                        ])
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Iphoto'
@@ -199,9 +199,9 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
-        
+
     def photofcn(self, d):
-        
+
         ikey=self.params['illum_key']
         tshift=self.params['illum_time_shift_s']
         interdict={}
@@ -268,7 +268,7 @@ class Analysis__Ephoto(Analysis__Iphoto):
         self.plotparams['plot__2']['series__1']='Ewe(V)_dark,Ewe(V)_ill,Ewe(V)_illdiff'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
 
 class Analysis__Etaphoto(Analysis__Iphoto):
     def __init__(self):
@@ -294,28 +294,28 @@ class Analysis__Etaphoto(Analysis__Iphoto):
         self.plotparams['plot__2']['series__1']='Eta(V)_dark,Eta(V)_ill,Eta(V)_illdiff'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
-    
+
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
         fomtuplist, rawlend, interlend=self.photofcn(d)
         #names are from fomlist so correct, just shift values
         fomtuplist=[(k, referenceshiftfcn(v, filed['reference_e0'], filed['redox_couple_type'])) for k, v in fomtuplist]
-        
+
         #rawlend just has IllumBool so add Eta(V)
         rawlend['Eta(V)']=referenceshiftfcn(dataarr[0], filed['reference_e0'], filed['redox_couple_type'])
-        
+
         #names in interlendict are based on Ewe(V)key so fix these.
         keystochange=[k for k in interlend.keys() if k.startswith('Ewe')]
         for oldk in keystochange:
             newk='Eta'+oldk[3:]
             interlend[newk]=referenceshiftfcn(interlend[oldk], filed['reference_e0'], filed['redox_couple_type'])
             del interlend[oldk]
-        
+
         return fomtuplist, rawlend, interlend
-        
 
 
-    
+
+
 
 class Analysis__E_Ithresh(Analysis_Master_nointer):
     def __init__(self):
@@ -335,13 +335,13 @@ class Analysis__E_Ithresh(Analysis_Master_nointer):
         self.plotparams['plot__1']['series__1']='Ewe(V)'
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
     def threshfcn(self, dataarr):
         t=dataarr[2]
         tstart=self.params['skip_time_at_start_s']
-        
+
         startind=numpy.argmin((t-tstart)**2)
-        
+
         v, i, t=dataarr[:, startind:]
         icrit=self.params['i_thresh']
         if not self.params['above_bool']:
@@ -356,10 +356,10 @@ class Analysis__E_Ithresh(Analysis_Master_nointer):
         else:
             fom=numpy.nan
         return [(self.fomnames[0], fom)]
-        
+
     def fomtuplist_dataarr(self, dataarr, filed):
         return self.threshfcn(dataarr)
-        
+
 
 
 class Analysis__Eta_Ithresh(Analysis_Master_inter, Analysis__E_Ithresh):
@@ -383,9 +383,8 @@ class Analysis__Eta_Ithresh(Analysis_Master_inter, Analysis__E_Ithresh):
 
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         fomtuplist=self.threshfcn(dataarr)
-        
+
         fomtuplist=[(k, referenceshiftfcn(v, filed['reference_e0'], filed['redox_couple_type'])) for k, v in fomtuplist]
-        
+
         eta=referenceshiftfcn(dataarr[0], filed['reference_e0'], filed['redox_couple_type'])
         return fomtuplist, dict([('Eta(V)', eta)]), {}
-
