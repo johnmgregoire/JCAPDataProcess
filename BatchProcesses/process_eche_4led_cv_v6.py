@@ -22,7 +22,7 @@ runfoldername=mygetdir(parent=None, xpath=tryprependpath(RUNFOLDERS, 'eche'),mar
 
 
 #user-entered parameters for mA/cm2 calculation ond chooseing eqe plots
-measurement_area_override=None#0.58#None to use exp value
+measurement_area_override=0.58#None to use exp value
 mineqeforplot=1.e-3
 crit_pmax_mwcm2_for_fillfactor=.06
 

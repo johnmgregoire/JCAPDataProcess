@@ -1453,7 +1453,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if measurement_area is None:
             areas=[self.expfiledict[runk]['parameters']['measurement_area'] for runk in runklist]
             if 0. in areas or False in [areas[0]==v for v in areas]:
-                measurement_area=userinputcaller(self, inputs=[('measurement area in mm2: ', float, 0.)], title='Inconsistent or 0 area in exp',  cancelallowed=False)[0]
+                measurement_area=userinputcaller(self, inputs=[('measurement area in mm2: ', float, '0.')], title='Inconsistent or 0 area in exp',  cancelallowed=False)[0]
             else:
                 measurement_area=areas[0]
         macm2divisor=1.e-5*measurement_area
