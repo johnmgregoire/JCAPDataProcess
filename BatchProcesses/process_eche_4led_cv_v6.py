@@ -31,7 +31,7 @@ anasaveextension='.run'
 
 
 #providing these paths will skip the generation of the exp/ana
-expname=None#r'eche\20170717.102636.done'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
+expname=r'eche\20170727.173030'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
 ananame=None#r'L:\processes\analysis\eche\20170717.155712.run\20170717.155712.ana'
 
 #expname=r'eche\20170719.165705.done'
@@ -172,7 +172,8 @@ if ananame is None:
         ('CV5','Pphotomax',False,{'v_extend_lower': -0.1, 'v_extend_upper': 0, 'sweep_direction': 'cathodic'},True),\
         ('CV5','Pphotomax',False,{'v_extend_lower': .03, 'v_extend_upper': 0, 'sweep_direction': 'cathodic'},True),\
         ]):
-        
+        print 'calculating ana__%s, %s' %(currentana, ana_fcn)
+        #calcui.exec_()
         select_techtype(techtypesearch)
         if isprocess:
             if not select_procana_fcn(calcui, ana_fcn):
@@ -182,12 +183,15 @@ if ananame is None:
                 calcui.exec_();raiseerror
         if len(paramd)>0:
             updateanalysisparams(calcui, paramd)
+        print 'parameters updated, performing calculation'
+        
         calcuierror=calcui.analyzedata()
         currentana+=1
         
         if calcuierror:
             calcui.exec_();raiseerror
         if cm2convertbool:
+            print 'converting to m*/cm2'
             calcui.batch_set_params_for_photo_mAcm2_scaling(measurement_area=measurement_area_override)
             
     #        if not select_ana_fcn(calcui, 'Process_B_vs_A_ByRun'):
