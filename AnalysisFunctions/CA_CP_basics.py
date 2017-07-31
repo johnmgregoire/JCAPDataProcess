@@ -175,7 +175,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.dfltparams=dict([\
   ('frac_illum_segment_start', 0.4), ('frac_illum_segment_end', 0.95), \
   ('frac_dark_segment_start', 0.4), ('frac_dark_segment_end', 0.95), \
-  ('illum_key', 'Ach(V)'), ('illum_time_shift_s', 0.), ('illum_threshold', -1), \
+  ('illum_key', 'Toggle'), ('illum_time_shift_s', 0.), ('illum_threshold', -1), \
   ('illum_invert', 1), ('num_illum_cycles', 2), ('from_end', True)\
                                        ])
         self.params=copy.copy(self.dfltparams)
