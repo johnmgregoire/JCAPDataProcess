@@ -495,7 +495,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
 #fom_keys_A can be list of floats same length as fom_keys_B to use constant scaling factors, in which case runints_A is not used and is set equal to runints_B.
 # in v 1.2 method can be a list of methods, but B_comp_dist_wrt_A will only work as intended as a standalone method
     def __init__(self):
-        self.analysis_fcn_version='1.2'
+        self.analysis_fcn_version='1.3'
         self.dfltparams={'select_ana': 'ana__1', 'fom_keys_B':'ALL', 'fom_keys_A':'ALL', 'runints_B':'2', 'runints_A':'1', 'keys_to_keep':'NONE', 'method':'B_over_A', 'relative_key_append':'_RelRatio', 'AandBoffset':'0.'}
         self.params=copy.copy(self.dfltparams)
         self.supported_methods=['B_minus_A', 'B_over_A', 'B_minus_A_over_A', 'B_comp_dist_wrt_A']
@@ -632,15 +632,15 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                         if plotcount<len(self.fomnames)-1:
                             plotcount+=1
             
-            inds_b=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_B]
+            self.inds_b=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_B]
             if not (False in [runint in self.runints_B for runint in self.runints_A]):#runints for A are subset of B so matchup line by line
-                inds_a=inds_b
+                self.inds_a=self.inds_b
             else:
-                inds_a=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_A]
-                smps_a=list(fomd['sample_no'][inds_a])
-                inds_b=[i for i in inds_b if fomd['sample_no'][i] in smps_a]#only keep b inds that have a matching sample in a
-                inds_a=[smps_a.index(smp) for smp in fomd['sample_no'][inds_b]]
-            if len(inds_a)==0 or len(inds_b)==0:
+                self.inds_a=[i for i, runint in enumerate(fomd['runint']) if runint in self.runints_A]
+                smps_a=list(fomd['sample_no'][self.inds_a])
+                self.inds_b=[i for i in self.inds_b if fomd['sample_no'][i] in smps_a]#only keep b inds that have a matching sample in a
+                self.inds_a=[self.inds_a[smps_a.index(smp)] for smp in fomd['sample_no'][self.inds_b]] #smps_a is expired after this
+            if len(self.inds_a)==0 or len(self.inds_b)==0:
                 print 'no foms calculated for ', fn
                 continue
             newfomd={}
@@ -648,9 +648,9 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             floatlist_or_False=self.checkforlistofnumbers(self.params['fom_keys_A'])
             ka_list=floatlist_or_False if floatlist_or_False else self.params['fom_keys_A'].split(',')
             for k, ka, kb, offset, relfcn in zip(self.fomnames, ka_list, self.params['fom_keys_B'].split(','), self.offsetlist, self.relfcns):
-                aval=ka if isinstance(ka, float) else fomd[ka.strip()][inds_a]
+                aval=ka if isinstance(ka, float) else fomd[ka.strip()][self.inds_a]
                 kb=kb.strip()
-                newfomd[k]=relfcn(aval, fomd[kb][inds_b], offset)
+                newfomd[k]=relfcn(aval, fomd[kb][self.inds_b], offset)
             
             if self.params['method']=='B_comp_dist_wrt_A':#only do this if method is not a list of methods, i.e. comp dist should only be doen as a standalone method
                 kdist='Comp_Dist'
@@ -660,7 +660,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
                 if num_els==3:
                     pylab.figure()
                     ellabels=[s.partition('.')[0] for s in self.params['fom_keys_A'].split(',')]
-                    acomps=numpy.array([fomd[ka][inds_a] for ka in self.params['fom_keys_A'].split(',')]).T
+                    acomps=numpy.array([fomd[ka][self.inds_a] for ka in self.params['fom_keys_A'].split(',')]).T
                     diffcomps=numpy.array([newfomd[k] for k in self.fomnames]).T
                     comps2=acomps+diffcomps#tacomps doesn't take into account offset but diff does
                     try:
@@ -685,7 +685,7 @@ class Analysis__Process_B_vs_A_ByRun(Analysis_Master_FOM_Process):#this is withi
             
             self.fomnames=keystocopy+self.fomnames
             for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+keystocopy:
-                newfomd[k]=fomd[k][inds_b]
+                newfomd[k]=fomd[k][self.inds_b]
                 
             allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames#+self.strkeys_fomdlist#str=valued keys don't go into fomnames
             self.fomdlist=[dict(zip(allkeys, tup))\

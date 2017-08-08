@@ -255,9 +255,17 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
             fileattrd['keys']=ks
     for k, a in zip(fileattrd['keys'], arr):
         if '.' in a[0] or 'NaN' in a:
-            d[k]=numpy.float32(a)
+            try:
+                d[k]=numpy.float32(a)
+            except:
+                if includestrvals:
+                    d[k]=a
         elif a[0].isdigit():
-            d[k]=numpy.int32(a)
+            try:
+                d[k]=numpy.int32(a)
+            except:
+                if includestrvals:
+                    d[k]=a
         elif includestrvals:
             d[k]=a#a string array that is onlcude included if "requested" via includestrvals
 
