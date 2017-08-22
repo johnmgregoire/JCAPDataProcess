@@ -44,21 +44,22 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
     h5f=h5py.File(h5path, mode='r')
     g=h5f[h5f.attrs['default_group']]
     gd=g['deposition']
-    gr=gd['selectROI']
-    gs=g['spec']
-    #gr['compositions']
-    q=g['xrd']['qcounts'].attrs['q']
-    q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
-    npts=len(q)
-    npts_subbcknd=len(q_subbcknd)
-    xrfcsvkeys=['sample_no,runint,plate_id']
-    xrfcsvkeys+=['%s.%s' %(tup[1], tup[0]) for tup in sorted(gs.attrs.items())]
-    roi_keys_to_copy=[tup[0] for tup in sorted(gs.attrs.items())]
-    xrfcsvkeys+=['%s.AtFrac' %el for el in gd.attrs['elements']]
-    xrfcsvfn=''.join([el for el in gd.attrs['elements']])+'.csv'
-    an_name='Analysis__SSRL_XRF_Comps'
-    headline=','.join(xrfcsvkeys)
-    multirun_ana_files[an_name]=[{'type':'fom_files', 'fn':xrfcsvfn, 'fval':'csv_fom_file;%s;1;%d' %(headline, len(gr['compositions'])), 'roi_keys_to_copy':roi_keys_to_copy, 'headline':headline}]
+    
+    if 'selectROI' in gd.keys():#make Analysis__SSRL_XRF_Comps ana block if possible but otherwise multirun_ana_files keeps its initialized value above
+        gr=gd['selectROI']
+        gs=g['spec']
+        q=g['xrd']['qcounts'].attrs['q']
+        q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
+        npts=len(q)
+        npts_subbcknd=len(q_subbcknd)
+        xrfcsvkeys=['sample_no,runint,plate_id']
+        xrfcsvkeys+=['%s.%s' %(tup[1], tup[0]) for tup in sorted(gs.attrs.items())]
+        roi_keys_to_copy=[tup[0] for tup in sorted(gs.attrs.items())]
+        xrfcsvkeys+=['%s.AtFrac' %el for el in gd.attrs['elements']]
+        xrfcsvfn=''.join([el for el in gd.attrs['elements']])+'.csv'
+        an_name='Analysis__SSRL_XRF_Comps'
+        headline=','.join(xrfcsvkeys)
+        multirun_ana_files[an_name]=[{'type':'fom_files', 'fn':xrfcsvfn, 'fval':'csv_fom_file;%s;1;%d' %(headline, len(gr['compositions'])), 'roi_keys_to_copy':roi_keys_to_copy, 'headline':headline}]
 
 
     xy_images=numpy.array(zip(gd['pmp_x'][:], gd['pmp_y'][:]))
