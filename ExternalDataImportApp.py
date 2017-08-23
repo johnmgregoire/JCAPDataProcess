@@ -255,7 +255,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         g=h5f[h5f.attrs['default_group']]
         gs=g['spec']
         gd=g['deposition']
-        gr=gd['selectROI']
+        if 'selectROI' in gd.keys():
+            gr=gd['selectROI']
         
 
         mainh5inds=[]

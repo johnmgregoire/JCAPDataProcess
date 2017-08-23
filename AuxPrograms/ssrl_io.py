@@ -44,14 +44,14 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
     h5f=h5py.File(h5path, mode='r')
     g=h5f[h5f.attrs['default_group']]
     gd=g['deposition']
+    q=g['xrd']['qcounts'].attrs['q']
+    q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
+    npts=len(q)
+    npts_subbcknd=len(q_subbcknd)
     
     if 'selectROI' in gd.keys():#make Analysis__SSRL_XRF_Comps ana block if possible but otherwise multirun_ana_files keeps its initialized value above
         gr=gd['selectROI']
         gs=g['spec']
-        q=g['xrd']['qcounts'].attrs['q']
-        q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
-        npts=len(q)
-        npts_subbcknd=len(q_subbcknd)
         xrfcsvkeys=['sample_no,runint,plate_id']
         xrfcsvkeys+=['%s.%s' %(tup[1], tup[0]) for tup in sorted(gs.attrs.items())]
         roi_keys_to_copy=[tup[0] for tup in sorted(gs.attrs.items())]
