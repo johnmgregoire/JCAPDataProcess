@@ -1815,12 +1815,15 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
     compstrlist=[]
     depstrlist=[]
     countstrlist=[]
-    if 'ellabels' in udi_dict.keys() and 'comps' in udi_dict.keys():
+    if 'ellabels' in udi_dict.keys():
         els=udi_dict['ellabels']
         elstr=','.join(els)
-        metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Composition=%s' %(elstr)]
-        for lab, carr in zip(els, udi_dict['comps'].T):
-            compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
+        if 'comps' in udi_dict.keys():
+            metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr), 'Composition=%s' %(elstr)]
+            for lab, carr in zip(els, udi_dict['comps'].T):
+                compstrlist+=[lab+'='+','.join(['%.4f' %v for v in carr])]
+        else:
+            metastrlist+=['M=%d' %(len(els)), 'Elements=%s' %(elstr)]
 
     if 'xy' in udi_dict.keys():
         metastrlist+=['Deposition=X,Y']
@@ -1838,9 +1841,6 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
                 ([('sample_no=', udi_dict['sample_no'], '%d')] if 'sample_no' in udi_dict.keys() else [])+\
                 ([('plate_id=', udi_dict['plate_id'], '%s')] if 'plate_id' in udi_dict.keys() else []):
             depstrlist+=[lab+','.join([fmt %v for v in arr])]
-
-
-
 
     if 'Motorpns' in udi_dict.keys() and 'mxy' in udi_dict.keys():
         metastrlist+=['Motorpns=%s' %(','.join(udi_dict['Motorpns']))]
@@ -1885,23 +1885,31 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
 def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_comps=None, anafolder_comps=None):
     #TODO open anadict and anadict_comps if they are paths
 
-    csvp=os.path.join(anafolder_comps, udi_dict['fom_file_comps'])
-    csvfiled=anadict_comps[udi_dict['anak_comps']]['files_multi_run']['fom_files'][udi_dict['fom_file_comps']]
-    compsfomd=readcsvdict(csvp, csvfiled, returnheaderdict=False)
-    compkeys=[k for k in csvfiled['keys'] if udi_dict['fomname_split_comps'] in k]
-    udi_dict['ellabels']=[k.partition(udi_dict['fomname_split_comps'])[0] for k in compkeys]
-
+    if 'fom_file_comps' in udi_dict.keys() and not anadict_comps is None:
+        compsbool=True
+        csvp=os.path.join(anafolder_comps, udi_dict['fom_file_comps'])
+        csvfiled=anadict_comps[udi_dict['anak_comps']]['files_multi_run']['fom_files'][udi_dict['fom_file_comps']]
+        compsfomd=readcsvdict(csvp, csvfiled, returnheaderdict=False)
+        compkeys=[k for k in csvfiled['keys'] if udi_dict['fomname_split_comps'] in k]
+        udi_dict['ellabels']=[k.partition(udi_dict['fomname_split_comps'])[0] for k in compkeys]
+        udi_dict['compkeys']=compkeys
+    elif 'plate_id' in udi_dict.keys() and not 'ellabels' in udi_dict.keys():#assume its a string value
+        udi_dict['ellabels']=getelements_plateidstr(str(udi_dict['plate_id']))
+        compsbool=False
+    else:
+        compsbool=False
     smp_fn_filed=sorted([(filed['sample_no'], fn, filed) for anarunk in [anarunk for anarunk in anadict[udi_dict['anak']].keys() if anarunk.startswith('files_')] \
               for fn, filed in anadict[udi_dict['anak']][anarunk][udi_dict['ana_file_type']].items() \
-                  if 'sample_no' in filed.keys() and filed['sample_no'] in compsfomd['sample_no'] and 'keys' in filed.keys() and udi_dict['q_key'] in filed['keys'] and udi_dict['intensity_key'] in filed['keys']])
+                  if 'sample_no' in filed.keys() and ((not compsbool) or filed['sample_no'] in compsfomd['sample_no']) and 'keys' in filed.keys() and udi_dict['q_key'] in filed['keys'] and udi_dict['intensity_key'] in filed['keys']])
     if len(smp_fn_filed)==0:
         return
 
     smps=[smp for smp, fn, filed in smp_fn_filed]
     udi_dict['sample_no']=numpy.array(smps)
-    compsmplist=list(compsfomd['sample_no'])
-    inds_compsfomd=[compsmplist.index(smp) for smp in smps]
-    udi_dict['comps']=numpy.array([compsfomd[k][inds_compsfomd] for k in compkeys]).T
+    if compsbool:
+        compsmplist=list(compsfomd['sample_no'])
+        inds_compsfomd=[compsmplist.index(smp) for smp in smps]
+        udi_dict['comps']=numpy.array([compsfomd[k][inds_compsfomd] for k in compkeys]).T
 
     udi_dict['Iarr']=[]
     for smp, fn, filed in smp_fn_filed:
@@ -1922,7 +1930,9 @@ def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_com
     pmsmps=[d['sample_no'] for d in pmdlist]
     udi_dict['xy']=numpy.array([[pmdlist[pmsmps.index(smp)]['x'], pmdlist[pmsmps.index(smp)]['y']] for smp in smps])
 
+
     writeudifile(udipath, udi_dict)
+
 
 def readudi(fl,fltyp='src'):
     def getval(valstr,dtype=numpy.float32,sep=','):

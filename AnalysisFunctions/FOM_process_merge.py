@@ -2,7 +2,7 @@ import numpy, copy,sys,os
 if __name__ == "__main__":
     sys.path.append(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0])
     sys.path.append(os.path.join(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0], 'AuxPrograms'))
-
+from scipy import interpolate
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import mygetopenfile
@@ -43,6 +43,9 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         return self.filedlist
     
     def processnewparams(self, calcFOMDialogclass=None, recalc_filedlist=True):
+        self.processnewparams_merge(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=recalc_filedlist)
+        
+    def processnewparams_merge(self, calcFOMDialogclass=None, recalc_filedlist=True, additionl_required_params_aux=[]):
         self.fomnames=[]
         if recalc_filedlist:#the parmas can change what fom files are in filedlist whcih determines which fom names must not be duplicated so need to reevaluate this every time params change
             self.getapplicablefomfiles(calcFOMDialogclass.anadict)
@@ -117,9 +120,10 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             reqdkeysset=set(reqdkeysset+['sample_no'])
         else:
             reqdkeysset=FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING
+        reqdkeysset=reqdkeysset.union(additionl_required_params_aux)
         keystestfcn=lambda filed: len(set(filed['keys']).intersection(reqdkeysset))==len(reqdkeysset)
         
-        existkeys=[k for filed in self.filedlist for k in filed['process_keys']]#don't allow aux key overlap with existing keys in any of the fom csvs in play
+        existkeys=[k for filed in self.filedlist for k in filed['process_keys'] if not k in additionl_required_params_aux]#don't allow aux key overlap with existing keys in any of the fom csvs in play
         
         self.auxfiledlist=[]
         for anak in anak_list:
@@ -475,3 +479,144 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
 
 
 
+
+
+class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_comp':0}
+        #remove_samples_not_in_aux not used and is effectively =0 here, select_aux_keys is the keys which will be interpolated and must not be in the destination ana and must not include interp_keys, interp_keys can be a keyword for using platemap or a list of 1 (for interp1d) or 2 (2d) keys that are present in both ana being merged.
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__FOM_Interp_Merge_Ana'
+        self.requiredkeys=[]
+        self.optionalkeys=[]
+        self.requiredparams=[]
+        self.fomnames=[]
+        self.plotparams=dict({}, plot__1={})#copied in the default getapplicablefomfiles
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})#get for each csv during .perform()
+        self.auxfiledlist=[]
+        self.auxpath=''
+        
+        
+    
+    def processnewparams(self, calcFOMDialogclass=None, recalc_filedlist=True):
+        interp_keys=self.params['interp_keys']
+        if interp_keys=='platemap_xy':
+            self.interp_type='xy'
+        else:
+            self.interp_type=[s.strip() for s in interp_keys.split(',')]
+        
+        self.processnewparams_merge(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=recalc_filedlist, additionl_required_params_aux=self.interp_type if isinstance(self.interp_type, list) else [])
+        
+        
+        for filed in self.filedlist:
+            filed['process_keys']=[k for k in filed['process_keys'] if not k in self.params['select_aux_keys'].split(',')] # these keys will be interpolated. process_keys are those coming along for the ride
+            if isinstance(self.interp_type, list):#if interp keys are used they better be in all destination filed. note this check is for process_keys assumintg things like sample_no and runint will not be used for interpolation
+                for k in self.interp_type:
+                    if not k in filed['process_keys']:
+                        self.params=copy.copy(self.dfltparams)
+                        self.filedlist=[]
+                        return
+        #if self.interp_type is a list then at this point its keys are in all filed prcess_keys and auxfiled['process_keys']. Merge doesn't allow these overlaps but required here
+        if self.interp_type=='xy' or (isinstance(self.interp_type, list) and len(self.interp_type)==2) and self.params['fill_value']=='extrapolate':
+            #self.interpkwargs={'fill_value':None}
+            self.interpkwargs={'fill_value':numpy.nan}
+            self.interpkwargs['method']=self.params['kind']
+        elif 'nan' in self.params['fill_value'] or 'NaN' in self.params['fill_value']:
+            self.interpkwargs={'fill_value':numpy.nan}
+            self.interpkwargs['kind']=self.params['kind']
+        elif ',' in self.params['fill_value']:
+            a, b, c=self.params['fill_value'].partition(',')
+            a=float(a.strip())
+            c=float(c.strip())
+            self.interpkwargs={'fill_value':(a, c)}
+            self.interpkwargs['kind']=self.params['kind']
+        else:
+            self.interpkwargs={'fill_value':self.params['fill_value']}
+            self.interpkwargs['kind']=self.params['kind']
+        
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
+        self.initfiledicts()
+        
+       
+        for filed in self.filedlist:
+            
+
+            fn=filed['fn']
+            try:
+            #if 1:
+                fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
+                
+                process_keys=filed['process_keys']
+                #along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
+                auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
+                
+                newfomd={}
+                for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
+                    newfomd[k]=fomd[k]
+                
+                keys_to_interp=self.params['select_aux_keys'].split(',')
+                self.fomnames=process_keys+keys_to_interp
+
+                if self.interp_type=='xy':
+                    fcn=interpolate.interp2d
+                    num_interpdim=2
+                    for runint in list(set(fomd['runint'])):#use the first platemaqp you find and aux better be same platemap
+                        rund=calcFOMDialogclass.expfiledict['run__%d' %runint]
+                        if 'platemapdlist' in rund.keys():
+                            dl=rund['platemapdlist']
+                            smps=[d['Sample'] for d in dl]
+                            xl=[d['x'] for d in dl]
+                            yl=[d['y'] for d in dl]
+                            break
+                    allkeys=['x', 'y']+keys_to_interp
+                    src_x_then_y=[[] for i in range(len(allkeys))]
+                    for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
+                        xaux=[xl[smps.index(smp)] for smp in auxfomd['sample_no']]
+                        yaux=[yl[smps.index(smp)] for smp in auxfomd['sample_no']]
+                        toappend=[tup for tup in zip(xaux, yaux, *[auxfomd[k] for k in allkeys[2:]]) if (not nump.nan in tup) and not True in [newval in l for newval, l in zip(tup, src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
+                        for i in range(len(allkeys)):
+                            src_x_then_y[i]+=[tup[i] for tup in toappend]
+                    dest_x=[xl[smps.index(smp)] for smp in fomd['sample_no'], yl[smps.index(smp)] for smp in fomd['sample_no']]
+                else:
+                    if len(self.interp_type)==2:
+                        #fcn=interpolate.interp2d
+                        fcn=interpolate.griddata
+                        num_interpdim=2
+                    else:
+                        fcn=interpolate.interp1d
+                        num_interpdim=1
+                    allkeys=self.interp_type+keys_to_interp
+                    src_x_then_y=[[] for i in range(len(allkeys))]
+                    for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
+                        toappend=[tup for tup in zip(*[auxfomd[k] for k in allkeys]) if (not nump.nan in tup) and not True in [newval in l for newval, l in zip(tup, src_x_then_y[:num_interpdim])]]#num pts by num data arrays
+                        for i in range(len(allkeys)):
+                            src_x_then_y[i]+=[tup[i] for tup in toappend]
+                    
+                    dest_x=[fomd[k] for k in self.interp_typ]
+                if num_interpdim==1:
+                    interpfcns=[fcn(*(src_x_then_y[:num_interpdim]+[src_x_then_y[i]]), **self.interpkwargs) for i in range(num_interpdim, len(allkeys))]
+                else:
+                    interpfcns=[lambda *destx: fcn(numpy.float64(src_x_then_y[:num_interpdim]).T, src_x_then_y[i], **self.interpkwargs) for i in range(num_interpdim, len(allkeys))]
+                for k, intfcn in zip(keys_to_interp, interpfcns):
+                    newfomd[k]=intfcn(*dest_x)
+                if self.params['interp_is_comp']:
+                    for k in interpfcns:
+                        newfomd[k][newfomd[k]<0]=0.
+                    normarr=numpy.float64([newfomd[k] for k in interpfcns]).sum(axis=0)
+                    for k in interpfcns:
+                        newfomd[k]/=normarr
+
+                allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
+                self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
+
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                print 'skipped filter/smooth of file ', fn
+                self.fomdlist=[]
+                continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here

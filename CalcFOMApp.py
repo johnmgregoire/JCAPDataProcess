@@ -37,7 +37,7 @@ from quatcomp_plot_options import quatcompplotoptions
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
 
-
+from Analysis_Master import calcfom_analyzedata_calcfomdialogclass, gethighestanak
 from CA_CP_basics import *
 from CV_photo import *
 from OpenFromInfoApp import openfrominfoDialog
@@ -56,6 +56,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
             Analysis__FOM_Merge_Aux_Ana(), \
             Analysis__FOM_Merge_PlatemapComps(), \
+            Analysis__FOM_Interp_Merge_Ana(), \
             Analysis__Filter_Linear_Projection(), \
             Analysis__Process_B_vs_A_ByRun(), \
             Analysis__FilterSmoothFromFile()]#Analysis__FilterSmoothFromFile must always be last because it is referred to with index -1 in the code
@@ -585,122 +586,13 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
         self.getactiveanalysisclass()#this is only to update the description if necessary
         
-    def gethighestanak(self, getnextone=False):
-        kfcn=lambda i:'ana__%d' %i
-        i=1
-        while kfcn(i) in self.anadict.keys():
-            i+=1
-        if getnextone:
-            anak=kfcn(i)
-        else:
-            anak=kfcn(i-1)
-            if not anak in self.anadict.keys():
-                return None
-        return anak
+    
     def analyzedata(self):
-        if self.analysisclass is None:
-            return
-        
-        checkbool, checkmsg=self.analysisclass.check_input()
-        if not checkbool:
-            if self.guimode:
-                idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
-                if not idialog.exec_():
-                    return
-            else:
-                return checkmsg
-        #rawd=readbinaryarrasdict(keys)
-        #expdatfolder=os.path.join(self.expfolder, 'raw_binary')
-        expdatfolder=self.expfolder
-        
-        anak=self.gethighestanak(getnextone=True)
-        #try:
-        if 1:
-            self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, expfiledict=self.expfiledict, anauserfomd=self.userfomd)
-#        except:
-#            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
-#            if not idialog.exec_():
-#                removefiles(self.tempanafolder, [k for rund in \
-#                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
-#                return
-        runk_typek_b=self.analysisclass.prepareanafilestuples__runk_typek_multirunbool()
-        killana=False
-        if len(runk_typek_b)==0:
-            killana=True
-            checkmsg='no analysis output'
-        else:
-            checkbool, checkmsg=self.analysisclass.check_output()
-            if not checkbool:
-                if self.guimode:
-                    idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
-                    if not idialog.exec_():
-                        killana=True
-                else:
-                    killana=True
-                if killana:
-                    removefiles(self.tempanafolder, [k for d in \
-                            ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.values()) for typed in d.values() for k in typed.keys()])
-                
-        if killana:
-            return checkmsg#anadict not been modified yet
-        
+        errbool=calcfom_analyzedata_calcfomdialogclass(self)
+        if errbool:
+            return errbool
         self.updateuserfomd(clear=True)
-        self.anadict[anak]={}
         
-        self.activeana=self.anadict[anak]
-        if not checkbool:
-            self.activeana['check_output_message']=checkmsg
-        for runk, typek, b in runk_typek_b:
-            frunk='files_'+runk
-            if not frunk in self.activeana.keys():
-                self.activeana[frunk]={}
-            if b:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
-            else:
-                self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
-                
-        self.activeana['name']=self.analysisclass.analysis_name
-        self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
-        
-        self.activeana['plot_parameters']=self.analysisclass.plotparams
-        plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
-        self.activeana['plate_ids']=plateidsliststr
-        le, desc=self.paramsdict_le_dflt['description']
-        s=str(le.text()).strip()
-        if not (len(s)==0 or 'null' in s):
-            desc=s
-        desc+='; run '+','.join('%d' %i for i in sorted(list(set([d['runint'] for d in self.analysisclass.fomdlist]))))
-        desc+='; plate_id '+plateidsliststr
-        self.activeana['description']=desc
-        le.setText('')#clear description to clear any user-entered comment
-        if len(self.analysisclass.params)>0:
-            self.activeana['parameters']={}
-        for k, v in self.analysisclass.params.iteritems():
-            if isinstance(v, dict):
-                self.activeana['parameters'][k]={}
-                for k2, v2 in v.iteritems():
-                    self.activeana['parameters'][k][v2]=str(v2)
-            else:
-                self.activeana['parameters'][k]=str(v)
-        
-        #the A,B,C,D order is editable as a analysisclass paramete and if it is not the nontrivial case, bump it up to an ana__ key for ease in finding in visualization
-        if 'parameters' in self.activeana.keys() and 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
-            self.activeana['platemap_comp4plot_keylist']=self.activeana['parameters']['platemap_comp4plot_keylist']
-
-        gentype=self.analysisclass.getgeneraltype()
-        if 'process_fom' in gentype:
-            if 'from_file' in gentype:
-                self.activeana['process_fom_from_file_paths']=','.join(sorted(list(set([compareprependpath(FOMPROCESSFOLDERS, p) for p in self.analysisclass.filter_path__runint.values()]))))
-        else:
-            self.activeana['technique']=self.techk
-        self.activeana['analysis_general_type']=gentype
-
-
-        self.fomdlist=self.analysisclass.fomdlist
-        self.filedlist=self.analysisclass.filedlist
-        self.fomnames=self.analysisclass.fomnames
-        self.csvheaderdict=self.analysisclass.csvheaderdict
-        self.primarycsvpath=self.analysisclass.primarycsvpath
         self.fomplotchoiceComboBox.clear()
         for count, s in enumerate(self.fomnames):
             self.fomplotchoiceComboBox.insertItem(count, s)
@@ -723,11 +615,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plot_preparestandardplot(plotbool=False)
         if self.autoplotCheckBox.isChecked():
             self.plot_generatedata(plotbool=True)
-        return False#false means no error
-
+        return False
     def attachfilestoana(self, anak=None, pathlist=None):
         if anak is None:
-            ans=userinputcaller(self, inputs=[('ana key', str, self.gethighestanak(getnextone=False))], title='Enter ana__# to attach files',  cancelallowed=True)
+            ans=userinputcaller(self, inputs=[('ana key', str, gethighestanak(self.anadict, getnextone=False))], title='Enter ana__# to attach files',  cancelallowed=True)
             if ans is None or not ans[0].strip() in self.anadict.keys():
                 return
             anak=ans[0].strip()
@@ -1299,9 +1190,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         selprocesslabel=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
         self.getactiveanalysisclass()
-        anak=self.gethighestanak(getnextone=True)
+        anak=gethighestanak(self.anadict, getnextone=True)
         self.analyzedata()
-        if anak!=self.gethighestanak(getnextone=False):
+        if anak!=gethighestanak(self.anadict, getnextone=False):
             print 'quitting batch process because analysis function did not successfully run'
             return 
 
@@ -1332,9 +1223,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             return
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
         self.getactiveanalysisclass()
-        anak=self.gethighestanak(getnextone=True)
+        anak=gethighestanak(self.anadict, getnextone=True)
         self.analyzedata()
-        if anak!=self.gethighestanak(getnextone=False):
+        if anak!=gethighestanak(self.anadict, getnextone=False):
             print 'quitting batch process because analysis function did not successfully run'
             return 
 
@@ -1352,9 +1243,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.getactiveanalysisclass()
             self.analysisclass.params['select_ana']=anak
             self.processeditedparams()#self.getactiveanalysisclass() run in here
-            anak_processed=self.gethighestanak(getnextone=True)
+            anak_processed=gethighestanak(self.anadict, getnextone=True)
             self.analyzedata()
-            if anak_processed!=self.gethighestanak(getnextone=False):
+            if anak_processed!=gethighestanak(self.anadict, getnextone=False):
                 print 'quitting batch process because processing function did not successfully run'
                 return 
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
@@ -1363,7 +1254,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         
     def batch_process_allsubspace(self):
-        anak=self.gethighestanak(getnextone=False)
+        anak=gethighestanak(self.anadict, getnextone=False)
         selprocesslabel_original=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
         selprocess_root=selprocesslabel_original.partition('__')[0]
         if len(selprocess_root)==0:
@@ -1383,9 +1274,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.getactiveanalysisclass()
             self.analysisclass.params['select_ana']=anak
             self.processeditedparams()#self.getactiveanalysisclass() run in here
-            anak_processed=self.gethighestanak(getnextone=True)
+            anak_processed=gethighestanak(self.anadict, getnextone=True)
             self.analyzedata()
-            if anak_processed!=self.gethighestanak(getnextone=False):
+            if anak_processed!=gethighestanak(self.anadict, getnextone=False):
                 print 'quitting batch process because processing function did not successfully run'
                 return 
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
@@ -1458,7 +1349,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 measurement_area=areas[0]
         macm2divisor=1.e-5*measurement_area
 
-        self.analysisclass.params['select_ana']=self.gethighestanak()
+        self.analysisclass.params['select_ana']=gethighestanak(self.anadict)
         self.analysisclass.params['runints_A']=runintliststr
         self.analysisclass.params['runints_B']=runintliststr
         self.analysisclass.params['keys_to_keep']='Voc.V,Vpmax.V,Fill_factor'

@@ -210,16 +210,22 @@ class Analysis_Master_nointer():
         
         if fn is None:
             fn='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
-        self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys+self.fomnames, intfomkeys=['runint','plate_id'], strfomkeys=strkeys+strkeys_fomdlist)#, fn=fnf)
+        self.multirunfiledict['fom_files'][fn]=\
+          self.writefom_bare(destfolder, fn, strkeys=strkeys+strkeys_fomdlist, floatkeys=floatkeys+self.fomnames, intfomkeys=['runint','plate_id'])
+        
+    def writefom_bare(self, destfolder, fn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id']):
+        if floatkeys is None:
+            floatkeys=self.fomnames
+        self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys, intfomkeys=intfomkeys, strfomkeys=strkeys)#, fn=fnf)self.fomnames
         if destfolder is None:
             return
         
-        allfomnames=['sample_no', 'runint', 'plate_id']+strkeys+strkeys_fomdlist+floatkeys+self.fomnames#this is the order in createcsvfilstr and doesn't allow int userfoms
+        allfomnames=['sample_no']+intfomkeys+strkeys+floatkeys#this is the order in createcsvfilstr and doesn't allow int userfoms
         
         p=os.path.join(destfolder,fn)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p
-        self.multirunfiledict['fom_files'][fn]='%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
+        return '%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
@@ -257,3 +263,136 @@ class Analysis_Master_inter(Analysis_Master_nointer):
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
             zc.close()
+
+def gethighestanak(anadict, getnextone=False):
+    kfcn=lambda i:'ana__%d' %i
+    i=1
+    while kfcn(i) in anadict.keys():
+        i+=1
+    if getnextone:
+        anak=kfcn(i)
+    else:
+        anak=kfcn(i-1)
+        if not anak in anadict.keys():
+            return None
+    return anak
+
+class calcfom_mock_class():
+    def __init__(self, savefolder):
+        self.expfolder=None
+        self.anadict={}
+        self.anadict['ana_version']='3'
+        self.tempanafolder=savefolder
+        self.userfomd={}
+        self.expfiledict=[]
+        self.expzipclass=False
+        self.guimode=False
+        self.paramsdict_le_dflt={}
+        self.paramsdict_le_dflt['description']='custom analysis'
+
+    
+def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argument is called self sothsi function appears the same as it would as part of the calcfomdialogclass
+    #minimal requirements of self: expfolder,anadict,tempanafolder,userfomd,expfiledict,expzipclass,guimode,paramsdict_le_dflt['description']
+    if self.analysisclass is None:
+        return
+    if checkinputbool:
+        checkbool, checkmsg=self.analysisclass.check_input()
+        if not checkbool:
+            if self.guimode:
+                idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
+                if not idialog.exec_():
+                    return
+            else:
+                return checkmsg
+
+    expdatfolder=self.expfolder
+    
+    anak=gethighestanak(self.anadict, getnextone=True)
+    #try:
+    if 1:
+        self.analysisclass.perform(self.tempanafolder, expdatfolder=expdatfolder, anak=anak, zipclass=self.expzipclass, expfiledict=self.expfiledict, anauserfomd=self.userfomd)
+#        except:
+#            idialog=messageDialog(self, 'Analysis Crashed. Nothing saved')
+#            if not idialog.exec_():
+#                removefiles(self.tempanafolder, [k for rund in \
+#                   ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.items()) for typed in rund.items() for k in typed.keys()])
+#                return
+    runk_typek_b=self.analysisclass.prepareanafilestuples__runk_typek_multirunbool()
+    killana=False
+    if len(runk_typek_b)==0:
+        killana=True
+        checkmsg='no analysis output'
+    else:
+        checkbool, checkmsg=self.analysisclass.check_output()
+        if not checkbool:
+            if self.guimode:
+                idialog=messageDialog(self, 'Keep analysis? '+checkmsg)
+                if not idialog.exec_():
+                    killana=True
+            else:
+                killana=True
+            if killana:
+                removefiles(self.tempanafolder, [k for d in \
+                        ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.values()) for typed in d.values() for k in typed.keys()])
+            
+    if killana:
+        return checkmsg#anadict not been modified yet
+    
+    self.anadict[anak]={}
+    
+    self.activeana=self.anadict[anak]
+    if not checkbool:
+        self.activeana['check_output_message']=checkmsg
+    for runk, typek, b in runk_typek_b:
+        frunk='files_'+runk
+        if not frunk in self.activeana.keys():
+            self.activeana[frunk]={}
+        if b:
+            self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
+        else:
+            self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
+            
+    self.activeana['name']=self.analysisclass.analysis_name
+    self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
+    
+    self.activeana['plot_parameters']=self.analysisclass.plotparams
+    plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
+    self.activeana['plate_ids']=plateidsliststr
+    le, desc=self.paramsdict_le_dflt['description']
+    s=str(le.text()).strip()
+    if not (len(s)==0 or 'null' in s):
+        desc=s
+    desc+='; run '+','.join('%d' %i for i in sorted(list(set([d['runint'] for d in self.analysisclass.fomdlist]))))
+    desc+='; plate_id '+plateidsliststr
+    self.activeana['description']=desc
+    le.setText('')#clear description to clear any user-entered comment
+    if len(self.analysisclass.params)>0:
+        self.activeana['parameters']={}
+    for k, v in self.analysisclass.params.iteritems():
+        if isinstance(v, dict):
+            self.activeana['parameters'][k]={}
+            for k2, v2 in v.iteritems():
+                self.activeana['parameters'][k][v2]=str(v2)
+        else:
+            self.activeana['parameters'][k]=str(v)
+    
+    #the A,B,C,D order is editable as a analysisclass paramete and if it is not the nontrivial case, bump it up to an ana__ key for ease in finding in visualization
+    if 'parameters' in self.activeana.keys() and 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
+        self.activeana['platemap_comp4plot_keylist']=self.activeana['parameters']['platemap_comp4plot_keylist']
+
+    gentype=self.analysisclass.getgeneraltype()
+    if 'process_fom' in gentype:
+        if 'from_file' in gentype:
+            self.activeana['process_fom_from_file_paths']=','.join(sorted(list(set([compareprependpath(FOMPROCESSFOLDERS, p) for p in self.analysisclass.filter_path__runint.values()]))))
+    else:
+        self.activeana['technique']=self.techk
+    self.activeana['analysis_general_type']=gentype
+
+
+    self.fomdlist=self.analysisclass.fomdlist
+    self.filedlist=self.analysisclass.filedlist
+    self.fomnames=self.analysisclass.fomnames
+    self.csvheaderdict=self.analysisclass.csvheaderdict
+    self.primarycsvpath=self.analysisclass.primarycsvpath
+
+    return False#false means no error

@@ -18,18 +18,19 @@ projectpath=os.path.split(os.path.abspath(__file__))[0]
 sys.path.append(os.path.join(projectpath,'QtForms'))
 sys.path.append(os.path.join(projectpath,'AuxPrograms'))
 sys.path.append(os.path.join(projectpath,'OtherApps'))
+sys.path.append(os.path.join(projectpath,'AnalysisFunctions'))
 
 from xrd_io import *
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 from fcns_compplots import plotwidget
+from Analysis_Master import Analysis_Master_nointer
 from ExternalImportForm import Ui_ExternalImportDialog
 
 matplotlib.rcParams['backend.qt4'] = 'PyQt4'
 
-
-
+analysismasterclass=Analysis_Master_nointer()
 
 class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def __init__(self, parent=None, title='', folderpath=None):
@@ -152,16 +153,24 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         newfn='%s_%s.udi' %(anak, self.plate_idstr)
         ana__d=ana__d[anarunk]
         afd_udi={}
+        afd_fomudi={}
         #afd_udi['folderpath']=fold
         afd_udi['anak']=anak
+        afd_fomudi['anak']=anak
         afd_udi['type']='misc_files'
+        afd_fomudi['type']='fom_files'
         #afd_udi['fn']=fn
         afd_udi['fval']='ssrl_udi_file'
+        afd_fomudi['fval']='csv_fom_file'
         afd_udi['anafn']=newfn
+        afd_fomudi['anafn']=newfn[:-3]+'csv'
         afd_udi['copy_fcn']=self.copy_createudi
-        if not afd_udi['type'] in ana__d.keys():
-            ana__d[afd_udi['type']]={}
-        ana__d[afd_udi['type']][afd_udi['anafn']]=afd_udi['fval']
+        afd_fomudi['copy_fcn']=self.copy_createfomudi
+        for afd in [afd_udi, afd_fomudi]:
+            if not afd['type'] in ana__d.keys():
+                ana__d[afd['type']]={}
+            ana__d[afd['type']][afd['anafn']]=afd['fval']
+
         
         xrdanak_anname_options=[(k, self.anadict[k]['name']) for k in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__') if True in ['pattern_files' in d.keys() for k2, d in self.anadict[k].iteritems() if isinstance(d, dict)]]
         xrdanaoptions=['-'.join(tup) for tup in xrdanak_anname_options]
@@ -194,8 +203,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         anaoptions=['-'.join(tup) for tup in anak_anname_options]
         if len(anaoptions)==0:
             print 'no comp data found'
-            return
-        if not opttionsearchstr_comps is None:
+            #return
+            compbool=False
+        elif not opttionsearchstr_comps is None:
             selectind=0
             for s in anaoptions:
                 if opttionsearchstr_comps in s:
@@ -203,12 +213,14 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 selectind+=1
             if selectind==len(anaoptions):
                 print 'udi comp search option not found'
-                return
+                compbool=False
+            else:
+                compbool=True
         else:
             #anaoptions+=['platemap']
             selectind=userselectcaller(self, options=anaoptions, title='Select composition source for udi',  cancelallowed=True)
             if selectind is None:
-                return
+                compbool=False
 #            if selectind==len(anaoptions)-1:
 #                #platemp
 #                selectind=None
@@ -220,34 +232,63 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 #                auxanadict=readana(p, stringvalues=True, erroruifcn=None)
 #                auxanadict=[for k in sort_dict_keys_by_counter(auxanadict, keystartswith='ana__') if 'files_multi_run' in auxanadict[k].keys() and 'fom_files' in auxanadict[k]['files_multi_run'].keys()]
 #                fomd, csvheaderdict=readcsvdict(p, filed, returnheaderdict=True, zipclass=anazipclass)
-                
-        anak_comps, csvfn_comps=anak_anname_options[selectind]
-        udi_dict['anak_comps']=anak_comps
-        udi_dict['fom_file_comps']=csvfn_comps
-        udi_dict['fomname_split_comps']='.AtFrac'
+        if compbool:
+            anak_comps, csvfn_comps=anak_anname_options[selectind]
+            udi_dict['anak_comps']=anak_comps
+            udi_dict['fom_file_comps']=csvfn_comps
+            udi_dict['fomname_split_comps']='.AtFrac'
+        else:
+            udi_dict['anak_comps']='none'
         afd_udi['udi_dict']=udi_dict
+        afd_fomudi['udi_dict']=udi_dict
         
         self.anadict[anak]['parameters']={}
         for k, v in udi_dict.iteritems():
             self.anadict[anak]['parameters'][k]=v
         afd_udi['sample_no__ana_filedict_inds']=sorted([(afd['sample_no'], count, ) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and afd['type']=='pattern_files'])
         #need to get compositions and xy data and only keep sample_no with this info
-        self.ana_filedict_tocopy+=[afd_udi]
+        
+        self.ana_filedict_tocopy+=[afd_udi, afd_fomudi]
         self.AnaTreeWidgetFcns.filltree(self.anadict, startkey='ana_version', laststartswith='ana__')
     
     def copy_createudi(self, afd, anafolder):
         ananame=os.path.split(anafolder)[1].rpartition('.')[0]
         udi_dict=afd['udi_dict']
         udi_dict['ana_name']=ananame
-        udi_dict['ana_name_comps']=ananame
+        if not udi_dict['anak_comps']=='none':
+            udi_dict['ana_name_comps']=ananame
         udi_dict['plate_id']=self.plate_idstr
         for k, v in udi_dict.iteritems():
             self.anadict[afd['anak']]['parameters'][k]=v
         anadict_with_filed=copy.deepcopy(self.anadict)
         convertfilekeystofiled(anadict_with_filed)
         create_udi_anas(os.path.join(anafolder, afd['anafn']), udi_dict, anadict=anadict_with_filed,anadict_comps=anadict_with_filed, anafolder=anafolder, anafolder_comps=anafolder)
-    
-    
+        #udi_dict updated by reference in the file save and now save an fom summary of whats in the udi file with samples in the order they appear in the udi
+
+    def copy_createfomudi(self, afd, anafolder):
+        udi_dict=afd['udi_dict']
+        analysismasterclass.fomdlist=[]
+        analysismasterclass.fomnames=['pmx', 'pmy', 'Intensity.max']
+        for i in range(len(udi_dict['Iarr'])):
+            d={}
+            d['sample_no']=udi_dict['sample_no'][i]
+            d['Intensity.max']=max(udi_dict['Iarr'][i])
+            d['pmx']=udi_dict['xy'][i][0]
+            d['pmy']=udi_dict['xy'][i][1]
+            d['runint']=1
+            d['plate_id']=int(self.plate_idstr)
+            if 'comps' in udi_dict.keys():
+                for k, v in zip(udi_dict['compkeys'], udi_dict['comps'][i]):
+                    d[k]=v
+                    if i==0:
+                        analysismasterclass.fomname+=[k]
+            analysismasterclass.fomdlist+=[d]
+        os.path.join(anafolder, afd['anafn'])
+        analysismasterclass.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        analysismasterclass.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='Intensity.max', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+        filedesc=analysismasterclass.writefom_bare(anafolder, afd['anafn'], strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id'])
+        self.anadict[afd['anak']]['files_multi_run'][afd['type']][afd['anafn']]=filedesc
+        
     def copy_all_to_ana__ssrl(self, anatempfolder):
 
         finished_inds_ana_filedict_tocopy=[]
@@ -287,38 +328,36 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         
         templ=[(afd, count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'roi_keys_to_copy' in afd.keys()]
         
-        if len(mainh5inds)==0 or len(templ)!=1:
-            h5f.close()
-            return
-        afd, ind=templ[0]
-        finished_inds_ana_filedict_tocopy+=[ind]
-        fom_columns=[mainsmps]
-        fom_columns+=[[1]*len(mainsmps)]#runint
-        fom_columns+=[[self.plate_idstr]*len(mainsmps)]
-        fmtlist=['%d', '%d', '%s']
-        fmtlist+=['%.4e']*len(afd['roi_keys_to_copy'])
-        for sk in afd['roi_keys_to_copy']:
-            fom_columns+=[gs[sk][:][mainh5inds]]
-        comps=gr['compositions'][:, :][mainh5inds]
-        fmtlist+=['%.3f']*comps.shape[1]
-        for arr in comps.T:
-            fom_columns+=[arr]
-        
-        self.anadict[afd['anak']]['files_multi_run'][afd['type']][afd['anafn']]=';'.join([afd['fval'].rpartition(';')[0], '%d' %len(mainsmps)])
-        lines=[afd['headline']]
-        fmstr=','.join(fmtlist)
-        lines+=[fmstr %tup for tup in zip(*fom_columns)]
-        s='\n'.join(lines)
-        with open(os.path.join(anatempfolder, afd['anafn']), mode='w') as f:
-            f.write(s)
-        
-        for anak in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__'):
-            if self.anadict[anak]['name']=='Analysis__SSRL_Integrate':
-                self.anadict[anak]['parameters']={}
-                for k, v in g['xrd'].attrs.items():
-                    self.anadict[anak]['parameters'][k]=str(v)
-            elif self.anadict[anak]['name']=='Analysis__SSRL_Process':
-                self.anadict[anak]['parameters']={'method':'legacy spline-based baseline detection'}
+        if not(len(mainh5inds)==0 or len(templ)!=1):
+            afd, ind=templ[0]
+            finished_inds_ana_filedict_tocopy+=[ind]
+            fom_columns=[mainsmps]
+            fom_columns+=[[1]*len(mainsmps)]#runint
+            fom_columns+=[[self.plate_idstr]*len(mainsmps)]
+            fmtlist=['%d', '%d', '%s']
+            fmtlist+=['%.4e']*len(afd['roi_keys_to_copy'])
+            for sk in afd['roi_keys_to_copy']:
+                fom_columns+=[gs[sk][:][mainh5inds]]
+            comps=gr['compositions'][:, :][mainh5inds]
+            fmtlist+=['%.3f']*comps.shape[1]
+            for arr in comps.T:
+                fom_columns+=[arr]
+            
+            self.anadict[afd['anak']]['files_multi_run'][afd['type']][afd['anafn']]=';'.join([afd['fval'].rpartition(';')[0], '%d' %len(mainsmps)])
+            lines=[afd['headline']]
+            fmstr=','.join(fmtlist)
+            lines+=[fmstr %tup for tup in zip(*fom_columns)]
+            s='\n'.join(lines)
+            with open(os.path.join(anatempfolder, afd['anafn']), mode='w') as f:
+                f.write(s)
+            
+            for anak in sort_dict_keys_by_counter(self.anadict, keystartswith='ana__'):
+                if self.anadict[anak]['name']=='Analysis__SSRL_Integrate':
+                    self.anadict[anak]['parameters']={}
+                    for k, v in g['xrd'].attrs.items():
+                        self.anadict[anak]['parameters'][k]=str(v)
+                elif self.anadict[anak]['name']=='Analysis__SSRL_Process':
+                    self.anadict[anak]['parameters']={'method':'legacy spline-based baseline detection'}
         
         h5f.close()
         
@@ -392,7 +431,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.evalsmpstr_afd(afd, smpstr)
         return [afd]
         
-    def createfiledicts(self):
+    def createfiledicts(self, rundoneext='.done'):
         self.inds_rcpdlist=self.runtreeclass.getindsofchecktoplevelitems()
         self.ana_filedict_tocopy=[]
         self.all_rcp_dict={}
@@ -446,7 +485,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 rcpdict[k]=rcpd[k]
                 exprund[k]=rcpd[k]
             rcpdict['parameters']['plate_id']=self.plate_idstr
-            exprund['run_path']=r'/%s/%s/%s/%s' %(self.datatype, rcpdict['computer_name'].lower(), self.rcpmainfoldname, rcpdict['name']+'.done')
+            exprund['run_path']=r'/%s/%s/%s/%s' %(self.datatype, rcpdict['computer_name'].lower(), self.rcpmainfoldname, rcpdict['name']+rundoneext)
             
             for fd in rcpd['file_dlist']:
                 if not fd['tech'] in rcpdict.keys():
@@ -641,7 +680,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             d=d[kl.pop(0)]
         d[kl[0]]=ans
 
-    def importfolder(self, p=None, plate_idstr=None, **kwargs):
+    def importfolder(self, p=None, plate_idstr=None, fn_search_str_list_for_checkbool=None, **kwargs):
         self.cleardata()
         self.profiledefintionfcns[self.ProfileComboBox.currentIndex()]()#defines the functions
         
@@ -665,7 +704,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         if self.maindatad is None:
             return
         self.plateidLineEdit.setText(self.plate_idstr)
-
+        
+        find_fn_list=lambda filedlist: [True in [s in filed['fn'] for s in fn_search_str_list_for_checkbool] for filed in filedlist]
 
         for count, rcpd in enumerate(self.maindatad['rcpdlist']):
             mainitem=QTreeWidgetItem(['temprun__%d' %(count+1)], 0)
@@ -678,7 +718,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                         item.setExpanded(False)
                         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                         item.setCheckState(0, Qt.Checked)
-                        self.runtreeclass.fillmainitem_with_dlistvalues(item, auxfiledlist, k='fn', v='fval', checkbool=True)
+                        self.runtreeclass.fillmainitem_with_dlistvalues(item, auxfiledlist, k='fn', v='fval', checkbool=True if fn_search_str_list_for_checkbool is None else find_fn_list(auxfiledlist))
                         fd['treeitem'].addChild(item)
             self.RunSelectTreeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(True)
@@ -721,10 +761,10 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
 
 
-    def createfiles_runprofilefcn(self):
+    def createfiles_runprofilefcn(self, **kwargs):
         if self.createfiledictsfcn is None:
             return
-        self.createfiledictsfcn()
+        self.createfiledictsfcn(**kwargs)
 
 
     def xrds_create_rcp_exp_ana(self):
@@ -752,7 +792,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
 
 
-    def savefiles(self):
+    def savefiles(self, overwrite=False, rundoneext='.done'):
         if len(self.inds_rcpdlist)==0:
             return
         dropfolder=tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(self.datatype, 'drop'))
@@ -764,13 +804,16 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         
         if os.path.isdir(rcpmainfolder):
-            messageDialog(self, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-            return
+            if overwrite:
+                shutil.rmtree(rcpmainfolder)
+            else:
+                messageDialog(self, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
+                return
         os.mkdir(rcpmainfolder)
         
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
             rcpfiled=self.all_rcp_dict['rcp_file__%d' %(runcount+1)]
-            rcpname=rcpfiled['name']+'.done'
+            rcpname=rcpfiled['name']+rundoneext
             rcpfolder=os.path.join(rcpmainfolder, rcpname)
             if os.path.isdir(rcpfolder):
                 messageDialog(self, 'Aborting SAVE because at least 1 rcp drop folder exists').exec_()
@@ -778,7 +821,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
         for runcount, ind_rcp in enumerate(self.inds_rcpdlist):
             rcpfiled=self.all_rcp_dict['rcp_file__%d' %(runcount+1)]
-            rcpname=rcpfiled['name']+'.done'
+            rcpname=rcpfiled['name']+rundoneext
             rcpfolder=os.path.join(rcpmainfolder, rcpname)
             os.mkdir(rcpfolder)
 
@@ -786,7 +829,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             for fd in rcpd['file_dlist']:
                 shutil.copy(os.path.join(fd['folderpath'], fd['fn']), os.path.join(rcpfolder, fd['fn']))
 
-            rcppath=os.path.join(rcpfolder, rcpname.replace('.done', '.rcp'))
+            rcppath=os.path.join(rcpfolder, rcpname.replace(rundoneext, '.rcp'))
             filestr=self.RcpTreeWidgetFcns.createtxt(parentitem=rcpfiled['treeitem'])
             with open(rcppath, mode='w') as f:
                 f.write(filestr)
@@ -962,11 +1005,15 @@ class treeclass_filedict():
 
 
     def fillmainitem_with_dlistvalues(self, mainitem, dlist, k='k', v='v', updatedwithitems=True, checkbool=None):
-        for d in dlist:
+        for count, d in enumerate(dlist):
             item=QTreeWidgetItem([': '.join([str(d[k]), str(d[v])])], 0)
             if not checkbool is None:
+                if isinstance(checkbool, list):
+                    checkboolval=checkbool[count]
+                else:
+                    checkboolval=checkbool
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.Checked if checkbool else Qt.Unchecked)
+                item.setCheckState(0, Qt.Checked if checkboolval else Qt.Unchecked)
             mainitem.addChild(item)
             if updatedwithitems:
                 d['treeitem']=item
