@@ -301,7 +301,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         
 
         mainh5inds=[]
-        for k, headline in zip(['qcounts_subbcknd', 'qcounts'], ['q.nm,intensity.counts', 'q.nm_processed,intensity.counts_processed']):#do qcounts last so this is the default for mainh5inds below
+        for k, headline in zip(['qcounts_subbcknd', 'qcounts'], ['q.nm_processed,intensity.counts_processed', 'q.nm,intensity.counts']):#do qcounts last so this is the default for mainh5inds below
             q=g['xrd'][k].attrs['q']
         
             temptups=sorted([(afd['h5arrind'], afd['anafn'], afd['sample_no'], count) for count, afd in enumerate(self.ana_filedict_tocopy) if 'sample_no' in afd.keys() and 'h5dataset' in afd.keys() and afd['h5dataset']==k])
