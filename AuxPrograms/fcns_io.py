@@ -1977,7 +1977,7 @@ def readudi(fl,fltyp='src'):
     return datad
 
 
-def sort_dict_keys_by_counter(d, keystartswith='ana__'):
+def sort_dict_keys_by_counter(d, keystartswith='ana__'): # duplicate action as self.sorted_ana_exp_keys in different classes
     try:
         sorttups=sorted([(int(k[len(keystartswith):]), k) for k in d.keys() if k.startswith(keystartswith)])
         kl=map(operator.itemgetter(1), sorttups)

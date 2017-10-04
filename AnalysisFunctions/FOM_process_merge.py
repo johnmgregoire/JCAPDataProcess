@@ -537,7 +537,7 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
-        
+        self.strkeys_fomdlist=[]
        
         for filed in self.filedlist:
             
@@ -559,10 +559,10 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                 self.fomnames=process_keys+keys_to_interp
 
                 if self.interp_type=='xy':
-                    fcn=interpolate.interp2d
+                    fcn=interpolate.griddata#interpolate.interp2d
                     num_interpdim=2
                     for runint in list(set(fomd['runint'])):#use the first platemaqp you find and aux better be same platemap
-                        rund=calcFOMDialogclass.expfiledict['run__%d' %runint]
+                        rund=expfiledict['run__%d' %runint]
                         if 'platemapdlist' in rund.keys():
                             dl=rund['platemapdlist']
                             smps=[d['Sample'] for d in dl]
@@ -570,41 +570,46 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                             yl=[d['y'] for d in dl]
                             break
                     allkeys=['x', 'y']+keys_to_interp
-                    src_x_then_y=[[] for i in range(len(allkeys))]
+                    self.src_x_then_y=[[] for i in range(len(allkeys))]
                     for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
                         xaux=[xl[smps.index(smp)] for smp in auxfomd['sample_no']]
                         yaux=[yl[smps.index(smp)] for smp in auxfomd['sample_no']]
-                        toappend=[tup for tup in zip(xaux, yaux, *[auxfomd[k] for k in allkeys[2:]]) if (not nump.nan in tup) and not True in [newval in l for newval, l in zip(tup, src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
+                        toappend=[tup for tup in zip(xaux, yaux, *[auxfomd[k] for k in allkeys[2:]]) if (not numpy.nan in tup) and not True in [newval in l for newval, l in zip(tup, self.src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
                         for i in range(len(allkeys)):
-                            src_x_then_y[i]+=[tup[i] for tup in toappend]
-                    dest_x=[xl[smps.index(smp)] for smp in fomd['sample_no'], yl[smps.index(smp)] for smp in fomd['sample_no']]
+                            self.src_x_then_y[i]+=[tup[i] for tup in toappend]
+                    dest_x=numpy.float64([[xl[smps.index(smp)], yl[smps.index(smp)]] for smp in fomd['sample_no']])
                 else:
                     if len(self.interp_type)==2:
                         #fcn=interpolate.interp2d
                         fcn=interpolate.griddata
                         num_interpdim=2
+                        dest_x=numpy.float64([fomd[self.interp_type[0]], fomd[self.interp_type[1]]]).T
                     else:
                         fcn=interpolate.interp1d
                         num_interpdim=1
+                        dest_x=fomd[self.interp_type[0]]
                     allkeys=self.interp_type+keys_to_interp
-                    src_x_then_y=[[] for i in range(len(allkeys))]
+                    self.src_x_then_y=[[] for i in range(len(allkeys))]
                     for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
-                        toappend=[tup for tup in zip(*[auxfomd[k] for k in allkeys]) if (not nump.nan in tup) and not True in [newval in l for newval, l in zip(tup, src_x_then_y[:num_interpdim])]]#num pts by num data arrays
+                        toappend=[tup for tup in zip(*[auxfomd[k] for k in allkeys]) if (not numpy.nan in tup) and not True in [newval in l for newval, l in zip(tup, self.src_x_then_y[:num_interpdim])]]#num pts by num data arrays
                         for i in range(len(allkeys)):
-                            src_x_then_y[i]+=[tup[i] for tup in toappend]
+                            self.src_x_then_y[i]+=[tup[i] for tup in toappend]
                     
-                    dest_x=[fomd[k] for k in self.interp_typ]
-                if num_interpdim==1:
-                    interpfcns=[fcn(*(src_x_then_y[:num_interpdim]+[src_x_then_y[i]]), **self.interpkwargs) for i in range(num_interpdim, len(allkeys))]
-                else:
-                    interpfcns=[lambda *destx: fcn(numpy.float64(src_x_then_y[:num_interpdim]).T, src_x_then_y[i], **self.interpkwargs) for i in range(num_interpdim, len(allkeys))]
-                for k, intfcn in zip(keys_to_interp, interpfcns):
-                    newfomd[k]=intfcn(*dest_x)
+                for k, dataind in zip(keys_to_interp, range(num_interpdim, len(allkeys))):
+                    if num_interpdim==1:
+                        intrp1dfcn=fcn(self.src_x_then_y[0], self.src_x_then_y[dataind], **self.interpkwargs)
+                        newfomd[k]=intrp1dfcn(dest_x)
+                    else:
+                        newfomd[k]=fcn(numpy.float64(self.src_x_then_y[:num_interpdim]).T, self.src_x_then_y[dataind], dest_x, **self.interpkwargs)
+                    
                 if self.params['interp_is_comp']:
-                    for k in interpfcns:
+                    keys_to_interp_orig=[k.replace('AtFrac', 'InterpRaw') if 'AtFrac' in k else (k+'InterpRaw') for k in keys_to_interp]
+                    self.fomnames+=keys_to_interp_orig
+                    for k, kraw in zip(keys_to_interp, keys_to_interp_orig):
+                        newfomd[kraw]=newfomd[k]
                         newfomd[k][newfomd[k]<0]=0.
-                    normarr=numpy.float64([newfomd[k] for k in interpfcns]).sum(axis=0)
-                    for k in interpfcns:
+                    normarr=numpy.float64([newfomd[k] for k in keys_to_interp]).sum(axis=0)
+                    for k in keys_to_interp:
                         newfomd[k]/=normarr
 
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames

@@ -114,7 +114,17 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
             self.plotparams=copy.deepcopy(anadict[self.params['select_ana']]['plot_parameters'])
             
         self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)#has to be called filedlist tro work with other analysis fcns
-
+        
+        if len(self.filedlist)==0: #if nothing there might be because default ana__1 selectana is no good and need to get filedlist to be nonempty so user can access process fcn in the menu and edit params
+            existselectana=self.params['select_ana']
+            for anak in sort_dict_keys_by_counter(anadict, keystartswith='ana__'):
+                if anak==existselectana:
+                    continue
+                self.params['select_ana']=anak
+                self.num_ana_considered, self.filedlist=stdgetapplicablefomfiles(anadict, params=self.params)
+                if len(self.filedlist)>0:
+                    break
+                self.params['select_ana']=existselectana#return to original value because no reason to keep the change
         self.description='process %s' %self.params['select_ana']
         return self.filedlist
     

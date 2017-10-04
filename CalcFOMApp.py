@@ -1464,14 +1464,29 @@ if __name__ == "__main__":
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
             #self.calcui.analyzedata()
-            #self.calcui.importana(p=r'K:\processes\analysis\temp\20160609.121710.done\20160609.121710.ana')
-            #self.calcui.analyzedata()\\htejcap.caltech.edu\share\home\processes\experiment\temp\20160609.162218.done\20160609.162218.pck
+#            self.calcui.importana(p=r'L:\processes\analysis\temp\20170922.123540.testinterp\20170922.123540.ana')
+#            self.calcui.importauxexpana(r'L:\processes\analysis\xrfs\20170907.125058.copied-20170907221545763PDT\20170907.125058.ana', exp=False)
+#            c=FOMProcessClasses[4]
+#            c.params['select_aux_keys']='V.K.AtFrac,Cu.K.AtFrac,Bi.L.AtFrac'
+#            c.params['select_aux_ints']='2'
+#            c.params['interp_is_comp']=1
+#            c.processnewparams(calcFOMDialogclass=self.calcui, recalc_filedlist=True)
+#            for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
+#                if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__FOM_Interp_Merge_Ana':
+#                    self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
+#                    self.calcui.getactiveanalysisclass()
+#                    self.calcui.processeditedparams()
+#                    break
+#            anak=gethighestanak(self.calcui.anadict, getnextone=True)
+
+            #c.perform(self.calcui.tempanafolder, expdatfolder=self.calcui.expfolder, anak=anak, zipclass=self.calcui.expzipclass, expfiledict=self.calcui.expfiledict, anauserfomd=self.calcui.userfomd)
             if execute:
                 self.calcui.exec_()
-    #os.chdir('//htejcap.caltech.edu/share/home/users/hte/demo_proto')
     mainapp=QApplication(sys.argv)
-    form=MainMenu(None)
+    form=MainMenu(None, execute=False)
+
     form.show()
     form.setFocus()
+    form.calcui.show()
     mainapp.exec_()
-#form.calcui.expfiledict
+
