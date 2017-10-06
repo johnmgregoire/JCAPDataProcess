@@ -1464,7 +1464,7 @@ if __name__ == "__main__":
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
             #self.calcui.analyzedata()
-#            self.calcui.importana(p=r'L:\processes\analysis\temp\20170922.123540.testinterp\20170922.123540.ana')
+#            self.calcui.importana(p=r'L:\processes\analysis\ssrl\20170922.123540.run\20170922.123540.ana')
 #            self.calcui.importauxexpana(r'L:\processes\analysis\xrfs\20170907.125058.copied-20170907221545763PDT\20170907.125058.ana', exp=False)
 #            c=FOMProcessClasses[4]
 #            c.params['select_aux_keys']='V.K.AtFrac,Cu.K.AtFrac,Bi.L.AtFrac'

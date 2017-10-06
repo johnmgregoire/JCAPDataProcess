@@ -830,6 +830,8 @@ def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     if not isinstance(v, dict):
         return itemstr+': '+str(v)
     sl=[itemstr+':']
+    if indentlevel==2 and k.endswith('_files') and not (False in [isinstance(v2, dict) for v2 in v.itervalues()]): # the present key is a _files: dict whose k,v are fn,filed so create flat filestr for each of them. If the vals are not filed but already flat strings, then the last boolean is false
+        return '\n'.join(sl+[strrep_filed_createflatfiledesc(k2, v2, indentlevel=indentlevel+1) for k2, v2 in v.iteritems()])
     keys=[nestk for nestk in v.keys() if 'version' in nestk]#assume this is not a dictionary
     keys+=sorted([nestk for nestk, nestv in v.iteritems() if not isinstance(nestv, dict) and not 'version' in nestk])
     sl+=[indent*(indentlevel+1)+nestk+': '+str(v[nestk]) for nestk in keys]
@@ -837,7 +839,18 @@ def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     dkeys+=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and 'files_' in nestk])
     return '\n'.join(sl+[strrep_filed_nesting(nestk, v[nestk], indentlevel=indentlevel+1) for nestk in dkeys])
 
-
+def strrep_filed_createflatfiledesc(k, v,  indent='    ', indentlevel=0):
+    if 'num_header_lines' in v.keys() and 'num_data_rows' in v.keys() and 'keys' in v.keys():
+        s='%s;%s;%d;%d' %(v['file_type'], ','.join(v['keys']), v['num_header_lines'], v['num_data_rows'])
+        if 'sample_no' in v.keys():
+            s+=';%d' %v['sample_no']
+    elif 'sample_no' in v.keys():
+        s='%s;%d' %(v['file_type'], v['sample_no'])
+    else:
+        s=v['file_type']#+';'#not all ana use semicolon after only file type but I thought this was standard practice
+    itemstr=indent*indentlevel+k
+    return itemstr+': '+s
+    
 def getarrfromkey(dlist, key):
     return numpy.array([d[key] for d in dlist])
 

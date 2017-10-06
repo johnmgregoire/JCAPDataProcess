@@ -281,7 +281,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 for k, v in zip(udi_dict['compkeys'], udi_dict['comps'][i]):
                     d[k]=v
                     if i==0:
-                        analysismasterclass.fomname+=[k]
+                        analysismasterclass.fomnames+=[k]
             analysismasterclass.fomdlist+=[d]
         os.path.join(anafolder, afd['anafn'])
         analysismasterclass.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
