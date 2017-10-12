@@ -294,14 +294,14 @@ class calcfom_mock_class():
 def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argument is called self sothsi function appears the same as it would as part of the calcfomdialogclass
     #minimal requirements of self: expfolder,anadict,tempanafolder,userfomd,expfiledict,expzipclass,guimode,paramsdict_le_dflt['description']
     if self.analysisclass is None:
-        return
+        return 'no analysis class defined'
     if checkinputbool:
         checkbool, checkmsg=self.analysisclass.check_input()
         if not checkbool:
             if self.guimode:
                 idialog=messageDialog(self, 'Continue analysis? '+checkmsg)
                 if not idialog.exec_():
-                    return
+                    return 'user canceled analysis because: ', checkmsg
             else:
                 return checkmsg
 

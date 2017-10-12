@@ -108,11 +108,11 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
             elkey_byel+=[None if len(kl)==0 else kl[0]]#use the elkey for the first match found - only 1 allowed
         l_elkey_byel+=[elkey_byel]
     elindset=set([i for i, k in enumerate(l_elkey_byel[0]) if not k is None])
-    for elkey_byel in l_elkey_byel:
-        elindset=elindset.intersection(set([i for i, k in enumerate(elkey_byel[0]) if not k is None]))
+    for elkey_byel in l_elkey_byel[1:]:
+        elindset=elindset.intersection(set([i for i, k in enumerate(elkey_byel) if not k is None]))
     elinds=sorted(list(elindset))
     if len(elindset)<2:
-        print 'aborting because only these elements found in all ana compositions: ',  [els[i] for i in elinds]
+        print '^^^aborting because only these elements found in all ana compositions: ',  [els[i] for i in elinds], pidstr
         [k for k in kl for kl in l_found_comp_keys]
     
     udi_dict={}
@@ -213,8 +213,10 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
         f.write(fs)
 
 #p=r'L:\processes\analysis\temp\20171005.180913.run\20171005.180913.ana'
-#
-#append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__4'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
+p=r'L:\processes\analysis\ssrl\20171012.133143.run\20171012.133143.ana'
+
+#append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
+#append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
 
 
 

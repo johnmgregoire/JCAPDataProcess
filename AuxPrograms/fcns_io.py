@@ -2055,6 +2055,8 @@ def find_paths_in_ana_need_copy_to_anatype(anad, anatype):#find which ana=-conta
                 kl+=['parameters']
                 for count, auxk in enumerate(['aux_ana_path', 'aux_exp_path']):
                     if auxk in v['parameters'].keys():
+                        if v['parameters'][auxk]=='custom':#copy handled in Analysis__FOM_Merge_Aux_Ana.perform
+                            continue
                         d=gen_pathd_absorrel_expanapath(v['parameters'][auxk], desttype=anatype, exp=(count==1), only_check_temp=True)
                         if d is None:
                             continue

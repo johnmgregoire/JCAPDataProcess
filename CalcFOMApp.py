@@ -279,7 +279,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         ext_str='.exp' if exp else '.ana'
         dlist=self.aux_exp_dlist if exp else self.aux_ana_dlist
         if not (auxexpanapath.endswith(ext_str) or auxexpanapath.endswith('.pck') or not os.path.isabs(auxexpanapath)):
-            auxexpanapath=(buildexppath if exp else buildanapath)(exppath)
+            auxexpanapath=(buildexppath if exp else buildanapath)(auxexpanapath)
         
         auxexpanadict=readexpasdict(auxexpanapath, includerawdata=False, returnzipclass=True) if exp else readana(auxexpanapath, stringvalues=False, erroruifcn=None)
         rp=os.path.split(auxexpanapath)[0]
@@ -590,6 +590,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def analyzedata(self):
         errbool=calcfom_analyzedata_calcfomdialogclass(self)
         if errbool:
+            print errbool
             return errbool
         self.updateuserfomd(clear=True)
         

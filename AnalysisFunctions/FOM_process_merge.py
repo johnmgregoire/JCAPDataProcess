@@ -38,7 +38,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
                 self.params['aux_ana_path']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_path not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
         #do not check if aux ana contains any valid foms - let user change params and validate there
-        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']!='custom':#only run params for custom when user changes to "custom"
+        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']=='custom':#only run params for custom when user changes to "custom"
             self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=False)
         return self.filedlist
     
@@ -116,7 +116,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                                                                                                                    (not k in notallowedkeys) and \
                                                                                                                 (True in [s in k for s in keysearchlist])]
         if custom_load_csv_bool:
-            reqdkeysset=['plate_id'] if self.params['match_plate_id'] else []
+            reqdkeysset=['plate_id'] if ('match_plate_id' in self.params.keys() and self.params['match_plate_id']) else []
             reqdkeysset=set(reqdkeysset+['sample_no'])
         else:
             reqdkeysset=FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING
@@ -180,6 +180,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+process_keys:
                         newfomd[k]=fomd[k]
                 if len(plt_smp_list)==0:
+                    print 'no samples match - skipping merge'
                     continue
                 self.fomnames=process_keys
                 self.strkeys_fomdlist=['aux_anak']
@@ -201,7 +202,15 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                         newfomd['aux_plate_id'][fomdinds]=numpy.array(auxfomd['plate_id'][auxfomdinds],dtype='|S8')
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
-
+                
+                #copy custom merge file to the ana
+                if self.params['aux_ana_path']=='custom':
+                    if not 'misc_files' in self.multirunfiledict.keys():
+                        self.multirunfiledict['misc_files']={}
+                    self.multirunfiledict['misc_files'][auxfiled['fn']]=\
+                     '%s;%s;%d;%d' %('csv_fom_file', ','.join(auxfiled['keys']), auxfiled['num_header_lines'], auxfiled['num_data_rows'] if 'num_data_rows' in auxfiled else len(auxfomd_list[0]['sample_no']))
+                    if not auxfiled['fn'] in os.listdir(destfolder):#assume aux custom fn is unique from the ana-generated files in this folder. If the custom file copied already doesn't need to be copied again  
+                        shutil.copy(os.path.join(self.auxpath, auxfiled['fn']), os.path.join(destfolder, auxfiled['fn']))
             except:
                 if self.debugmode:
                     raiseTEMP
