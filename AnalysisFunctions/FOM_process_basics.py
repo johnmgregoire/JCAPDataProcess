@@ -290,13 +290,13 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
 
 class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='1.3'
-        self.dfltparams={'select_ana': 'ana__1', 'nmol_CPS_list':'','nmol_CPS_lib_file': '.csv', 'transition_list_for_stds':'ALL', 'transition_list_for_comps':'ALL', 'transition_ratio_list':'NONE', 'bcknd_CPS_sample_nos':'nonpositive', 'bcknd_CPS_by_trans':'None'}#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
+        self.analysis_fcn_version='2'
+        self.dfltparams={'select_ana': 'ana__1', 'nmol_CPS_list':'','nmol_CPS_lib_file': '.csv', 'transition_list_for_stds':'ALL', 'transition_list_for_comps':'ALL', 'transition_ratio_list':'NONE', 'bcknd_CPS_sample_nos':'nonpositive', 'bcknd_CPS_by_trans':'None', 'measurement_area_cm2':'SPOT'}#nmol_CPS_list is comma-delim values, to override library, for other params user can type substrings, e.g. .csv to find any library file or Fe to find Fe.K, rations typed as comma-delim of form "Fe:La.L"
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Process_XRFS_Stds'
         self.requiredkeys=[]
         self.optionalkeys=[]
-        self.requiredparams=['tube_voltage', 'tube_current', 'spot_size', 'chamber_atmosphere', 'amp_time']
+        self.requiredparams=['tube_voltage', 'tube_current', 'spot_size', 'chamber_atmosphere', 'amp_time', 'spot_size']#order of the first 5 critical for file name search below
         self.fomnames=['Tot.nmol']
         self.plotparams=dict({}, plot__1={})
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
@@ -347,6 +347,27 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             return
         filed=self.filedlist[0]
         
+        #new in version 2, use rcp param spot_size to get area if SPOT. This code makes the parameters either a .2e number or NONE
+        if self.params['measurement_area_cm2']=='SPOT':
+            s=filed['spot_size']
+            if 'um-Spot' in s and s.partition(' ')[0].strip().isdigit():
+                s=s.partition(' ')[0].strip()
+                diam_micron=float(s)
+                areacm2=numpy.pi*(1.e-4*diam_micron/2.)**2
+                self.params['measurement_area_cm2']='%.2e' %areacm2
+            else:
+                print 'spot_size not understood: ', s
+                self.params['measurement_area_cm2']='NONE'
+        elif self.params['measurement_area_cm2'][0].isdigit():
+            try:
+                areacm2=float(self.params['measurement_area_cm2'])
+                self.params['measurement_area_cm2']='%.2e' %areacm2
+            except:
+                print 'measurement_area_cm2 not understood: ', self.params['measurement_area_cm2']
+                self.params['measurement_area_cm2']='NONE'
+        else:
+            self.params['measurement_area_cm2']='NONE'
+            
         filed['trans_keys']=[k for k in filed['process_keys'] if k.endswith(self.cpsendswithstr)]
         filed['trans_list']=[k[:-len(self.cpsendswithstr)] for k in filed['trans_keys']]
         for count, (paramkey, unitstr) in enumerate([('transition_list_for_stds', '.nmol'), ('transition_list_for_comps', '.AtFrac')]):
@@ -365,6 +386,10 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 trans_list=[tr for tr in trans_list if tr in transition_list_for_stds]
             self.params[paramkey]=','.join(trans_list)
             self.fomnames+=[tr+unitstr for tr in trans_list]
+            #if have an area put the nmolpercm2 foms after the nmol, before the AtFrac
+            if count==0 and self.params['measurement_area_cm2']!='NONE':
+                self.fomnames+=[tr+unitstr+'percm2' for tr in trans_list]
+                
         
         if len(transition_list_for_stds)==0:
             self.params=copy.copy(self.dfltparams)
@@ -419,8 +444,9 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                         continue
                     nmolcps_list[i]=self.xrfs_stds_dict[tr]
         self.params['nmol_CPS_list']=','.join(['%.4f' %v if v>0. else '0' for v in nmolcps_list])
-            
+        
 
+            
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
         
@@ -454,7 +480,11 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             
             compsfcn=lambda nmolarr:nmolarr[trans_inds_comps]/nmolarr[trans_inds_comps].sum()
             ratiofcn=lambda nmolarr:nmolarr[trans_ind_numer_ratios]/nmolarr[trans_ind_denom_ratios]
-            
+            if self.params['measurement_area_cm2']=='NONE':
+                measurement_area_cm2=False
+            else:
+                measurement_area_cm2=float(self.params['measurement_area_cm2'])
+            nmolpercm2fcn=lambda nmolarr:[v/measurement_area_cm2 for v in nmolarr] if measurement_area_cm2 else []
             self.strkeys_fomdlist=[]
 
             fn=filed['fn']
@@ -485,7 +515,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 
                 nmol_bysample_bytrans=numpy.float32([(xrffomd[k]-bckndcps)*nmolcps for k, bckndcps, nmolcps in zip(transition_list_csvkeys, bckndcps_by_trans, nmolcpsarr)]).T
                 nmol_bysample_bytrans[nmol_bysample_bytrans<0.]=0.
-                [fomd.update(zip(self.fomnames, [nmolarr.sum()]+list(nmolarr)+list(compsfcn(nmolarr))+list(ratiofcn(nmolarr)))) for fomd, nmolarr in zip(self.fomdlist, nmol_bysample_bytrans)]
+                [fomd.update(zip(self.fomnames, [nmolarr.sum()]+list(nmolarr)+nmolpercm2fcn(nmolarr)+list(compsfcn(nmolarr))+list(ratiofcn(nmolarr)))) for fomd, nmolarr in zip(self.fomdlist, nmol_bysample_bytrans)]
                 
             except:
                 if self.debugmode:
