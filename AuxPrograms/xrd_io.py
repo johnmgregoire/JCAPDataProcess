@@ -1,5 +1,5 @@
 from xml.etree import ElementTree
-import os, numpy, copy, time
+import os, numpy, copy, time, string
 #from collections import OrderedDict as OD
 from fcns_math import myeval
 p=r'K:\users\hte\ProjectSummaries\Oxynitrides\La-Ta-O-N\15635\xrd\postacid\20160715\data\postacid.bsml'
@@ -74,7 +74,9 @@ def get_bmsl_dict(p):
                         for node in pnode.iterfind(tpath):
                             strval=node.attrib[tattr[0]] if len(tattr)==1 else ' '.join([node.attrib[attr] for attr in tattr]).encode('utf-8').replace('\xb5','u').replace('\xb0','deg').replace('\xc2','')
                             updatefcn(paramd, keyname, strval)
-
+    valid_chars = " ()[]-_.%s%s" %(string.ascii_letters, string.digits)
+    for k, v in paramd.items():
+        paramd[k]=''.join([c for c in v if c in valid_chars])
     # spectial matching for theta/2theta setup. there's got to be a better way of crawling through these nodes
     for gpnode in tree.iterfind('.//ScanAxisList/ScanAxis'):
         if gpnode.attrib['VisibleName'] in ['2Theta', 'Theta']:
