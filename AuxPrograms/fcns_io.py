@@ -1941,7 +1941,7 @@ def create_udi_anas(udipath, udi_dict, anadict=None, anafolder=None, anadict_com
     pmap_path=getplatemappath_plateid(str(udi_dict['plate_id']))
     pmdlist=readsingleplatemaptxt(pmap_path)
     pmsmps=[d['sample_no'] for d in pmdlist]
-    udi_dict['xy']=numpy.array([[pmdlist[pmsmps.index(smp)]['x'], pmdlist[pmsmps.index(smp)]['y']] for smp in smps])
+    udi_dict['xy']=numpy.array([[pmdlist[pmsmps.index(smp)]['x'], pmdlist[pmsmps.index(smp)]['y']] if smp in pmsmps else [numpy.nan, numpy.nan] for smp in smps])
 
 
     writeudifile(udipath, udi_dict)

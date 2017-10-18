@@ -397,7 +397,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         ttvals=numpy.array([myeval(tt) for tt, z in strtuplist])
         qvals=q_twotheta(ttvals)
         lines=[lines[0]]
-        lines+=['%.3f,%s,%s' %(q, tt, z) for q, (tt, z) in zip(qvals, strtuplist)]
+        lines+=['%.5f,%s,%s' %(q, tt, z) for q, (tt, z) in zip(qvals, strtuplist)]
         s='\n'.join(lines)
         with open(newp, mode='w') as f:
             f.write(s)
@@ -417,7 +417,10 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def mod_smp_afd__xrds_withq(self, afd, anak, smpstr=None):
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
-        afd['fval']=afd['fval'].replace('two_theta.deg,','q.nm,two_theta.deg,')
+        if 'q.nm,' in afd['fval']:
+            print 'THIS IS AN ERROR THAT WAS NOT REPRODUCIBLE BUT HAS ARISEN AGAIN SO REMEMBER WHAT GOT YOU HERE TO HELP DIAGNOSE'
+        else:
+            afd['fval']=afd['fval'].replace('two_theta.deg','q.nm_processed,two_theta.deg' if '_processed' in afd['fval'] else 'q.nm,two_theta.deg')
         afd['anak']=anak
         afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q
         self.evalsmpstr_afd(afd, smpstr)
@@ -586,7 +589,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             if not 'ana__1' in self.anadict.keys():
                 return
             
-            anakl=sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')[::-1]
+            anakl=sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')#[::-1]
             anak=anakl[-1]
             anarunk='files_multi_run'
 
