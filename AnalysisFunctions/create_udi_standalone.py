@@ -1,5 +1,6 @@
 import numpy, copy, operator
 from scipy import interpolate
+from scipy.signal import savgol_filter
 if __name__ == "__main__":
     import os, sys
     sys.path.append(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0])
@@ -7,11 +8,11 @@ if __name__ == "__main__":
     
 from fcns_io import *
 from Analysis_Master import Analysis_Master_nointer
-
+from scipy.integrate import cumtrapz
 analysismasterclass=Analysis_Master_nointer()
 
 
-def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str='', dq=None, q_log_space_coef=None, resamp_interp_order=1):
+def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str=''):
     if l_anapath is None:
         num_ana=userinputcaller(None, inputs=[('num_ana', int, '1')], title='Enter Number of ana to open')
         if num_ana is None:
@@ -216,7 +217,7 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
         f.write(fs)
 
 
-def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None,  l_pattern_fn_search_str=None, pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed'):
+def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None,  l_pattern_fn_search_str=None, pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=None, resamp_interp_order=1, pre_resamp_smooth_fcn=None):
     if l_anapath is None:
         num_ana=userinputcaller(None, inputs=[('num_ana', int, '1')], title='Enter Number of ana to open')
         if num_ana is None:
@@ -272,102 +273,136 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
             for fn, filed in filesrund[pattern_key].iteritems():
                 if not pattern_fn_search_str in fn:
                     continue
-                if q_key in filed['keys'] and intensity_key in filed['keys'] and filed['sample_no'] in fomd['sample_no']:
+                if q_key in filed['keys'] and intensity_key in filed['keys']:
                     l_fn_fd+=[(fn, filed, runint)]
                     l_smps+=[filed['sample_no']]
         l_pattern_l_fn_fd+=[l_fn_fd]
         l_pattern_l_smps+=[l_smps]
     
     smps=set(l_pattern_l_smps[0])
-    for l_smps in l_pattern_l_smps[0]:
+    for l_smps in l_pattern_l_smps[1:]:
         smps=smps.intersection(set(l_smps))
     if len(smps)==0:
         print 'no sample_no in common among different pattern anas'
         return
     
-    l_qresampfcn=[]
+    lsmps_reconstruction_area_error=[]
+    lsmps_runint=[]
+    lsmps_newfn=[]
+    lsmps_I_resamp_flattened=[]
     for smpcount, smp in enumerate(smps):
         l_q=[]
         l_I=[]
-        for count, (pidstr, pattern_l_fn_fd, pattern_l_smps, anap, (anadict, zipclass)) in enumerate(zip(l_plate_idstr, l_pattern_l_fn_fd, l_pattern_l_smps, l_anapath, l_anadict_zipclass)):
+        for count, (pattern_l_fn_fd, pattern_l_smps, anap, (anadict, zipclass), pattern_fn_search_str) in enumerate(zip(l_pattern_l_fn_fd, l_pattern_l_smps, l_anapath, l_anadict_zipclass, l_pattern_fn_search_str)):
             i=pattern_l_smps.index(smp)
             fn, filed, runint=pattern_l_fn_fd[i]
+            if count==0:
+                lsmps_runint+=[runint]#might be merging multiple runs but take the first
+                newfn=fn[5:].partition('_')[2] if fn.startswith('ana__') else fn
+                newfn=newfn.replace(pattern_fn_search_str, 'resampled')
+                if not newfn.endswith('.csv'):
+                    if '.' in newfn:
+                        newfn=newfn.rpartition('.')[0]
+                    newfn+='.csv'
+                lsmps_newfn+=[newfn]
             patternd=readcsvdict(get_file_path(anap, fn, zipclass), filed, returnheaderdict=False, zipclass=zipclass, includestrvals=False)
             l_q+=[patternd[q_key]]
-            l_I+=[patternd[intensity_key]]
+            if pre_resamp_smooth_fcn is None:
+                l_I+=[patternd[intensity_key]]
+            else:
+                l_I+=[pre_resamp_smooth_fcn(patternd[intensity_key])]
         if smpcount==0:
             qmin=min([q.min() for q in l_q])
             qmax=max([q.max() for q in l_q])
             
             if not dq is None:
-                L=(qmax-qmin)//dq+1
+                L=int((qmax-qmin)//dq)+1
                 q_resamp=numpy.linspace(qmin, qmax, L)
             elif not q_log_space_coef is None:
-                q_resamp=qmin**(numpy.arange(q_log_space_coef))
+                L=numpts_log_spacing_coef(qmin, qmax, q_log_space_coef)#will round down num points to be sure q_rasmp within bounds of qmin,qmax
+                q_resamp=qmin*(q_log_space_coef**(numpy.arange(L)))
             else:
                 print 'resampling required for merging at this time'
                 return
             #assume all patterns same l_q
-            qresampfcn=lambda z: interpolate.interp1d(q, z, kind=resamp_interp_order, fill_value=(z.min(), z.max()))(q_resamp)
-#TODO
-            Iarr=qresampfcn(patternd[intensity_key])
+            qresampfcn=lambda l_z: numpy.array([interpolate.InterpolatedUnivariateSpline(q, z, k=resamp_interp_order, ext='zeros')(q_resamp) for q,z in zip(l_q,l_z)])#functino resamps on whole array even if there are lots out of bounds. l_q is local var from smpcount==0 and is used for all later interps
+            
+            interp_mask_numpatterns_by_qresamp=qresampfcn(l_q)!=0#interpolate q values (could interp zeros but q is avaialble in the right size and nonzero) with 0 fill to see where q_resamp is beyond bounds of each qarr in l_q. This mask is 1 where interp is valid
+            numpatterns_contributing_to_each_qresamp_val=interp_mask_numpatterns_by_qresamp.sum(axis=0, dtype=numpy.int32)
+            resampinds_zerofill=numpy.where(numpatterns_contributing_to_each_qresamp_val==0)[0]
+            resampinds_ave=numpy.where(numpatterns_contributing_to_each_qresamp_val>0)[0]
+            if len(resampinds_zerofill)>0:
+                print 'there are this many resampled q values that will be zero-filled: ', len(resampinds_zerofill)
+        resamparr=qresampfcn(l_I)
+        I_resamp_flattened=resamparr.sum(axis=0)
+        I_resamp_flattened[resampinds_ave]/=numpatterns_contributing_to_each_qresamp_val[resampinds_ave]
+        lsmps_I_resamp_flattened+=[I_resamp_flattened]
+        #in the individual integrals the overlapped regions will not be averaged so multiply out the averaging weights here,
+        area_reconstcutructed_inresampepattern=cumtrapz(I_resamp_flattened*numpatterns_contributing_to_each_qresamp_val, x=q_resamp)[-1]
+        area_patterns=numpy.sum([cumtrapz(Iarr, x=qarr)[-1] for qarr, Iarr in zip(l_q, l_I)])
+        reconstruction_area_error=(area_reconstcutructed_inresampepattern-area_patterns)/area_patterns
+        lsmps_reconstruction_area_error+=[reconstruction_area_error]
 
-    
-    udi_dict['comps']=numpy.array(udi_dict['comps'])
-    udi_dict['xy']=numpy.array(udi_dict['xy'])
-    udi_dict['Iarr']=numpy.array(udi_dict['Iarr'])
-    udi_dict['Q']=numpy.array(udi_dict['Q'])
-    
     anap=l_anapath[0]
     anadict=l_anadict_zipclass[0][0]
-    pidset=sorted(list(set(l_plate_idstr)))
-    pidstr=l_plate_idstr[0]
     lastanak=sort_dict_keys_by_counter(anadict)[-1]
     anak='ana__%d' %(1+int(lastanak.partition('__')[2]))
-    udifn=anak+'_'+'_'.join(pidset)+'.udi'
-    csvfn=udifn[:-3]+'csv'
-    udip=get_file_path(anap, udifn, False)
-    anafolder=os.path.split(udip)[0]
-    writeudifile(udip, udi_dict)
-    
-    analysismasterclass.fomdlist=[]
-    analysismasterclass.fomnames=['pmx', 'pmy', 'Intensity.max']
-    for i in range(len(udi_dict['Iarr'])):
-        d={}
-        d['sample_no']=udi_dict['sample_no'][i]
-        d['Intensity.max']=max(udi_dict['Iarr'][i])
-        d['pmx']=udi_dict['xy'][i][0]
-        d['pmy']=udi_dict['xy'][i][1]
-        d['runint']=udi_dict['runint'][i]
-        d['plate_id']=int(udi_dict['plate_id'][i])
-        for k, v in zip(udi_dict['compkeys'], udi_dict['comps'][i]):
-            d[k]=v
-            if i==0:
-                analysismasterclass.fomnames+=[k]
-        analysismasterclass.fomdlist+=[d]
-    analysismasterclass.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-    analysismasterclass.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='Intensity.max', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    filedesc=analysismasterclass.writefom_bare(anafolder, csvfn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id'])
+    csvfn=anak+'_'+pidstr+'.csv'
+    csvpath=get_file_path(anap, csvfn, False)
+    anafolder=os.path.split(csvpath)[0]
+
     anadict[anak]={}
-    anadict[anak]['name']='Analysis__Create_UDI'
-    anadict[anak]['plate_ids']=','.join(pidset)
+    anadict[anak]['name']='Analysis__Resamp_Merge_Patterns'
+    anadict[anak]['plate_ids']=pidstr
     anadict[anak]['technique']=anadict['analysis_type']
+    tempstr='none' if l_pattern_fn_search_str is None else ','.join(l_pattern_fn_search_str)
+    tempstr=tempstr.strip()
+    if len(tempstr)==0:
+        tempstr='none'
     anadict[anak]['parameters']={\
     'ana_file_type': pattern_key, \
     'ana_name': ','.join([ad['name'] for ad, zc in l_anadict_zipclass]), \
     'anak': ','.join(l_anak_patterns), \
-    'anak_comps': ','.join(l_anak_comps), \
     'pattern_source_analysis_name': anadict[l_anak_patterns[0]]['name'], \
-    'plate_id': ','.join(pidset), \
+    'plate_id': pidstr, \
     'q_key': q_key, \
     'intensity_key': intensity_key, \
+    'pattern_fn_search_str': tempstr, \
+    'q_resample_linear_interval':`dq`, \
+    'q_resample_log_interval':`q_log_space_coef`, \
+    'q_resample_interp_order':`resamp_interp_order`, \
     }
+    newq_key=q_key+'_resampled'
+    newintensity_key=intensity_key+'_resampled'
+    analysismasterclass.fomdlist=[]
+    analysismasterclass.fomnames=['Reconstruction_Area_Rel_Error']
+    for smp, runint, reconstruction_area_error, I_resamp, newfn in zip(smps, lsmps_runint, lsmps_reconstruction_area_error, lsmps_I_resamp_flattened, lsmps_newfn):
+        d={}
+        d['sample_no']=smp
+        d['Reconstruction_Area_Rel_Error']=reconstruction_area_error
+        d['runint']=runint
+        d['plate_id']=int(pidstr)
+        analysismasterclass.fomdlist+=[d]
+        
+        filesrunk='files_run__%d' %runint
+        if not filesrunk in anadict[anak].keys():
+            anadict[anak][filesrunk]={}
+            anadict[anak][filesrunk][pattern_key]={}
+        fn='_'.join([anak, newfn])
+        anadict[anak][filesrunk][pattern_key][fn]='%s_csv_pattern_file;%s,%s;1;%d;%d' %(anadict[anak]['technique'], newq_key, newintensity_key, len(q_resamp), smp)
+        lines=['%s,%s' %(newq_key, newintensity_key)]
+        lines+=['%.6e,%.6e' %t for t in zip(q_resamp, I_resamp)]
+        s='\n'.join(lines)
+        with open(os.path.join(anafolder, fn), mode='w') as f:
+            f.write(s)
+                    
+    analysismasterclass.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+    analysismasterclass.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='Reconstruction_Area_Rel_Error', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+    filedesc=analysismasterclass.writefom_bare(anafolder, csvfn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id'])#floatkeys None uses fomnames
     anadict[anak]['files_multi_run']={}
     anadict[anak]['files_multi_run']['fom_files']={}
     anadict[anak]['files_multi_run']['fom_files'][csvfn]=filedesc
-    anadict[anak]['files_multi_run']['misc_files']={}
-    anadict[anak]['files_multi_run']['misc_files'][udifn]='%s_udi_file' %anadict[anak]['technique']
-    
+
     fs=strrep_filedict(anadict)
     with open(anap, mode='w') as f:
         f.write(fs)
@@ -380,16 +415,26 @@ def numpts_log_q_sampling_calculator(qmin, qmax, q_peak, dq_peak, numppts_fwhm=8
 def log_spacing_coef_numpts(qmin, qmax, numpts):
     return (qmax/qmin)**(1./(numpts-1.))
 
+def numpts_log_spacing_coef(qmin, qmax, q_log_space_coef, round_down_bool=True):
+    L=1.+numpy.log(qmax/qmin)/numpy.log(q_log_space_coef)
+    if round_down_bool:
+        return int(L//1)
+    else:
+        return L
+    
 def percent_change_in_lattice_contsant(rho, num_shifted_patterns):
     return 100.*(rho**(num_shifted_patterns-1.)-1.)
 
+smoothfcn=lambda Iraw: savgol_filter(Iraw, 31, 4)
 #for xrds q going from 5.33065 to 27.5384, 700 data point resampling in log q makes the spacing 1.00235198 and with 10 shifted patterns would model 2.14% lattice constant change
 
-#p=r'L:\processes\analysis\temp\20171005.180913.run\20171005.180913.ana'
-p=r'L:\processes\analysis\ssrl\20171012.133143.run\20171012.133143.ana'
 
 #append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
 #append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
 
+p=r'L:\processes\analysis\xrds\20171017.101645.run\20171017.101645.ana'
 
-
+#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__1', 'ana__1'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
