@@ -736,18 +736,18 @@ def buildrunpath(runp):
             p=os.path.join(fold, newfns[0])
     return p
 
-def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False):
+def buildrunpath_selectfile(fn, expfolder_fullpath, runp=None, expzipclass=None, returnzipclass=False, lookfordat=False):
 
     returnvalfcn=lambda val:(val, expzipclass) if returnzipclass else val
 
     if expzipclass is None:
         expzipclass=gen_zipclass(expfolder_fullpath)
     if expzipclass:
-        if expzipclass.fn_in_archive(fn+'.dat'):
+        if lookfordat and expzipclass.fn_in_archive(fn+'.dat'):
             return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
         if expzipclass.fn_in_archive(fn):
             return returnvalfcn(os.path.join(expfolder_fullpath, fn))
-    if os.path.isfile(os.path.join(expfolder_fullpath, fn+'.dat')):
+    if lookfordat and os.path.isfile(os.path.join(expfolder_fullpath, fn+'.dat')):
         return returnvalfcn(os.path.join(expfolder_fullpath, fn+'.dat'))
     if os.path.isfile(os.path.join(expfolder_fullpath, fn)):
         return returnvalfcn(os.path.join(expfolder_fullpath, fn))

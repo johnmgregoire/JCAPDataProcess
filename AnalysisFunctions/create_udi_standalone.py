@@ -194,6 +194,9 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
     filedesc=analysismasterclass.writefom_bare(anafolder, csvfn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id'])
     anadict[anak]={}
     anadict[anak]['name']='Analysis__Create_UDI'
+    anadict[anak]['analysis_function_version']='1.1'
+    anadict[anak]['analysis_general_type']='process_fom'
+    anadict[anak]['description']='make udi with comps from %s and patterns from %s' %(','.join(l_anak_comps), ','.join(l_anak_patterns))
     anadict[anak]['plate_ids']=','.join(pidset)
     anadict[anak]['technique']=anadict['analysis_type']
     anadict[anak]['parameters']={\
@@ -217,7 +220,7 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
         f.write(fs)
 
 
-def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None,  l_pattern_fn_search_str=None, pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=None, resamp_interp_order=1, pre_resamp_smooth_fcn=None):
+def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None,  l_pattern_fn_search_str=None, pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=None, resamp_interp_order=1, pre_resamp_smooth_fcn=None, gradual_average_overlap_bool=True):
     if l_anapath is None:
         num_ana=userinputcaller(None, inputs=[('num_ana', int, '1')], title='Enter Number of ana to open')
         if num_ana is None:
@@ -333,14 +336,34 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
             resampinds_ave=numpy.where(numpatterns_contributing_to_each_qresamp_val>0)[0]
             if len(resampinds_zerofill)>0:
                 print 'there are this many resampled q values that will be zero-filled: ', len(resampinds_zerofill)
+            
+            weights_2d=numpy.ones(interp_mask_numpatterns_by_qresamp.shape, dtype='float64')
+            weights_2d[:, resampinds_zerofill]=0.#this has no consequence due to the zero fill in interp but makes sense to write. These inds have no input data from the patterns
+            if gradual_average_overlap_bool and 2 in numpatterns_contributing_to_each_qresamp_val and numpy.all(numpatterns_contributing_to_each_qresamp_val<=2):
+                startinds=numpy.where((numpatterns_contributing_to_each_qresamp_val[:-1]==1)&(numpatterns_contributing_to_each_qresamp_val[1:]==2))[0]+1
+                stopinds=numpy.where((numpatterns_contributing_to_each_qresamp_val[:-1]==2)&(numpatterns_contributing_to_each_qresamp_val[1:]==1))[0]+1
+                if len(stopinds)>0 and len(stopinds)==len(startinds):
+                    for i, j in zip(startinds, stopinds):
+                        activepatterns=numpy.where(interp_mask_numpatterns_by_qresamp[:, i]==True)[0]
+                        #activepatterns is length 2  of pattern indeces tbeing combined from i:j. typically the 0th pattern is coming in from the left and should start with full weight and the 1st pattern start with no wieght and finishes with full. If 1st is coming in from left, flip their order
+                        if interp_mask_numpatterns_by_qresamp[activepatterns[1], i-1]:#if the data point before i is active in the 1st pattern, then this pattern is the one with lower Q so reverse their order
+                            activepatterns=activepatterns[::-1]
+                        newweights=numpy.linspace(0., 1., j-i)
+                        weights_2d[activepatterns[0], i:j]=1.-newweights
+                        weights_2d[activepatterns[1], i:j]=newweights
+            else:
+                if gradual_average_overlap_bool:
+                    print 'gradual overlap calculation not possible because only implemented for 2-pattern overlaps and the max num of pattern overlaps is ', numpatterns_contributing_to_each_qresamp_val.max()
+                for patternind in range(weights_2d.shape[0]):
+                    weights_2d[patternind, resampinds_ave]=1./numpatterns_contributing_to_each_qresamp_val[resampinds_ave]#wieght each pattern to obtain mean
         resamparr=qresampfcn(l_I)
-        I_resamp_flattened=resamparr.sum(axis=0)
-        I_resamp_flattened[resampinds_ave]/=numpatterns_contributing_to_each_qresamp_val[resampinds_ave]
+        I_resamp_flattened=(resamparr*weights_2d).sum(axis=0)
+        #I_resamp_flattened[resampinds_ave]/=numpatterns_contributing_to_each_qresamp_val[resampinds_ave]
         lsmps_I_resamp_flattened+=[I_resamp_flattened]
         #in the individual integrals the overlapped regions will not be averaged so multiply out the averaging weights here,
-        area_reconstcutructed_inresampepattern=cumtrapz(I_resamp_flattened*numpatterns_contributing_to_each_qresamp_val, x=q_resamp)[-1]
-        area_patterns=numpy.sum([cumtrapz(Iarr, x=qarr)[-1] for qarr, Iarr in zip(l_q, l_I)])
-        reconstruction_area_error=(area_reconstcutructed_inresampepattern-area_patterns)/area_patterns
+        area_reconstructed_inresampledpattern=cumtrapz(resamparr.sum(axis=0), x=q_resamp)[-1]#this is done on the sum of interpolated patterns without the weights since the weights aren't applied below. i.e. overlapped portions are double counted here and int he next line
+        area_patterns=numpy.sum([cumtrapz(Iarr, x=qarr)[-1] for qarr, Iarr in zip(l_q, l_I)])#these integrals cannot contain the weights_2d because they are nto resampled
+        reconstruction_area_error=(area_reconstructed_inresampledpattern-area_patterns)/area_patterns
         lsmps_reconstruction_area_error+=[reconstruction_area_error]
 
     anap=l_anapath[0]
@@ -353,6 +376,9 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
 
     anadict[anak]={}
     anadict[anak]['name']='Analysis__Resamp_Merge_Patterns'
+    anadict[anak]['analysis_function_version']='1.1'
+    anadict[anak]['analysis_general_type']='process_fom'
+    anadict[anak]['description']=''.join(['resample ', '' if len(l_anak_patterns)==1 else 'and merge',  ' patterns from ', ','.join(l_anak_patterns)])
     anadict[anak]['plate_ids']=pidstr
     anadict[anak]['technique']=anadict['analysis_type']
     tempstr='none' if l_pattern_fn_search_str is None else ','.join(l_pattern_fn_search_str)
@@ -371,6 +397,7 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
     'q_resample_linear_interval':`dq`, \
     'q_resample_log_interval':`q_log_space_coef`, \
     'q_resample_interp_order':`resamp_interp_order`, \
+    'gradual_average_overlap_bool':`gradual_average_overlap_bool`, \
     }
     newq_key=q_key+'_resampled'
     newintensity_key=intensity_key+'_resampled'
@@ -432,9 +459,9 @@ smoothfcn=lambda Iraw: savgol_filter(Iraw, 31, 4)
 #append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
 #append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
 
-p=r'L:\processes\analysis\xrds\20171017.101645.run\20171017.101645.ana'
+p=r'L:\processes\analysis\temp\20171017.101645.run\20171017.101645.ana'
 
-#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__1', 'ana__1'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__1', 'ana__1'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
