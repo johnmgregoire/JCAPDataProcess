@@ -12,34 +12,39 @@ from VisualizeDataApp import visdataDialog
 from VisualizeBatchFcns import choosexyykeys
 from fcns_io import *
 
+#from get_raw_data_from_exp import get_file_dicts_containing_data
 
-expname=r'/eche/20170504.082546.copied-20170504220706403PDT.zip'
-filekeystoget=['files_technique__CV2']
-filetype='pstat_files'
+def get_file_dicts_containing_data(expname, filekeystoget, filetype):
+    exppath=buildexppath(expname)
+    expd, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
+    expfolder=os.path.split(exppath)[0]
 
-exppath=buildexppath(expname)
-expd, expzipclass=readexpasdict(exppath, includerawdata=False, erroruifcn=None, returnzipclass=True)
-expfolder=os.path.split(exppath)[0]
+    runkeys=sort_dict_keys_by_counter(expd, keystartswith='run__')
 
-runkeys=sort_dict_keys_by_counter(expd, keystartswith='run__')
-
-allfilesdict={}
-for rk in runkeys:
-    rund=expd[rk]
-    for fk in filekeystoget:
-        if not fk in rund.keys():
-            continue
-        for fn, filed in rund[fk][filetype].iteritems():
-            allfilesdict[fn]=filed
-            filed['fn']=fn
-            ans=buildrunpath_selectfile(fn, expfolder, runp=rund['run_path'], expzipclass=expzipclass, returnzipclass=True)
-            
-            p, zipclass=ans
+    allfilesdict={}
+    for rk in runkeys:
+        rund=expd[rk]
+        for fk in filekeystoget:
+            if not fk in rund.keys():
+                continue
+            for fn, filed in rund[fk][filetype].iteritems():
+                allfilesdict[fn]=filed
+                filed['fn']=fn
+                ans=buildrunpath_selectfile(fn, expfolder, runp=rund['run_path'], expzipclass=expzipclass, returnzipclass=True)
                 
-            filed['path']=p
-            filed['zipclass']=zipclass
-        
-for fn, filed in allfilesdict.items():
-    filed['data_arr']=getarrs_filed(filed['fn'], filed, selcolinds=None, trydat=False, zipclass=filed['zipclass'])
+                p, zipclass=ans
+                    
+                filed['path']=p
+                filed['zipclass']=zipclass
+            
+    for fn, filed in allfilesdict.items():
+        filed['data_arr']=getarrs_filed(filed['fn'], filed, selcolinds=None, trydat=False, zipclass=filed['zipclass'])
+    return allfilesdict
     
-#filed['data_arr'] is an array with length len(filed['keys']) by number of data points
+###Demo
+#expname=r'/eche/20170504.082546.copied-20170504220706403PDT.zip'
+#filekeystoget=['files_technique__CV2']
+#filetype='pstat_files'
+#
+#allfilesdict=get_file_dicts_containing_data(expname, filekeystoget, filetype)
+#print 'the first data array has shape ', allfilesdict.values()[0]['data_arr'].shape
