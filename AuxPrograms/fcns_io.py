@@ -534,6 +534,9 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         if 'eche' in expfiledict['experiment_type']:
                             numhead_numdata_fcn=lambda lines: get_numhead_numdata_echetxtfiles(lines)
                             readlinesfcn=lambda f:f.readlines()
+                        elif 'edep' in expfiledict['experiment_type']:
+                            numhead_numdata_fcn=lambda lines: get_numhead_numdata_echetxtfiles(lines)
+                            readlinesfcn=lambda f:f.readlines()
                         elif 'pets' in expfiledict['experiment_type']:
                             numhead_numdata_fcn=lambda lines: get_numhead_numdata_petsdtafiles(lines)
                             readlinesfcn=lambda f:f.readlines(1000)#only need the header so read
@@ -555,7 +558,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                     lines=f.readlines()
                                 else:
                                     lines=readlinesfcn(f)
-                    except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist
+                    except:#this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist. otherwise check out the if k3== cases above
                         print 'ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s' %(fn, runp, k, k2, k3)
                         del expfiledict[k][k2][k3][fn]
                         filedeletedbool=True
@@ -1609,6 +1612,7 @@ def getheadattrs(path=None, filestr='', searchstrs=['Sample', 'Sample No', 'samp
 #need interpretheaderbool on eche to get the column_headings?
 readdatafiledict=dict([\
     ('eche', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines, interpretheaderbool=False) or smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
+    ('edep', lambda ext, lines:ext=='.txt' and readechemtxt('', lines=lines, interpretheaderbool=False) or None), \
     ('uvis', lambda ext, lines:smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('pets', lambda ext, lines:read_dta_pstat_file('', lines=lines, addparams=True)), \
     ('xrfs', lambda ext, lines:None), \

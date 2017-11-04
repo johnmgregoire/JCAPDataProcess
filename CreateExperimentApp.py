@@ -134,6 +134,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         #self.expfilelist=[]
         #self.TechInFilesComboBox, self.FileInFilesComboBox
         #self.FileSearchLineEdit
+        self.savebinaryCheckBox.setChecked(False)
         self.batchmode=False
         self.updateuserfomd(clear=True)
         self.run_foms_fcn=None#framework setup but not tested and 20160608 not used. run_foms_fcn(rcpdict_temp) takes the rcpdict from a run block and returns a dictionsary ofr run_fom keys with string values that will be included as a run_foms block in each run__ block in the exp
@@ -417,15 +418,15 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.rcpdlist=map(operator.itemgetter(1), sorttups)
         for d in self.rcpdlist:
             d['name']=d['rcp_file'].strip().rstrip('.rcp')
-
             if self.getplatemapCheckBox.isChecked():
                 d['platemapdlist']=readsingleplatemaptxt(getplatemappath_plateid(d['plateidstr']), \
                     erroruifcn=\
                 lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, d['plateidstr'])))
             else:
                 d['platemapdlist']=[]
-        if True in [True for d in self.rcpdlist for tup in d['rcptuplist'] if 'computer_name' in tup[0] and 'UVIS' in tup[0]]:
-            self.experiment_type='uvis'
+        exp_type_list=[tup[0].partition(':')[2].strip() for d in self.rcpdlist for tup in d['rcptuplist'] if 'experiment_type' in tup[0]]
+        if len(exp_type_list)>0:
+            self.experiment_type=exp_type_list[0].lower()
         else:
             self.experiment_type='eche'
         self.expparamsdict_le_dflt['experiment_type'][1]=self.experiment_type

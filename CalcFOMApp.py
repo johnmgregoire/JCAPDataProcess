@@ -326,7 +326,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     if len(pmidstr)>0:
                         rund['platemap_id']=pmidstr
                 if runk.startswith('run__') and not 'platemap_id' in rund.keys():
-                    rund['platemap_id']=userinputcaller(self, inputs=[('platemap id: ', str, '')], title='Reading platemap filed. Enter map_id',  cancelallowed=False)[0]
+                    rund['platemap_id']=userinputcaller(self, inputs=[('platemap id: ', str, '')], title='Reading platemap failed. Enter map_id',  cancelallowed=False)[0]
             platemapids=[rund['platemap_id'] for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
             self.FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
             
