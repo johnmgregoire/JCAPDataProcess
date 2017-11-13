@@ -45,9 +45,13 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
     g=h5f[h5f.attrs['default_group']]
     gd=g['deposition']
     q=g['xrd']['qcounts'].attrs['q']
-    q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
     npts=len(q)
-    npts_subbcknd=len(q_subbcknd)
+    
+    if 'qcounts_subbcknd' in g['xrd'].keys():
+        q_subbcknd=g['xrd']['qcounts_subbcknd'].attrs['q']
+        npts_subbcknd=len(q_subbcknd)
+    else:
+        q_subbcknd=None
     
     if 'selectROI' in gd.keys():#make Analysis__SSRL_XRF_Comps ana block if possible but otherwise multirun_ana_files keeps its initialized value above
         gr=gd['selectROI']
@@ -72,12 +76,19 @@ def get_externalimportdatad_ssrl_batchresults(p, p_processed=None, askforprocess
     #            fn=calibfns[0]
     #            multirun_ana_files[an_name]+=[{'folderpath':imdir, 'fn':fn, 'type':'misc_files', 'fval':'ssrl_misc_file;'}]
         tif_fns=sorted([fn for fn in imdir_files if fn.endswith('.tif')])
-        if len(tif_fns)==len(xy_images):
-            rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir, \
-                 'ana_files':{\
+        
+        ana_files_generator=lambda fn: \
+                    {\
+                     'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'ssrl_csv_pattern_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}]\
+                        }\
+                if q_subbcknd is None else \
+                    {\
                      'Analysis__SSRL_Integrate':[{'fn':fn.replace('.tif', '_integrated.csv'),  'type':'pattern_files', 'fval':'ssrl_csv_pattern_file;q.nm,intensity.counts;1;%d;' %npts, 'h5arrind':count, 'h5dataset':'qcounts'}], \
                      'Analysis__SSRL_Process':[{'fn':fn.replace('.tif', '_processed.csv'),  'type':'pattern_files', 'fval':'ssrl_csv_pattern_file;q.nm_processed,intensity.counts_processed;1;%d;' %npts_subbcknd, 'h5arrind':count, 'h5dataset':'qcounts_subbcknd'}], \
-                                    }, \
+                        }
+        if len(tif_fns)==len(xy_images):
+            rcpd['file_dlist']+=[{'xyarr':xyarr,'tech':'files_technique__SSRL', 'type':'image_files',  'fn':fn, 'fval':'ssrl_mar_tiff_file;', 'folderpath':imdir, \
+                 'ana_files':ana_files_generator(fn)\
                  } for count, (fn, xyarr) in enumerate(zip(tif_fns, xy_images))]
     #get Analysis__SSRL_Integrate params from g['xrd'].attrs.items()
     pck2dfolder=os.path.join(p_processed, 'pck2d')
