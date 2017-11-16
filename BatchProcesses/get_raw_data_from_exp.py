@@ -7,6 +7,10 @@ sys.path.append(os.path.join(projectroot,'AuxPrograms'))
 sys.path.append(os.path.join(projectroot,'OtherApps'))
 
 from fcns_io import *
+#fix error of too many open files
+import win32file
+if win32file._getmaxstdio()<1000:
+    win32file._setmaxstdio(2048)
 
 #from get_raw_data_from_exp import get_file_dicts_containing_data
 
