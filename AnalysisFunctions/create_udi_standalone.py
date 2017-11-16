@@ -353,7 +353,7 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
                         weights_2d[activepatterns[1], i:j]=newweights
             else:
                 if gradual_average_overlap_bool:
-                    print 'gradual overlap calculation not possible because only implemented for 2-pattern overlaps and the max num of pattern overlaps is ', numpatterns_contributing_to_each_qresamp_val.max()
+                    print 'gradual overlap calculation not possible because only implemented for 2-pattern overlaps and the max num of pattern overlaps is ', numpatterns_contributing_to_each_qresamp_val.max(), anap
                 for patternind in range(weights_2d.shape[0]):
                     weights_2d[patternind, resampinds_ave]=1./numpatterns_contributing_to_each_qresamp_val[resampinds_ave]#wieght each pattern to obtain mean
         resamparr=qresampfcn(l_I)
