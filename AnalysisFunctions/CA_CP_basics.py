@@ -14,11 +14,11 @@ referenceshiftfcn=lambda x, e0, redoxstr:(x-e0)*((-1)**(not redoxstr in ['FeCp2+
 
 class Analysis__Imax(Analysis_Master_nointer):
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={}
+        self.analysis_fcn_version='2'
+        self.dfltparams={'seconds_to_skip_at_start': 0., 'seconds_to_skip_at_end': 0.}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Imax'
-        self.requiredkeys=['I(A)']
+        self.requiredkeys=['I(A)', 't(s)']
         self.optionalkeys=[]
         self.requiredparams=[]
         self.fomnames=['I.A_max']
@@ -28,16 +28,22 @@ class Analysis__Imax(Analysis_Master_nointer):
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
     def fomtuplist_dataarr(self, dataarr, filed):
-        return [(self.fomnames[0], numpy.max(dataarr[0]))]
+        return [(self.fomnames[0], self.calc_min_or_max(dataarr, maxbool=True))]
+    def calc_min_or_max(self, dataarr, maxbool=True):
+        t=dataarr[1]
+        inds=numpy.where((t>=self.params['seconds_to_skip_at_start'])&((t.max()-t)>=self.params['seconds_to_skip_at_end']))
+        fcn=numpy.max if maxbool else numpy.min
+        if numpy.isnan(fcn(dataarr[0][inds])):
+            asdfg
+        return fcn(dataarr[0][inds])
 
-
-class Analysis__Imin(Analysis_Master_nointer):
+class Analysis__Imin(Analysis__Imax):
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={}
+        self.analysis_fcn_version='2'
+        self.dfltparams={'seconds_to_skip_at_start': 0., 'seconds_to_skip_at_end': 0.}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__Imin'
-        self.requiredkeys=['I(A)']
+        self.requiredkeys=['I(A)', 't(s)']
         self.optionalkeys=[]
         self.requiredparams=[]
         self.fomnames=['I.A_min']
@@ -47,7 +53,7 @@ class Analysis__Imin(Analysis_Master_nointer):
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
     def fomtuplist_dataarr(self, dataarr, filed):
-        return [(self.fomnames[0], numpy.min(dataarr[0]))]
+        return [(self.fomnames[0], self.calc_min_or_max(dataarr, maxbool=False))]
 
 
 class Analysis__Ifin(Analysis_Master_nointer):
