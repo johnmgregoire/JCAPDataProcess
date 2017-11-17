@@ -25,13 +25,13 @@ runfoldername=mygetdir(parent=None, xpath=tryprependpath(RUNFOLDERS, 'eche'),mar
 measurement_area_override=0.58#None to use exp value
 mineqeforplot=1.e-3
 crit_pmax_mwcm2_for_fillfactor=.06
-
+illum_key='t(s)'
 expsaveextension='.done'
 anasaveextension='.run'
 
 
 #providing these paths will skip the generation of the exp/ana
-expname=None#r'eche\20171115.163552.exp'#None#r'eche\20170727.133340.exp'#None#r'eche\20170727.173030'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
+expname=r'eche\20171115.163552.exp'#None#r'eche\20170727.133340.exp'#None#r'eche\20170727.173030'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
 ananame=None#r'L:\processes\analysis\eche\20170717.155712.run\20170717.155712.ana'
 
 #expname=r'eche\20170719.165705.done'
@@ -161,9 +161,9 @@ print exppath
 
 
 analysis_to_do_tups=[\
-        ('CA1','Iphoto',False,{},True),('CA2','Iphoto',False,{},True),('CA3','Iphoto',False,{},True),('CA4','Iphoto',False,{},True),\
+        ('CA1','Iphoto',False,{'illum_key':illum_key},True),('CA2','Iphoto',False,{'illum_key':illum_key},True),('CA3','Iphoto',False,{'illum_key':illum_key},True),('CA4','Iphoto',False,{'illum_key':illum_key},True),\
         ('CA1','SpectralPhoto',False,{},False),\
-        ('CV5','Iphoto',False,{},False),\
+        ('CV5','Iphoto',False,{'illum_key':illum_key},False),\
         ('CV5','Pphotomax',False,{'v_extend_lower': -0.1, 'v_extend_upper': 0, 'sweep_direction': 'anodic'},True),\
         ('CV5','Pphotomax',False,{'v_extend_lower': .03, 'v_extend_upper': 0, 'sweep_direction': 'anodic'},True),\
         ('CV5','Pphotomax',False,{'v_extend_lower': -0.1, 'v_extend_upper': 0, 'sweep_direction': 'cathodic'},True),\

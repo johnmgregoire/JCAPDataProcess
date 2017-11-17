@@ -177,7 +177,7 @@ class Analysis__Etaave(Analysis_Master_inter, Analysis__Iave):#this order is imp
 
 class Analysis__Iphoto(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
+        self.analysis_fcn_version='2'
         self.dfltparams=dict([\
   ('frac_illum_segment_start', 0.4), ('frac_illum_segment_end', 0.95), \
   ('frac_dark_segment_start', 0.4), ('frac_dark_segment_end', 0.95), \
@@ -202,11 +202,16 @@ class Analysis__Iphoto(Analysis_Master_inter):
     #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.requiredkeys[-1]=self.params['illum_key']
-        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
+        requiredparams=self.requiredparams
+        if self.params['illum_key']=='t(s)':
+            self.echem_params_key='echem_params__'+techk
+            requiredparams+=[self.echem_params_key]#['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']
+            
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
 
-    def photofcn(self, d):
+    def photofcn(self, d, filed):
 
         ikey=self.params['illum_key']
         tshift=self.params['illum_time_shift_s']
@@ -218,6 +223,10 @@ class Analysis__Iphoto(Analysis_Master_inter):
             d[ikey]=-1*d[ikey]
 
         interd={}
+        
+        if self.params['illum_key']=='t(s)':
+            ikey=[filed[self.echem_params_key][k] for k in ['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']]
+        
         err=calcdiff_ill_caller(d, interd, ikey=ikey, thresh=self.params['illum_threshold'], \
             ykeys=[self.requiredkeys[0]], xkeys=list(self.requiredkeys[1:-1]), \
             illfracrange=(self.params['frac_illum_segment_start'], self.params['frac_illum_segment_end']), \
@@ -248,7 +257,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         return [(fomk, numpy.nan) for fomk in self.fomnames], {}, {}
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
-        return self.photofcn(d)
+        return self.photofcn(d, filed)
 
 class Analysis__Ephoto(Analysis__Iphoto):
     def __init__(self):
