@@ -47,6 +47,10 @@ def get_file_dicts_containing_data(expname, filekeystoget, filetype, sample_list
         tups=sorted([(sample_list.index(v['sample_no']), v) for v in allfilesdict.values()])
         dlist=map(operator.itemgetter(1), tups)
         return dlist
+    elif return_list_ordered_by_sample:#ordered by sample_no but user doesn't yet know the sample_no list (get it as [d['sample_no'] for d in dlist])
+        tups=sorted([(v['sample_no'], v) for v in allfilesdict.values()])
+        dlist=map(operator.itemgetter(1), tups)
+        return dlist
     else:
         return allfilesdict
     
