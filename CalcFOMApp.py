@@ -343,6 +343,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anadict['experiment_path']=rp.replace(chr(92),chr(47))
         print 'active experiment_path is %s' %(self.anadict['experiment_path'])
         self.anadict['experiment_name']=self.expfiledict['name']
+        if 'access' in self.expfiledict.keys():
+            self.anadict['access']=self.expfiledict['access']#this will set access here and then not overwritten later
         self.fillexpoptions()
         self.expfilenameLineEdit.setText(self.exppath)
     def fillexpoptions(self):
@@ -647,6 +649,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
     def updateana(self):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
+            if k=='access' and 'access' in self.expfiledict.keys():#only allow access specification from UI if not already provded by exp
+                continue
             s=str(le.text()).strip()
             if len(s)==0:
                 s=dfltstr

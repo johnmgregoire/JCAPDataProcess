@@ -337,7 +337,8 @@ class expDialog(QDialog, Ui_CreateExpDialog):
 
         importedexpparamstuplist=readexpasrcpdlist(p, only_expparamstuplist=True)
         self.expparamstuplist=[('exp_version:3',  [])]+[tup for tup in importedexpparamstuplist if not 'exp_version' in tup[0]]
-        
+        if not (True in [s.startswith('access:') for s, l in self.expparamstuplist]):
+            self.expparamstuplist+=[('access: hte', [])]
         #if params were manually changed in the tree, those changes will be ignored here
         self.ExpTreeWidgetFcns.filltreeexp(self.expdlist_use, self.expparamstuplist)
         self.updateexpobjects_tree()
@@ -702,11 +703,24 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         self.expparamstuplist=[('exp_version: 3',  [])]
 
         for k, (le, dfltstr) in self.expparamsdict_le_dflt.items():
+            if 'access' in k:#this handled below now
+                continue
             s=str(le.text()).strip()
             if len(s)==0:
                 s=dfltstr
             self.expparamstuplist+=[(k+': '+s , [])]
         plateidstemp=[d['plateidstr'] if 'plateidstr' in d.keys() else None for dlist in self.expdlist_use.itervalues() for d in dlist]
+        accesslist=[s[7:].strip() for d2 in [d for dlist in self.expdlist_use.itervalues() for d in dlist if 'rcptuplist' in d.keys()] for s, l in d2['rcptuplist'] if s.startswith('access:')]
+        if 'tri' in accesslist:
+            access='tri'
+        elif 'muri' in accesslist:
+            access='muri'
+        elif len(accesslist)>0 and not (False in [s=='public' for s in accesslist]): #access specified and all access is 'public'
+            access='public'
+        else:
+            access=str(self.AccessLineEdit.text()).strip()
+        self.expparamstuplist+=[('access: %s' %access, [])]
+            
         if None in plateidstemp:
             idialog=messageDialog(self, 'WARNING: plate_id missing for at least 1 run')
             idialog.exec_()
