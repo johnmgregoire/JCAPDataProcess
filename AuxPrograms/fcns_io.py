@@ -428,7 +428,7 @@ def readxrfbatchcsv(path, mtime_path_fcn=None, lines=None):
     return d
 
 
-def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'analysis_type', 'name', 'description', 'created_by']):
+def convertstrvalstonum_nesteddict(expfiledict, skipkeys=['experiment_type', 'analysis_type', 'name', 'description', 'created_by', 'experiment_name']):
     def nestednumconvert(d):
         for k, v in d.iteritems():
             if isinstance(v, str) and not k in skipkeys:
@@ -696,8 +696,13 @@ def prepend_root_exp_path(p, exp=True):
         if os.path.isfile(os.path.join(parentfold, subfold)):
             return os.path.join(parentfold, subfold)
         if subfold.count('.')>1:
-            subfold='.'.join(subfold.split('.')[:2])
+            subfoldparts=subfold.split('.')
+            subfold='.'.join(subfoldparts[:2])
         subfoldl=[s for s in os.listdir(parentfold) if s.startswith(subfold)]
+        if len(subfoldl)>1:#if multiple matches (e.g. a same-named exp or ana with simulatanous different extensions or descriptive manually named folder, try to find the perfect match before just return the first
+            for foldname in subfoldl:
+                if not (False in [s in foldname for s in subfoldparts]):
+                    return os.path.join(parentfold, foldname)
         if len(subfoldl)>0:
             return os.path.join(parentfold, subfoldl[0])
     #print 'cannot find folder %s in %s' %(subfold, parentfold)
@@ -706,7 +711,9 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+ext_str #15 characters in YYYYMMDD.HHMMSS
 
-    if (not os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) or not os.path.isabs(p):
+    if (os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) and os.path.isabs(p):#os.path.isdir(os.path.split(p)[0]) presumably is to catch .zip "folders" that aren't a dir but their parent will be
+        p#don't need to do anything
+    else:
         if ext_str=='.exp':
             p=prepend_root_exp_path(p)
         else:
@@ -719,6 +726,7 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
         return os.path.join(p, fn)#hope this works out without checking if it is actually there
 
     fnl=[s for s in os.listdir(p) if s.endswith(ext_str)]
+
     if len(fnl)==0:
         print 'cannot find %s file in %s' %(ext_str, p)
         return p
@@ -820,12 +828,24 @@ def saveexp_txt_dat(expfiledict, erroruifcn=None, saverawdat=True, experiment_ty
         pickle.dump(saveexpfiledict, f)
     return saveexpfiledict, dsavep
 
+def dictkeysort(kl, splitstr='__'):#sort kl with all keys without '__' first and then group into unique strings before __ and within those sets try intgeter conversino of post-__ and ssort by that or string if not***
+    newkl=[]
+    newkl+=sorted([k for k in kl if not splitstr in k])
+    pretext=sorted(list(set([k.partition(splitstr)[0] for k in kl if splitstr in k])))
+    for s in pretext:
+        partkl=[k for k in kl if splitstr in k and k.partition(splitstr)[0]==s]
+        nonintkl=sorted([k for k in partkl if False in [c.isdigit() for c in k.partition(splitstr)[2]]])
+        l_sort=sorted([(int(k.partition(splitstr)[2]), k) for k in partkl if not k in nonintkl])
+        intkl=map(operator.itemgetter(1), l_sort)
+        newkl+=nonintkl
+        newkl+=intkl
+    return newkl
 def strrep_filedict(filedict):
     keys=[k for k in filedict.keys() if 'version' in k]#assume this is not a dictionary
     keys+=sorted([k for k, v in filedict.iteritems() if not isinstance(v, dict) and not 'version' in k])
     sl=['' if len(k)==0 else (k+': '+str(filedict[k])) for k in keys]
-    dkeys=[k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k]
-    dkeys+=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
+    dkeys=sorted([k for k, v in filedict.iteritems() if isinstance(v, dict) and not '__' in k])
+    dkeys+=dictkeysort([k for k, v in filedict.iteritems() if isinstance(v, dict) and '__' in k])
     return ('\n'.join(sl+[strrep_filed_nesting(k, filedict[k]) for k in dkeys])).strip()
 
 def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
@@ -838,8 +858,8 @@ def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     keys=[nestk for nestk in v.keys() if 'version' in nestk]#assume this is not a dictionary
     keys+=sorted([nestk for nestk, nestv in v.iteritems() if not isinstance(nestv, dict) and not 'version' in nestk])
     sl+=[indent*(indentlevel+1)+nestk+': '+str(v[nestk]) for nestk in keys]
-    dkeys=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and not 'files_' in nestk])
-    dkeys+=sorted([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and 'files_' in nestk])
+    dkeys=dictkeysort([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and not 'files_' in nestk])
+    dkeys+=dictkeysort([nestk for nestk, nestv in v.iteritems() if isinstance(nestv, dict) and 'files_' in nestk])
     return '\n'.join(sl+[strrep_filed_nesting(nestk, v[nestk], indentlevel=indentlevel+1) for nestk in dkeys])
 
 def strrep_filed_createflatfiledesc(k, v,  indent='    ', indentlevel=0):

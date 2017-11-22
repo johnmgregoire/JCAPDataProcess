@@ -21,14 +21,14 @@ class MainMenu(QMainWindow):
 mainapp=QApplication(sys.argv)
 form=MainMenu(None)
 calcui=form.calcui
-
+calcui.getplatemapCheckBox.setChecked(False)
 folder=r'L:\processes\analysis\xrds'
-fns=[fn for fn in os.listdir(folder) if fn.endswith('.run')]#20170922.125037.run and 20170922.124034.run
+fns=[fn for fn in os.listdir(folder) if fn.endswith('.done')]#20170922.125037.run and 20170922.124034.run
 for fn in fns:
     anafolder=os.path.join(folder, fn)
 #    if True in [s.startswith('ana__6_') for s in os.listdir(anafolder)]:
 #        print 'skipping becuase already done ', fn
-    p=os.path.join(anafolder, fn[:-3]+'ana')
+    p=os.path.join(anafolder, fn.rpartition('.')[0]+'.ana')
     calcui.importana(p=p)
     pidstr=calcui.anadict['plate_ids']
     if ',' in pidstr:
@@ -52,6 +52,7 @@ for fn in fns:
             calcui.getactiveanalysisclass()
             calcui.processeditedparams()
             break
+    #calcui.exec_()
     c=calcui.analysisclass
     c.params['select_aux_keys']='AtFrac'
     c.params['select_aux_ints']='2'

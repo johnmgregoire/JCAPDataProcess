@@ -99,7 +99,7 @@ class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
         self.close()
         
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
-    def __init__(self, parent=None, title='', folderpath=None, guimode=GUIMODE):
+    def __init__(self, parent=None, title='', folderpath=None, modifyanainplace=False, guimode=GUIMODE):
         super(calcfomDialog, self).__init__(parent)
         self.setupUi(self)
         
@@ -111,7 +111,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #        self.echem30=echem30axesWidget()
 #        self.echem30.show()
         self.plotillumkey=None
-
+        self.modifyanainplace=modifyanainplace
         self.dbdatasource=0
 
         self.techniquedictlist=[]
@@ -186,6 +186,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.exppath='null'
         self.tempanafolder=''
         self.expzipclass=None
+        self.anafolder=None
         self.clearanalysis()
         self.updateuserfomd(clear=True)
         
@@ -315,14 +316,20 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.expzipclass=expzipclass
         self.FilterSmoothMapDict={}
         if self.getplatemapCheckBox.isChecked():
-            for runk, rund in self.expfiledict.iteritems():
+            for runk, rund in self.expfiledict.items():
                 if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
                          and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
                          and 'plate_id' in rund['parameters'].keys():
                     pmpath, pmidstr=getplatemappath_plateid(str(rund['parameters']['plate_id']), return_pmidstr=True)
-                    rund['platemapdlist']=readsingleplatemaptxt(pmpath, \
-                        erroruifcn=\
-                    lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+                    if len(pmidstr)>0:
+                        for temprunk, temprund in self.expfiledict.iteritems():
+                            if temprunk.startswith('run__') and 'platemap_id' in temprund.keys() and temprund['platemap_id']==pmidstr:
+                                rund['platemapdlist']=temprund['platemapdlist']#presumably share platemap by reference
+                                rund['platemap_id']=pmidstr
+                    if not 'platemapdlist' in rund.keys():
+                        rund['platemapdlist']=readsingleplatemaptxt(pmpath, \
+                            erroruifcn=\
+                                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
                     if len(pmidstr)>0:
                         rund['platemap_id']=pmidstr
                 if runk.startswith('run__') and not 'platemap_id' in rund.keys():
@@ -534,14 +541,15 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
             idialog.exec_()
             return
-        self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass, anadict=anadict)#clearanalysis happens here and anadcit is ported into self.anadict in the clearanalysis
+        
         #self.anadict=anadict
         if p.endswith('.ana') or p.endswith('.pck'):
-            anafolder=os.path.split(p)[0]
+            self.anafolder=os.path.split(p)[0]
         else:
-            anafolder=p
-    
-        copyanafiles(anafolder, self.tempanafolder)
+            self.anafolder=p
+        self.importexp(expfiledict=expfiledict, exppath=exppath, expzipclass=expzipclass, anadict=anadict)#clearanalysis happens here and anadcit is ported into self.anadict in the clearanalysis
+        if not self.modifyanainplace:
+            copyanafiles(self.anafolder, self.tempanafolder)
         self.updateana()
         print self.anadict.keys()
 
@@ -709,7 +717,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def clearanalysis(self, anadict=None):
         self.analysisclass=None
         self.activeana=None
+
         self.anadict={}
+        self.AnaTreeWidget.clear()
         
         self.aux_exp_dlist=[]
         self.aux_ana_dlist=[]
@@ -721,13 +731,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 self.anadict[k]=v
             if 'description' in anadict.keys():
                 self.paramsdict_le_dflt['description'][1]=anadict['description']
-                
-        self.anadict['ana_version']='3'
-        
-        
+            if self.modifyanainplace:#can only modify in place if anadict provided
+                self.anadict['ana_version']='3'
+                if not self.anafolder is None:
+                    self.tempanafolder=self.anafolder
+                if 'name' in self.anadict.keys():
+                    self.AnaNameLineEdit.setText(self.anadict['name'])
+                    self.paramsdict_le_dflt['name'][1]=self.anadict['name']
+                return
 
-        self.AnaTreeWidget.clear()
-        
+        self.anadict['ana_version']='3'
         
         if os.path.isdir(self.tempanafolder):
             for fn in os.listdir(self.tempanafolder):
@@ -745,6 +758,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
  
     def saveana(self, dontclearyet=False, anatype=None, rundone=None):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
+        if self.modifyanainplace:
+            savep=os.path.join(self.anafolder, self.anadict['name']+'.ana')
+            saveanafiles(savep, anafilestr=self.anafilestr, anadict=self.anadict)
+            return self.anafolder
         if not 'ana_version' in self.anafilestr:
             idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
             idialog.exec_()
@@ -1488,7 +1505,7 @@ if __name__ == "__main__":
             if execute:
                 self.calcui.exec_()
     mainapp=QApplication(sys.argv)
-    form=MainMenu(None, execute=False)
+    form=MainMenu(None, execute=False, modifyanainplace=False)#modifyanainplace is a dangerous thing to turn on so no user-available way of doing it
 
     form.show()
     form.setFocus()

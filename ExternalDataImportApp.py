@@ -417,9 +417,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def mod_smp_afd__xrds_withq(self, afd, anak, smpstr=None):
         newfn='%s_%s' %(anak, afd['fn'].replace('.xy', '.csv'))
         afd['anafn']=newfn
-        if 'q.nm,' in afd['fval']:
-            print 'THIS IS AN ERROR THAT WAS NOT REPRODUCIBLE BUT HAS ARISEN AGAIN SO REMEMBER WHAT GOT YOU HERE TO HELP DIAGNOSE'
-        else:
+        if not ('q.nm' in afd['fval']):
             afd['fval']=afd['fval'].replace('two_theta.deg','q.nm_processed,two_theta.deg' if '_processed' in afd['fval'] else 'q.nm,two_theta.deg')
         afd['anak']=anak
         afd['copy_fcn']=self.xrds_copy_xy_to_ana_convert_to_q

@@ -453,15 +453,18 @@ def percent_change_in_lattice_contsant(rho, num_shifted_patterns):
     return 100.*(rho**(num_shifted_patterns-1.)-1.)
 
 smoothfcn=lambda Iraw: savgol_filter(Iraw, 31, 4)
-#for xrds q going from 5.33065 to 27.5384, 700 data point resampling in log q makes the spacing 1.00235198 and with 10 shifted patterns would model 2.14% lattice constant change
 
 
-#append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
-#append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
 
-p=r'L:\processes\analysis\temp\20171017.101645.run\20171017.101645.ana'
-
-append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__1', 'ana__1'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
-append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+##for xrds q going from 5.33065 to 27.5384, 700 data point resampling in log q makes the spacing 1.00235198 and with 10 shifted patterns would model 2.14% lattice constant change
+#
+#
+##append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
+##append_udi_to_ana(l_anapath=[p], l_anak_comps=['ana__7'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
+#
+#p=r'L:\processes\analysis\temp\20171017.101645.run\20171017.101645.ana'
+#
+#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__1', 'ana__1'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+#append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
