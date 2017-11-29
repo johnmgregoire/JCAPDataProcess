@@ -1847,7 +1847,7 @@ def get_data_rcp_dict__echerunfile(run_path, file_name):
         d[k]=v
     return d
 
-def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id
+def writeudifile(p, udi_dict, additional_deposition_keys_with_str_vals=['pattern_fn']):#ellabels, comps, xy, Q, Iarr, sample_no and plate_id
     metastrlist=[];mtrpnstrlist=[]
     compstrlist=[]
     depstrlist=[]
@@ -1878,7 +1878,9 @@ def writeudifile(p, udi_dict):#ellabels, comps, xy, Q, Iarr, sample_no and plate
                 ([('sample_no=', udi_dict['sample_no'], '%d')] if 'sample_no' in udi_dict.keys() else [])+\
                 ([('plate_id=', udi_dict['plate_id'], '%s')] if 'plate_id' in udi_dict.keys() else []):
             depstrlist+=[lab+','.join([fmt %v for v in arr])]
-
+        for k in additional_deposition_keys_with_str_vals:
+            if k in udi_dict.keys() and len(udi_dict[k])>0 and isinstance(udi_dict[k][0], str):
+                depstrlist+=['%s=%s' %(k, ','.join(udi_dict[k]))]
     if 'Motorpns' in udi_dict.keys() and 'mxy' in udi_dict.keys():
         metastrlist+=['Motorpns=%s' %(','.join(udi_dict['Motorpns']))]
         for lab, arr, fmt in [('mX=', udi_dict['mxy'][:, 0], '%.2f'), ('mY=', udi_dict['mxy'][:, 1], '%.2f')]+\
@@ -2153,3 +2155,5 @@ def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maind
     if closezip:
         zipclass.close()
     return d
+
+

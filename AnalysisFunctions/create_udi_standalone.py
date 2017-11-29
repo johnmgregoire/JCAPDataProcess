@@ -127,6 +127,7 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
     udi_dict['Iarr']=[]
     udi_dict['runint']=[]
     udi_dict['sample_no']=[]
+    udi_dict['pattern_fn']=[]
     
     smps_added_so_far=[]
     for count, (pidstr, elkey_byel, comp_fomd, pattern_l_fn_fd, anap, (anadict, zipclass)) in enumerate(zip(l_plate_idstr, l_elkey_byel, l_comp_fomd, l_pattern_l_fn_fd, l_anapath, l_anadict_zipclass)):
@@ -153,6 +154,7 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
                 udi_dict['compkeys']=[elkey_byel[elind] for elind in elinds]
                 udi_dict['Q']=patternd[q_key]
             udi_dict['Iarr']+=[patternd[intensity_key]]
+            udi_dict['pattern_fn']+=[fn]
             if len(udi_dict['Iarr'][-1])!=len(udi_dict['Q']):
                 print 'not all patterns same length: ',  len(udi_dict['Iarr'][-1]), len(udi_dict['Q']), anap, fn
                 return
@@ -468,3 +470,8 @@ smoothfcn=lambda Iraw: savgol_filter(Iraw, 31, 4)
 #append_resampled_merged_patterns_to_ana(l_anapath=[p, p], l_anak_patterns=['ana__2', 'ana__2'],  l_pattern_fn_search_str=['1st_frame', '2nd_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
 #append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__1'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm_processed',intensity_key='intensity.counts_processed', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
 #append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
+
+
+newanapath=buildanapath(r'L:\processes\analysis\ssrl\20171011.113240.run')
+append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
+append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
