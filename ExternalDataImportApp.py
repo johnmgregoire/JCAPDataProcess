@@ -796,7 +796,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
     def savefiles(self, overwrite=False, rundoneext='.done'):
         if len(self.inds_rcpdlist)==0:
             return
-        dropfolder=tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(self.datatype, 'drop'))
+        dropfolder=getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             messageDialog(self, 'Aborting SAVE because cannot find drop folder').exec_()
             return

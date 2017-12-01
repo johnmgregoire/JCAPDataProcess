@@ -22,6 +22,9 @@ def filterchars(s, valid_chars = "-_.%s%s" % (string.ascii_letters, string.digit
     return ''.join([c for c in s if c in valid_chars])
 
 
+def strrep_generic_file_dict_value(v):
+    return filterchars(str(v), valid_chars = "/<>-_.,; ()[]{}/%s%s%s" % (string.ascii_letters, string.digits,''.join(['\\','%','&','^','!','#','*'])))
+
 def attemptnumericconversion(s, fcn=float):
     try:
         return fcn(s)
@@ -678,6 +681,9 @@ def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
             return pp
     return ''
 
+def getdropfolder_exptype(datatype):
+    return tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(datatype, 'drop'))
+    
 def compareprependpath(preppendfolderlist, p, replaceslash=True):
     for folder in preppendfolderlist:
         if os.path.normpath(p).startswith(os.path.normpath(folder)):
@@ -863,6 +869,11 @@ def strrep_filed_nesting(k, v, indent='    ', indentlevel=0):
     return '\n'.join(sl+[strrep_filed_nesting(nestk, v[nestk], indentlevel=indentlevel+1) for nestk in dkeys])
 
 def strrep_filed_createflatfiledesc(k, v,  indent='    ', indentlevel=0):
+    s=filed_createflatfiledesc(v)
+    itemstr=indent*indentlevel+k
+    return itemstr+': '+s
+
+def filed_createflatfiledesc(v):#v is the filed
     if 'num_header_lines' in v.keys() and 'num_data_rows' in v.keys() and 'keys' in v.keys():
         s='%s;%s;%d;%d' %(v['file_type'], ','.join(v['keys']), v['num_header_lines'], v['num_data_rows'])
         if 'sample_no' in v.keys():
@@ -871,9 +882,7 @@ def strrep_filed_createflatfiledesc(k, v,  indent='    ', indentlevel=0):
         s='%s;%d' %(v['file_type'], v['sample_no'])
     else:
         s=v['file_type']#+';'#not all ana use semicolon after only file type but I thought this was standard practice
-    itemstr=indent*indentlevel+k
-    return itemstr+': '+s
-    
+    return s
 def getarrfromkey(dlist, key):
     return numpy.array([d[key] for d in dlist])
 
