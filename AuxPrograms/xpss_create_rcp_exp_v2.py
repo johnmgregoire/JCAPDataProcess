@@ -280,9 +280,9 @@ class setup_rcp_and_exp_xpss():
             return
         with open(p, mode='w') as f:
             f.write(rcpfilestr)
-        print 'rcp file saved to ', p
-        saveexpfiledict, dsavep=saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext, file_attr_and_existence_check=False)
-        print 'exp file saved to ', dsavep
+        #print 'rcp file saved to ', p
+        saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext, file_attr_and_existence_check=False)
+        #print 'exp file saved to ', dsavep
     
     def add_all_files(self):
         self.import_path#this path should be all that's necessary to 
@@ -300,6 +300,6 @@ class setup_rcp_and_exp_xpss():
             x = np.array([1486.6-self.allparams['startE'][fileindex]+i*self.allparams['stepE'][fileindex] for i in range(len(self.xpsspec[fileindex]))])
             sav = np.array([x,y]).T
             np.savetxt(os.path.join(self.runfolderpath,fn),sav,delimiter=',',fmt='%3.4f, %0.0f',header=','.join(self.pattern_file_keys))
-#example
-import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
-xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.run', expext='.run', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
+##example
+#import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
+#xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.run', expext='.run', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
