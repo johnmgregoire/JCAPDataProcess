@@ -8,7 +8,6 @@ import numpy
 import operator
 import numpy as np
 import re
-os.chdir('K:\users\helge.stein\scripts-dev\JCAPDataProcess-master\AuxPrograms')
 projectroot=os.path.split(os.getcwd())[0]
 sys.path.append(projectroot)
 sys.path.append(os.path.join(projectroot,'AuxPrograms'))
