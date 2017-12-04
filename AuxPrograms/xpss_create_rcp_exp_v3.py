@@ -263,13 +263,11 @@ class setup_rcp_and_exp_xpss():
                 exprund[tk]['pattern_files']={}
                 rcpdict[tk]['pattern_files']={}
                 techdlist+=[(rcpdict[tk]['pattern_files'], exprund[tk]['pattern_files'])]
-        #TODO: unsure about this line
-        self.add_kratos_file=lambda fn:[d.update({fn:strrep_filed_createflatfiledesc('',{'file_type':'xpss_kratos_file'})}) for d in xpsstechd]
-        #self.add_kratos_file=lambda fn:[d.update({fn:strrep_filed_createflatfiledesc({'file_type':'xpss_kratos_file'})}) for d in xpsstechd]
-        #self.add_meta_file=lambda fn:[d.update({fn:filed_createflatfiledesc({'file_type':'xpss_kratos_file'})}) for d in xpsstechd]
+        #messy fix for : : bug
+        self.add_kratos_file=lambda fn:[d.update({fn:strrep_filed_createflatfiledesc('DELSTR',{'file_type':'xpss_kratos_file'}).strip('DELSTR:')}) for d in xpsstechd]
         self.pattern_file_keys=['BE(eV)','Intensity']
-        self.add_pattern_file=lambda tech, fn, nrows, sample_no:[d.update({fn:strrep_filed_createflatfiledesc('',{'file_type':'xpss_spectrum_csv','keys':self.pattern_file_keys,'num_header_lines':1,'num_data_rows':nrows,'sample_no':sample_no})}) for d in techdlist[self.technique_names.index(tech)]]
-    
+        self.add_pattern_file=lambda tech, fn, nrows, sample_no:[d.update({fn:strrep_filed_createflatfiledesc('DELSTR',{'file_type':'xpss_spectrum_csv','keys':self.pattern_file_keys,'num_header_lines':1,'num_data_rows':nrows,'sample_no':sample_no}).strip('DELSTR:')}) for d in techdlist[self.technique_names.index(tech)]]
+     
     def save_rcp_exp(self, testmode):
         rcpfilestr=strrep_filedict(self.rcpdict)
         p=os.path.join(self.runfolderpath, self.rcpdict['name']+'.rcp')
