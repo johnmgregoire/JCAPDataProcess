@@ -160,7 +160,8 @@ class setup_rcp_and_exp_xpss():
             temp['technique'].append('{}-{}{}'.format(method,element_an,transition))
             temp['passE'].append(spec[' 42 Pass energy'])
             temp['stepE'].append(spec[' 4 Spectrum scan step size'])
-            temp['startE'].append(spec[' 3 Spectrum scan start'])
+            #excitation energy is hardcoded to 1486.6 eV
+            temp['startE'].append(1486.6-spec[' 3 Spectrum scan start'])
             self.xpsspec.append(spec[' 12 Ordinate values'])
         self.allparams = temp
         
@@ -294,8 +295,7 @@ class setup_rcp_and_exp_xpss():
             tech=self.technique_names[fileindex%len(self.technique_names)]
             self.add_pattern_file(tech, fn, len(self.xpsspec[fileindex]), sample_no)
             y = self.xpsspec[fileindex]
-            #excitation energy is hardcoded to 1486.6 eV
-            x = np.array([1486.6-self.allparams['startE'][fileindex]+i*self.allparams['stepE'][fileindex] for i in range(len(self.xpsspec[fileindex]))])
+            x = np.array([self.allparams['startE'][fileindex]+i*self.allparams['stepE'][fileindex] for i in range(len(self.xpsspec[fileindex]))])
             sav = np.array([x,y]).T
             np.savetxt(os.path.join(self.runfolderpath,fn),sav,delimiter=',',fmt='%3.4f, %0.0f',header=','.join(self.pattern_file_keys), comments='')
 ##example
