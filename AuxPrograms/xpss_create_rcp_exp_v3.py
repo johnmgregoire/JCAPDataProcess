@@ -74,9 +74,8 @@ class setup_rcp_and_exp_xpss():
                 print 'aborting because failed retrieval of platemap id for plate :', self.plate_idstr
                 return True
             self.pmidstr=ans[1]
-        #TODO !!!!!!!!!!
-        #dropfolder=self.getdropfolder_exptype(self.datatype)
-        dropfolder='K:/experiments/xpss/drop'
+
+        dropfolder=self.getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             #messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
             print 'Aborting SAVE because cannot find drop folder'
