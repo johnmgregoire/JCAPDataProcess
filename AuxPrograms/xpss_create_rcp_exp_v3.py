@@ -233,7 +233,8 @@ class setup_rcp_and_exp_xpss():
         self.add_run_attr('run_use', 'data')
         self.add_run_attr('plate_id', self.plate_idstr)
         self.add_run_attr('name', self.data_acquisition_timestamp)
-        
+        self.add_run_attr('access', self.access)
+
         compname='HTE-XPSS-01'
         self.add_run_attr('computer_name', compname)
         exprund['run_path']=r'/%s/%s/%s/%s' %(self.datatype, compname.lower(), self.rcpmainfoldname, rcpdict['name']+self.rcpext)
