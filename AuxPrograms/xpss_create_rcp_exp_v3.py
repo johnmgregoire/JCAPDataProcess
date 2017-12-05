@@ -58,16 +58,16 @@ class setup_rcp_and_exp_xpss():
 
         self.rcpext=rcpext
         self.expext=expext
-        iserror=self.setup_folders(overwrite_runs)
+        iserror=self.setup_folders(overwrite_runs, testmode)
         if iserror:
             return
         
         self.setup_file_dicts()
-        self.add_all_files()
+        self.add_all_files(testmode)
         self.save_rcp_exp(testmode)
         
     
-    def setup_folders(self, overwrite_runs=True):
+    def setup_folders(self, overwrite_runs, testmode):
         if self.pmidstr is None:
             ans=getplatemappath_plateid(self.plate_idstr, erroruifcn=None, infokey='screening_map_id:', return_pmidstr=True)
             if ans is None:
@@ -81,7 +81,7 @@ class setup_rcp_and_exp_xpss():
             #messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
             print 'Aborting SAVE because cannot find drop folder'
             return True
-        if not os.path.isdir(dropfolder):
+        if (not testmode) and not os.path.isdir(dropfolder):
             os.mkdir(dropfolder)
             
         ellist=getelements_plateidstr(self.plate_idstr)
@@ -90,19 +90,20 @@ class setup_rcp_and_exp_xpss():
         
         rcpmainfolder=os.path.join(dropfolder, self.rcpmainfoldname)
         
-        if not os.path.isdir(rcpmainfolder):
+        if (not testmode) and not os.path.isdir(rcpmainfolder):
             os.mkdir(rcpmainfolder)
             
         
         self.runfolderpath=os.path.join(rcpmainfolder, self.data_acquisition_timestamp+self.rcpext)
-        if os.path.isdir(self.runfolderpath):
-            if overwrite_runs:
-                shutil.rmtree(self.runfolderpath)
-            else:
-                #messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-                print 'Aborting SAVE because %s folder exists' %rcpmainfolder
-                return True
-        os.mkdir(self.runfolderpath)
+        if not testmode:
+            if os.path.isdir(self.runfolderpath):
+                if overwrite_runs:
+                    shutil.rmtree(self.runfolderpath)
+                else:
+                    #messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
+                    print 'Aborting SAVE because %s folder exists' %rcpmainfolder
+                    return True
+            os.mkdir(self.runfolderpath)
         return False
 
     def get_block_list(self):
@@ -283,13 +284,14 @@ class setup_rcp_and_exp_xpss():
         saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext, file_attr_and_existence_check=False)
         #print 'exp file saved to ', dsavep
     
-    def add_all_files(self):
+    def add_all_files(self, testmode):
         self.import_path#this path should be all that's necessary to 
         position_index_of_file_index=lambda fi:fi//len(self.technique_names)
         sample_no_of_file_index=lambda fi:self.sample_no_from_position_index[position_index_of_file_index[position_index_of_file_index(fi)]] if isinstance(self.sample_no_from_position_index, list) else self.sample_no_from_position_index(position_index_of_file_index(fi))
         kratosfn=os.path.split(self.import_path)[1]
         self.add_kratos_file(kratosfn)
-        shutil.copy(self.import_path, os.path.join(self.runfolderpath, kratosfn))
+        if not testmode:
+            shutil.copy(self.import_path, os.path.join(self.runfolderpath, kratosfn))
         fns=['{}_XPS{}.csv'.format(sample_no_of_file_index(i),self.allparams['technique'][i]) for i in range(len(self.xpsspec))]
         for fileindex, fn in enumerate(fns):
             sample_no=sample_no_of_file_index(fileindex)
@@ -298,7 +300,8 @@ class setup_rcp_and_exp_xpss():
             y = self.xpsspec[fileindex]
             x = np.array([self.allparams['startE'][fileindex]+i*self.allparams['stepE'][fileindex] for i in range(len(self.xpsspec[fileindex]))])
             sav = np.array([x,y]).T
-            np.savetxt(os.path.join(self.runfolderpath,fn),sav,delimiter=',',fmt='%3.4f, %0.0f',header=','.join(self.pattern_file_keys), comments='')
+            if not testmode:
+                np.savetxt(os.path.join(self.runfolderpath,fn),sav,delimiter=',',fmt='%3.4f, %0.0f',header=','.join(self.pattern_file_keys), comments='')
 ##example
-#import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
-#xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.run', expext='.run', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
+import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
+xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.done', expext='.done', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
