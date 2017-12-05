@@ -196,7 +196,7 @@ class setup_rcp_and_exp_xpss():
         self.technique_names=self.params['technique']
         #parse date
         from dateutil.parser import parse
-        self.data_acquisition_timestamp=parse(self.pre_parsed[0][' 151 Date Acquired']).strftime('%d%y%m.%H%M%S') 
+        self.data_acquisition_timestamp='20'+parse(self.pre_parsed[0][' 151 Date Acquired']).strftime('%d%y%m.%H%M%S') 
         self.run_params_dict = {}
         for key in self.params.keys():
             if key == 'technique':            
