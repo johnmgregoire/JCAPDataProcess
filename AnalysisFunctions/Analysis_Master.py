@@ -225,7 +225,7 @@ class Analysis_Master_nointer():
         
         p=os.path.join(destfolder,fn)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
-        self.primarycsvpath=p
+        self.primarycsvpath=p#every writefom goes through here to set the primarycsvpath for the analysis class
         return '%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):

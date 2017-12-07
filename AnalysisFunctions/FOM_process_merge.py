@@ -22,6 +22,8 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})#get for each csv during .perform()
         self.auxfiledlist=[]
         self.auxpath=''
+        self.previous_params=None
+        self.auxd={}
     
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'process_fom'
@@ -52,36 +54,36 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         
         custom_load_csv_bool=False
         if self.params['aux_ana_path']=='self':
-            auxd=copy.deepcopy(calcFOMDialogclass.anadict)
-            convertfilekeystofiled(auxd)
+            self.auxd=copy.deepcopy(calcFOMDialogclass.anadict)
+            convertfilekeystofiled(self.auxd)
             self.auxpath=calcFOMDialogclass.tempanafolder
         elif self.params['aux_ana_path']=='custom':
             custom_load_csv_bool=True
-            auxd={}
-            auxd['custom']={}
-            auxd['custom']['files_multi_run']={}
-            auxd['custom']['files_multi_run']['fom_files']={}
-            
+
             try:
-                p=mygetopenfile(parent=(None if (calcFOMDialogclass is None) else calcFOMDialogclass), markstr='Select .csv with 1 header line inlcuding sample_no')
-                if p is None or len(p)==0:
-                    raise ValueError()
-                self.auxpath, fnk=os.path.split(p)
-                fileattrd=dict({}, fn=fnk, num_header_lines=1)#the 'keys' get defined within this trial reading
-                readcsvdict(p, fileattrd)
-                if not 'sample_no' in fileattrd['keys']:
-                    print 'sample_no required as a column in .csv'
-                    raise ValueError()
-                if False in [k==filterchars(k) for k in fileattrd['keys']]:
-                    print 'a key in the selected .csv hs an illegal character'
-                    raise ValueError()
+                if self.previous_params is None or (not 'custom' in self.auxd) or (False in [self.previous_params[k]==v for k, v in self.params.iteritems()]):#first time through or a param has changed since end of last function call then open a file. if want to change the file will need tro change a parameter
+                    self.auxd={}
+                    self.auxd['custom']={}
+                    self.auxd['custom']['files_multi_run']={}
+                    self.auxd['custom']['files_multi_run']['fom_files']={}
+                    p=mygetopenfile(parent=(None if (calcFOMDialogclass is None) else calcFOMDialogclass), markstr='Select .csv with 1 header line inlcuding sample_no')
+                    if p is None or len(p)==0:
+                        raise ValueError()
+                    self.auxpath, fnk=os.path.split(p)
+                    fileattrd=dict({}, fn=fnk, num_header_lines=1)#the 'keys' get defined within this trial reading
+                    readcsvdict(p, fileattrd)
+                    if not 'sample_no' in fileattrd['keys']:
+                        print 'sample_no required as a column in .csv'
+                        raise ValueError()
+                    if False in [k==filterchars(k) for k in fileattrd['keys']]:
+                        print 'a key in the selected .csv hs an illegal character'
+                        raise ValueError()
+                    self.auxd['custom']['files_multi_run']['fom_files'][fnk]=fileattrd
             except:
                 print 'error reading custom .csv file'
                 self.params=copy.copy(self.dfltparams)
                 self.filedlist=[]
                 return
-                
-            auxd['custom']['files_multi_run']['fom_files'][fnk]=fileattrd
         else:
             if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
                 self.params=copy.copy(self.dfltparams)#no aux_ana meet search so return to default, will also happen if there are no aux_ana open
@@ -92,19 +94,19 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     self.params['aux_ana_path']=auxd['auxexpanapath_relative']
                     break
             self.auxpath=os.path.split(auxd['auxexpanapath'])[0]
-        
+            self.auxd=auxd
         if custom_load_csv_bool:
             anak_list=['custom']
         else:
             if self.params['aux_ana_ints']=='ALL':
-                anak_list=sort_dict_keys_by_counter(auxd, keystartswith='ana__')
+                anak_list=sort_dict_keys_by_counter(self.auxd, keystartswith='ana__')
             else:
                 anaintstrlist=self.params['aux_ana_ints'].split(',')
                 anaintstrlist=[s.strip() for s in anaintstrlist]
-                anak_list=[k for k in sort_dict_keys_by_counter(auxd, keystartswith='ana__') if k.partition('ana__')[2] in anaintstrlist]
+                anak_list=[k for k in sort_dict_keys_by_counter(self.auxd, keystartswith='ana__') if k.partition('ana__')[2] in anaintstrlist]
                 
             anak_list=[k for k in anak_list\
-               if ('files_multi_run' in auxd[k].keys()) and ('fom_files' in auxd[k]['files_multi_run'].keys())]
+               if ('files_multi_run' in self.auxd[k].keys()) and ('fom_files' in self.auxd[k]['files_multi_run'].keys())]
            
         if self.params['select_aux_keys']=='ALL':
             keysearchlist=['']
@@ -127,7 +129,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         
         self.auxfiledlist=[]
         for anak in anak_list:
-            for fnk, filed in auxd[anak]['files_multi_run']['fom_files'].iteritems():
+            for fnk, filed in self.auxd[anak]['files_multi_run']['fom_files'].iteritems():
                 if keystestfcn(filed) and len(keysfcn(filed, existkeys))>0:
                     self.auxfiledlist+=\
                        [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':filed['keys'], \
@@ -142,11 +144,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
 #            self.filedlist=[]
 #            return
         self.params['select_aux_keys']=','.join(auxkeylist)
+        self.previous_params=copy.copy(self.params)
 
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
-        
+
         matchplateidbool=bool(self.params['match_plate_id'])
         if matchplateidbool:
             matchplateidfcn=lambda tempfomd:tempfomd['plate_id']
@@ -205,21 +208,26 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 
                 #copy custom merge file to the ana
                 if self.params['aux_ana_path']=='custom':
+                    newfn='%s__%s' %(anak, auxfiled['fn'])
                     if not 'misc_files' in self.multirunfiledict.keys():
                         self.multirunfiledict['misc_files']={}
-                    self.multirunfiledict['misc_files'][auxfiled['fn']]=\
+                    self.multirunfiledict['misc_files'][newfn]=\
                      '%s;%s;%d;%d' %('csv_fom_file', ','.join(auxfiled['keys']), auxfiled['num_header_lines'], auxfiled['num_data_rows'] if 'num_data_rows' in auxfiled else len(auxfomd_list[0]['sample_no']))
-                    if not auxfiled['fn'] in os.listdir(destfolder):#assume aux custom fn is unique from the ana-generated files in this folder. If the custom file copied already doesn't need to be copied again  
-                        shutil.copy(os.path.join(self.auxpath, auxfiled['fn']), os.path.join(destfolder, auxfiled['fn']))
+                    if not newfn in os.listdir(destfolder):#assume aux custom fn is unique from the ana-generated files in this folder. If the custom file copied already doesn't need to be copied again  
+                        shutil.copy(os.path.join(self.auxpath, auxfiled['fn']), os.path.join(destfolder, newfn))
+
             except:
                 if self.debugmode:
                     raiseTEMP
                 print 'skipped filter/smooth of file ', fn
                 self.fomdlist=[]
                 continue
+
             if len(self.fomdlist)==0:
                 print 'no foms calculated for ', fn
                 continue
+
+            print destfolder, anak, anauserfomd, self.strkeys_fomdlist
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
 
 

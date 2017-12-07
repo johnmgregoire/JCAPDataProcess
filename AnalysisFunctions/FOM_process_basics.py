@@ -50,6 +50,7 @@ TernaryPlotInstance=TernaryPlot((1, 1, 1), outline=False)
 #    return len([anak for anak in anadict.keys() if anak.startswith('ana__')]), filedlist
 
 FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING=set(['sample_no', 'runint', 'plate_id'])
+FOMKEYSOPTIONAL_BUTNEVERUSEDINPROCESSING=set(['SmpRunPlate_Association', 'anak', 'aux_anak'])
 def stdgetapplicablefomfiles(anadict, params={}):
     
     if (not 'select_ana' in params.keys()) or (not params['select_ana'] in anadict.keys()) or (not isinstance(anadict[params['select_ana']], dict)):
@@ -67,7 +68,7 @@ def stdgetapplicablefomfiles(anadict, params={}):
         keystestfcn=lambda tagandkeys: len(set(tagandkeys.split(';')[1].split(',')).intersection(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))==len(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)
         #keysfcn=lambda tagandkeys: list(set(tagandkeys.split(';')[1].split(',')).difference(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING))
         #make keys list retain original order
-        keysfcn=lambda tagandkeys: [k for k in tagandkeys.split(';')[1].split(',') if not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING]
+        keysfcn=lambda tagandkeys: [k for k in tagandkeys.split(';')[1].split(',') if not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING.union(FOMKEYSOPTIONAL_BUTNEVERUSEDINPROCESSING)]
         
         #goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
     ##the 'ftk==('files_'+filed['run'])" condition means the run of the raw data is matched to the run in the analysis and this implied that the plate_id is match so matching sample_no would be sufficient, but matching the filename is easiest for now.  #('__'+os.path.splitext(filed['fn'])[0]) in fnk

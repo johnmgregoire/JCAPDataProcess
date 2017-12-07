@@ -1276,7 +1276,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         
         
     def batch_process_allsubspace(self):
-        anak=gethighestanak(self.anadict, getnextone=False)
+        self.getactiveanalysisclass()
+        if not 'select_ana' in self.analysisclass.params.keys():
+            print 'quitting batch process because the presently selected FOM process function does not provide the select_ana'
+            return
+        anak=self.analysisclass.params['select_ana']
+        #anak=gethighestanak(self.anadict, getnextone=False)
         selprocesslabel_original=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]
         selprocess_root=selprocesslabel_original.partition('__')[0]
         if len(selprocess_root)==0:
