@@ -725,15 +725,15 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
         else:
             p=prepend_root_exp_path(p, exp=False)
 
-    if not os.path.isdir(p):
-        print 'cannot find exp from path %s' %p
-        return p
+    
     #from here down : turn an exp folder into an exp file
     if os.path.isfile(os.path.join(p, fn)):
         return os.path.join(p, fn)
     if '.zip' in p:
         return os.path.join(p, fn)#hope this works out without checking if it is actually there
-    
+    elif not os.path.isdir(p):
+        print 'cannot find exp from path %s' %p
+        return p
     fnl=[s for s in os.listdir(p) if s.endswith(ext_str)]
 
     if len(fnl)==0:
