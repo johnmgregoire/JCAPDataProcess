@@ -128,7 +128,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         (self.SaveViewPushButton, self.saveview), \
         (self.EditDfltVisPushButton, self.editvisparams), \
         (self.SaveAnaPushButton, self.saveana), \
-        (self.ClearAnalysisPushButton, self.clearanalysis), \
+        (self.ClearAnalysisPushButton, self.clearanalysis_pushbutton), \
         (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
         (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
         (self.UpdatePlotPushButton, self.plotwithcaution), \
@@ -701,7 +701,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if i is None:
             return
         if len(keys)==1:
-            self.clearanalysis()
+            self.clearanalysis_pushbutton()
             return
         anad=self.anadict[keys[i]]
         fnlist=[fn for d in [v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)] for d2 in d.itervalues() for fn in d2.keys()]
@@ -713,7 +713,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         del self.anadict[keys[-1]]
         self.activeana=None
         self.updateana()
+    
+    def clearanalysis_pushbutton(self):
         
+        if self.exppath=='null':
+            self.clearanalysis()
+        else:#analysis will be cleared while importing exp
+            self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)
+            
     def clearanalysis(self, anadict=None):
         self.analysisclass=None
         self.activeana=None
