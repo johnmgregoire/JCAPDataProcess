@@ -684,6 +684,11 @@ def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
 def getdropfolder_exptype(datatype):
     return tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(datatype, 'drop'))
     
+def get_relative_path_for_exp_or_ana_full_path(p, exp=False):
+    dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
+    rp=compareprependpath(dbpath_folds, p, replaceslash=True)
+    return rp
+
 def compareprependpath(preppendfolderlist, p, replaceslash=True):
     for folder in preppendfolderlist:
         if os.path.normpath(p).startswith(os.path.normpath(folder)):

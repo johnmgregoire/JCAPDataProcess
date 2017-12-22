@@ -283,10 +283,14 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             auxexpanapath=(buildexppath if exp else buildanapath)(auxexpanapath)
         
         auxexpanadict=readexpasdict(auxexpanapath, includerawdata=False, returnzipclass=True) if exp else readana(auxexpanapath, stringvalues=False, erroruifcn=None)
-        rp=os.path.split(auxexpanapath)[0]
-        dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
-        rp=compareprependpath(dbpath_folds, rp)
-        auxexpanadict['auxexpanapath_relative']=rp.replace(chr(92),chr(47))
+#        rp=os.path.split(auxexpanapath)[0]
+#        dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
+#        rp=compareprependpath(dbpath_folds, rp)
+#        auxexpanadict['auxexpanapath_relative']=rp.replace(chr(92),chr(47))
+        
+        rp=get_relative_path_for_exp_or_ana_full_path(os.path.split(auxexpanapath)[0], exp=exp)
+        auxexpanadict['auxexpanapath_relative']=rp
+        
         auxexpanadict['auxexpanapath']=auxexpanapath
         dlist+=[auxexpanadict]
         

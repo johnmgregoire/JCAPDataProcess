@@ -11,8 +11,22 @@ from Analysis_Master import Analysis_Master_nointer
 from scipy.integrate import cumtrapz
 analysismasterclass=Analysis_Master_nointer()
 
-
-def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str=''):
+def get_element_list_for_list_of_pidstr(l_plate_idstr, union_bool=False):
+    if union_bool:
+        all_els=[]
+        for pidstr in l_plate_idstr:
+            all_els+=getelements_plateidstr(pidstr)
+        els_to_return=sorted(list(set(all_els)))
+    else:
+        els_to_return=set(getelements_plateidstr(l_plate_idstr[0]))
+        for pidstr in l_plate_idstr[1:]:
+            els_to_return=els_to_return.intersection(set(getelements_plateidstr(pidstr)))
+        els_to_return=sorted(list(els_to_return))
+    return els_to_return
+        
+def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str='', union_el_list=False):
+    #if multiple ana paths, the 0th index is the master where the new will be appended, and in the resulting ana__ parameters ana_name,,anak, anak_comps will all be lists to let you know the source of the "merged aux" anas 
+    
     if l_anapath is None:
         num_ana=userinputcaller(None, inputs=[('num_ana', int, '1')], title='Enter Number of ana to open')
         if num_ana is None:
@@ -102,25 +116,35 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
         fomd['x']=numpy.array([pmdlist[smps.index(smp)]['x'] for smp in fomd['sample_no']])
         fomd['y']=numpy.array([pmdlist[smps.index(smp)]['y'] for smp in fomd['sample_no']])
     #get the elements whose comps were found in all ana
-    l_elkey_byel=[]
-    for (pidstr, found_comp_keys) in zip(l_plate_idstr, l_found_comp_keys):
-        els=getelements_plateidstr(pidstr)
-        elkey_byel=[]
-        for i, el in enumerate(els):
+    
+    els_for_udi_temp=get_element_list_for_list_of_pidstr(l_plate_idstr, union_bool=union_el_list)
 
+    els_for_udi=[]
+    for el in els_for_udi_temp:
+        #check if el exists in at least one foe the comp anas
+        for (pidstr, found_comp_keys) in zip(l_plate_idstr, l_found_comp_keys):
             kl=[k for k in found_comp_keys if (el+'.') in k]
-            elkey_byel+=[None if len(kl)==0 else kl[0]]#use the elkey for the first match found - only 1 allowed
+            if len(kl)>0:
+                els_for_udi+=[el]
+                break
+            
+    if len(els_for_udi)<2:
+        print '^^^aborting because only these elements found in ana compositions: ',  els_for_udi, pidstr
+        return
+    l_elkey_byel=[]
+    #get the elkey  or None for each ana
+    for (pidstr, found_comp_keys) in zip(l_plate_idstr, l_found_comp_keys):
+        elkey_byel=[]
+        for el in els_for_udi:
+            kl=[k for k in found_comp_keys if (el+'.') in k]
+            elkey_byel+=[None if len(kl)==0 else kl[0]]
         l_elkey_byel+=[elkey_byel]
-    elindset=set([i for i, k in enumerate(l_elkey_byel[0]) if not k is None])
-    for elkey_byel in l_elkey_byel[1:]:
-        elindset=elindset.intersection(set([i for i, k in enumerate(elkey_byel) if not k is None]))
-    elinds=sorted(list(elindset))
-    if len(elindset)<2:
-        print '^^^aborting because only these elements found in all ana compositions: ',  [els[i] for i in elinds], pidstr
-        [k for k in kl for kl in l_found_comp_keys]
+
+
     
     udi_dict={}
-    udi_dict['ellabels']=[el for i, el in enumerate(els) if i in elinds]
+    udi_dict['ellabels']=els_for_udi
+    udi_dict['compkeys']=els_for_udi
     udi_dict['xy']=[]
     udi_dict['plate_id']=[]
     udi_dict['comps']=[]
@@ -130,28 +154,28 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
     udi_dict['pattern_fn']=[]
     
     smps_added_so_far=[]
-    for count, (pidstr, elkey_byel, comp_fomd, pattern_l_fn_fd, anap, (anadict, zipclass)) in enumerate(zip(l_plate_idstr, l_elkey_byel, l_comp_fomd, l_pattern_l_fn_fd, l_anapath, l_anadict_zipclass)):
+    for count, (pidstr, elkey_byel, fomd, pattern_l_fn_fd, anap, (anadict, zipclass)) in enumerate(zip(l_plate_idstr, l_elkey_byel, l_comp_fomd, l_pattern_l_fn_fd, l_anapath, l_anadict_zipclass)):
         
         fomdsmps=list(fomd['sample_no'])
         patternsmps=[filed['sample_no'] for fn, filed, runint in pattern_l_fn_fd]
-        inds=sorted([fomdsmps.index(smp) for smp in patternsmps if not smp in smps_added_so_far])
-        inds=[i for i in inds if not (True in [numpy.isnan(fomd[elkey_byel[elind]][i]) for elind in elinds])]
+        inds=sorted([fomdsmps.index(smp) for smp in patternsmps if not (pidstr, smp) in smps_added_so_far])
+        inds=[i for i in inds if not (True in [numpy.isnan(fomd[elkey][i]) for elkey in elkey_byel if not elkey is None])]#making sure none of the composition values is NaN. if elkey is None then that element isn't for this plate so don't penalize that
         newsmps=[fomdsmps[i] for i in inds]
-        smps_added_so_far+=newsmps
+        smps_added_so_far+=[(pidstr, smp) for smp in newsmps]
         udi_dict['xy']+=[[fomd['x'][i], fomd['y'][i]] for i in inds]
         for i in inds:
-            cmp=numpy.array([fomd[elkey_byel[elind]][i] for elind in elinds])
-            cmp/=cmp.sum()
+            cmp=numpy.array([0. if elkey is None else fomd[elkey][i] for elkey in elkey_byel])
+            if cmp.sum()>0.:
+                cmp/=cmp.sum()
             udi_dict['comps']+=[cmp]
         udi_dict['plate_id']+=[pidstr]*len(newsmps)
         udi_dict['sample_no']+=newsmps
-        for smp in newsmps:
+        for count2, smp in enumerate(newsmps):
             pind=patternsmps.index(smp)
             fn, filed, runint=pattern_l_fn_fd[pind]
             udi_dict['runint']+=[runint]
             patternd=readcsvdict(get_file_path(anap, fn, zipclass), filed, returnheaderdict=False, zipclass=zipclass, includestrvals=False)
-            if count==0:
-                udi_dict['compkeys']=[elkey_byel[elind] for elind in elinds]
+            if count==0 and count2==0:
                 udi_dict['Q']=patternd[q_key]
             udi_dict['Iarr']+=[patternd[intensity_key]]
             udi_dict['pattern_fn']+=[fn]
@@ -196,14 +220,15 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
     filedesc=analysismasterclass.writefom_bare(anafolder, csvfn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id'])
     anadict[anak]={}
     anadict[anak]['name']='Analysis__Create_UDI'
-    anadict[anak]['analysis_function_version']='1.1'
+    anadict[anak]['analysis_function_version']='2'
     anadict[anak]['analysis_general_type']='process_fom'
     anadict[anak]['description']='make udi with comps from %s and patterns from %s' %(','.join(l_anak_comps), ','.join(l_anak_patterns))
     anadict[anak]['plate_ids']=','.join(pidset)
     anadict[anak]['technique']=anadict['analysis_type']
+    ananames=[ad['name'] for ad, zc in l_anadict_zipclass]
     anadict[anak]['parameters']={\
     'ana_file_type': pattern_key, \
-    'ana_name': ','.join([ad['name'] for ad, zc in l_anadict_zipclass]), \
+    'ana_name': ','.join(ananames), \
     'anak': ','.join(l_anak_patterns), \
     'anak_comps': ','.join(l_anak_comps), \
     'pattern_source_analysis_name': anadict[l_anak_patterns[0]]['name'], \
@@ -211,6 +236,13 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
     'q_key': q_key, \
     'intensity_key': intensity_key, \
     }
+    auxanainds=[count for count, aname in enumerate(ananames) if ananames[0]!=aname]
+    if len(auxanainds)>0:
+        rel_path_list=[]
+        for l_ind in auxanainds:
+            rel_path_list+=[get_relative_path_for_exp_or_ana_full_path(os.path.split(l_anapath[l_ind])[0], exp=False)]
+        anadict[anak]['parameters']['aux_ana_path']=','.join(rel_path_list)
+        
     anadict[anak]['files_multi_run']={}
     anadict[anak]['files_multi_run']['fom_files']={}
     anadict[anak]['files_multi_run']['fom_files'][csvfn]=filedesc
@@ -289,6 +321,7 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
         smps=smps.intersection(set(l_smps))
     if len(smps)==0:
         print 'no sample_no in common among different pattern anas'
+        gdfhfg
         return
     
     lsmps_reconstruction_area_error=[]
@@ -472,6 +505,8 @@ smoothfcn=lambda Iraw: savgol_filter(Iraw, 31, 4)
 #append_resampled_merged_patterns_to_ana(l_anapath=[p], l_anak_patterns=['ana__2'],  l_pattern_fn_search_str=['1st_frame'], pattern_key='pattern_files', q_key='q.nm',intensity_key='intensity.counts', dq=None, q_log_space_coef=1.00235198, resamp_interp_order=3, pre_resamp_smooth_fcn=smoothfcn)
 
 
-newanapath=buildanapath(r'L:\processes\analysis\ssrl\20171011.113240.run')
-append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
-append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
+#newanapath=buildanapath(r'L:\processes\analysis\ssrl\20171011.113240.run')
+#append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__2'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed')
+#append_udi_to_ana(l_anapath=[newanapath], l_anak_comps=['ana__4'], l_anak_patterns=['ana__1'], pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm',intensity_key='intensity.counts')
+
+
