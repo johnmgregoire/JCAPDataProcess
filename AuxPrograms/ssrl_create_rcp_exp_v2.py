@@ -237,10 +237,11 @@ class setup_rcp_and_exp_ssrl():
         calibtechd = (rcpdict[tk]['calib_files'], exprund[tk]['calib_files'])
 
         # messy fix for : : bug
-        self.add_calib_file = lambda fn: [d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_calib_file'})}) for
-                                          d in calibtechd]
-        self.add_speccsv_file = lambda fn: [
-            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file'})}) for d in csvtechd]
+        self.add_calib_file = lambda fn: [d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_calib_file'})})
+                                          for d in calibtechd]
+        self.add_speccsv_file = lambda fn, sample_no: [
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file', 'sample_no': sample_no})}) for d
+            in csvtechd]
         self.add_tif_file = lambda fn, sample_no: [
             d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_mar_tiff_file', 'sample_no': sample_no})}) for d
             in tiftechd]
@@ -253,52 +254,27 @@ class setup_rcp_and_exp_ssrl():
 
         fns = os.listdir(os.path.join(self.import_path, 'images'))
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
+
         ID_spec = np.array([j.split('_')[1].strip('.txt') for j in self.speccsv_fns]).astype(np.int)
         ID_tif = np.array([j.split('_')[1].strip('.tif') for j in self.tif_fns]).astype(np.int)
 
-        #check if specs and tif are read in the same way so once spec are parsed a simple map can be run on add_tif_file
+        #check if specs and tif are read in the same way so once spec are parsed
+        # a simple map can be run on add_tif_file
         if not np.sum(np.argsort(ID_spec)-np.argsort(ID_tif)) == 0:
             argsort_ID_spec = np.argsort(ID_spec)
             self.tif_fns = self.tif_fns[argsort_ID_spec]
 
-        map(self.add_speccsv_file,self.speccsv_fns)
         position_index_of_file_index = lambda fi: fi
         sample_no_of_file_index = lambda fi: self.sample_no_from_position_index[
             position_index_of_file_index[position_index_of_file_index(fi)]] if isinstance(
             self.sample_no_from_position_index, list) else self.sample_no_from_position_index(
             position_index_of_file_index(fi))
-        for fn in enumerate(self.tif_fns):
-            self.add_tif_file(fn[1], sample_no_of_file_index(fn[0]))
+
+        for fntif,fncsv in zip(enumerate(self.tif_fns),enumerate(self.speccsv_fns)):
+            self.add_tif_file(fntif[1], sample_no_of_file_index(fntif[0]))
+            self.add_speccsv_file(fncsv[1], sample_no_of_file_index(fncsv[0]))
 
 
-        self.import_path  # this path should be all that's necessary to
-
-        '''
-        ##xpss version
-        
-        position_index_of_file_index = lambda fi: fi // len(self.technique_names)
-        sample_no_of_file_index = lambda fi: self.sample_no_from_position_index[
-            position_index_of_file_index[position_index_of_file_index(fi)]] if isinstance(
-            self.sample_no_from_position_index, list) else self.sample_no_from_position_index(
-            position_index_of_file_index(fi))
-        kratosfn = os.path.split(self.import_path)[1]
-        self.add_kratos_file(kratosfn)
-        if not testmode:
-            shutil.copy(self.import_path, os.path.join(self.runfolderpath, kratosfn))
-        fns = ['{}_XPS{}.csv'.format(sample_no_of_file_index(i), self.allparams['technique'][i]) for i in
-               range(len(self.xpsspec))]
-        for fileindex, fn in enumerate(fns):
-            sample_no = sample_no_of_file_index(fileindex)
-            tech = self.technique_names[fileindex % len(self.technique_names)]
-            self.add_pattern_file(tech, fn, len(self.xpsspec[fileindex]), sample_no)
-            y = self.xpsspec[fileindex]
-            x = np.array([self.allparams['startE'][fileindex] + i * self.allparams['stepE'][fileindex] for i in
-                          range(len(self.xpsspec[fileindex]))])
-            sav = np.array([x, y]).T
-            if not testmode:
-                np.savetxt(os.path.join(self.runfolderpath, fn), sav, delimiter=',', fmt='%3.4f, %0.0f',
-                           header=','.join(self.pattern_file_keys), comments='')
-        '''
     def save_rcp_exp(self, testmode):
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict['name'] + '.rcp')
@@ -313,32 +289,7 @@ class setup_rcp_and_exp_ssrl():
                         file_attr_and_existence_check=False)
         # print 'exp file saved to ', dsavep
 
-    # todo: mayeb  don't want to do analysis in this class, just generate rcp/exp and have separate analysis code that
-    # anyway here is the code that would make the analysis
 
-    def analysis_chiq_and_integrate(self):
-        ##for ana
-        an_name = 'Analysis__pyFAI_unwarp'  # and then Analysis__integrate_chi
-        self.anadict = {}
-        self.anadict['created_by'] = self.datatype
-        self.anadict['access'] = 'hte'
-        self.anadict['analysis_type'] = self.datatype
-        self.anadict[anak]['name'] = an_name
-
-
-# self.anadict[anak]['technique']=self.datatype
-# self.anadict[anak]['plate_ids']=self.plate_idstr
-# ana__d=self.anadict[anak]
-# anrunk='files_%s' %runk
-# if not anrunk in ana__d.keys():
-#                                    ana__d[anrunk]={}
-#                                ana__d=ana__d[anrunk]
-#                                    
-#        anrunk='files_multi_run'
-#                            if not anrunk in ana__d.keys():
-#                                ana__d[anrunk]={}
-#                            ana__d=ana__d[anrunk]
-##example
 
 
 '''
