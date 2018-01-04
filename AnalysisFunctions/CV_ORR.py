@@ -57,6 +57,11 @@ class mars_class():
             'noise_lvl','curr_lminter_model','lminter','zinter','max_slope',
             'redpot_f_var','oxpot_f_var','oxpot_f','redpot_f','curr_lminter_data'
         ]
+        #TODO; ensure these values are passed correctly
+        self.dfltparams = dict([ \
+            ('slope_trunc', 0.00001), ('savgol_window', 151), \
+            ('savgol_order', 0.3), ('ex_order', 0.51), \
+            ('use_smY', True)])
 
         #as this anaclass requires a fast and slow cv scan the data should also be viewable
         self.plotparams = dict({}, plot__1={})
@@ -72,6 +77,7 @@ class mars_class():
         self.plotparams['plot__2']['series__1'] = 'I(A)_fast'
         self.plotparams['plot__2']['series__2'] = 'srYf'
         self.csvheaderdict = dict({}, csv_version='1', plot_parameters={})
+        #TODO: fix this so it reflects the FOMs this class creates?
         self.csvheaderdict['plot_parameters']['plot__1'] = dict(
             {},
             fom_name='Pmax.W',
@@ -190,32 +196,7 @@ class mars_class():
         pass
 
 '''
-#model after this class
-class Analysis__Iphoto(Analysis_Master_inter):
-    def __init__(self):
-        self.analysis_fcn_version='2'
-        self.dfltparams=dict([\
-  ('frac_illum_segment_start', 0.4), ('frac_illum_segment_end', 0.95), \
-  ('frac_dark_segment_start', 0.4), ('frac_dark_segment_end', 0.95), \
-  ('illum_key', 'Toggle'), ('illum_time_shift_s', 0.), ('illum_threshold', 0.5), \
-  ('illum_invert', 0), ('num_illum_cycles', 2), ('from_end', True)\
-                                       ])
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__Iphoto'
-        self.requiredkeys=['I(A)', 'Ewe(V)', 't(s)', 'Toggle']#0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
-        self.optionalkeys=[]
-        self.requiredparams=[]
-        self.fomnames=['I.A_photo', 'I.A_photo_ill', 'I.A_photo_dark']
-        self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='t(s)'
-        self.plotparams['plot__1']['series__1']='I(A)'
-        self.plotparams['plot__1']['series__2']='IllumBool'
-        self.plotparams['plot__2']={}
-        self.plotparams['plot__2']['x_axis']='t(s)_dark,t(s)_ill,t(s)_ill'
-        self.plotparams['plot__2']['series__1']='I(A)_dark,I(A)_ill,I(A)_illdiff'
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
+#implement this function
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.requiredkeys[-1]=self.params['illum_key']
         requiredparams=self.requiredparams
@@ -226,7 +207,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
-
+#implement this funnction as it apparently contains how the extra files are created
     def photofcn(self, d, filed):
 
         ikey=self.params['illum_key']
@@ -274,13 +255,12 @@ class Analysis__Iphoto(Analysis_Master_inter):
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
         return self.photofcn(d, filed)
-
 '''
 
 
 
 '''
-#sigmoid fitting from old script
+#sigmoid fitting from old script it is essentially the same as CV_phot's fitting exept for the overpotental part
 def splitLVS(X, Y):  # split the linear sweeps
     up = np.reshape(np.where(np.diff(X) > 0), -1, 1)
     down = np.reshape(np.where(np.diff(X) > 0), -1, 1)
