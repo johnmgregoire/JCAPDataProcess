@@ -249,26 +249,33 @@ class setup_rcp_and_exp_ssrl():
         # TODO find the spec file correpsonding to the .tif in the images folder, read spec file to get x,y
         #  and use these functions to add to rcp/exp
         self.parse_shell()
-        self.read_ssrl_calib()
+        self.d = self.read_ssrl_calib()
 
         fns = os.listdir(os.path.join(self.import_path, 'images'))
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
-        ID_spec = np.array([j.split('_')[1].strip('.txt') for j in self.speccsv_fns])
-        ID_tif = np.array([j.split('_')[1].strip('.txt') for j in self.tif_fns])
+        ID_spec = np.array([j.split('_')[1].strip('.txt') for j in self.speccsv_fns]).astype(np.int)
+        ID_tif = np.array([j.split('_')[1].strip('.tif') for j in self.tif_fns]).astype(np.int)
 
         #check if specs and tif are read in the same way so once spec are parsed a simple map can be run on add_tif_file
         if not np.sum(np.argsort(ID_spec)-np.argsort(ID_tif)) == 0:
             argsort_ID_spec = np.argsort(ID_spec)
             self.tif_fns = self.tif_fns[argsort_ID_spec]
 
+        map(self.add_speccsv_file,self.speccsv_fns)
+        position_index_of_file_index = lambda fi: fi
+        sample_no_of_file_index = lambda fi: self.sample_no_from_position_index[
+            position_index_of_file_index[position_index_of_file_index(fi)]] if isinstance(
+            self.sample_no_from_position_index, list) else self.sample_no_from_position_index(
+            position_index_of_file_index(fi))
+        for fn in enumerate(self.tif_fns):
+            self.add_tif_file(fn[1], sample_no_of_file_index(fn[0]))
 
-
-        map(self.add_spec_files,self.speccsv_fns)
-        self.add_tif_file(fn, sample_no)
 
         self.import_path  # this path should be all that's necessary to
 
+        '''
         ##xpss version
+        
         position_index_of_file_index = lambda fi: fi // len(self.technique_names)
         sample_no_of_file_index = lambda fi: self.sample_no_from_position_index[
             position_index_of_file_index[position_index_of_file_index(fi)]] if isinstance(
@@ -291,7 +298,7 @@ class setup_rcp_and_exp_ssrl():
             if not testmode:
                 np.savetxt(os.path.join(self.runfolderpath, fn), sav, delimiter=',', fmt='%3.4f, %0.0f',
                            header=','.join(self.pattern_file_keys), comments='')
-
+        '''
     def save_rcp_exp(self, testmode):
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict['name'] + '.rcp')
