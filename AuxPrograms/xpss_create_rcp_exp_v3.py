@@ -302,5 +302,10 @@ class setup_rcp_and_exp_xpss():
             if not testmode:
                 np.savetxt(os.path.join(self.runfolderpath,fn),sav,delimiter=',',fmt='%3.4f, %0.0f',header=','.join(self.pattern_file_keys), comments='')
 ##example
+#import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
+#xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.done', expext='.done', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
 import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
-xpsimportclass=setup_rcp_and_exp_xpss(import_path, rcpext='.done', expext='.done', overwrite_runs=True, plate_idstr=None, access='tri', pmidstr=None, sample_no_from_position_index=lambda i:(1+i), testmode=True)
+sample_no = [i+1 for i in range(1972)]+[i+1 for i in range(34)]
+xpsimportclass = setup_rcp_and_exp_xpss(import_path, rcpext='.done', expext='.done', overwrite_runs=True,
+                                        plate_idstr=None, access='tri', pmidstr=None,
+                                        sample_no_from_position_index=lambda i: sample_no[i], testmode=False)

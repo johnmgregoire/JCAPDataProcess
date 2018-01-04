@@ -273,7 +273,7 @@ class setup_rcp_and_exp_ssrl():
     
     
     #todo: mayeb  don't want to do analysis in this class, just generate rcp/exp and have separate analysis code that 
-
+    #anyway here is the code that would make the analysis
                 
     def analysis_chiq_and_integrate(self):
             ##for ana

@@ -189,6 +189,95 @@ class mars_class():
     def save_data(self):
         pass
 
+'''
+#model after this class
+class Analysis__Iphoto(Analysis_Master_inter):
+    def __init__(self):
+        self.analysis_fcn_version='2'
+        self.dfltparams=dict([\
+  ('frac_illum_segment_start', 0.4), ('frac_illum_segment_end', 0.95), \
+  ('frac_dark_segment_start', 0.4), ('frac_dark_segment_end', 0.95), \
+  ('illum_key', 'Toggle'), ('illum_time_shift_s', 0.), ('illum_threshold', 0.5), \
+  ('illum_invert', 0), ('num_illum_cycles', 2), ('from_end', True)\
+                                       ])
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__Iphoto'
+        self.requiredkeys=['I(A)', 'Ewe(V)', 't(s)', 'Toggle']#0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
+        self.optionalkeys=[]
+        self.requiredparams=[]
+        self.fomnames=['I.A_photo', 'I.A_photo_ill', 'I.A_photo_dark']
+        self.plotparams=dict({}, plot__1={})
+        self.plotparams['plot__1']['x_axis']='t(s)'
+        self.plotparams['plot__1']['series__1']='I(A)'
+        self.plotparams['plot__1']['series__2']='IllumBool'
+        self.plotparams['plot__2']={}
+        self.plotparams['plot__2']['x_axis']='t(s)_dark,t(s)_ill,t(s)_ill'
+        self.plotparams['plot__2']['series__1']='I(A)_dark,I(A)_ill,I(A)_illdiff'
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+    #this is the default fcn but with requiredkeys changed to relfect user-entered illum key
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
+        self.requiredkeys[-1]=self.params['illum_key']
+        requiredparams=self.requiredparams
+        if self.params['illum_key']=='t(s)':
+            self.echem_params_key='echem_params__'+techk
+            requiredparams+=[self.echem_params_key]#['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']
+            
+        self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=requiredparams)
+        self.description='%s on %s' %(','.join(self.fomnames), techk)
+        return self.filedlist
+
+    def photofcn(self, d, filed):
+
+        ikey=self.params['illum_key']
+        tshift=self.params['illum_time_shift_s']
+        interdict={}
+        if tshift!=0:
+            newikey='IllumMod'
+            illumtimeshift(d, ikey, 't(s)', tshift)
+        if self.params['illum_invert']:
+            d[ikey]=-1*d[ikey]
+
+        interd={}
+        
+        if self.params['illum_key']=='t(s)':
+            ikey=[filed[self.echem_params_key][k] for k in ['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']]
+        
+        err=calcdiff_ill_caller(d, interd, ikey=ikey, thresh=self.params['illum_threshold'], \
+            ykeys=[self.requiredkeys[0]], xkeys=list(self.requiredkeys[1:-1]), \
+            illfracrange=(self.params['frac_illum_segment_start'], self.params['frac_illum_segment_end']), \
+            darkfracrange=(self.params['frac_dark_segment_start'], self.params['frac_dark_segment_end']))
+        fomtuplist=[]
+        for count, suffix in enumerate(['_illdiff', '_ill', '_dark']):
+            illkey=self.requiredkeys[0]+suffix
+            fomk=self.fomnames[count]
+            #try:
+            if err or len(interd[illkey])==0:
+                return [(fomk, numpy.nan) for fomk in self.fomnames], {}, {}
+
+            ncycs=self.params['num_illum_cycles']
+            fromend=self.params['from_end']
+            if fromend:
+                arr=interd[illkey][::-1]
+            else:
+                arr=interd[illkey]
+            arr=arr[numpy.logical_not(numpy.isnan(arr))]
+            if len(arr)<ncycs:
+                fomtuplist+=[(fomk, numpy.nan)]
+            else:
+                fomtuplist+=[(fomk, arr[:ncycs].mean())]
+
+        return fomtuplist, dict([('IllumBool', d['IllumBool'])]), interd
+        #except:
+        #    pass
+        return [(fomk, numpy.nan) for fomk in self.fomnames], {}, {}
+    def fomtuplist_rawlend_interlend(self, dataarr, filed):
+        d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
+        return self.photofcn(d, filed)
+
+'''
+
+
 
 '''
 #sigmoid fitting from old script
