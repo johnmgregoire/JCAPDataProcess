@@ -60,7 +60,7 @@ class setup_rcp_and_exp_ssrl():
         self.compname = 'HTE-SSRL-01'
 
         self.plate_idstr = plate_idstr
-        iserror = self.parse_spec_files()
+        iserror = self.parse_shell()
         if iserror:
             return
         self.datatype = 'ssrl'
@@ -122,12 +122,13 @@ class setup_rcp_and_exp_ssrl():
         with open(self.calib_path, mode='r') as f:
             lines = f.readlines()
         if not line_inds is None:
+            print 'lines are {}'.format(lines)
             lines = [lines[i] for i in line_inds]
 
         for l in lines:
             k, temp, v = l.partition(delim)
             self.run_params_dict[
-                l.strip()] = v.strip()  # calib params are string vaslues even for the numbers so convert beofre sending to functions
+                l.strip()] = v.strip()  # calib params are string vaslues even for the numbers so convert before sending to functions
 
         # TDOD these hard coded values and the calib input in general will need to be made more general
         self.run_params_dict['detector_name'] = 'Rayonix MarCCD'
@@ -135,11 +136,11 @@ class setup_rcp_and_exp_ssrl():
 
         # d=self.read_ssrl_calib()
 
-    def parse_spec_files(self):
-        # unsure what this should do?
+    def parse_shell(self):
+        #unsure what file should be read here?
         #self.lines = [line for line in open(self.import_path)]
         #self.get_block_list()  # get the complete file as a list containing dicts
-        # set the plateid
+        #set the plateid
         if self.plate_idstr is None:  # ideally plate_id is read from the filename or spec file because it was entered
             # by user when starting data acquisition, but if it was passed in
             # the class init then ignore
@@ -156,7 +157,7 @@ class setup_rcp_and_exp_ssrl():
         p_files = os.listdir(self.import_path)
         shellfns = [fn for fn in p_files if not '.' in fn]
         shellfn = shellfns[0]
-        with open(os.path.join(p, shellfn), mode='r') as f:
+        with open(os.path.join(self.import_path, shellfn), mode='r') as f:
             lines = f.readlines()
         for l in lines:
             if l.startswith('#D'):
@@ -244,24 +245,25 @@ class setup_rcp_and_exp_ssrl():
             d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_mar_tiff_file', 'sample_no': sample_no})}) for d
             in tiftechd]
 
-    def save_rcp_exp(self, testmode):
-        rcpfilestr = strrep_filedict(self.rcpdict)
-        p = os.path.join(self.runfolderpath, self.rcpdict['name'] + '.rcp')
-        if testmode:
-            print 'THIS IS THE RCP FILE THAT WOULD BE SAVED:'
-            print rcpfilestr
-            return
-        with open(p, mode='w') as f:
-            f.write(rcpfilestr)
-        # print 'rcp file saved to ', p
-        saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext,
-                        file_attr_and_existence_check=False)
-        # print 'exp file saved to ', dsavep
-
     def add_all_files(self, testmode):
-        # TODO find the spec file correpsonding to the .tif in the images folder, read spec file to get x,y and use these functions to add to rcp/exp
-        self.add_speccsv_file(fn)
-        self.add_calib_file(fn)
+        # TODO find the spec file correpsonding to the .tif in the images folder, read spec file to get x,y
+        #  and use these functions to add to rcp/exp
+        self.parse_shell()
+        self.read_ssrl_calib()
+
+        fns = os.listdir(os.path.join(self.import_path, 'images'))
+        self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
+        ID_spec = np.array([j.split('_')[1].strip('.txt') for j in self.speccsv_fns])
+        ID_tif = np.array([j.split('_')[1].strip('.txt') for j in self.tif_fns])
+
+        #check if specs and tif are read in the same way so once spec are parsed a simple map can be run on add_tif_file
+        if not np.sum(np.argsort(ID_spec)-np.argsort(ID_tif)) == 0:
+            argsort_ID_spec = np.argsort(ID_spec)
+            self.tif_fns = self.tif_fns[argsort_ID_spec]
+
+
+
+        map(self.add_spec_files,self.speccsv_fns)
         self.add_tif_file(fn, sample_no)
 
         self.import_path  # this path should be all that's necessary to
@@ -289,6 +291,20 @@ class setup_rcp_and_exp_ssrl():
             if not testmode:
                 np.savetxt(os.path.join(self.runfolderpath, fn), sav, delimiter=',', fmt='%3.4f, %0.0f',
                            header=','.join(self.pattern_file_keys), comments='')
+
+    def save_rcp_exp(self, testmode):
+        rcpfilestr = strrep_filedict(self.rcpdict)
+        p = os.path.join(self.runfolderpath, self.rcpdict['name'] + '.rcp')
+        if testmode:
+            print 'THIS IS THE RCP FILE THAT WOULD BE SAVED:'
+            print rcpfilestr
+            return
+        with open(p, mode='w') as f:
+            f.write(rcpfilestr)
+        # print 'rcp file saved to ', p
+        saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext,
+                        file_attr_and_existence_check=False)
+        # print 'exp file saved to ', dsavep
 
     # todo: mayeb  don't want to do analysis in this class, just generate rcp/exp and have separate analysis code that
     # anyway here is the code that would make the analysis
@@ -367,8 +383,8 @@ filename = '27830_0001.tif'
 
 '''
 #REMINDER: this actually looks for the spec file (no file ending) that contains information
-import_path = r'K:\experiments\ssrl\user\SSRLJan2017\39675_InFeCuMn_b2\39675'
+import_path = r'K:\experiments\ssrl\user\SSRLJan2017\39675_InFeCuMn_b2'
 calib_path = r'K:\experiments\ssrl\user\SSRLJan2017\calib\version_4.calib'
 importclass = setup_rcp_and_exp_ssrl(import_path, calib_path, rcpext='.done', expext='.done', overwrite_runs=True,
-                                     plate_idstr=None, access='tri', pmidstr=None,
+                                     plate_idstr=None, access='hte', pmidstr=None,
                                      sample_no_from_position_index=lambda i: (1 + i), testmode=True)
