@@ -6,7 +6,6 @@ Created on Wed Nov 7 17:02:32 2017
 
 -------this class is a work in progress-------
 TODO: adjust perform function similar to CV photo that this class works smoothly with JCAPDataProcess
-TODO: merge in sigmoidfitting for comparison
 TODO: write files to spec into anafolder
 """
 
