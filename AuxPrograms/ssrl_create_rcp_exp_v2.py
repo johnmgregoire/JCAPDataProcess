@@ -107,6 +107,7 @@ class setup_rcp_and_exp_ssrl():
             os.mkdir(rcpmainfolder)
 
         self.runfolderpath = os.path.join(rcpmainfolder, self.data_acquisition_timestamp + self.rcpext)
+
         if not testmode:
             if os.path.isdir(self.runfolderpath):
                 if overwrite_runs:
@@ -156,8 +157,8 @@ class setup_rcp_and_exp_ssrl():
 
         p_files = os.listdir(self.import_path)
         shellfns = [fn for fn in p_files if not '.' in fn]
-        shellfn = shellfns[0]
-        with open(os.path.join(self.import_path, shellfn), mode='r') as f:
+        self.shellfn = shellfns[0]
+        with open(os.path.join(self.import_path, self.shellfn), mode='r') as f:
             lines = f.readlines()
         for l in lines:
             if l.startswith('#D'):
@@ -236,21 +237,31 @@ class setup_rcp_and_exp_ssrl():
         rcpdict[tk]['calib_files'] = {}
         calibtechd = (rcpdict[tk]['calib_files'], exprund[tk]['calib_files'])
 
+        exprund[tk]['shell_files'] = {}
+        rcpdict[tk]['shell_files'] = {}
+        shelltechd = (rcpdict[tk]['shell_files'], exprund[tk]['shell_files'])
+
+
         # messy fix for : : bug
         self.add_calib_file = lambda fn: [d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_calib_file'})})
                                           for d in calibtechd]
         self.add_speccsv_file = lambda fn, sample_no: [
-            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file', 'sample_no': sample_no})}) for d
-            in csvtechd]
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file', 'sample_no': sample_no})})
+            for d in csvtechd]
         self.add_tif_file = lambda fn, sample_no: [
-            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_mar_tiff_file', 'sample_no': sample_no})}) for d
-            in tiftechd]
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_mar_tiff_file', 'sample_no': sample_no})})
+            for d in tiftechd]
+        self.add_shell_file = lambda fn: [
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_shell_file'})})
+            for d in shelltechd]
 
     def add_all_files(self, testmode):
         # TODO read spec file to get x,y
         self.parse_shell()
         self.d = self.read_ssrl_calib()
-        self.add_calib_file(self.calib_path)
+        self.calib_fn = os.path.split(self.calib_path)[1]
+        self.add_calib_file(self.calib_fn)
+        self.add_shell_file(self.shellfn)
         fns = os.listdir(os.path.join(self.import_path, 'images'))
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
 
@@ -279,13 +290,23 @@ class setup_rcp_and_exp_ssrl():
         if testmode:
             print 'THIS IS THE RCP FILE THAT WOULD BE SAVED:'
             print rcpfilestr
+            print os.path.join(self.import_path, self.shellfn)
             return
         with open(p, mode='w') as f:
             f.write(rcpfilestr)
         # print 'rcp file saved to ', p
         saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext,
-                        file_attr_and_existence_check=False)
+                        file_attr_and_existence_check=False, runtodonesavep=self.runfolderpath, savefolder=self.runfolderpath)
         # print 'exp file saved to ', dsavep
+        if not testmode:
+            shutil.copy(self.calib_path, os.path.join(self.runfolderpath, self.calib_fn))
+            shutil.copy(os.path.join(self.import_path, self.shellfn), os.path.join(self.runfolderpath, self.shellfn))
+
+            img_path = os.path.join(self.import_path,'images')
+            for fntif, fncsv in zip(self.tif_fns, self.speccsv_fns):
+                shutil.copy(os.path.join(img_path, fntif), os.path.join(self.runfolderpath, fntif))
+                shutil.copy(os.path.join(img_path, fncsv), os.path.join(self.runfolderpath, fncsv))
+        print self.runfolderpath
 
 '''
 
@@ -335,7 +356,7 @@ folder_path = ''
 filename = '27830_0001.tif'
 
 '''
-#REMINDER: this actually looks for the spec file (no file ending) that contains information
+#REMINDER: this class looks for the shellfile file (no file ending) that contains information
 import_path = r'K:\experiments\ssrl\user\SSRLJan2017\39675_InFeCuMn_b2'
 calib_path = r'K:\experiments\ssrl\user\SSRLJan2017\calib\version_4.calib'
 importclass = setup_rcp_and_exp_ssrl(import_path, calib_path, rcpext='.done', expext='.done', overwrite_runs=True,
