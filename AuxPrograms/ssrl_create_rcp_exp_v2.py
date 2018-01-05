@@ -56,14 +56,16 @@ class setup_rcp_and_exp_ssrl():
         self.calib_path = calib_path
         self.sample_no_from_position_index = sample_no_from_position_index
 
-        # moved most hard coded definitions to init
+        # hard coded definitions
         self.compname = 'HTE-SSRL-01'
+        self.detectorname = 'Rayonix MarCCD'
+        self.pixelsize = '79.0'
+        self.datatype = 'ssrl'
 
         self.plate_idstr = plate_idstr
         iserror = self.parse_shell()
         if iserror:
             return
-        self.datatype = 'ssrl'
 
         self.rcpext = rcpext
         self.expext = expext
@@ -130,11 +132,9 @@ class setup_rcp_and_exp_ssrl():
             self.run_params_dict[
                 l.strip()] = v.strip()  # calib params are string vaslues even for the numbers so convert before sending to functions
 
-        # TDOD these hard coded values and the calib input in general will need to be made more general
-        self.run_params_dict['detector_name'] = 'Rayonix MarCCD'
-        self.run_params_dict['pixel_size_micron'] = '79.0'
 
-        # d=self.read_ssrl_calib()
+        self.run_params_dict['detector_name'] = self.detectorname
+        self.run_params_dict['pixel_size_micron'] = self.pixelsize
 
     def parse_shell(self):
         #unsure what file should be read here?
@@ -224,9 +224,9 @@ class setup_rcp_and_exp_ssrl():
         exprund[tk] = {}
         rcpdict[tk] = {}
 
-        exprund[tk]['csv_summary_files'] = {}
-        rcpdict[tk]['csv_summary_files'] = {}
-        csvtechd = (rcpdict[tk]['csv_summary_files'], exprund[tk]['csv_summary_files'])
+        exprund[tk]['csv_spec_files'] = {}
+        rcpdict[tk]['csv_spec_files'] = {}
+        csvtechd = (rcpdict[tk]['csv_spec_files'], exprund[tk]['csv_spec_files'])
 
         exprund[tk]['image_files'] = {}
         rcpdict[tk]['image_files'] = {}
@@ -247,11 +247,10 @@ class setup_rcp_and_exp_ssrl():
             in tiftechd]
 
     def add_all_files(self, testmode):
-        # TODO find the spec file correpsonding to the .tif in the images folder, read spec file to get x,y
-        #  and use these functions to add to rcp/exp
+        # TODO read spec file to get x,y
         self.parse_shell()
         self.d = self.read_ssrl_calib()
-
+        self.add_calib_file(self.calib_path)
         fns = os.listdir(os.path.join(self.import_path, 'images'))
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
 
@@ -274,7 +273,6 @@ class setup_rcp_and_exp_ssrl():
             self.add_tif_file(fntif[1], sample_no_of_file_index(fntif[0]))
             self.add_speccsv_file(fncsv[1], sample_no_of_file_index(fncsv[0]))
 
-
     def save_rcp_exp(self, testmode):
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict['name'] + '.rcp')
@@ -288,9 +286,6 @@ class setup_rcp_and_exp_ssrl():
         saveexp_txt_dat(self.expdict, saverawdat=False, experiment_type=self.datatype, rundone=self.expext,
                         file_attr_and_existence_check=False)
         # print 'exp file saved to ', dsavep
-
-
-
 
 '''
 

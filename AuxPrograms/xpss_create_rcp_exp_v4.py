@@ -645,7 +645,7 @@ import_path = 'K:/experiments/xpss/user/MnFeCoNiCuZn/4082.cal'
 sample_no = [i+1 for i in range(1972)]+[i+1 for i in range(34)]
 xpsimportclass = setup_rcp_and_exp_xpss(import_path, rcpext='.done', expext='.done', overwrite_runs=True,
                                         plate_idstr=None, access='tri', pmidstr=None,
-                                        sample_no_from_position_index=lambda i: sample_no[i], testmode=False)
+                                        sample_no_from_position_index=lambda i: sample_no[i], testmode=True)
 
 '''
 #this block is for testing purposes regarding errorneous sampleno attribution
