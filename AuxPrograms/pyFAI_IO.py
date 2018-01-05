@@ -17,7 +17,14 @@ import numpy as np
             self.parse_calib()
             self.perform_integration()
 
-        def calib(self):
+        def parse_calib(self):
+            pass
+
+        def perform_integration(self):
+            pass
+
+        def perform_calibration(self):
+            pass
 
         def read_tiff(params, path, filen,img_size = 2048):
             #basic calculations
@@ -54,19 +61,35 @@ import numpy as np
             ret['Intens'] = res['Intens'][h_min:h_max]
             return ret
 
-        def test():
 
-            params = {'distance' : 2334.85362601, 'rot_ang' : 4.72370095632, 'tilt_ang' : 0.541102222503,
-                      'lambda' : 0.976, 'x' : 1431.18973336, 'y' : 2388.35677878,
-                      'imx' : 2048, 'imy' : 2048, 'pxs' : 79}
+'''
+example calib file
+imagetype=uncorrected-q
+dtype=uint16
+horsize=2048
+versize=2048
+region_ulc_x=0.0
+region_ulc_y=0.0
+bcenter_x=835.494902365
+bcenter_y=2462.62397658
+detect_dist=2693.18805687
+detect_tilt_alpha=4.70363646847
+detect_tilt_delta=0.243126320799
+wavelenght=0.9762
+Qconv_const=0.00238987059185
+'''
 
-            path = r'K:\users\helge.stein\test'
-            fn = '39675_0011.tif'
+params = {'distance' : 2334.85362601, 'rot_ang' : 4.72370095632, 'tilt_ang' : 0.541102222503,
+          'lambda' : 0.976, 'x' : 1431.18973336, 'y' : 2388.35677878,
+          'imx' : 2048, 'imy' : 2048, 'pxs' : 79}
 
-            res = read_tiff(params, path, fn)
-            res = trunc_res(res)
+path = r'K:\users\helge.stein\test'
+fn = '39675_0011.tif'
 
-        #import matplotlib.pyplot as plt
-        #plt.plot(res['Qv'],res['Intens'])
-        #plt.show()
+#res = read_tiff(params, path, fn)
+#res = trunc_res(res)
+
+#import matplotlib.pyplot as plt
+#plt.plot(res['Qv'],res['Intens'])
+#plt.show()
 
