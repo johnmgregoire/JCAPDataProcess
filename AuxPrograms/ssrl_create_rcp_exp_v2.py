@@ -157,6 +157,7 @@ class setup_rcp_and_exp_ssrl():
 
         p_files = os.listdir(self.import_path)
         shellfns = [fn for fn in p_files if not '.' in fn]
+        self.speccsvfns = [fn for fn in p_files if  '.csv' in fn]
         self.shellfn = shellfns[0]
         with open(os.path.join(self.import_path, self.shellfn), mode='r') as f:
             lines = f.readlines()
@@ -229,6 +230,10 @@ class setup_rcp_and_exp_ssrl():
         rcpdict[tk]['csv_spec_files'] = {}
         csvtechd = (rcpdict[tk]['csv_spec_files'], exprund[tk]['csv_spec_files'])
 
+        exprund[tk]['meta_spec_files'] = {}
+        rcpdict[tk]['meta_spec_files'] = {}
+        metatechd = (rcpdict[tk]['meta_spec_files'], exprund[tk]['meta_spec_files'])
+
         exprund[tk]['image_files'] = {}
         rcpdict[tk]['image_files'] = {}
         tiftechd = (rcpdict[tk]['image_files'], exprund[tk]['image_files'])
@@ -245,9 +250,12 @@ class setup_rcp_and_exp_ssrl():
         # messy fix for : : bug
         self.add_calib_file = lambda fn: [d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_calib_file'})})
                                           for d in calibtechd]
-        self.add_speccsv_file = lambda fn, sample_no: [
-            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file', 'sample_no': sample_no})})
+        self.add_speccsv_file = lambda fn: [
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_spec_csv_file'})})
             for d in csvtechd]
+        self.add_metacsv_file = lambda fn, sample_no: [
+            d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_meta_csv_file', 'sample_no': sample_no})})
+            for d in metatechd]
         self.add_tif_file = lambda fn, sample_no: [
             d.update({fn: filed_createflatfiledesc({'file_type': 'ssrl_mar_tiff_file', 'sample_no': sample_no})})
             for d in tiftechd]
@@ -262,6 +270,12 @@ class setup_rcp_and_exp_ssrl():
         self.calib_fn = os.path.split(self.calib_path)[1]
         self.add_calib_file(self.calib_fn)
         self.add_shell_file(self.shellfn)
+        #for now this is a for loop but because this would essentially correspond to dirrefent runs within a folder
+        #there should be some better checking of it ... or better data aquisition rules because it is hard to tell a
+        # z height adjustment from an actual measurement
+        for fn in self.speccsvfns:
+            self.add_speccsv_file(fn)
+
         fns = os.listdir(os.path.join(self.import_path, 'images'))
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
 
@@ -282,7 +296,7 @@ class setup_rcp_and_exp_ssrl():
 
         for fntif,fncsv in zip(enumerate(self.tif_fns),enumerate(self.speccsv_fns)):
             self.add_tif_file(fntif[1], sample_no_of_file_index(fntif[0]))
-            self.add_speccsv_file(fncsv[1], sample_no_of_file_index(fncsv[0]))
+            self.add_metacsv_file(fncsv[1], sample_no_of_file_index(fncsv[0]))
 
     def save_rcp_exp(self, testmode):
         rcpfilestr = strrep_filedict(self.rcpdict)

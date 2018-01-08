@@ -6,6 +6,7 @@ import fabio
 import os
 import numpy as np
 import pickle
+
 class ssrl_integrator():
     def __init__(self,import_path,testmode=False,calibration_performed=True,truncate=True,trunc_factor=0.8):
         self.import_path = import_path
@@ -95,7 +96,6 @@ class ssrl_integrator():
         except ValueError:
             return float(stringy)
 
-'''
+
 exp_path = r'K:\users\helge.stein\test'
 integrator = ssrl_integrator(exp_path)
-'''
