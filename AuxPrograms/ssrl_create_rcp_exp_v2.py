@@ -323,8 +323,8 @@ class setup_rcp_and_exp_ssrl():
         print self.runfolderpath
 
 #REMINDER: this class looks for the shellfile file (no file ending) that contains information
-import_path = r'K:\experiments\ssrl\user\SSRLJan2017\39675_InFeCuMn_b2'
+import_path = r'K:\experiments\ssrl\user\2017Jul\43557_CuPdZn_toredo'
 calib_path = r'K:\experiments\ssrl\user\SSRLJan2017\calib\version_4.calib'
 importclass = setup_rcp_and_exp_ssrl(import_path, calib_path, rcpext='.done', expext='.done', overwrite_runs=True,
                                      plate_idstr=None, access='hte', pmidstr=None,
-                                     sample_no_from_position_index=lambda i: (1 + i), testmode=True)
+                                     sample_no_from_position_index=lambda i: (1 + i), testmode=False)

@@ -1,6 +1,3 @@
-#this class is not working as of yes
-
-import pyFAI
 import pyFAI.azimuthalIntegrator as az
 import fabio
 import os
@@ -8,7 +5,7 @@ import numpy as np
 import pickle
 
 class ssrl_integrator():
-    def __init__(self,import_path,testmode=False,calibration_performed=True,truncate=True,trunc_factor=0.8):
+    def __init__(self,import_path,testmode=False,calibration_performed=True,truncate=True,trunc_factor=1.0):
         self.import_path = import_path
         self.testmode = testmode
         self.truncate = truncate
@@ -19,6 +16,7 @@ class ssrl_integrator():
 
         #read the calibration and tif file names
         self.calib_file = os.path.join(self.import_path,*[fn for fn in fns if 'calib' in fn])
+
         self.speccsv_fns, self.tif_fns = [fn for fn in fns if '.txt' in fn], [fn for fn in fns if '.tif' in fn]
 
         if calibration_performed:
@@ -38,19 +36,32 @@ class ssrl_integrator():
                         self.params[line.split('=')[0]] = self.conv(line.split('=')[1].strip('\n'))
                     except ValueError:
                         print('Param for {} is not numeric but {}.'.format(*line.strip('\n').split('=')))
-        self.params['pxs'] = 79
+        self.params['pxs'] = 79 #magic factor
+        print self.params
 
     def perform_integration(self):
-        for fn in self.tif_fns:
+        for fn in self.tif_fns[80:82]:
             if self.truncate:
                 Qchi = self.trunc_res(self.read_and_integrate_tiff(fn))
+                self.Qchi = Qchi
             else:
                 self.read_and_integrate_tiff(fn)
             if not self.testmode:
-                picklepfn = os.path.join(self.import_path,fn.replace('.tif','.qchi2'))
-                with open(picklepfn,'wb') as qchi2binary:
-                    pickle.dump(Qchi,qchi2binary)
-            print '{} integrated and saved as .qchi2 to {}'.format(fn,picklepfn)
+                fn_npy = os.path.join(self.import_path,fn.replace('.tif','.npy'))
+                with open(fn_npy,'wb') as npy:
+                    #save the qchi using numpy
+                    np.save(npy,Qchi['Qchi'],allow_pickle=False)
+                fn_1d = os.path.join(self.import_path, 'ana_1_'+fn.strip('.tif')+'_processed.csv')
+                with open(fn_1d,'wb')as f1d:
+                    np.savetxt(f1d,(Qchi['Qv']))
+            print '{} integrated and saved as .npy to {}'.format(fn,fn_npy)
+        #assuming the image meta infos like qvals etc are the same in a run
+        picklepfn = os.path.join(self.import_path, 'pck2d_chi_q_vals.pck')
+        with open(picklepfn, 'wb') as qchi2binary:
+            # save the qchi using numpy
+            d = {'q_invA':Qchi['Qv']*10**9, 'q_invnm':Qchi['Qv']*10**10, 'chi_deg':Qchi['chi']+90, 'chi_rad':(Qchi['chi']+90)/180.*np.pi}
+            print d
+            pickle.dump(d, qchi2binary)
 
     def perform_calibration(self):
         pass
@@ -59,15 +70,15 @@ class ssrl_integrator():
         #basic calculations
         rot = (np.pi * 2 - self.params['detect_tilt_alpha']) / np.pi * 180
         tilt = self.params['detect_tilt_delta'] / np.pi * 180
-        d = self.params['detect_dist']*self.params['pxs']*0.001
+        d = self.params['detect_dist']*self.params['pxs'] *0.001
         #open and integrate
-        img = fabio.open(os.path.join(path,filen)).data
+        img = fabio.open(os.path.join(self.import_path,filen)).data
         model = az.AzimuthalIntegrator(wavelength=self.params['wavelenght'])
-        model.setFit2D(d, self.params['bcenter_x'], self.params['bcenter_y'], tilt, rot, self.params['horsize'], self.params['versize'])
-        Qchi, Q, chi = model.integrate2d(img, self.params['horsize'], self.params['versize'])
+        model.setFit2D(d, self.params['bcenter_x'], self.params['bcenter_y'], tilt, rot, self.params['pxs'], self.params['pxs'])
+        Qchi, Q, chi = model.integrate2d(img, 1024, 1024)
         Qv, Intens = model.integrate1d(img, self.params['horsize'])
 
-        return {'Qchi':Qchi,'Q':Q,'chi':chi,'Qv':Qv,'Intens':Intens}
+        return {'Qchi':Qchi, 'Q':Q, 'chi':chi, 'Qv':Qv, 'Intens':Intens}
 
     def det_cutoff_pxs(self, Qchi,f=1.0):
         zer_h = np.array([np.sum(np.where(c==0,1,0)) for c in Qchi.T])
@@ -96,6 +107,11 @@ class ssrl_integrator():
         except ValueError:
             return float(stringy)
 
-
-exp_path = r'K:\users\helge.stein\test'
+exp_path = r'K:\users\helge.stein\20180108_CuPdZnAr_43557\20170727.130926.done'
 integrator = ssrl_integrator(exp_path)
+
+import matplotlib.pyplot as plt
+plt.plot(integrator.Qchi['Qv'],integrator.Qchi['Intens'])
+plt.show()
+plt.imshow((integrator.Qchi['Qchi']))
+plt.show()
