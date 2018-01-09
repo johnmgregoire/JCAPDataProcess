@@ -315,6 +315,8 @@ class setup_rcp_and_exp_ssrl():
         if not testmode:
             shutil.copy(self.calib_path, os.path.join(self.runfolderpath, self.calib_fn))
             shutil.copy(os.path.join(self.import_path, self.shellfn), os.path.join(self.runfolderpath, self.shellfn))
+            for fn in self.speccsvfns:
+                shutil.copy(os.path.join(self.import_path, fn), os.path.join(self.runfolderpath, fn))
 
             img_path = os.path.join(self.import_path,'images')
             for fntif, fncsv in zip(self.tif_fns, self.speccsv_fns):
