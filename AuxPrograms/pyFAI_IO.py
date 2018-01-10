@@ -4,6 +4,7 @@ import os, sys
 import numpy as np
 import pickle
 import time
+import scipy.misc
 
 projectroot=os.path.split(os.getcwd())[0]
 sys.path.append(projectroot)
@@ -65,9 +66,11 @@ class ssrl_integrator():
                 self.read_and_integrate_tiff(fn)
             if not self.testmode:
                 fn_npy = os.path.join(self.import_path,fn.replace('.tif','.npy'))
+                fn_png = os.path.join(self.import_path,fn.replace('.tif', '.png'))
                 with open(fn_npy,'wb') as npy:
                     #save the qchi using numpy
                     np.save(npy,Qchi['Qchi'],allow_pickle=False)
+                scipy.misc.imsave(fn_png, Qchi['Qchi'])
                 fn_1d = os.path.join(self.import_path, 'ana_1_'+fn.strip('.tif')+'_processed.csv')
                 with open(fn_1d,'wb')as f1d:
                     np.savetxt(f1d,np.array([Qchi['Qv']*10e10,Qchi['Intens']]).T,

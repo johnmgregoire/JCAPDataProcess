@@ -12,11 +12,7 @@ TODO: write files to spec into anafolder
 
 import sys, os
 
-cwd = os.path.split(os.getcwd())[0]
-if 'JCAPDataProcess-master' in cwd:
-    projectroot = cwd
-else:
-    projectroot = r'K:\users\helge.stein\git\JCAPDataProcess-master'
+projectroot = os.path.split(os.getcwd())[0]
 
 sys.path.append(projectroot)
 sys.path.append(os.path.join(projectroot, 'QtForms'))
@@ -310,7 +306,8 @@ for i in range(len(data['files_technique__CV2'][1][:])):
 # run a test
 '''
 
-expname = r'\eche\20171218.222905.done'
+#expname = r'\eche\20171218.222905.done'
+expname = r'\eche\20180109.122753.done'
 filekeystoget = ['files_technique__CV2', 'files_technique__CV4', 'files_technique__CA5']
 ftype = 'pstat_files'
 
