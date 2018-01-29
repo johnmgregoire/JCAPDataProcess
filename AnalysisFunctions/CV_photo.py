@@ -61,12 +61,12 @@ class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
         self.analysis_fcn_version = '4'  # version 4 include 0-asymptote and asymmetric models, output sigmoid model coefficients as FOMs
         self.dfltparams=dict([\
-  ('weight', False), ('num_cycles_omit_start', 0), \
+  ('weight', 0.0), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', 'anodic'), \
   ('i_photo_base', 1E-8), ('num_sweeps_to_fit', 1), \
   ('use_sweeps_from_end', True), ('v_extend_upper', 0.1), \
   ('v_extend_lower', 0.1), ('v_interp_step', 0.001), \
-  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -3), ('calc_vs_HER', 0), ('function_type', 'sigmoid') \
+  ('allow_nan_iphoto_pct', 0.1), ('log_ftol', -8), ('max_log_ftol', -3), ('calc_vs_HER', 0), ('function_type', 'sigmoid'), ('override_vrhe', 0.0) \
                                        ]) # sweep direction -1 means anodic somehow...!!! dE/dt>0
         self.params = copy.copy(self.dfltparams)
         self.analysis_name = 'Analysis__Pphotomax'
@@ -174,7 +174,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             fn = filed['fn']
 
             try:
-                #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
+            #since using raw, inter and rawlen_inter data, just put them all into a datadict. all of the inter arrays are included
                 dataarr = filed['readfcn'](*filed['readfcn_args'],
                                            **filed['readfcn_kwargs'])
                 for k, v in zip(self.requiredkeys, dataarr):
@@ -342,8 +342,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ## create _dark and _ill interd keys from fitted range
         cyc_start = self.params['num_cycles_omit_start']
         cyc_end = None if self.params[
-            'num_cycles_omit_end'] == 0 else -1 * self.params[
-                'num_cycles_omit_end']
+            'num_cycles_omit_end'] == 0 else -1 * self.params['num_cycles_omit_end']
 
         ttrim_fitrng = numpy.array([ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
         ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
@@ -364,17 +363,23 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         if self.params['function_type']=='sigmoid_0asymptote':
             fitfn = tpl
             fnstring = 'lambda t, Cu, A, k: (Cu/(1+np.exp((A-t)/k)))'
+            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, 0]), \
+                      numpy.array([numpy.inf, numpy.inf, numpy.inf]))
         elif self.params['function_type']=='sigmoid_asymmetric':
             fitfn = fpl_2shapes
             fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))'
+            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
+                      numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
         else:
             fitfn = fpl
             fnstring = 'lambda x, A, B, C, D: (D + ((C - D) / (1 + numpy.exp((B - x) / A))))'
+            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
+                      numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
 
 
 
         weight = self.params['weight']
-        ywt = 1/(iphoto_fitrng**weight) if weight else None
+        ywt = 1/(iphoto_fitrng**weight) if weight!=0.0 else None
 
         mintol = self.params['log_ftol']
         maxtol = self.params['max_log_ftol']
@@ -385,7 +390,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             tolind=0
             while tolind<len(tollist):
                 try:
-                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind])
+                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds)
                     initpars=[topt[0], topt[1], topt[2], 1]
                     break
                 except RuntimeError:
@@ -398,7 +403,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         tolind=0
         while tolind<len(tollist):
             try:
-                popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=initpars, sigma=ywt, maxfev=10000, ftol=tollist[tolind])
+                popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=initpars, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds)
                 break
             except RuntimeError:
                 tolind+=1
@@ -424,8 +429,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         miscfilestr = json.dumps(jsondict)
 
         # fom calculations on trimmed data (limited sweeps and cycles)
-        vrhe = paramd['reference_vrhe']
-        # eo = paramd['reference_e0']
+        use_rhe=self.params['override_vrhe']
+        vrhe = paramd['reference_vrhe'] if use_rhe==0.0 else use_rhe
         eo = vrhe + 1.229 # don't detect OER/HER from rcp, just assume OER and check calc_vs_HER param
         if self.params['calc_vs_HER']:
             ewe_eo = ewetrim_fitrng - vrhe
@@ -476,9 +481,10 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd['I(A)_residuals_fitrng'] = fitresiduals
         interd['I(A)_pred_fitrng'] = iphoto
         interd['P(W)_pred_fitrng'] = pphoto
+        # interd['rawselectinds'] = numpy.array(
+        #     [rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v and i in d['rawselectinds']])
         interd['rawselectinds'] = numpy.array(
-            [rawinds[i] for i, v in enumerate(map(rangefunc, d['t(s)'])) if v and i in d['rawselectinds']])
-
+            [i for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end])
         if self.params['function_type']=='sigmoid_0asymptote':
             shape=fitcoeff[2]
             shape_err=fiterrs[2]
