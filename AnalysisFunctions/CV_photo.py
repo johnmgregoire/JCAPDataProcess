@@ -59,7 +59,7 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version = '4'  # version 4 include 0-asymptote and asymmetric models, output sigmoid model coefficients as FOMs
+        self.analysis_fcn_version = '5'  # version 5 rescale Iphoto to range 0-1 before fitting, modify weighting so small values increase weight for low Iphoto
         self.dfltparams=dict([\
   ('weight', 0.0), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', 'anodic'), \
@@ -376,10 +376,14 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
                       numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
 
-
+        iphoto_offset=numpy.min(numpy.abs(iphoto_fitrng))*numpy.sign(numpy.min(iphoto_fitrng))
+        iphoto_fitrng=(iphoto_fitrng-iphoto_offset)
+        iphoto_norm=numpy.max(numpy.abs(iphoto_fitrng))
+        iphoto_fitrng=(iphoto_fitrng-iphoto_offset)
 
         weight = self.params['weight']
-        ywt = 1/(iphoto_fitrng**weight) if weight!=0.0 else None
+        # ywt = 1/(numpy.abs(iphoto_fitrng)**weight) if weight!=0.0 else None
+        ywt = numpy.abs(iphoto_fitrng*iphoto_norm+iphoto_offset)**0.5 if weight!=0.0 else None
 
         mintol = self.params['log_ftol']
         maxtol = self.params['max_log_ftol']
@@ -415,8 +419,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 
         fittedfunc = lambda x: fitfn(x, *popt)
         fitcoeff = popt
-        fiterrs = pcov.diagonal()**0.5
-        fitresiduals = iphoto_fitrng - fittedfunc(ewetrim_fitrng)
+        fiterrs = (pcov.diagonal()**0.5)*iphoto_norm
+        fitresiduals = (iphoto_fitrng - fittedfunc(ewetrim_fitrng))*iphoto_norm
         rss = numpy.sum(fitresiduals**2)
 
         jsondict = {
@@ -434,11 +438,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         eo = vrhe + 1.229 # don't detect OER/HER from rcp, just assume OER and check calc_vs_HER param
         if self.params['calc_vs_HER']:
             ewe_eo = ewetrim_fitrng - vrhe
-            isc = fittedfunc(-1*vrhe)
+            isc = fittedfunc(-1*vrhe)*iphoto_norm+iphoto_offset
         else:
             ewe_eo = eo - ewetrim_fitrng
-            isc = fittedfunc(eo)
-        iphoto = fittedfunc(ewetrim_fitrng)
+            isc = fittedfunc(eo)*iphoto_norm+iphoto_offset
+        iphoto = fittedfunc(ewetrim_fitrng)*iphoto_norm+iphoto_offset
 
         #iminsign = 1 if paramd['redox_couple_type'] == 'O2/H2O' else -1
         pphoto = iphoto * ewe_eo #* iminsign
@@ -452,7 +456,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         ewesmooth = numpy.arange(start=minewe-extlo, \
                                    stop=maxewe+exthi, \
                                    step=vstep)
-        iphotosmooth = fittedfunc(ewesmooth)
+        iphotosmooth = fittedfunc(ewesmooth)*iphoto_norm+iphoto_offset
         if self.params['calc_vs_HER']:
             pphotosmooth = iphotosmooth * (ewesmooth - vrhe) #* iminsign
             pmaxind = numpy.argmin(pphotosmooth)
@@ -468,15 +472,15 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 
         # rawlend assignments
         rawinds = numpy.arange(len(d['t(s)']))
-        rawlend['I(A)_pred'] = fittedfunc(d['Ewe(V)'])
+        rawlend['I(A)_pred'] = fittedfunc(d['Ewe(V)'])*iphoto_norm+iphoto_offset
         if self.params['calc_vs_HER']:
-            rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (d['Ewe(V)'] - vrhe) #* (iminsign)
+            rawlend['P(W)_pred'] = rawlend['I(A)_pred'] * (d['Ewe(V)'] - vrhe) #* (iminsign)
         else:
-            rawlend['P(W)_pred'] = fittedfunc(d['Ewe(V)']) * (eo - d['Ewe(V)']) #* (iminsign)
+            rawlend['P(W)_pred'] = rawlend['I(A)_pred'] * (eo - d['Ewe(V)']) #* (iminsign)
         rawlend['FitrngBool'] = map(rangefunc, d['t(s)'])
         # interd assignemnts
         interd['Ewe(V)_fitrng'] = ewetrim_fitrng
-        interd['I(A)_fitrng'] = iphoto_fitrng
+        interd['I(A)_fitrng'] = iphoto_fitrng*iphoto_norm+iphoto_offset
         interd['t(s)_fitrng'] = ttrim_fitrng
         interd['I(A)_residuals_fitrng'] = fitresiduals
         interd['I(A)_pred_fitrng'] = iphoto
