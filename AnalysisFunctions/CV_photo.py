@@ -11,6 +11,7 @@ from scipy.optimize import curve_fit
 #from scipy.optimize import minimize_scalar
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
+from joblib import Parallel, delayed
 
 # import matplotlib.pyplot as plt
 
@@ -59,7 +60,7 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
 
 class Analysis__Pphotomax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version = '5'  # version 5 rescale Iphoto to range 0-1 before fitting, modify weighting so small values increase weight for low Iphoto
+        self.analysis_fcn_version = '6'  # version 6 better initial params for sigmoid fit to coerce positive growth rate
         self.dfltparams=dict([\
   ('weight', 0.0), ('num_cycles_omit_start', 0), \
   ('num_cycles_omit_end', 0), ('sweep_direction', 'anodic'), \
@@ -360,26 +361,31 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         # fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,(k*k2)**0.5))
         fpl_2shapes = lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))
 
+        inflec_init=ewetrim_fitrng[numpy.argmin(numpy.abs(iphoto_fitrng-numpy.median(iphoto_fitrng)))]
+
         if self.params['function_type']=='sigmoid_0asymptote':
             fitfn = tpl
             fnstring = 'lambda t, Cu, A, k: (Cu/(1+np.exp((A-t)/k)))'
             fitbnds = (numpy.array([-numpy.inf, -numpy.inf, 0]), \
                       numpy.array([numpy.inf, numpy.inf, numpy.inf]))
+            p_init=[max(ewetrim_fitrng),1,1]
         elif self.params['function_type']=='sigmoid_asymmetric':
             fitfn = fpl_2shapes
             fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))'
             fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
                       numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
+            p_init=[min(ewetrim_fitrng),max(ewetrim_fitrng),1,1]
         else:
             fitfn = fpl
             fnstring = 'lambda x, A, B, C, D: (D + ((C - D) / (1 + numpy.exp((B - x) / A))))'
-            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
-                      numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
+            fitbnds = (numpy.array([-numpy.inf, inflec_init, -numpy.inf, 0]), \
+                                   numpy.array([inflec_init, numpy.inf, numpy.inf, numpy.inf]))
+            p_init=[min(ewetrim_fitrng),max(ewetrim_fitrng),1,1]
 
         iphoto_offset=numpy.min(numpy.abs(iphoto_fitrng))*numpy.sign(numpy.min(iphoto_fitrng))
         iphoto_fitrng=(iphoto_fitrng-iphoto_offset)
         iphoto_norm=numpy.max(numpy.abs(iphoto_fitrng))
-        iphoto_fitrng=(iphoto_fitrng-iphoto_offset)
+        iphoto_fitrng=iphoto_fitrng/iphoto_norm
 
         weight = self.params['weight']
         # ywt = 1/(numpy.abs(iphoto_fitrng)**weight) if weight!=0.0 else None
@@ -394,7 +400,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             tolind=0
             while tolind<len(tollist):
                 try:
-                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds)
+                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds, p0=p_init)
                     initpars=[topt[0], topt[1], topt[2], 1]
                     break
                 except RuntimeError:
@@ -435,10 +441,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         # fom calculations on trimmed data (limited sweeps and cycles)
         use_rhe=self.params['override_vrhe']
         vrhe = paramd['reference_vrhe'] if use_rhe==0.0 else use_rhe
-        eo = vrhe + 1.229 # don't detect OER/HER from rcp, just assume OER and check calc_vs_HER param
+        eo = vrhe + 1.229
         if self.params['calc_vs_HER']:
             ewe_eo = ewetrim_fitrng - vrhe
-            isc = fittedfunc(-1*vrhe)*iphoto_norm+iphoto_offset
+            #isc = fittedfunc(-1*vrhe)*iphoto_norm+iphoto_offset
+            isc = fittedfunc(vrhe)*iphoto_norm+iphoto_offset
         else:
             ewe_eo = eo - ewetrim_fitrng
             isc = fittedfunc(eo)*iphoto_norm+iphoto_offset
