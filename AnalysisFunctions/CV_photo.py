@@ -11,7 +11,6 @@ from scipy.optimize import curve_fit
 #from scipy.optimize import minimize_scalar
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
-from joblib import Parallel, delayed
 
 # import matplotlib.pyplot as plt
 
