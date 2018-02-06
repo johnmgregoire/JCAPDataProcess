@@ -371,9 +371,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         elif self.params['function_type']=='sigmoid_asymmetric':
             fitfn = fpl_2shapes
             fnstring = 'lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))'
-            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, 0]), \
+            fitbnds = (numpy.array([-numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf]), \
                       numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf]))
-            p_init=[min(ewetrim_fitrng),max(ewetrim_fitrng),1,1]
+            # p_init=[1,1,1,1] # set this using three-param fit
         else:
             fitfn = fpl
             fnstring = 'lambda x, A, B, C, D: (D + ((C - D) / (1 + numpy.exp((B - x) / A))))'
@@ -388,19 +388,18 @@ class Analysis__Pphotomax(Analysis_Master_inter):
 
         weight = self.params['weight']
         # ywt = 1/(numpy.abs(iphoto_fitrng)**weight) if weight!=0.0 else None
-        ywt = numpy.abs(iphoto_fitrng*iphoto_norm+iphoto_offset)**0.5 if weight!=0.0 else None
+        ywt = numpy.abs(iphoto_fitrng*iphoto_norm+iphoto_offset)**weight if weight!=0.0 else None
 
         mintol = self.params['log_ftol']
         maxtol = self.params['max_log_ftol']
         tollist=numpy.logspace(mintol, maxtol, maxtol-mintol+1)
-        initpars=None
 
         if self.params['function_type']=='sigmoid_asymmetric':
             tolind=0
             while tolind<len(tollist):
                 try:
-                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds, p0=p_init)
-                    initpars=[topt[0], topt[1], topt[2], 1]
+                    topt, tcov = curve_fit(tpl, ewetrim_fitrng, iphoto_fitrng, sigma=ywt, maxfev=10000, ftol=tollist[tolind])
+                    p_init=[topt[0], topt[1], topt[2], 1]
                     break
                 except RuntimeError:
                     tolind+=1
@@ -412,7 +411,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         tolind=0
         while tolind<len(tollist):
             try:
-                popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=initpars, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds)
+                popt, pcov = curve_fit(fitfn, ewetrim_fitrng, iphoto_fitrng, p0=p_init, sigma=ywt, maxfev=10000, ftol=tollist[tolind], bounds=fitbnds)
                 break
             except RuntimeError:
                 tolind+=1
