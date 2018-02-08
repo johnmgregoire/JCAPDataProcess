@@ -472,9 +472,11 @@ def convertfilekeystofiled(exporanafiledict):
         if not (k.startswith('run__') or k.startswith('ana__')):
             continue
         for k2, techd in rund.iteritems():
-            if not k2.startswith('files_'):
+            if not (k2.startswith('files_') and isinstance(techd, dict)):
                 continue
             for k3, typed in techd.iteritems():
+                if not isinstance(typed, dict):
+                    continue
                 for fn, keystr in typed.iteritems():
                     d=createfileattrdict(keystr, fn=fn)
                     exporanafiledict[k][k2][k3][fn]=d
@@ -706,8 +708,8 @@ def prepend_root_exp_path(p, exp=True):
             continue
         if os.path.isfile(os.path.join(parentfold, subfold)):
             return os.path.join(parentfold, subfold)
+        subfoldparts=subfold.split('.')
         if subfold.count('.')>1:
-            subfoldparts=subfold.split('.')
             subfold='.'.join(subfoldparts[:2])
         subfoldl=[s for s in os.listdir(parentfold) if s.startswith(subfold)]
         if len(subfoldl)>1:#if multiple matches (e.g. a same-named exp or ana with simulatanous different extensions or descriptive manually named folder, try to find the perfect match before just return the first
@@ -1015,6 +1017,17 @@ def importinfo(plateidstr):
         lines=f.readlines()
     infofiled=filedict_lines(lines)
     return infofiled
+
+def database_time_string_to_timestamp(s):
+    return time.strptime(s.rpartition(' ')[0],'%Y-%m-%d %H:%M:%S')
+
+def get_most_recent_created_at(d, beforetime=None):
+    if beforetime is None:
+        beforetime=time.ctime()
+    tups=[(database_time_string_to_timestamp(v['created_at']), k, v) for k, v in d.iteritems() if 'created_at' in v.keys() and database_time_string_to_timestamp(v['created_at'])<beforetime]
+    if len(tups)==0:
+        return None, None
+    return sorted(tups)[-1][1], sorted(tups)[-1][2]
 
 def getelements_plateidstr(plateidstr_or_filed, multielementink_concentrationinfo_bool=False,print_key_or_keyword='screening_print_id', exclude_elements_list=['']):#print_key_or_keyword can be e.g. "print__3" or screening_print_id
     if isinstance(plateidstr_or_filed, dict):

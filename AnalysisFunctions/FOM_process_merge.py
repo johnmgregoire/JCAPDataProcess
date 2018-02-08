@@ -187,8 +187,9 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     continue
                 self.fomnames=process_keys
                 self.strkeys_fomdlist=['aux_anak']
-                newfomd['aux_anak']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#S8 is ana__NNN
-                if 'plate_id' in auxfomd.keys() and not matchplateidbool:
+                newfomd['aux_anak']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#S8 is ana__NNN'
+                plateidinanyaux=True in ['plate_id' in auxfomd.keys() for auxfomd in auxfomd_list]
+                if plateidinanyaux and not matchplateidbool:
                     self.strkeys_fomdlist+=['aux_plate_id']
                     newfomd['aux_plate_id']=numpy.array(['']*len(newfomd['sample_no']),dtype='|S8')#plate_id presumably no more than 8 characters long
                 for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
