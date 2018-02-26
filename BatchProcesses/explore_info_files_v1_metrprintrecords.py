@@ -41,6 +41,8 @@ def add_entry_for_each_analysis(d, pidstr, anatype='image'):
             
             ananame=anad['name']
             d[ananame]={'plate_id_str':pidstr, 'analysis':copy.copy(av)}
+            if 'screening_map_id' in infofiled.keys():
+                d[ananame]['screening_map_id']=infofiled['screening_map_id']
             exppath=buildexppath(anad['experiment_path'])
             try:
                 expd=readexpasdict(exppath, returnzipclass=False)
