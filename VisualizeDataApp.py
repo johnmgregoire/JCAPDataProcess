@@ -360,7 +360,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #                self.platemap4keys_default=self.ellabels[:4]
             else:#if no ellabels are missing in platemap then they were all recalculated meaning that platemap signals are not good for composition plots so give the option to use multi-ink-calculated compositions
                 if ellabelsforquatplots=='ask':
-                    ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
+                    if self.GUIMODE:
+                        ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
+                    else:
+                        ans=None
                 elif isinstance(ellabelsforquatplots, list):
                     ans=ellabelsforquatplots
                 else:
@@ -1363,7 +1366,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         
         
     def fillcomppermutations(self):
-        if self.ellabels==['A', 'B', 'C', 'D']:#default to only using 4 elements , i.e. if more than that then they should have been ready correctly from database and are not enter-able here
+        if self.ellabels==['A', 'B', 'C', 'D'] and self.GUIMODE:#default to only using 4 elements , i.e. if more than that then they should have been ready correctly from database and are not enter-able here
             ans=userinputcaller(self, inputs=[('A', str, 'A'), ('B', str, 'B'), ('C', str, 'C'), ('D', str, 'D')], title='Enter element labels',  cancelallowed=True)
             if not ans is None:
                 self.ellabels=[v.strip() for v in ans]
