@@ -104,7 +104,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
 
-        self.inkjetconcentrationadjustment='ask_if_appropriate'#'ask_if_appropriate' for dialog, or False/True    
+        self.inkjetconcentrationadjustment=False if not self.GUIMODE else 'ask_if_appropriate'#'ask_if_appropriate' for dialog, or False/True    
         self.plotwsetup()
         
         self.clearall()
@@ -219,18 +219,18 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if self.GUIMODE and inkjetconcentrationadjustment=='ask_if_appropriate':
             print 'code should be modified to call process_multielementink with different value for inkjetconcentrationadjustment'
         if errorbool:
-            if inkjetconcentrationadjustment=='ask_if_appropriate':#don't display error messgage if set to True for batch purposes
+            if self.GUIMODE and inkjetconcentrationadjustment=='ask_if_appropriate':#don't display error messgage if set to True for batch purposes
                 idialog=messageDialog(self, tupormessage)
                 idialog.exec_()
             else:
                 print tupormessage
             return False
-        
-        if inkjetconcentrationadjustment=='ask_if_appropriate':
+        if self.GUIMODE and inkjetconcentrationadjustment=='ask_if_appropriate':
             idialog=messageDialog(self, 'Non standard ink deposition:\nShould platemap compositions be modified?\n"OK" will calculate comps now and for\nall future imports until program closed.')
             if not idialog.exec_():
                 return False
-        
+        elif not inkjetconcentrationadjustment:
+            return False
         cels_set_ordered, conc_el_chan=tupormessage
         
         calc_comps_multi_element_inks(rund['platemapdlist'], cels_set_ordered, conc_el_chan, key_append_conc='', key_append_atfrac=None)
