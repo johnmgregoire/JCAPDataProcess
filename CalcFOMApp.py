@@ -774,9 +774,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             saveanafiles(savep, anafilestr=self.anafilestr, anadict=self.anadict)
             return self.anafolder
         if not 'ana_version' in self.anafilestr:
-            idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
-            idialog.exec_()
-            return
+            if self.guimode:
+                idialog=messageDialog(self, 'Aborting SAVE because no data in ANA')
+                idialog.exec_()
+            else:
+                print 'Aborting SAVE because no data in ANA'
+            return 
         if anatype is None:
             savefolder=None
             dfltanatype=self.anadict['analysis_type']
@@ -794,8 +797,11 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 needcopy_dlist=find_paths_in_ana_need_copy_to_anatype(self.anadict, anatype)
                 if len(needcopy_dlist)>0:
                     if None in needcopy_dlist:
-                        idialog=messageDialog(self, 'Aborting Save: Aux exp/ana in temp or not on K')
-                        idialog.exec_()
+                        if self.guimode:
+                            idialog=messageDialog(self, 'Aborting Save: Aux exp/ana in temp or not on K')
+                            idialog.exec_()
+                        else:
+                            print 'Aborting Save: Aux exp/ana in temp or not on K'
                         return
                     idialog=messageDialog(self, 'Need to copy EXP and/or ANA to %s to continue\nOK to attempt copy, Cancel to abort save.' %anatype)
                     if not idialog.exec_():
@@ -803,9 +809,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     for d_needcopy in needcopy_dlist: 
                         errormsg=copyfolder_1level(d_needcopy['srcabs'], d_needcopy['destabs'])
                         if errormsg:
-                            idialog=messageDialog(self, 'Aborting Save on exp/ana copy: ' %errormsg)
-                            idialog.exec_()
-                            return
+                            if self.guimode:
+                                idialog=messageDialog(self, 'Aborting Save on exp/ana copy: ' %errormsg)
+                                idialog.exec_()
+                            else:
+                                print 'Aborting Save on exp/ana copy: ' %errormsg
+                            return 
                         get_dict_item_keylist(self.anadict, d_needcopy['anadkeylist'][:-1])[d_needcopy['anadkeylist'][-1]]=d_needcopy['destrel']
                     self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         else:
