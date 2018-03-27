@@ -344,9 +344,9 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         cyc_end = None if self.params[
             'num_cycles_omit_end'] == 0 else -1 * self.params['num_cycles_omit_end']
 
-        ttrim_fitrng = numpy.array([ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
-        ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
-        iphoto_fitrng = numpy.array([illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end], dtype=float)
+        ttrim_fitrng = numpy.array([ttrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v and not numpy.isnan(illdiff[i])][cyc_start:cyc_end], dtype=float)
+        ewetrim_fitrng = numpy.array([ewetrim[i] for i, v in enumerate(map(rangefunc, ttrim)) if v and not numpy.isnan(illdiff[i])][cyc_start:cyc_end], dtype=float)
+        iphoto_fitrng = numpy.array([illdiff[i] for i, v in enumerate(map(rangefunc, ttrim)) if v and not numpy.isnan(illdiff[i])][cyc_start:cyc_end], dtype=float)
 
         # Four Parameter Logistic Curve Fitting
         # 0 x:t input (V)
