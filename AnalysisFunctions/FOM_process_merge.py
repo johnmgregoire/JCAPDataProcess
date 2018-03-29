@@ -38,10 +38,11 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                 self.filedlist=[]
                 return self.filedlist
             if not (True in [self.params['aux_ana_path'] in auxd['auxexpanapath_relative'] for auxd in calcFOMDialogclass.aux_ana_dlist]):
-                self.params['aux_ana_path']=os.path.split(auxd['auxexpanapath_relative'])[1]# if aux_ana_path not available or 'None', use the msot recently added one, which will be auxd due to the above iterator
+                self.params['aux_ana_path']=auxd['auxexpanapath_relative']# if aux_ana_path not available or 'None', use the msot recently added one, which will be auxd due to the above iterator#20180329removed os.path.split
         #do not check if aux ana contains any valid foms - let user change params and validate there
-        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']=='custom':#only run params for custom when user changes to "custom"
-            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=False)
+#        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']=='custom':#only run params for custom when user changes to "custom"
+#            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=False)
+        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=not hasattr(self, 'filedlist'))
         return self.filedlist
     
     def processnewparams(self, calcFOMDialogclass=None, recalc_filedlist=True):
