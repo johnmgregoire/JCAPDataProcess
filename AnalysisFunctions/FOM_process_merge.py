@@ -42,7 +42,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         #do not check if aux ana contains any valid foms - let user change params and validate there
 #        if len(self.getapplicablefomfiles(anadict))>0 and self.params['aux_ana_path']=='custom':#only run params for custom when user changes to "custom"
 #            self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=False)
-        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=not hasattr(self, 'filedlist'))
+        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass, recalc_filedlist=True)#not hasattr(self, 'filedlist'))
         return self.filedlist
     
     def processnewparams(self, calcFOMDialogclass=None, recalc_filedlist=True):
