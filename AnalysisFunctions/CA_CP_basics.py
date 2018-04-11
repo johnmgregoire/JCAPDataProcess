@@ -9,7 +9,7 @@ from fcns_io import *
 from csvfilewriter import createcsvfilstr
 from Analysis_Master import *
 
-referenceshiftfcn=lambda x, e0, redoxstr:(x-e0)*((-1)**(not redoxstr in ['FeCp2+/0','Fe(CN)6-3/-4','O2/H2O']))
+referenceshiftfcn=lambda x, e0, redoxstr:(x-e0)*((-1)**(not redoxstr in ['FeCp2+/0','Fe(CN)6-3/-4','O2/H2O', 'FeCp2+0','Fe(CN)6-3-4','O2H2O']))
 
 
 class Analysis__Imax(Analysis_Master_nointer):
