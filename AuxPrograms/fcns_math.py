@@ -768,13 +768,13 @@ def calcdiff_choppedill(d, interd, ikey='Illum', ykeys=['I(A)'], xkeys=['t(s)', 
     istart_len_calc=lambda startind, endind, fracrange: (startind+numpy.floor(fracrange[0]*(endind-startind)), numpy.ceil((fracrange[1]-fracrange[0])*(endind-startind)))
     riseinds=numpy.where(illum[1:]&numpy.logical_not(illum[:-1]))[0]+1
     fallinds=numpy.where(numpy.logical_not(illum[1:])&illum[:-1])[0]+1
-    if len(fallinds)<2 or len(riseinds)==0:
-        print 'insufficeint light cycles'
+    if len(fallinds)==0 or len(riseinds)==0:
+        print 'insufficient light cycles'
         return 1
     riseinds=riseinds[riseinds<fallinds[-1]]#only consider illum if there is a dark before and after
     fallinds=fallinds[fallinds>riseinds[0]]
-    if len(fallinds)<2 or len(riseinds)==0:
-        print 'insufficeint light cycles'
+    if len(fallinds)==0 or len(riseinds)==0:
+        print 'insufficient light cycles'
         return 1
     ill_istart, ill_len=istart_len_calc(riseinds, fallinds, illfracrange)
     darkstart, darkend=numpy.where(numpy.logical_not(illum))[0][[0, -1]]
