@@ -4,6 +4,7 @@ if __name__ == "__main__":
 
 
 sys.path.append(os.path.join(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0],'AuxPrograms'))
+array_folder=os.path.join(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0],'static_analysis_arrays')
 
 from fcns_math import *
 from fcns_io import *
@@ -83,9 +84,9 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(filedlist, expfiledict, ana
 
 class Analysis__SpectralPhoto(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='2'
+        self.analysis_fcn_version='3'
         self.dfltparams=dict([\
-                    ('photo_analysis_ana_fcn', 'Analysis__Iphoto'), ('optical_power_mw', 'illumination_intensity') \
+                    ('photo_analysis_ana_fcn', 'Analysis__Iphoto'), ('optical_power_mw', 'illumination_intensity'), ('spectral_integral_fom_file', 'am15g'), ('spectral_integral_fom_keys', 'irrad.mW_cm2_nm,flux.mA_cm2_nm'), ('spectral_integral_below_above_vals', 'const,0.') \
                                        ])
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__SpectralPhoto'
@@ -137,7 +138,35 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
             genmw=lambda d:float(attemptnumericconversion_tryintfloat(mwparam))
         else:#key from interd oarams
             genmw=lambda d:d[mwparam] if mwparam in d.keys() else numpy.nan
-            
+        spectrum_path=None
+        if self.params['spectral_integral_fom_file']!='None':#this is list of file startswith and then keys so if no comma then skip, ie. "None" as a value will skip this calculation
+            integral_wlkey='wl.nm'
+            l=self.params['spectral_integral_fom_keys'].split(',')
+            spectrum_integral_keys=[v.strip() for v in l]
+            file_start_str=self.params['spectral_integral_fom_file']
+
+            for fn in os.listdir(array_folder):
+                if fn.startswith(file_start_str) and fn.endswith('.csv'):
+                    p=os.path.join(array_folder, fn)
+                    specd_headerdict={'num_header_lines':1}
+                    specd=readcsvdict(p, specd_headerdict)
+                    if not (False in [k in specd.keys() for k in [integral_wlkey]+spectrum_integral_keys]):
+                        spectrum_path=p
+                        inds=numpy.argsort(specd[integral_wlkey])
+                        for k, v in specd.items():
+                            specd[k]=v[inds]
+                        limfcns=[]
+                        for count, limvalstr in enumerate(self.params['spectral_integral_below_above_vals'].split(',')):
+                            limvalstr=attemptnumericconversion_tryintfloat(limvalstr)
+                            if isinstance(limvalstr, str):
+                                if limvalstr!='const':
+                                    print 'unknown limit parameter'
+                                    raiseerror
+                                limfcns+=[lambda l:l[0 if count==0 else -1]]
+                            else:
+                                limfcns+=[lambda l:float(limvalstr)]
+                        break
+                        
         self.fomdlist=[]
         for filed in self.filedlist:
             if numpy.isnan(filed['sample_no']):
@@ -185,8 +214,8 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
             intkeys=['runint','anaint']
             num_wavelengths=len(photofomd_wl.keys())
             
-            sortedwls=sorted(photofomd_wl.keys())[::-1]
-            wl_dlist=[photofomd_wl[k] for k in sortedwls]
+            sortedwls=sorted(photofomd_wl.keys())
+            wl_dlist=[photofomd_wl[k] for k in sortedwls[::-1]]#inverse sorting for the spectralfoms files
 
             
        
@@ -199,12 +228,35 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
             totnumheadlines=writecsv_smpfomd(p, csvfilstr, headerdict={})
         
             self.multirunfiledict['sample_vector_files'][fn]='%s;%s;%d;%d;%d' %('csv_sample_file', ','.join(allnames), totnumheadlines, len(wl_dlist), filed['sample_no'])
-        
+            integral_fom_tups=[]
+            if not spectrum_path is None:
+                x=numpy.float64([photofomd_wl[k]['WL.nm_illum'] for k in sortedwls])
+                y=numpy.float64([photofomd_wl[k]['EQE'] for k in sortedwls])
+                x=x[numpy.logical_not(numpy.isnan(y))]
+                y=y[numpy.logical_not(numpy.isnan(y))]
+                    
+                for k in spectrum_integral_keys:
+                    if len(y)==0:
+                        integral_fom=numpy.nan
+                    else:
+                        integral_fom=integrate_spectrum_with_piecewise_weights(specd[integral_wlkey], specd[k], x, y, below_val=limfcns[0](y), above_val=limfcns[1](y))
+                    k2='SpectralInt.'+k
+                    integral_fom_tups+=[(k2, integral_fom)]
+
             #now update the official fomdlist which has only the number of wavelength  points 
-            self.fomdlist+=[dict([(self.fomnames[0], num_wavelengths)], sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            self.fomdlist+=[dict([(self.fomnames[0], num_wavelengths)]+integral_fom_tups, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+        
+        if not spectrum_path is None:
+            self.fomnames+=[k for k, v in integral_fom_tups]
+            specfn=os.path.split(spectrum_path)[1]
+            newfn='%s__%s' %(anak,specfn)
+            destp=os.path.join(destfolder, newfn)
+            shutil.copy(spectrum_path, destp)
+            self.multirunfiledict['misc_files']={}
+            self.multirunfiledict['misc_files'][newfn]=\
+             '%s;%s;%d;%d' %('csv_misc_file', ','.join(specd_headerdict['keys']), specd_headerdict['num_header_lines'], specd_headerdict['num_data_rows'] )
         
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
-
         
 
 #c=Analysis__Pphotomax()

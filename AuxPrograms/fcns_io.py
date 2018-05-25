@@ -256,8 +256,10 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
             ks=lines[fileattrd['num_header_lines']-1].split(',')
             ks=[k.strip() for k in ks]
             fileattrd['keys']=ks
+    if not 'num_data_rows' in fileattrd.keys():
+        fileattrd['num_data_rows']=len(arr[0])
     for k, a in zip(fileattrd['keys'], arr):
-        if '.' in a[0] or 'NaN' in a:
+        if '.' in ''.join(a) or 'NaN' in a:
             try:
                 d[k]=numpy.float32(a)
             except:

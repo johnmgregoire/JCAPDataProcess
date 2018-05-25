@@ -1,6 +1,7 @@
 import numpy, scipy, scipy.optimize, scipy.interpolate
 import os, os.path, time, copy, pylab, operator
 from scipy import interp
+import matplotlib.pyplot as plt
 
 def myeval(c):
     if c=='None':
@@ -943,3 +944,31 @@ def q_twotheta(twotheta, wl=0.15418, units='deg'): #units are those of twotheta,
     if units=='deg':
         twotheta*=(numpy.pi/180.0)
     return 4*numpy.pi*numpy.sin(twotheta/2.0)/wl
+
+def integrate_spectrum_with_piecewise_weights(spectrumx, spectrumy, weightsx, weightsy, below_val=0, above_val=0, return_completed_weights=False):
+    #assume spectrum x and weights x are in increasing order
+    completed_weights=numpy.zeros(len(spectrumy), dtype='float64')
+    completed_weights[spectrumx<min(weightsx)]=below_val
+    completed_weights[spectrumx>max(weightsx)]=above_val
+    
+    for x0, x1, y0, y1 in zip(weightsx[:-1], weightsx[1:],weightsy[:-1], weightsy[1:]):
+        inds=numpy.where((spectrumx>=x0)&(spectrumx<=x1))[0]
+        xarr=spectrumx[inds]
+        yarr=y0+(y1-y0)*(xarr-x0)/(x1-x0)
+        completed_weights[inds]=yarr
+    newy=spectrumy*completed_weights
+    if 0:
+        plt.figure()
+        plt.plot(spectrumx, spectrumy, 'k-')
+        plt.plot(spectrumx, newy, 'r-')
+        twax=plt.twinx()
+        twax.plot(spectrumx, completed_weights, 'b-')
+        twax.plot(weightsx, weightsy, 'bo')
+        plt.show()
+    integrated_val=numpy.trapz(newy, x=spectrumx)
+    if return_completed_weights:
+        return integrated_val, completed_weights
+    return integrated_val
+    
+        
+    

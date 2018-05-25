@@ -1511,7 +1511,7 @@ if __name__ == "__main__":
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')
             #self.calcui.analyzedata()
-#            self.calcui.importana(p=r'L:\processes\analysis\ssrl\20170922.123540.run\20170922.123540.ana')
+#            self.calcui.importana(p=r'L:\processes\analysis\eche\20170524.103449.copied-20170524221236494PDT\20170524.103449.ana')
 #            self.calcui.importauxexpana(r'L:\processes\analysis\xrfs\20170907.125058.copied-20170907221545763PDT\20170907.125058.ana', exp=False)
 #            c=FOMProcessClasses[4]
 #            c.params['select_aux_keys']='V.K.AtFrac,Cu.K.AtFrac,Bi.L.AtFrac'
@@ -1519,13 +1519,16 @@ if __name__ == "__main__":
 #            c.params['interp_is_comp']=1
 #            c.processnewparams(calcFOMDialogclass=self.calcui, recalc_filedlist=True)
 #            for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
-#                if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__FOM_Interp_Merge_Ana':
+#                if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__SpectralPhoto':
 #                    self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
 #                    self.calcui.getactiveanalysisclass()
 #                    self.calcui.processeditedparams()
 #                    break
 #            anak=gethighestanak(self.calcui.anadict, getnextone=True)
-
+#            cb=self.calcui.AnalysisNamesComboBox
+#            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__SpectralPhoto')]
+#            cb.setCurrentIndex(selind[0])
+#            self.calcui.getactiveanalysisclass()
             #c.perform(self.calcui.tempanafolder, expdatfolder=self.calcui.expfolder, anak=anak, zipclass=self.calcui.expzipclass, expfiledict=self.calcui.expfiledict, anauserfomd=self.calcui.userfomd)
             if execute:
                 self.calcui.exec_()
