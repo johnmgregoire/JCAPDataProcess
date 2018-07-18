@@ -109,6 +109,71 @@ class Analysis__Etafin(Analysis_Master_inter):
         eta=referenceshiftfcn(dataarr[0], filed['reference_e0'], filed['redox_couple_type'])
         return [(self.fomnames[0], eta[-1])], dict([('Eta(V)', eta)]), {}
 
+class Analysis__EchemMinMax(Analysis_Master_inter):
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'measurement_area.mm2': 'rcp'}
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__EchemMinMax'
+        self.requiredkeys=['t(s)', 'Ewe(V)', 'I(A)']
+        self.optionalkeys=[]
+        self.requiredparams=['reference_vrhe', 'measurement_area']
+        self.fomnames=['Emin.Vrhe', 'Emax.Vrhe', 'Jmin.mAcm2', 'Jmax.mAcm2']
+        self.plotparams=dict({}, plot__1={})
+        self.plotparams['plot__1']['x_axis']='t(s)'
+        self.plotparams['plot__1']['series__1']='Ewe(Vrhe)'
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
+        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
+    def fomtuplist_rawlend_interlend(self, dataarr, filed):
+        vrhe=dataarr[1]-filed['reference_vrhe']
+        emin=numpy.min(vrhe)
+        emax=numpy.max(vrhe)
+        if self.params['measurement_area.mm2']=='rcp':
+            mm_area = numpy.float(filed['measurement_area'])
+        else:
+            mm_area = numpy.float(self.params['measurement_area.mm2'])
+        jscale = numpy.nan if mm_area==0 else 1E5/mm_area
+        jmAcm2=dataarr[2]*jscale
+        jmin=numpy.min(jmAcm2)
+        jmax=numpy.max(jmAcm2)
+        ftl=[(self.fomnames[0], emin), (self.fomnames[1], emax), (self.fomnames[2], jmin), (self.fomnames[3], jmax)]
+        rld=dict([('t(s)', dataarr[0]), ('Ewe(Vrhe)', vrhe), ('J(mAcm2)', jmAcm2)])
+        return ftl, rld, {}
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
+        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
+        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
+        self.fomdlist=[]
+        for filed in self.filedlist:
+            if numpy.isnan(filed['sample_no']):
+                if self.debugmode:
+                    raiseTEMP
+                continue
+            fn=filed['fn']
+            try:
+                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
+                fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                fomtuplist, rawlend, interlend=[(k, numpy.nan) for k in self.fomnames], {}, {}#if error have the sample written below so fomdlist stays commensurate with filedlist, but fill everythign with NaN and no interdata
+                pass
+            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
+                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            if destfolder is None:
+                continue
+            if len(rawlend.keys())>0:
+                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fnr)
+                kl=saveinterdata(p, rawlend, keys=['t(s)', 'Ewe(Vrhe)', 'J(mAcm2)'], savetxt=True)
+                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
+            if 'rawselectinds' in interlend.keys():
+                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
+                p=os.path.join(destfolder,fni)
+                kl=saveinterdata(p, interlend, savetxt=True)
+                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
+        self.writefom(destfolder, anak, anauserfomd=anauserfomd)
+        for zc in closeziplist:
+            zc.close()
 
 class Analysis__Iave(Analysis_Master_nointer):
     def __init__(self):
@@ -206,7 +271,7 @@ class Analysis__Iphoto(Analysis_Master_inter):
         if self.params['illum_key']=='t(s)':
             self.echem_params_key='echem_params__'+techk
             requiredparams+=[self.echem_params_key]#['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']
-            
+
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
@@ -223,10 +288,10 @@ class Analysis__Iphoto(Analysis_Master_inter):
             d[ikey]=-1*d[ikey]
 
         interd={}
-        
+
         if self.params['illum_key']=='t(s)':
             ikey=[filed[self.echem_params_key][k] for k in ['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']]
-        
+
         err=calcdiff_ill_caller(d, interd, ikey=ikey, thresh=self.params['illum_threshold'], \
             ykeys=[self.requiredkeys[0]], xkeys=list(self.requiredkeys[1:-1]), \
             illfracrange=(self.params['frac_illum_segment_start'], self.params['frac_illum_segment_end']), \

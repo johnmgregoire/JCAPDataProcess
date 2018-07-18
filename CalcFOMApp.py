@@ -46,11 +46,11 @@ from FOM_process_basics import *
 from FOM_process_merge import *
 from import_scipy_foruvis import *
 from eche_spectral import Analysis__SpectralPhoto
-AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
+AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__EchemMinMax(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax(), Analysis__SpectralPhoto(), \
    Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS(), \
-   Analysis__XRFS_EDAX(), \
+   Analysis__XRFS_EDAX() \
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
@@ -70,7 +70,7 @@ for ac in AnalysisClasses+FOMProcessClasses:
 GUIMODE=True #when running this program all the classes will default to True and then if writing a batch script, need to turn gui_mode_bool to False
 for ac in AnalysisClasses+FOMProcessClasses:
     ac.gui_mode_bool=GUIMODE
-    
+
 class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
     def __init__(self, parent, dflt):
         super(SaveOptionsDialog, self).__init__(parent)
@@ -97,12 +97,12 @@ class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
     def cancel(self):
         self.choice=''
         self.close()
-        
+
 class calcfomDialog(QDialog, Ui_CalcFOMDialog):
     def __init__(self, parent=None, title='', folderpath=None, modifyanainplace=False, guimode=GUIMODE):
         super(calcfomDialog, self).__init__(parent)
         self.setupUi(self)
-        
+
         self.parent=parent
         self.guimode=guimode
         if guimode!=GUIMODE:
@@ -139,29 +139,29 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         #(self.UndoExpPushButton, self.undoexpfile), \
         for button, fcn in button_fcn:
             QObject.connect(button, SIGNAL("pressed()"), fcn)
-        
+
         QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
 
 
         QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
         self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)
-        
+
         QObject.connect(self.ExpRunUseComboBox,SIGNAL("activated(QString)"),self.fillruncheckboxes)
-        
+
         #QObject.connect(self.TechTypeButtonGroup,SIGNAL("buttonClicked(QAbstractButton)"),self.fillanalysistypes)
         self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
-        
+
         QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
         QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
-        
-        
+
+
         QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
         QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
         QObject.connect(self.usedaqtimeCheckBox,SIGNAL("stateChanged()"),self.plot_generatedata)
-        
+
         QObject.connect(self.AnaTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
-        
+
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
          ('name', [self.AnaNameLineEdit, 'temp_eche_name']), \
@@ -169,19 +169,19 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
          ('created_by', [self.UserNameLineEdit, 'eche']), \
          ('description', [self.AnaDescLineEdit, 'null']), \
         ])
-        
+
         self.batchprocesses=[self.batch_processallana, self.batch_analyzethenprocess, self.batch_process_allsubspace, \
                                       self.batch_analyzethenprocess_allsubspace, self.batch_analyze_fcn_same_techclass, \
                                       self.batch_merge_atfrac_from_aux, self.batch_set_params_for_photo_mAcm2_scaling]
-                                      
+
         batchdesc=['Run Prcoess FOM on all present ana__x', 'Run select Analysis and then Process', 'FOM Process: all Sub-Space w/ same root name',\
                          'Run Analysis + Process all w/ same root name', 'Run select Analysis on all similar techniques', \
                          'Merge AtFrac from an Aux ANA, each ana__', 'setup parameters for scaling Iphoto to mAcm2']
         for i, l in enumerate(batchdesc):
             self.BatchComboBox.insertItem(i, l)
-            
+
         self.getplatemapCheckBox.setChecked(True)
-        
+
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
         self.exppath='null'
         self.tempanafolder=''
@@ -189,7 +189,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.anafolder=None
         self.clearanalysis()
         self.updateuserfomd(clear=True)
-        
+
     def raiseerror(self):
         raiseerror
     def updateuserfomd(self, clear=False):
@@ -198,9 +198,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.UserFOMLineEdit.setText('')
             self.text_UserFOMLineEdit=''
             return
-            
+
         s=str(self.UserFOMLineEdit.text())
-        if self.text_UserFOMLineEdit==s:#"duplicate" signals being emitted so ignore them 
+        if self.text_UserFOMLineEdit==s:#"duplicate" signals being emitted so ignore them
             return
         self.text_UserFOMLineEdit=s
 
@@ -222,7 +222,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
     def edittreeitem(self, item, column):
         self.editparams(self.AnaTreeWidget, item=item, column=column)
-        
+
     def editparams(self, widget, item=None, column=0):
         if item is None:
             item=widget.currentItem()
@@ -237,7 +237,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if ans is None or ans[0].strip()==v:
             return
         ans=ans[0].strip()
-        
+
         warningbool = (True in [ws in k for ws in ['version']])
         parent=item.parent()
         if parent is None:
@@ -245,8 +245,8 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         else:
             parentstr=parent.text(0)
         warningbool = warningbool or True in [ws in parentstr or ws in k for ws in ['ana__', 'parameters', 'files_']]
-        
-        
+
+
         if warningbool:
             idialog=messageDialog(self, 'THIS IS CONSIDERED A READ-ONLY PARAMETER.\nYOU SHOULD PROBABLY "Cancel"')
             if not idialog.exec_():
@@ -263,7 +263,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         d[kl[0]]=ans
 
     def openauxexpana(self, tryexp=True):
-        
+
         msg='Select .ana/.pck or containing .zip'
         if tryexp:
             msg+=' - CANCEL FOR EXP'
@@ -275,30 +275,30 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             p=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(p)>0:
                 self.importauxexpana(p, exp=True)
-    
+
     def importauxexpana(self, auxexpanapath, exp=False):
         ext_str='.exp' if exp else '.ana'
         dlist=self.aux_exp_dlist if exp else self.aux_ana_dlist
         if not (auxexpanapath.endswith(ext_str) or auxexpanapath.endswith('.pck') or not os.path.isabs(auxexpanapath)):
             auxexpanapath=(buildexppath if exp else buildanapath)(auxexpanapath)
-        
+
         auxexpanadict=readexpasdict(auxexpanapath, includerawdata=False, returnzipclass=True) if exp else readana(auxexpanapath, stringvalues=False, erroruifcn=None)
 #        rp=os.path.split(auxexpanapath)[0]
 #        dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
 #        rp=compareprependpath(dbpath_folds, rp)
 #        auxexpanadict['auxexpanapath_relative']=rp.replace(chr(92),chr(47))
-        
+
         rp=get_relative_path_for_exp_or_ana_full_path(os.path.split(auxexpanapath)[0], exp=exp)
         auxexpanadict['auxexpanapath_relative']=rp
-        
+
         auxexpanadict['auxexpanapath']=auxexpanapath
         dlist+=[auxexpanadict]
-        
+
         ###do not save apths as top level key but instead gets saved when used in ana__ blocks, typically in params
         ###self.anadict['aux_exp_paths' if exp else 'aux_ana_paths']=','.join([d['auxexpanapath_relative'] for d in dlist])
         #update analysis function options
         self.updateana()#fill analysis types to enable auxs-related fucntions will happen here
-        
+
     def importexp(self, expfiledict=None, exppath=None, expzipclass=None, anadict=None):
         if expfiledict is None:
             if exppath is None:
@@ -340,7 +340,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     rund['platemap_id']=userinputcaller(self, inputs=[('platemap id: ', str, '')], title='Reading platemap failed. Enter map_id',  cancelallowed=False)[0]
             platemapids=[rund['platemap_id'] for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__') and 'platemap_id' in rund]
             self.FilterSmoothMapDict=generate_filtersmoothmapdict_mapids(platemapids)
-            
+
         self.paramsdict_le_dflt['analysis_type'][1]=self.expfiledict['experiment_type']
         self.paramsdict_le_dflt['created_by'][1]=self.expfiledict['experiment_type']
 
@@ -360,20 +360,20 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.expfilenameLineEdit.setText(self.exppath)
     def fillexpoptions(self):
         self.clearexp()
-        
+
         self.runk_use=[(k, v['run_use'].partition('__')[0]) for k, v in self.expfiledict.iteritems() if k.startswith('run__')]
         self.uselist=list(set(map(operator.itemgetter(1), self.runk_use)))
         if 'data' in self.uselist:
             temp=self.uselist.pop(self.uselist.index('data'))
             self.uselist=[temp]+self.uselist
-        
+
         for i, k in enumerate(self.uselist):
             self.ExpRunUseComboBox.insertItem(i, k)
 
         self.ExpRunUseComboBox.setCurrentIndex(0)
-        
+
         self.fillruncheckboxes()
-    
+
     def fillruncheckboxes(self):
         self.runselectionaction=False
         self.usek=str(self.ExpRunUseComboBox.currentText())
@@ -389,7 +389,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         if item.parent() is None:#top level run
             self.filltechtyperadiobuttons()
-    
+
     def filltechtyperadiobuttons(self, startind=0):
         qlist=self.TechTypeButtonGroup.buttons()
         numbuttons=len(qlist)
@@ -403,17 +403,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
            for runk in self.selectrunklist \
            for techk in self.expfiledict[runk].keys() \
               if techk.startswith('files_technique__')]
-        
+
         self.techk_typek=list(set([(techk.partition('files_technique__')[2], typek) \
         for runk, techk in runk_techk \
         for typek in self.expfiledict[runk][techk].keys()]))
-        
+
         numfiles=[\
             numpy.array([len(self.expfiledict[runk]['files_technique__'+techk][typek].keys()) \
                 for runk in self.selectrunklist \
                 if 'files_technique__'+techk in self.expfiledict[runk].keys() and typek in self.expfiledict[runk]['files_technique__'+techk].keys()]).sum(dtype='int32')
             for techk, typek in self.techk_typek]
-        
+
         temp_t_t=self.techk_typek
         numcanlist=numbuttons
         displaystrs=[]
@@ -443,7 +443,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             button.setText(s)
             button.setVisible(True)
             count+=1
-            
+
     def fillanalysistypes(self, button):
         if button is None:
             button=self.TechTypeButtonGroup.buttons()[0]
@@ -461,10 +461,10 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         for count, i in enumerate(self.AnalysisClassInds):
             self.AnalysisNamesComboBox.insertItem(count+1, AnalysisClasses[i].analysis_name+('(%d)' %nfiles_classes[i]))
             self.AnalysisNamesComboBox.setCurrentIndex(1)
-            
-        
+
+
         filternames=list(set([k for d in self.FilterSmoothMapDict.values() for k in d.keys()]))
-        
+
         nfiles_classes=[len(c.getapplicablefilenames(self.expfiledict, self.usek, self.techk, self.typek, runklist=self.selectrunklist, anadict=self.anadict, calcFOMDialogclass=self)) for i, c in enumerate(FOMProcessClasses[:-1])]
         self.FOMProcessClassInds=[i for i, nf in enumerate(nfiles_classes) if nf>0]
         self.FOMProcessNamesComboBox.clear()
@@ -477,9 +477,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 count+=1
                 self.FOMProcessNamesComboBox.insertItem(count+1, '%s(%s)' %(filtername, FOMProcessClasses[-1].params['select_ana']))
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
-            
+
         self.getactiveanalysisclass()
-    
+
     def getactiveanalysisclass(self):
         procselind=int(self.FOMProcessNamesComboBox.currentIndex())
         if procselind>0:
@@ -488,7 +488,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if procclassind==-1:#filter from pck
                 filtername=str(self.FOMProcessNamesComboBox.currentText()).partition('(')[0]#write the filter_path__runint while handy here to use later
                 self.analysisclass.filter_path__runint=dict([(int(runk.partition('__')[2]), self.FilterSmoothMapDict[str(rund['platemap_id'])][filtername]) for runk, rund in self.expfiledict.iteritems() if runk.startswith('run__')])
-                
+
                 if '__' in filtername:
                     self.analysisclass.params['platemap_comp4plot_keylist']=','.join(list(filtername.partition('__')[2]))
                 else:
@@ -500,7 +500,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 return
             self.analysisclass=AnalysisClasses[self.AnalysisClassInds[selind-1]]
         #self.activeana=None
-        
+
         le, dflt=self.paramsdict_le_dflt['description']
         s=filterchars(str(le.text()), valid_chars = "-_.; ()%s%s" % (string.ascii_letters, string.digits))
         if ';' in s:
@@ -510,7 +510,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             newdflt=self.analysisclass.description
         le.setText(newdflt)
         self.paramsdict_le_dflt['description'][1]=newdflt
-        
+
     def clearexp(self):
         self.ExpRunUseComboBox.clear()
         self.RunSelectTreeWidget.clear()
@@ -545,7 +545,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             idialog=messageDialog(self, 'abort .ana import because fail to open .exp')
             idialog.exec_()
             return
-        
+
         #self.anadict=anadict
         if p.endswith('.ana') or p.endswith('.pck'):
             self.anafolder=os.path.split(p)[0]
@@ -599,20 +599,20 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             selind=int(self.AnalysisNamesComboBox.currentIndex())
             self.AnalysisNamesComboBox.setItemText(selind, self.analysisclass.analysis_name+('(%d)' %nfiles))
         self.getactiveanalysisclass()#this is only to update the description if necessary
-        
-    
+
+
     def analyzedata(self):
         errbool=calcfom_analyzedata_calcfomdialogclass(self)
         if errbool:
             print errbool
             return errbool
         self.updateuserfomd(clear=True)
-        
+
         self.fomplotchoiceComboBox.clear()
         for count, s in enumerate(self.fomnames):
             self.fomplotchoiceComboBox.insertItem(count, s)
         self.fomplotchoiceComboBox.setCurrentIndex(0)
-        
+
         self.stdcsvplotchoiceComboBox.clear()
         if 'plot_parameters' in self.csvheaderdict.keys() and 'plot__1' in self.csvheaderdict['plot_parameters'].keys():
             keys=sorted([k for k in self.csvheaderdict['plot_parameters'].keys() if k.startswith('plot__')])
@@ -625,7 +625,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 newk='new plot__%d' %(int(keys[-1].partition('__')[2])+1)
             self.stdcsvplotchoiceComboBox.insertItem(count+1, newk)
         self.stdcsvplotchoiceComboBox.setCurrentIndex(0)
-        
+
         self.updateana()
         self.plot_preparestandardplot(plotbool=False)
         if self.autoplotCheckBox.isChecked():
@@ -658,7 +658,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             shutil.copy(p, newp)
             anad['files_multi_run']['misc_files'][os.path.split(newp)[1]]='user_misc_file;'
         self.updateana()
-        
+
     def updateana(self):
         for k, (le, dfltstr) in self.paramsdict_le_dflt.items():
             if k=='access' and 'access' in self.expfiledict.keys():#only allow access specification from UI if not already provded by exp
@@ -667,21 +667,21 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             if len(s)==0:
                 s=dfltstr
             self.anadict[k]=s#this makes description just the last ana__ description
-        
-        
+
+
         #plateids=sorted(list(set(['%d' %rund['parameters']['plate_id'] for rund in [v for k, v in self.expfiledict.iteritems() if k.startswith('run__')]]))) #this old way of getting plate_ids will include plates for which analysis was not done
-        
+
         ananames=sorted(list(set([anad['name'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')]])))
         plateidsstrlist_list=[anad['plate_ids'] for anad in [v for k, v in self.anadict.iteritems() if k.startswith('ana__')] if 'plate_ids' in anad.keys()]
         plateidsstrlist=sorted(list(set([idstr for liststr in plateidsstrlist_list for idstr in liststr.split(',')])))
         plateidsstr=','.join(plateidsstrlist)
         #self.anadict['plate_ids']=plateidsstr
-        
+
         self.anadict['description']='%s on plate_id %s' %(', '.join(ananames), plateidsstr)
         self.AnaTreeWidgetFcns.filltree(self.anadict)
-        
+
         self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
-        
+
     def viewresult(self, anasavefolder=None, show=True):
         if anasavefolder is None:
             anasavefolder=self.tempanafolder
@@ -691,7 +691,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if show:
             self.hide()
         self.parent.visexpana(anafiledict=d, anafolder=anasavefolder, show=show)
-        
+
     def saveview(self):
         anasavefolder=self.saveana(dontclearyet=True)
         self.viewresult(anasavefolder=anasavefolder)#just hide+show so shouldn't get hung here
@@ -710,33 +710,33 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         anad=self.anadict[keys[i]]
         fnlist=[fn for d in [v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)] for d2 in d.itervalues() for fn in d2.keys()]
         removefiles(self.tempanafolder, fnlist)
-        
+
         if i<(len(keys)-1):
             for ki, knext in zip(keys[i:-1], keys[i+1:]):
                 self.anadict[ki]=self.anadict[knext]
         del self.anadict[keys[-1]]
         self.activeana=None
         self.updateana()
-    
+
     def clearanalysis_pushbutton(self):
-        
+
         if self.exppath=='null':
             self.clearanalysis()
         else:#analysis will be cleared while importing exp
             self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)
-            
+
     def clearanalysis(self, anadict=None):
         self.analysisclass=None
         self.activeana=None
 
         self.anadict={}
         self.AnaTreeWidget.clear()
-        
+
         self.aux_exp_dlist=[]
         self.aux_ana_dlist=[]
-        
+
         self.paramsdict_le_dflt['description'][1]='null'
-        
+
         if not anadict is None:
             for k, v in anadict.iteritems():
                 self.anadict[k]=v
@@ -752,7 +752,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 return
 
         self.anadict['ana_version']='3'
-        
+
         if os.path.isdir(self.tempanafolder):
             for fn in os.listdir(self.tempanafolder):
                 os.remove(os.path.join(self.tempanafolder, fn))
@@ -766,7 +766,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         return
 
 
- 
+
     def saveana(self, dontclearyet=False, anatype=None, rundone=None):
         self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         if self.modifyanainplace:
@@ -779,7 +779,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 idialog.exec_()
             else:
                 print 'Aborting SAVE because no data in ANA'
-            return 
+            return
         if anatype is None:
             savefolder=None
             dfltanatype=self.anadict['analysis_type']
@@ -806,7 +806,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                     idialog=messageDialog(self, 'Need to copy EXP and/or ANA to %s to continue\nOK to attempt copy, Cancel to abort save.' %anatype)
                     if not idialog.exec_():
                         return
-                    for d_needcopy in needcopy_dlist: 
+                    for d_needcopy in needcopy_dlist:
                         errormsg=copyfolder_1level(d_needcopy['srcabs'], d_needcopy['destabs'])
                         if errormsg:
                             if self.guimode:
@@ -814,12 +814,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                                 idialog.exec_()
                             else:
                                 print 'Aborting Save on exp/ana copy: ' %errormsg
-                            return 
+                            return
                         get_dict_item_keylist(self.anadict, d_needcopy['anadkeylist'][:-1])[d_needcopy['anadkeylist'][-1]]=d_needcopy['destrel']
                     self.anafilestr=self.AnaTreeWidgetFcns.createtxt()
         else:
             savefolder=None
-            
+
         if len(self.anafilestr)==0 or not 'ana_version' in self.anafilestr:
             return
 
@@ -832,7 +832,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         anasavefolder=saveana_tempfolder(self.anafilestr, self.tempanafolder, analysis_type=anatype, anadict=self.anadict, savefolder=savefolder, rundone=rundone, erroruifcn=\
             lambda s:mygetdir(parent=self, xpath="%s" % os.getcwd(),markstr='Error: %s, select folder for saving ANA'))
-        
+
         if not dontclearyet:
             self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)#clear analysis happens here but exp_path wont' be lost
         #self.clearanalysis()
@@ -872,7 +872,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         l[2]='%d' %(totnumheadlines)
         files_fomd[fnf]=';'.join(l)
         self.updateana()
-        
+
     def plot_preparestandardplot(self, plotbool=True):
         k=str(self.stdcsvplotchoiceComboBox.currentText())
         if not k in self.csvheaderdict['plot_parameters'].keys():
@@ -902,26 +902,26 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             daqtimebool=self.usedaqtimeCheckBox.isChecked()
         else:#generally Process FOM
             daqtimebool=False
-            
+
         # inds are inds from  self.fomdlist, not all of which are used because some are NaN
         fomdlistinds=numpy.where(numpy.logical_not(numpy.isnan(fom)))[0]
         if len(fomdlistinds)==0:
             print 'ABORTING PLOTTING BECAUSE ALL FOMs ARE NaN'
             return
-        #here the fom and runkarr and sample arrays are setup 
+        #here the fom and runkarr and sample arrays are setup
         fom=fom[fomdlistinds]
         runkarr=runkarr[fomdlistinds]
         sample=numpy.array([self.fomdlist[i]['sample_no'] for i in fomdlistinds])
         #and now this is a dictionary that given a runk looks ups the inds from the above arrays, i.e. these inds are inds of the selction from fomdlist, NOT from fomdlist
         inds_runk=dict([(runk, numpy.where(runkarr==runk)[0]) for runk in list(set(runkarr))])
-        
+
 
         t=[]
 #        else:
 #            hx=numpy.arange(len(fom))
 
         #remapinds=[i for runk in sorted(inds_runk.keys()) for i in inds_runk[runk]]
-        
+
         if daqtimebool:
             t=numpy.zeros(len(fom), dtype='float64')
             for runk in sorted(inds_runk.keys()):
@@ -931,9 +931,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             t-=t.min()
 #        else:
 #            hx=numpy.array(sample)
-        
+
         compplottype=str(self.CompPlotTypeComboBox.currentText())
-        
+
         nanxy=[numpy.nan]*2
         nancomp=[numpy.nan]*4
         xy=numpy.ones((len(fom), 2), dtype='float64')*numpy.nan
@@ -948,16 +948,16 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             xy[inds_runk[runk]]=numpy.float64([ \
                          [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['x', 'y']] \
                          if smp in pmsmps else nanxy for smp in sample[inds_runk[runk]]])
-                         
+
             if compplottype=='none':
                 continue
-                
+
             comps[inds_runk[runk]]=numpy.float64([\
                      [self.expfiledict[runk]['platemapdlist'][pmsmps.index(smp)][k] for k in ['A', 'B', 'C', 'D']] \
                      if smp in pmsmps else nancomp for smp in sample[inds_runk[runk]]])
 #        xy=numpy.float64(xy)
 #        comps=numpy.float64(comps)
-        
+
         self.plotd['comps']=numpy.array([c/c.sum() for c in comps])
         self.plotd['xy']=xy
         self.plotd['fom']=fom
@@ -989,7 +989,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         x, y=self.plotd['xy'].T
         comps=self.plotd['comps']
         fom=self.plotd['fom']
-        
+
         #h plot
         daqtimebool=self.usedaqtimeCheckBox.isChecked()
         if daqtimebool:
@@ -1009,7 +1009,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.plotw_h.axes.set_ylabel(self.plotd['fomname'])
         autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)
         self.plotw_h.fig.canvas.draw()
-        
+
         #plate plot
         cmapstr=str(self.colormapLineEdit.text())
         try:
@@ -1047,7 +1047,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             except:
                 pass
 
-        
+
         norm=colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
         if skipoutofrange[0]:
             inds=numpy.where(fom>=self.vmin)
@@ -1072,9 +1072,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             extend='min'
         else:
             extend='neither'
-        
+
         pointsizestr=str(self.compplotsizeLineEdit.text())
-        
+
         m=self.plotw_plate.axes.scatter(x, y, c=fom, s=20, marker='s', edgecolor='none', cmap=cmap, norm=norm)
         if x.max()-x.min()<2. or y.max()-y.min()<2.:
             self.plotw_plate.axes.set_xlim(x.min()-1, x.max()+1)
@@ -1085,12 +1085,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         sm=cm.ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array(fom)
         cols=numpy.float32(map(sm.to_rgba, fom))[:, :3]#ignore alpha
-        
+
         cb=self.plotw_plate.fig.colorbar(sm, cax=self.cbax_plate, extend=extend, format=autocolorbarformat((self.vmin, self.vmax)))
         cb.set_label(self.plotd['fomname'])
         self.plotw_plate.fig.canvas.draw()
-        
-        
+
+
         #comp plot
         compsinds=[i for i, (compv, colv) in enumerate(zip(comps, cols)) if not (numpy.any(numpy.isnan(compv)) or numpy.any(numpy.isnan(colv)))]
         if len(compsinds)==0:
@@ -1126,7 +1126,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
 #        fomlabel=''.join((str(self.expmntLineEdit.text()), str(self.calcoptionComboBox.currentText()), self.filterfomstr))
 #        self.stackedternplotdict=dict([('comps', reordercomps), ('fom', fom), ('cmap', cmap), ('norm', norm), ('ellabels', reorderlabels), ('fomlabel', fomlabel)])
-#        
+#
 #        pointsizestr=str(self.compplotsizeLineEdit.text())
 #        tern=TernaryPlot(self.plotw_comp.axes, ellabels=reorderlabels[:3], offset=0)
 #        tern.label()
@@ -1142,7 +1142,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         #self.selectind=-1
         #self.plotselect()
-        
+
 
 
     def plateclickprocess(self, coords_button):
@@ -1171,12 +1171,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 #            self.addtoselectsamples(idlist)
 
     def plotwsetup(self):
-        
+
         self.plotw_comp=plotwidget(self)
         self.plotw_quat3d=plotwidget(self, projection3d=True)
         self.plotw_h=plotwidget(self)
         self.plotw_plate=plotwidget(self)
-        
+
 
         for b, w in [\
             (self.textBrowser_plate, self.plotw_plate), \
@@ -1199,9 +1199,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.cbax_quat=self.plotw_quat3d.fig.add_axes(axrect)
 
         self.plotw_h.fig.subplots_adjust(left=.22, bottom=.17)
-        
+
         self.quatcompclass=quatcompplotoptions(self.plotw_comp, self.CompPlotTypeComboBox, plotw3d=self.plotw_quat3d, plotwcbaxrect=axrect)
-    
+
     def batch_processallana(self, additionalfcn_runeachiteration=None):
         if int(self.FOMProcessNamesComboBox.currentIndex())==0:
             print 'quitting batch process because use analysis function was selected instead of a FOM process'
@@ -1224,7 +1224,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.FOMProcessNamesComboBox.setCurrentIndex(i)
             self.getactiveanalysisclass()
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
-    
+
     def batch_analyzethenprocess(self):
         if int(self.FOMProcessNamesComboBox.currentIndex())==0:
             print 'quitting batch process because use analysis function was selected instead of a FOM process'
@@ -1236,9 +1236,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.analyzedata()
         if anak!=gethighestanak(self.anadict, getnextone=False):
             print 'quitting batch process because analysis function did not successfully run'
-            return 
+            return
 
-        
+
         matchbool=False
         for i in range(1, int(self.FOMProcessNamesComboBox.count())):
             matchbool=(str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])==selprocesslabel
@@ -1251,9 +1251,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.analysisclass.params['select_ana']=anak
         self.processeditedparams()#self.getactiveanalysisclass() run in here
         self.analyzedata()
-        
+
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
-        
+
     def batch_analyzethenprocess_allsubspace(self):
         if int(self.FOMProcessNamesComboBox.currentIndex())==0:
             print 'quitting batch process because use analysis function was selected instead of a FOM process'
@@ -1269,9 +1269,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.analyzedata()
         if anak!=gethighestanak(self.anadict, getnextone=False):
             print 'quitting batch process because analysis function did not successfully run'
-            return 
+            return
 
-        
+
         selprocesslabel_list=[str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0] for i in range(1, int(self.FOMProcessNamesComboBox.count())) if (str(self.FOMProcessNamesComboBox.itemText(i)).partition('__')[0])==selprocess_root]
         for selprocesslabel in selprocesslabel_list:
             matchbool=False
@@ -1289,12 +1289,12 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.analyzedata()
             if anak_processed!=gethighestanak(self.anadict, getnextone=False):
                 print 'quitting batch process because processing function did not successfully run'
-                return 
+                return
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
-        
+
         #user would prompt running of editanalysisparams_paramsd at this point but skip this since only updates the label
-        
-        
+
+
     def batch_process_allsubspace(self):
         self.getactiveanalysisclass()
         if not 'select_ana' in self.analysisclass.params.keys():
@@ -1307,7 +1307,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if len(selprocess_root)==0:
             print 'quitting batch process because FOM process function not iterable (must be "<root>__<indexstr>")'
             return
-            
+
         selprocesslabel_list=[str(self.FOMProcessNamesComboBox.itemText(i)).partition('(')[0] for i in range(1, int(self.FOMProcessNamesComboBox.count())) if (str(self.FOMProcessNamesComboBox.itemText(i)).partition('__')[0])==selprocess_root]
         for selprocesslabel in selprocesslabel_list:
             matchbool=False
@@ -1325,17 +1325,17 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.analyzedata()
             if anak_processed!=gethighestanak(self.anadict, getnextone=False):
                 print 'quitting batch process because processing function did not successfully run'
-                return 
+                return
         self.FOMProcessNamesComboBox.setCurrentIndex(0)
-    
+
     def batch_analyze_fcn_same_techclass(self):
         #uses the presently-selected analysis name, file type and 1st 2 characters of techniuqe to run the analysis on all  tech,type that match
         anname=self.analysisclass.analysis_name
-        
+
         buttonstrings=[','.join([techv, typev]) for techv, typev in self.techk_typek if techv[:2]==self.techk[:2] and typev==self.typek]
         for buttonstr in buttonstrings:
             qlist=self.TechTypeButtonGroup.buttons()
-        
+
             typetechfound=False
             for button in qlist:
                 if str(button.text()).strip()==buttonstr:
@@ -1346,7 +1346,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 print 'Skipped %s because could find it in the options list' %buttonstr
                 continue
             self.fillanalysistypes(self.TechTypeButtonGroup.checkedButton())
-            
+
 
             cb=self.AnalysisNamesComboBox
             selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith(anname)]
@@ -1373,7 +1373,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         if not matchbool:
             print 'skipping %s, probably because no appropriate fom_files found' %anak
             return
-        
+
         auxanak=sort_dict_keys_by_counter(self.aux_ana_dlist[0], keystartswith='ana__')[-1]
         auxanaintstr=auxanak.partition('__')[2]
         def additionalfcn_runeachiteration(selfclasslocal):
@@ -1422,7 +1422,7 @@ class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree
         self.treeWidget.clear()
-    
+
     def getlistofchecktoplevelitems(self):
         return [str(self.treeWidget.topLevelItem(count).text(0)).strip().strip(':') for count in range(int(self.treeWidget.topLevelItemCount()))\
             if bool(self.treeWidget.topLevelItem(count).checkState(0))]
@@ -1434,22 +1434,22 @@ class treeclass_anadict():
     def filltree(self, d, startkey='ana_version', laststartswith='ana__'):
         self.treeWidget.clear()
         #assume startkey is not for dict and laststatswith is dict
-        
+
         if len(startkey)>0:
             mainitem=QTreeWidgetItem([': '.join([startkey, d[startkey]])], 0)
             self.treeWidget.addTopLevelItem(mainitem)
             self.treeWidget.setCurrentItem(mainitem)
-        
+
         for k in sorted([k for k, v in d.iteritems() if k!=startkey and not isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([': '.join([k, str(d[k])])], 0)
             self.treeWidget.addTopLevelItem(mainitem)
-            
+
         for k in sorted([k for k, v in d.iteritems() if not k.startswith(laststartswith) and isinstance(v, dict)]):
             mainitem=QTreeWidgetItem([k+':'], 0)
             self.nestedfill(d[k], mainitem)
             self.treeWidget.addTopLevelItem(mainitem)
             mainitem.setExpanded(False)
-            
+
         anakl=sort_dict_keys_by_counter(d, keystartswith=laststartswith)
         for k in anakl:
             mainitem=QTreeWidgetItem([k+':'], 0)
@@ -1474,7 +1474,7 @@ class treeclass_anadict():
     def createtxt(self, indent='    '):
         self.indent=indent
         return '\n'.join([self.createtxt_item(self.treeWidget.topLevelItem(count)) for count in range(int(self.treeWidget.topLevelItemCount()))])
-        
+
     def createtxt_item(self, item, indentlevel=0):
         str(item.text(0))
         itemstr=self.indent*indentlevel+str(item.text(0)).strip()
@@ -1482,7 +1482,7 @@ class treeclass_anadict():
             return itemstr
         childstr='\n'.join([self.createtxt_item(item.child(i), indentlevel=indentlevel+1) for i in range(item.childCount())])
         return '\n'.join([itemstr, childstr])
-    
+
     def partitionlineitem(self, item):
         s=str(item.text(0)).strip()
         a, b, c=s.partition(':')
@@ -1491,7 +1491,7 @@ class treeclass_anadict():
         return dict(\
         [self.createdict_item(self.treeWidget.topLevelItem(count))\
             for count in range(int(self.treeWidget.topLevelItemCount()))])
-        
+
     def createdict_item(self, item):
         tup=self.partitionlineitem(item)
         if item.childCount()==0:
@@ -1539,4 +1539,3 @@ if __name__ == "__main__":
     form.setFocus()
     form.calcui.show()
     mainapp.exec_()
-
