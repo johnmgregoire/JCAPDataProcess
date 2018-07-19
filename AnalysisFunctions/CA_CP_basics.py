@@ -112,12 +112,12 @@ class Analysis__Etafin(Analysis_Master_inter):
 class Analysis__EchemMinMax(Analysis_Master_inter):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'measurement_area.mm2': 'rcp'}
+        self.dfltparams={'measurement_area.mm2': 'rcp', 'override_Vrhe.ref': 'rcp'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__EchemMinMax'
         self.requiredkeys=['t(s)', 'Ewe(V)', 'I(A)']
         self.optionalkeys=[]
-        self.requiredparams=['reference_vrhe', 'measurement_area']
+        self.requiredparams=[]
         self.fomnames=['Emin.Vrhe', 'Emax.Vrhe', 'Jmin.mAcm2', 'Jmax.mAcm2']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
@@ -125,11 +125,22 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
-        vrhe=dataarr[1]-filed['reference_vrhe']
+        if self.params['override_Vrhe.ref']=='rcp':
+            if 'reference_vrhe' not in filed.keys():
+                print('reference_vrhe key not found in run rcp. specify override_Vrhe.ref parameter')
+                vrhe=dataarr[1]-numpy.nan
+            else:
+                vrhe=dataarr[1]-filed['reference_vrhe']
+        else:
+            vrhe=dataarr[1]-numpy.float(self.params['override_Vrhe.ref'])
         emin=numpy.min(vrhe)
         emax=numpy.max(vrhe)
         if self.params['measurement_area.mm2']=='rcp':
-            mm_area = numpy.float(filed['measurement_area'])
+            if 'measurement_area' not in filed.keys():
+                print('measurement_area key not found in run rcp. specify measurement_area.mm2 parameter')
+                mm_area = 0
+            else:
+                mm_area = numpy.float(filed['measurement_area'])
         else:
             mm_area = numpy.float(self.params['measurement_area.mm2'])
         jscale = numpy.nan if mm_area==0 else 1E5/mm_area
