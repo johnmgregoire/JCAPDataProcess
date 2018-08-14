@@ -204,7 +204,7 @@ class Analysis_Master_nointer():
         for zc in closeziplist:
             zc.close()
 
-    def writefom(self, destfolder, anak, anauserfomd={}, fn=None, strkeys_fomdlist=[], createdummyfomdlist=False):#self.fomnames assumed to be float, createdummyfomdlist is for writing all NaN and aborting analysis
+    def writefom(self, destfolder, anak, anauserfomd={}, fn=None, strkeys_fomdlist=[], createdummyfomdlist=False, num_intfoms_at_start_of_fomdlist=0):#self.fomnames assumed to be float, createdummyfomdlist is for writing all NaN and aborting analysis
         if createdummyfomdlist:
             self.fomdlist=[dict([(k, numpy.nan) for k in self.fomnames], sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2])) for filed in self.filedlist]
         strkeys, floatkeys, userfomdlist=self.genuserfomdlist(anauserfomd)
@@ -212,7 +212,7 @@ class Analysis_Master_nointer():
         if fn is None:
             fn='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
         self.multirunfiledict['fom_files'][fn]=\
-          self.writefom_bare(destfolder, fn, strkeys=strkeys+strkeys_fomdlist, floatkeys=floatkeys+self.fomnames, intfomkeys=['runint','plate_id'])
+          self.writefom_bare(destfolder, fn, strkeys=strkeys+strkeys_fomdlist, floatkeys=floatkeys+self.fomnames[num_intfoms_at_start_of_fomdlist:], intfomkeys=['runint','plate_id']+self.fomnames[:num_intfoms_at_start_of_fomdlist])
         
     def writefom_bare(self, destfolder, fn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id']):
         if floatkeys is None:

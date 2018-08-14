@@ -974,22 +974,24 @@ def readsingleplatemaptxt(p, returnfiducials=False,  erroruifcn=None, lines=None
 #        p=erroruifcn('', tryprependpath(PLATEFOLDERS[::-1], ''))
 #    return p
 
-def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:', return_pmidstr=False):
-    p=''
-    pmidstr=''
-    infop=getinfopath_plateid(plateidstr)
-    if infop is None:
-        if not erroruifcn is None:
-            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-        return (p, pmidstr) if return_pmidstr else p
-    with open(infop, mode='r') as f:
-        s=f.read(1000)
+def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_id:', return_pmidstr=False, pmidstr=None):
     pmfold=tryprependpath(PLATEMAPFOLDERS, '')
-    if pmfold=='' or not infokey in s:
-        if not erroruifcn is None:
-            p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-        return (p, pmidstr) if return_pmidstr else p
-    pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
+    p=''
+    if pmidstr is None:
+        pmidstr=''
+        infop=getinfopath_plateid(plateidstr)
+        if infop is None:
+            if not erroruifcn is None:
+                p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+            return (p, pmidstr) if return_pmidstr else p
+        with open(infop, mode='r') as f:
+            s=f.read(1000)
+        
+        if pmfold=='' or not infokey in s:
+            if not erroruifcn is None:
+                p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+            return (p, pmidstr) if return_pmidstr else p
+        pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
     fns=[fn for fn in os.listdir(pmfold) if fn.startswith('0'*(4-len(pmidstr))+pmidstr+'-') and fn.endswith('-mp.txt')]
     if len(fns)!=1:
         if not erroruifcn is None:

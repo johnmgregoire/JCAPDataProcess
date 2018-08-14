@@ -50,7 +50,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax(), Analysis__SpectralPhoto(), \
    Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS(), \
-   Analysis__XRFS_EDAX() \
+   Analysis__XRFS_EDAX(), Analysis__PlatemapComps()\
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
@@ -414,6 +414,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 if 'files_technique__'+techk in self.expfiledict[runk].keys() and typek in self.expfiledict[runk]['files_technique__'+techk].keys()]).sum(dtype='int32')
             for techk, typek in self.techk_typek]
 
+        if len(self.techk_typek)==0:#201809fix to allow exp that don't have files, i.e. only paramaters. This doesn't allow exp to have a mix of run__ with and without files
+            self.techk_typek=set([(self.expfiledict[runk]['parameters']['technique_name'], self.expfiledict[runk]['parameters']['technique_name']) for runk in self.selectrunklist if 'parameters' in self.expfiledict[runk].keys() and 'technique_name' in self.expfiledict[runk]['parameters'].keys()])
+            numfiles=[1]*len(self.techk_typek)
         temp_t_t=self.techk_typek
         numcanlist=numbuttons
         displaystrs=[]

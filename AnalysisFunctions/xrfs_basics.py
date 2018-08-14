@@ -42,7 +42,25 @@ def getapplicablefilenames_specific_usetypetech(expfiledict, usek, techk, typek,
     return num_files_considered, filedlist
 
 
+def getapplicable_runs_paramsonly(expfiledict, usek, runklist=None, requiredparams=[]):
 
+    requiredparams+=['plate_id']
+    if runklist is None:
+        runklist=expfiledict.keys()
+    runklist=[runk for runk in runklist \
+    if runk.startswith('run__') and \
+        (usek in expfiledict[runk]['run_use'])]
+
+    num_files_considered=len(runklist)
+    filedlist=[dict(\
+                        dict([(reqparam, expfiledict[runk]['parameters'][reqparam]) for reqparam in requiredparams]),\
+                                     run=runk, runparamd=expfiledict[runk]['parameters'], runint=int(runk.partition('run__')[2])\
+                                        )\
+            for runk in runklist \
+            if not (False in [reqparam in expfiledict[runk]['parameters'].keys() for reqparam in requiredparams])\
+            ]
+    return num_files_considered, filedlist
+    
 class Analysis__XRFS_EDAX(Analysis_Master_nointer):
     def __init__(self):
         self.analysis_fcn_version='1'
@@ -136,3 +154,87 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
 
 
         self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
+
+class Analysis__PlatemapComps(Analysis_Master_nointer):
+    def __init__(self):
+        self.analysis_fcn_version='1'
+        self.dfltparams={'key_append_conc':'.PM.Loading', 'key_append_atfrac':'.PM.AtFrac', 'tot_conc_label':'Tot.PM.Loading', 'other_keys_to_include':'x,y,code'}
+        self.params=copy.copy(self.dfltparams)
+        self.analysis_name='Analysis__PlatemapComps'
+        self.requiredkeys=[]
+        self.optionalkeys=[]
+        self.requiredparams=['elements', 'map_id']
+        self.fomnames=[]
+        self.plotparams=dict({}, plot__1={})#copied in the default getapplicablefomfiles
+        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})#get for each csv during .perform()
+        self.description='calculate platemap compositions for inkj exp'
+  
+    def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
+        
+        if True in [not 'platemapdlist' in rund.keys() for runk, rund in calcFOMDialogclass.expfiledict.iteritems() if runk.startswith('run__')]:
+            #all platemaps must be available
+            self.filedlist=[]
+            return self.filedlist
+            
+        self.num_files_considered, self.filedlist=getapplicable_runs_paramsonly(expfiledict, usek, runklist=None, requiredparams=self.requiredparams)
+
+        return self.filedlist
+    
+    def processnewparams(self, calcFOMDialogclass=None):
+        self.fomnames=[]
+
+
+    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
+        self.initfiledicts()
+        for filed in self.filedlist:
+            try:
+            #if 1:
+                pid =filed['plate_id']
+            
+                els=filed['elements'].split(',')
+                errbool, (cels_set_ordered, conc_el_chan)=get_multielementink_concentrationinfo(filed['runparamd'], els, return_defaults_if_none=True)#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap                
+                pmkeys_to_include=[k.strip() for k in self.params['other_keys_to_include'].split(',')]
+                
+                
+                    
+                pmpath=getplatemappath_plateid('', pmidstr=str(filed['map_id']), return_pmidstr=False)
+                #pmpath, pmidstr=r'J:\hte_jcap_app_proto\map\0068-04-0100-mp.txt', '69'#for 1-off override
+                platemapdlist=readsingleplatemaptxt(pmpath, erroruifcn=None)
+                
+                
+                tot_conc_label=None if len(self.params['tot_conc_label'])==0 else self.params['tot_conc_label']
+                calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc=self.params['key_append_conc'], key_append_atfrac=self.params['key_append_atfrac'], tot_conc_label=tot_conc_label)
+                newfomnames=[el+self.params['key_append_conc'] for el in cels_set_ordered]+\
+                                      [el+self.params['key_append_atfrac'] for el in cels_set_ordered]+\
+                                      ([] if tot_conc_label is None else [tot_conc_label])
+                newfomnames=[lab for lab in newfomnames if not (lab in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)]
+            
+                self.fomnames=[k for k in (newfomnames+pmkeys_to_include) if k in platemapdlist[0]]
+                if 'code' in self.fomnames:
+                    num_intfoms_at_start_of_fomdlist=1
+                    self.fomnames.pop(self.fomnames.index('code'))
+                    self.fomnames=['code']+self.fomnames
+                else:
+                    num_intfoms_at_start_of_fomdlist=0
+                for d in platemapdlist:
+                    d['plate_id']=filed['plate_id']
+                    d['runint']=filed['runint']
+                
+                self.strkeys_fomdlist=[]
+                allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames
+                self.fomdlist=platemapdlist
+
+            except:
+                if self.debugmode:
+                    raiseTEMP
+                print 'skipped calculation of ', pid
+                self.fomdlist=[]
+                continue
+            if len(self.fomdlist)==0:
+                print 'no foms calculated for ', fn
+                continue
+            
+            plotfomname=self.params['tot_conc_label'] if self.params['tot_conc_label'] in self.fomnames else self.fomnames[0]
+            self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=plotfomname, colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
+            self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist, num_intfoms_at_start_of_fomdlist=num_intfoms_at_start_of_fomdlist)#sample_no, plate_id and runint are explicitly required in csv selection above and are assume to be present here
+            
