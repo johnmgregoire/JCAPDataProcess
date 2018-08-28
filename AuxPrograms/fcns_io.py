@@ -1098,8 +1098,8 @@ def get_multielementink_concentrationinfo(printd, els, return_defaults_if_none=F
             conc_el_chan[cels_set_ordered.index(cel), chanind]=conc
         #for a given platemap sample with x being the 8-component vecotr of ink channel intensity, the unnormalized concentration of cels_set_ordered is conc_el_chan*x[:conc_el_chan.shape[0]]
         return False, (cels_set_ordered, conc_el_chan)
-    if return_defaults_if_none:
-        return False, (els, numpy.identity(len(els), dtype='float64'))
+    if return_defaults_if_none:#this handles the case when the length of concentration_elements does not match elements,, which usually hapens when only partial concentration info is available
+        return False, (els, numpy.identity(len(els), dtype='float64')*conclist[0])
     return None
 #
 #def getplatemapid_plateidstr(plateidstr, erroruifcn=None):

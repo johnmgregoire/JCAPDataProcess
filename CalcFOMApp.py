@@ -319,21 +319,29 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             self.expzipclass.close()
         self.expzipclass=expzipclass
         self.FilterSmoothMapDict={}
+        if 'experiment_type' in expfiledict.keys():
+            for runk, rund in self.expfiledict.items():
+                if runk.startswith('run__') and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict) and not 'technique_name' in rund['parameters'].keys():
+                    rund['parameters']['technique_name']=expfiledict['experiment_type']
         if self.getplatemapCheckBox.isChecked():
             for runk, rund in self.expfiledict.items():
-                if runk.startswith('run__') and not 'platemapdlist' in rund.keys()\
-                         and 'parameters' in rund.keys() and isinstance(rund['parameters'], dict)\
-                         and 'plate_id' in rund['parameters'].keys():
-                    pmpath, pmidstr=getplatemappath_plateid(str(rund['parameters']['plate_id']), return_pmidstr=True)
-                    if len(pmidstr)>0:
-                        for temprunk, temprund in self.expfiledict.iteritems():
-                            if temprunk.startswith('run__') and 'platemap_id' in temprund.keys() and temprund['platemap_id']==pmidstr:
-                                rund['platemapdlist']=temprund['platemapdlist']#presumably share platemap by reference
-                                rund['platemap_id']=pmidstr
-                    if not 'platemapdlist' in rund.keys():
-                        rund['platemapdlist']=readsingleplatemaptxt(pmpath, \
-                            erroruifcn=\
-                                lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
+                if runk.startswith('run__') and not 'platemapdlist' in rund.keys():
+                    if not ('parameters' in rund.keys() and isinstance(rund['parameters'], dict)):
+                        rund['parameters']={}
+                    if not 'plate_id' in rund['parameters'].keys():#this handles when plate_id only specified at top of file and not in run params, requires there only be 1 plate_id in the exp
+                        if 'plate_ids' in self.expfiledict.keys() and isinstance(self.expfiledict['plate_ids'], int):#integer means it got auto converted because wasn't a list
+                            rund['parameters']['plate_id']=self.expfiledict['plate_ids']
+                    if 'plate_id' in rund['parameters'].keys():
+                        pmpath, pmidstr=getplatemappath_plateid(str(rund['parameters']['plate_id']), return_pmidstr=True)
+                        if len(pmidstr)>0:
+                            for temprunk, temprund in self.expfiledict.iteritems():
+                                if temprunk.startswith('run__') and 'platemap_id' in temprund.keys() and temprund['platemap_id']==pmidstr:
+                                    rund['platemapdlist']=temprund['platemapdlist']#presumably share platemap by reference
+                                    rund['platemap_id']=pmidstr
+                        if not 'platemapdlist' in rund.keys():
+                            rund['platemapdlist']=readsingleplatemaptxt(pmpath, \
+                                erroruifcn=\
+                                    lambda s:mygetopenfile(parent=self, xpath=PLATEMAPFOLDERS[0], markstr='Error: %s select platemap for plate_no %s' %(s, rund['parameters']['plate_id'])))
                     if len(pmidstr)>0:
                         rund['platemap_id']=pmidstr
                 if runk.startswith('run__') and not 'platemap_id' in rund.keys():

@@ -840,7 +840,7 @@ def illumtimeshift(d, ikey, tkey, tshift):
     inds=[numpy.argmin((t-tmod)**2) for t in d[tkey]]
     d[ikey]=d[ikey][inds]
 
-def calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc='.RelLoading', key_append_atfrac='.AtFrac', tot_conc_label=None):
+def calc_comps_multi_element_inks(platemapdlist, cels_set_ordered, conc_el_chan, key_append_conc='.Loading', key_append_atfrac='.AtFrac', tot_conc_label=None):
     #platemap should have standard A-H channels, at least as many as conc_el_chan.shape[1], conc_el_chan is by "new" element and by platemap channel, make the key_append a string to update dlist or None to skip
     inkchannelsused=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][:conc_el_chan.shape[1]]#grab the channels used
     #with this update the platemap is in units of concentration instead of fraction of printer channel loading

@@ -193,6 +193,8 @@ class Analysis__PlatemapComps(Analysis_Master_nointer):
             
                 els=filed['elements'].split(',')
                 errbool, (cels_set_ordered, conc_el_chan)=get_multielementink_concentrationinfo(filed['runparamd'], els, return_defaults_if_none=True)#None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap                
+                if errbool:
+                    raiseTemp
                 pmkeys_to_include=[k.strip() for k in self.params['other_keys_to_include'].split(',')]
                 
                 
