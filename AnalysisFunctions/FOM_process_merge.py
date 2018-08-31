@@ -10,8 +10,8 @@ from FOM_process_basics import FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, Analysis
 
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='2'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'match_plate_id':1}
+        self.analysis_fcn_version='3'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'match_plate_id':1, 'key_append_all_aux':'none'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
         self.requiredkeys=[]
@@ -115,8 +115,9 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             keysearchlist=self.params['select_aux_keys'].split(',')
             keysearchlist=[s.strip() for s in keysearchlist if len(s.strip())>0]
         
-        keysfcn=lambda filed, notallowedkeys: [k for k in filed['keys'] if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
-                                                                                                                   (not k in notallowedkeys) and \
+        keysfcn=lambda filed, aux_key_append, notallowedkeys: [k+aux_key_append for k in filed['keys'] if (not k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
+                                                                                                                (not k+aux_key_append in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) and \
+                                                                                                                (not k+aux_key_append in notallowedkeys) and \
                                                                                                                 (True in [s in k for s in keysearchlist])]
         if custom_load_csv_bool:
             reqdkeysset=['plate_id'] if ('match_plate_id' in self.params.keys() and self.params['match_plate_id']) else []
@@ -128,16 +129,21 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         
         existkeys=[k for filed in self.filedlist for k in filed['process_keys'] if not k in additionl_required_params_aux]#don't allow aux key overlap with existing keys in any of the fom csvs in play
         
+        if 'key_append_all_aux' in self.params.keys() and self.params['key_append_all_aux']!='none':
+            aux_key_append=self.params['key_append_all_aux']
+        else:
+            aux_key_append=''
+        
         self.auxfiledlist=[]
         for anak in anak_list:
             for fnk, filed in self.auxd[anak]['files_multi_run']['fom_files'].iteritems():
-                if keystestfcn(filed) and len(keysfcn(filed, existkeys))>0:
+                if keystestfcn(filed) and len(keysfcn(filed, aux_key_append, existkeys))>0:
                     self.auxfiledlist+=\
                        [{'anakeys':[anak, 'files_multi_run', 'fom_files', fnk], 'ana':anak, 'fn':fnk, 'keys':filed['keys'], \
-                       'num_header_lines':filed['num_header_lines'], 'process_keys':keysfcn(filed, existkeys)}]
-                    existkeys+=[self.auxfiledlist[-1]]#aux keys can be from multipleana__ blocks but only 1 ana_file
+                       'num_header_lines':filed['num_header_lines'], 'process_keys':keysfcn(filed, aux_key_append, existkeys)}]
+                    existkeys+=[self.auxfiledlist[-1]['process_keys']]#aux keys can be from multipleana__ blocks but only 1 ana_file
                 
-        auxkeylist=[k for filed in self.auxfiledlist for k in filed['process_keys']]
+        auxkeylist=[k if len(aux_key_append)==0 else k[:-len(aux_key_append)] for filed in self.auxfiledlist for k in filed['process_keys']]
 #allow this to pass so the params can be changed to, e.g. "custom". If "perform" happens under this condition then the new .csv will be the same as the old.
 #        if len(auxkeylist)==0:
 #            print 'cannot find any unique aux fom keys'
@@ -202,7 +208,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     self.fomnames+=auxfiled['process_keys']
                     for k in auxfiled['process_keys']:
                         newfomd[k]=numpy.ones(len(newfomd['sample_no']), dtype='float64')*numpy.nan
-                        newfomd[k][fomdinds]=auxfomd[k][auxfomdinds]
+                        newfomd[k][fomdinds]=auxfomd[k[:-len(self.params['key_append_all_aux'])] if self.params['key_append_all_aux']!='none' else k][auxfomdinds]
                     if 'plate_id' in auxfomd.keys() and not matchplateidbool:#if not matching by plate_id then the aux plate_id could be different so need to save it. This will arise for parent/child merges
                         newfomd['aux_plate_id'][fomdinds]=numpy.array(auxfomd['plate_id'][auxfomdinds],dtype='|S8')
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
