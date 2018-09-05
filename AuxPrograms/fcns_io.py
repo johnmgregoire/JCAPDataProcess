@@ -1068,8 +1068,24 @@ def get_multielementink_concentrationinfo(printd, els, return_defaults_if_none=F
     searchstr2='concentration_values'
     if not (searchstr1 in printd.keys() and searchstr2 in printd.keys()):
         if return_defaults_if_none:
-            return False, (els, numpy.identity(len(els), dtype='float64'))
-        return None
+            nels_printchannels=[len(regexcompile("[A-Z][a-z]*").findall(el)) for el in els]
+            if max(nels_printchannels)>1:
+                return True, 'concentration info required when there are multi-ink channels'
+            els_set=set(els)
+            if len(els_set)<len(els):#only known cases of this (same element used in multiple print channels and no concentration info provided) is when Co printed in library and as internal reference, in which case 2 channels never printed together but make code assume each ink with equal concentration regardless of duplicates
+                conc_el_chan=numpy.zeros((len(els_set), len(els)), dtype='float64')
+                cels_set_ordered=[]
+                for j, cel in enumerate(els):#assume 
+                    if not cel in cels_set_ordered:
+                        cels_set_ordered+=[cel]
+                    i=cels_set_ordered.index(cel)
+                    conc_el_chan[i, j]=1
+            else: #this is generic case with no concentration info
+                cels_set_ordered=els
+                conc_el_chan=numpy.identity(len(els), dtype='float64')
+            return False, (cels_set_ordered, conc_el_chan)
+        else:
+            return None
     cels=printd[searchstr1]
     concstr=printd[searchstr2]
     conclist=[float(s) for s in concstr.split(',')]

@@ -296,7 +296,7 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                     #pmpath, pmidstr=r'J:\hte_jcap_app_proto\map\0068-04-0100-mp.txt', '69'#for 1-off override
                     platemapdlist=readsingleplatemaptxt(pmpath, erroruifcn=None)
                     
-                    els, tup_multielementink=getelements_plateidstr(str(pid), multielementink_concentrationinfo_bool=True)
+                    els, tup_multielementink=getelements_plateidstr(str(pid), multielementink_concentrationinfo_bool=True, return_defaults_if_none=True)
                     if not tup_multielementink is None:
                         errorbool, tupormessage=tup_multielementink
                         if errorbool:
