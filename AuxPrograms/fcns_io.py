@@ -2,7 +2,10 @@ import numpy, pickle, shutil, string
 from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as colors
 from fcns_math import *
-from fcns_ui import mygetopenfile
+try:
+    from fcns_ui import mygetopenfile
+except:
+    pass
 import time
 import zipfile
 from operator import itemgetter

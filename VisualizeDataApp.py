@@ -634,6 +634,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                             codes+=[-1]#codes are intgeters so can't uses nan
                         else:
                             codes+=[rund['platemapdlist'][rund['platemapsamples'].index(smp)]['code']]
+                    if len(codes)==0:#the exp/rcp don't have sample-specific information so just allow all codes through
+                        codes=sorted(list(set([smpd['code'] for smpd in rund['platemapdlist']])))
                     codeset=codeset.union(set(codes))
                     self.exp_keys_codearr_dict[keytup]=numpy.int32(codes)
         flattups=[[pl]+list(kt) for pl, kt in self.exp_keys_codearr_dict.keys()]
@@ -1128,14 +1130,26 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
         if anaint==0 and runint==0:
             return None
-        if anaint>0:
-            xyydlist=self.extractxy_ana(arrkeys, anaint, runint, smp)
+        xyydlist=[None, None, None]
+        look_in_upstream_ana=anaint>0
+        while look_in_upstream_ana:#keep looking in ana__ if they are linked through the select_ana parameter
+            xyydlist1=self.extractxy_ana(arrkeys, anaint, runint, smp)
             xyydlist2=self.extractxy_ana(arrkeys, anaint, None, smp)
-            for count, (d1, d2) in enumerate(zip(xyydlist, xyydlist2)):
+            for count, (d1, d2) in enumerate(zip(xyydlist1, xyydlist2)):#use the data from runint=None, which means files_multi_run, only if data from the runint,smp wasn't found
                 if d1 is None and not d2 is None:
-                    xyydlist[count]=xyydlist2[count]
-        else:
-            xyydlist=[None, None, None]
+                    xyydlist1[count]=xyydlist2[count]
+            for count, (d0, d1) in enumerate(zip(xyydlist, xyydlist1)):#use the data from runint=None, which means files_multi_run, only if data from the runint,smp wasn't found
+                if d0 is None and not d1 is None:#only update the master xyydlist if something new found in this round of extractxy_ana. This allows differnet ana__ to contribute to x and y
+                    xyydlist[count]=xyydlist1[count]
+            if None in [v for v, arrk in zip(xyydlist, arrkeys) if arrk!='None']:#still things to find that are not in run,fom or the ana looked at so far
+                anak='ana__%d' %anaint
+                anad=self.anafiledict[anak]
+                if 'parameters' in anad.keys() and 'select_ana' in anad['parameters'] and anad['parameters']['select_ana'].startswith('ana__'):
+                    anaint=int(anad['parameters']['select_ana'][5:])
+                else:#the ana__ just search doesn't refer to a previous ana__ so give up
+                    look_in_upstream_ana=False
+            else:
+                look_in_upstream_ana=False#if already found things to plot go with that
         if runint>0:
             lefttogetinds=[count for count, (d, arrk) in enumerate(zip(xyydlist, arrkeys)) if d is None and not arrk=='None']
             if len(lefttogetinds)>0:
