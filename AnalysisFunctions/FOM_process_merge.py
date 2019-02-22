@@ -242,8 +242,8 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
 
 class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'key_append_conc':'.PM.Loading', 'key_append_atfrac':'.PM.AtFrac', 'tot_conc_label':'Tot.PM.Loading'}
+        self.analysis_fcn_version='2'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'key_append_conc':'.PM.Loading', 'key_append_atfrac':'.PM.AtFrac', 'tot_conc_label':'Tot.PM.Loading', 'value_when_missing':'nan'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_PlatemapComps'
         self.requiredkeys=[]
@@ -268,7 +268,11 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
     
     def processnewparams(self, calcFOMDialogclass=None):
         self.fomnames=[]
-
+        try:
+            self.value_when_missing=numpy.nan if self.params['value_when_missing']=='NaN' else float(self.params['value_when_missing'])
+        except:
+            self.value_when_missing=numpy.nan
+        self.params['value_when_missing']=`self.value_when_missing`
 
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
@@ -289,7 +293,7 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                     continue
                 allplateids=sorted(list(set(fomd['plate_id'])))
                 
-                self.fomnames=process_keys
+                self.fomnames=copy.copy(process_keys)
                 for pid in allplateids:
                     
                     pmpath, pmidstr=getplatemappath_plateid(str(pid), return_pmidstr=True)
@@ -318,13 +322,11 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                     smps=fomd['sample_no'][fomdinds_plate]
                     pmsmps=[pmd['sample_no'] for pmd in platemapdlist]
                     pminds=[pmsmps.index(smp) for smp in smps]
-                    
                     for k in newfomnames:
                         if not k in self.fomnames:
-                            fomd[k]=numpy.ones(len(fomd['sample_no']), dtype='float64')*numpy.nan
+                            fomd[k]=numpy.ones(len(fomd['sample_no']), dtype='float64')*self.value_when_missing
                             self.fomnames+=[k]
                         fomd[k][fomdinds_plate]=numpy.array([platemapdlist[pmind][k] for pmind in pminds])
-                
                 self.strkeys_fomdlist=[]
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[fomd[k] for k in allkeys])]

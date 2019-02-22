@@ -18,7 +18,7 @@ import os,shutil
 import pandas as pd
 import numpy as np
 
-def import_CU_Multi_Bcknd_as_ana2(srcfolder,anafolder,fom_segment_min_index_spacing=4):
+def import_CU_Multi_Bcknd_as_ana_block(srcfolder,anafolder,fom_segment_min_index_spacing=6,anak='ana__2'):
     def get_num_segments(arr):
         indsarr=np.where((arr[:-1]<=0.5)&(arr[1:]>0.5))[0]
         if len(indsarr)==0:
@@ -37,7 +37,7 @@ def import_CU_Multi_Bcknd_as_ana2(srcfolder,anafolder,fom_segment_min_index_spac
     filelists=[[],[],[]]
     for fn in os.listdir(srcfolder):
         pr=os.path.join(srcfolder,fn)
-        nfn='ana__2_'+fn
+        nfn=anak+'_'+fn
         pn=os.path.join(anafolder,nfn)
         if fn=='Bcknd_Summary.csv':
             with open(pr,mode='r') as f: lines=f.readlines()
@@ -84,8 +84,8 @@ def import_CU_Multi_Bcknd_as_ana2(srcfolder,anafolder,fom_segment_min_index_spac
     filestr='\n'.join(new_summ_lines)
     with open(p_summ,mode='w') as f: f.write(filestr)
     
-    
-    s='ana__2:\n    plate_ids: %d\n    analysis_fcn_version: 1\n    technique: rams\n    analysis_general_type: analysis_of_ana\n    description: multi-rank background identification and subtraction\n    name: Analysis__CU_Multi_Bcknd\n    parameters:\n        select_ana: ana__1\n%s\n        fom_segment_min_index_spacing: %d\n    plot_parameters:\n        plot__1:\n            x_axis: wavenumber._cm\n            series__1: smooth_signal_probability_pattern' \
+    s=anak
+    s+=':\n    plate_ids: %d\n    analysis_fcn_version: 1\n    technique: rams\n    analysis_general_type: analysis_of_ana\n    description: multi-rank background identification and subtraction\n    name: Analysis__CU_Multi_Bcknd\n    parameters:\n        select_ana: ana__1\n%s\n        fom_segment_min_index_spacing: %d\n    plot_parameters:\n        plot__1:\n            x_axis: wavenumber._cm\n            series__1: smooth_signal_probability_pattern' \
            %(pid,paramsfromfile,fom_segment_min_index_spacing)
     analines=[s]
     analines.append('    files_multi_run:\n        fom_files:\n'+'\n'.join([indent*3+filedesc for filedesc in filelists[0]]))
@@ -97,3 +97,12 @@ def import_CU_Multi_Bcknd_as_ana2(srcfolder,anafolder,fom_segment_min_index_spac
     anafilestr='\n'.join([fs.strip()]+analines)
     with open(pana,mode='w') as f: f.write(anafilestr)
     with open(os.path.join(srcfolder,'anablock.txt'),mode='w') as f: f.write('\n'.join(analines))
+
+#anafolder=r'L:\processes\analysis\rams\20181205.140000.run'
+#
+#for anaint,rank in [(2,1),(3,2),(4,4),(5,8)]:
+#    foldname='rank%d_4832' %rank
+#    anak='ana__%d' %(anaint)
+#    srcfolder=os.path.join(r'D:\data\201812_MultiBcknd_4832',foldname)
+#    import_CU_Multi_Bcknd_as_ana_block(srcfolder,anafolder,fom_segment_min_index_spacing=6,anak=anak)
+    

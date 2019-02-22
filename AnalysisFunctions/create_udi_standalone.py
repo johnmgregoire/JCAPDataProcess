@@ -24,7 +24,7 @@ def get_element_list_for_list_of_pidstr(l_plate_idstr, union_bool=False):
         els_to_return=sorted(list(els_to_return))
     return els_to_return
         
-def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str='', union_el_list=False):
+def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, pattern_key='pattern_files', compkeys='AtFrac', q_key='q.nm_processed',intensity_key='intensity.counts_processed', pattern_fn_search_str='', union_el_list=False, xykeys_compcsv=None):
     #if multiple ana paths, the 0th index is the master where the new will be appended, and in the resulting ana__ parameters ana_name,,anak, anak_comps will all be lists to let you know the source of the "merged aux" anas 
     
     if l_anapath is None:
@@ -77,7 +77,7 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
             else:
                 found_comp_keys=[k for k in filed['keys'] if k in compkeys]
             found_comp_keys=sorted(found_comp_keys)
-            if (len(found_comp_keys)>0 and isinstance(compkeys, str)) or len(selkeyinds)==len(compkeys):
+            if (len(found_comp_keys)>0 and isinstance(compkeys, str)) or len(found_comp_keys)==len(compkeys):
                 fomd=readcsvdict(get_file_path(anap, fn, zipclass), filed, returnheaderdict=False, zipclass=zipclass, includestrvals=False)
                 l_found_comp_keys+=[found_comp_keys]
                 l_comp_fomd+=[fomd]
@@ -108,13 +108,17 @@ def append_udi_to_ana(l_anapath=None, l_anak_comps=None, l_anak_patterns=None, p
                     l_fn_fd+=[(fn, filed, runint)]
         l_pattern_l_fn_fd+=[l_fn_fd]
         
-        
-        pmpath=getplatemappath_plateid(pidstr)
-        pmlines, pmpath=get_lines_path_file(p=pmpath)
-        pmdlist=readsingleplatemaptxt('', lines=pmlines)
-        smps=[d['sample_no'] for d in pmdlist]
-        fomd['x']=numpy.array([pmdlist[smps.index(smp)]['x'] for smp in fomd['sample_no']])
-        fomd['y']=numpy.array([pmdlist[smps.index(smp)]['y'] for smp in fomd['sample_no']])
+        if xykeys_compcsv is None:
+            pmpath=getplatemappath_plateid(pidstr)
+            pmlines, pmpath=get_lines_path_file(p=pmpath)
+            pmdlist=readsingleplatemaptxt('', lines=pmlines)
+            smps=[d['sample_no'] for d in pmdlist]
+            fomd['x']=numpy.array([pmdlist[smps.index(smp)]['x'] for smp in fomd['sample_no']])
+            fomd['y']=numpy.array([pmdlist[smps.index(smp)]['y'] for smp in fomd['sample_no']])
+        else:
+            xk, yk=xykeys_compcsv
+            fomd['x']=fomd[xk]
+            fomd['y']=fomd[yk]
     #get the elements whose comps were found in all ana
     
     els_for_udi_temp=get_element_list_for_list_of_pidstr(l_plate_idstr, union_bool=union_el_list)

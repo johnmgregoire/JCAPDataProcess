@@ -268,7 +268,7 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
             except:
                 if includestrvals:
                     d[k]=a
-        elif a[0].isdigit():
+        elif a[0].strip('-').isdigit():
             try:
                 d[k]=numpy.int32(a)
             except:
@@ -276,7 +276,6 @@ def readcsvdict(p, fileattrd, returnheaderdict=False, zipclass=None, includestrv
                     d[k]=a
         elif includestrvals:
             d[k]=a#a string array that is onlcude included if "requested" via includestrvals
-
     if not returnheaderdict:
         return d
 
@@ -483,6 +482,8 @@ def convertfilekeystofiled(exporanafiledict):
                 if not isinstance(typed, dict):
                     continue
                 for fn, keystr in typed.iteritems():
+                    if isinstance(keystr, dict):
+                        continue
                     d=createfileattrdict(keystr, fn=fn)
                     exporanafiledict[k][k2][k3][fn]=d
 def importfomintoanadict(anafiledict, anafolder):#assumes convertfilekeystofiled already run on anafiledict

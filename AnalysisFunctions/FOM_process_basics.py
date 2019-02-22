@@ -227,8 +227,8 @@ class Analysis__FilterSmoothFromFile(Analysis_Master_FOM_Process):#THE PCK-BASED
 
 class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999}
+        self.analysis_fcn_version='2'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'crit_comp_dist':0.0005, 'sorted_ind_start':0, 'sorted_ind_stop':999, 'ave_type':'mean', 'comp_source':'elemental_print_channel_loadings'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__AveCompDuplicates'
         self.requiredkeys=[]
@@ -254,26 +254,37 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
         compdelta=self.params['crit_comp_dist']
         i0=self.params['sorted_ind_start']
         i1=self.params['sorted_ind_stop']
-        
+        median_bool=self.params['ave_type'].startswith('med')
+        closest_bool='closest' in self.params['ave_type']
         samples_runint=dict([(runint, [d['sample_no'] for d in dlist]) for runint, dlist in self.platemapdlist_runint.iteritems()])
         platemapsampled=lambda runint, sample_no:self.platemapdlist_runint[runint][samples_runint[runint].index(sample_no)] if sample_no in samples_runint[runint] else None
         indstoprocess=range(len(fomd['sample_no']))
+        #get the sample-level platemap dicts for each entry in fomd
         mappedplated=[platemapsampled(runint, sample_no) for (runint, sample_no) in zip(fomd['runint'], fomd['sample_no'])]
         code=numpy.array([d['code'] for d in mappedplated])
-        comps=numpy.float32([[d[el] if el in d.keys() else 0. for el in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']] for d in mappedplated])#comps are NOT normalized so that different thicknesses tdo not get averaged together
+        if self.params['comp_source']=='elemental_print_channel_loadings':
+            allplateids=sorted(list(set(fomd['plate_id'])))
+            el_lists=[getelements_plateidstr(str(pid)) for pid in allplateids]
+            elset=sorted(list(set([el for ell in el_lists for el in ell])))
+            comps=numpy.float32([[d[['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][el_lists[allplateids.index(pid)].index(el)]] if el in el_lists[allplateids.index(pid)] else 0. for el in elset] for d, pid in zip(mappedplated, fomd['plate_id'])])#comps are NOT normalized so that different thicknesses tdo not get averaged together
+        elif self.params['comp_source']=='print_channel_loadings':
+            comps=numpy.float32([[d[el] if el in d.keys() else 0. for el in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']] for d in mappedplated])#comps are NOT normalized so that different thicknesses tdo not get averaged together
         inds_compsdist=lambda c1:numpy.where(numpy.float32([((c1-c2)**2).sum()/2.**.5 for c2 in comps])<=compdelta)[0]
         fomdlist=[]
         strk='SmpRunPlate_Association'
+        intk='num_samples_averaged'
         while len(indstoprocess)>0:
             if numpy.any(numpy.isnan(comps[indstoprocess[0]])):
                 inds=[indstoprocess[0]]
             else:
                 inds=inds_compsdist(comps[indstoprocess[0]])
-            repind=inds[numpy.argmin(code[inds])]
+            
             fd={}
-            fd[strk]=';'.join(['_'.join([str(fomd[k][i]) for k in ['sample_no', 'runint', 'plate_id']]) for i in inds])
-            for k in along_for_the_ride_keys:
-                fd[k]=fomd[k][repind]
+            fd[strk]=';'.join(['_'.join([str(fomd[k][i]) for k in ['sample_no', 'runint', 'plate_id']]) for i in inds]) #track origin of things being averaged
+            fd[intk]=len(inds)
+            
+            inds_matching_median_for_all_process_keys=[]
+            distances_inds=numpy.zeros(len(inds), dtype='float64')
             for k in process_keys:
                 arr=fomd[k][inds]
                 arr=arr[numpy.logical_not(numpy.isnan(arr))]
@@ -281,10 +292,28 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
                     fd[k]=numpy.nan
                     continue
                 arr=arr[numpy.argsort(arr)]
-                fd[k]=arr[i0:i1].mean()
+                
+                if median_bool:
+                    fd[k]=numpy.median(arr[i0:i1])
+                    distances_inds+=numpy.abs(fomd[k][inds]-fd[k])
+                    inds_matching_median_for_all_process_keys+=[i for i in inds if fomd[k][i]==fd[k]]
+                else:
+                    fd[k]=arr[i0:i1].mean()
+                
+            if median_bool:
+                repind=inds[int(numpy.argmin(distances_inds))]#lowest abslute distance to the medians
+                if closest_bool:#replace median by the rep sample so that foms match that of an actual sample
+                    for k in process_keys:
+                        fd[k]=fomd[k][repind]
+            else:
+                repind=inds[int(numpy.argmin(code[inds]))]
+            for k in along_for_the_ride_keys:
+                fd[k]=fomd[k][repind]
+            
             fomdlist+=[fd]
             indstoprocess=sorted(list(set(indstoprocess).difference(set(inds))))
         self.strkeys_fomdlist=[strk]
+        self.fomnames=[intk]+self.fomnames
         return fomdlist
 
 
