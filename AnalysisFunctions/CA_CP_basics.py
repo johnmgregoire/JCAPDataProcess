@@ -117,7 +117,7 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
         self.analysis_name='Analysis__EchemMinMax'
         self.requiredkeys=['t(s)', 'Ewe(V)', 'I(A)']
         self.optionalkeys=[]
-        self.requiredparams=[]
+        self.requiredparams=['reference_vrhe']
         self.fomnames=['Emin.Vrhe', 'Emax.Vrhe', 'Jmin.mAcm2', 'Jmax.mAcm2']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
