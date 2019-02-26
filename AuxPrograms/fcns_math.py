@@ -3,6 +3,8 @@ import os, os.path, time, copy, pylab, operator
 from scipy import interp
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 def myeval(c):
     if c=='None':
         c=None
@@ -970,5 +972,33 @@ def integrate_spectrum_with_piecewise_weights(spectrumx, spectrumy, weightsx, we
         return integrated_val, completed_weights
     return integrated_val
     
-        
+
+
+def linear_2d_extrapolation(d,xk,yk,zklist,num_pts_in_lin_fit=6):#returns None - mod d in place. updates all NaN in d[zk] with 2d interp values using linear interp of num_pts_in_lin_fit (up to num_pts_in_lin_fit x 2 if need be)
+    if isinstance(xk, str):
+        x=d[xk]
+    else:
+        x=xk
+    if isinstance(yk, str):
+        y=d[yk]
+    else:
+        y=yk
+    for k in zklist:
+        z=d[k]
+        for i in np.where(np.isnan(d[k]))[0]:
+            xi=x[i]
+            yi=y[i]
     
+            dist_tups=sorted([((xv-xi)**2+(yv-yi)**2,count) for count,(xv,yv,zv) in enumerate(zip(x,y,z)) if not np.isnan(zv)])
+            for extra_pts in range(num_pts_in_lin_fit+1):#try up to twice as many points if necessary to get unique x and y values
+                fitinds=[tup[1] for tup in dist_tups[:num_pts_in_lin_fit+extra_pts]]
+                xf=x[fitinds]
+                yf=y[fitinds]
+                zf=z[fitinds]
+                if ((xf[0]==xf).prod()+(yf[0]==yf).prod())==0:#if more than 1 x value and also more than 1 y value
+                    break
+            if extra_pts==num_pts_in_lin_fit:#cannot perform 2d extrap here
+                continue
+            A = np.vstack([xf, yf, np.ones(len(xf))]).T
+            fitcoefs=np.linalg.lstsq(A, zf)[0]
+            d[k][i]=(fitcoefs*np.array([xi,yi,1.])).sum()

@@ -172,13 +172,14 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
                 self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
             if destfolder is None:
                 continue
+            runint=int(filed['run'].partition('run__')[2])
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(self.make_inter_fn_start(anak,runint),os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, keys=['t(s)', 'Ewe(Vrhe)', 'J(mAcm2)'], savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(self.make_inter_fn_start(anak,runint),os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])

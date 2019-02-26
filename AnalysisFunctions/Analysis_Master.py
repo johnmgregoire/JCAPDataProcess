@@ -229,6 +229,12 @@ class Analysis_Master_nointer():
         return '%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
         
 class Analysis_Master_inter(Analysis_Master_nointer):
+    def make_inter_fn_start(self, anak, runint=None):
+        if runint is None:
+            return anak
+        else:
+            return '%s__run__%d' %(anak,runint)
+        
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
@@ -247,17 +253,18 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                     raiseTEMP
                 fomtuplist, rawlend, interlend=[(k, numpy.nan) for k in self.fomnames], {}, {}#if error have the sample written below so fomdlist stays commensurate with filedlist, but fill everythign with NaN and no interdata
                 pass
+            runint=int(filed['run'].partition('run__')[2])
             if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=runint)]
             if destfolder is None:
                 continue
             if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(anak,os.path.splitext(fn)[0])
+                fnr='%s__%s_rawlen.txt' %(self.make_inter_fn_start(anak,runint), os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fnr)
                 kl=saveinterdata(p, rawlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
             if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt' %(anak,os.path.splitext(fn)[0])
+                fni='%s__%s_interlen.txt' %(self.make_inter_fn_start(anak,runint), os.path.splitext(fn)[0])
                 p=os.path.join(destfolder,fni)
                 kl=saveinterdata(p, interlend, savetxt=True)
                 self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
@@ -355,7 +362,7 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
             
     self.activeana['name']=self.analysisclass.analysis_name
     self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
-    
+    self.activeana['run_use_option']=self.usek
     self.activeana['plot_parameters']=self.analysisclass.plotparams
     plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
     self.activeana['plate_ids']=plateidsliststr

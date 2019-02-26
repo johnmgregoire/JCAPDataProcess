@@ -886,7 +886,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
     def plot_preparestandardplot(self, plotbool=True):
         k=str(self.stdcsvplotchoiceComboBox.currentText())
-        if not k in self.csvheaderdict['plot_parameters'].keys():
+        if not 'plot_parameters' in self.csvheaderdict.keys():
            return
         d=self.csvheaderdict['plot_parameters'][k]
         if not 'fom_name' in d.keys() or not d['fom_name'] in self.fomnames:
