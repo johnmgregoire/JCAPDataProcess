@@ -510,7 +510,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
 
 class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
     def __init__(self):
-        self.analysis_fcn_version='2'
+        self.analysis_fcn_version='3'
         self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_comp':0, 'num_pts_in_2d_extrapolation':6}
         #remove_samples_not_in_aux not used and is effectively =0 here, select_aux_keys is the keys which will be interpolated and must not be in the destination ana and must not include interp_keys, interp_keys can be a keyword for using platemap or a list of 1 (for interp1d) or 2 (2d) keys that are present in both ana being merged.
         self.params=copy.copy(self.dfltparams)
@@ -630,10 +630,10 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                         newfomd[k]=intrp1dfcn(dest_x)
                     else:
                         newfomd[k]=fcn(numpy.float64(self.src_x_then_y[:num_interpdim]).T, self.src_x_then_y[dataind], dest_x, **self.interpkwargs)
-                
-                if self.need_to_extrapolate_separately:
-                    xarr, yarr=numpy.float64(self.src_x_then_y[:num_interpdim])
-                    linear_2d_extrapolation(newfomd, xarr, yarr, keys_to_interp, num_pts_in_lin_fit=self.params['num_pts_in_2d_extrapolation'])
+                        if self.need_to_extrapolate_separately:
+                            naninds=np.where(np.isnan(newfomd[k]))[0]
+                            if len(naninds)>0:
+                                newfomd[k][naninds]=linear_2d_extrapolation(numpy.float64(self.src_x_then_y[:num_interpdim]).T, numpy.array(self.src_x_then_y[dataind]), dest_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_2d_extrapolation'])
                 
                 if self.params['interp_is_comp']:
                     keys_to_interp_orig=[k.replace('AtFrac', 'InterpRaw') if 'AtFrac' in k else (k+'InterpRaw') for k in keys_to_interp]

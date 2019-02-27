@@ -38,11 +38,11 @@ plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
 exp_info_dlist+=[dict({},run_use='data-postPETS', plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
 
 #def combine_exps(exp_info_dlist,filter_plate_sample_fileattrd=None,include_csv_samples_bool=True,access=None,created_by=None,experiment_type=None,include_sample_0=True,rundone='.run')
-filter_plate_sample_fileattrd=None
-#filter_plate_sample_fileattrd={'p':r'L:\processes\analysis\eche\20190222.134030.done\ana__2__num_samples_averaged-I.A_ave.csv', \
-#'keys':'sample_no,runint,plate_id,SmpRunPlate_Association,num_samples_averaged,I.A_ave'.split(','), \
-#'num_header_lines':9
-#}
+#filter_plate_sample_fileattrd=None
+filter_plate_sample_fileattrd={'p':r'L:\processes\analysis\eche\20190222.134030.done\ana__2__num_samples_averaged-I.A_ave.csv', \
+'keys':'sample_no,runint,plate_id,SmpRunPlate_Association,num_samples_averaged,I.A_ave'.split(','), \
+'num_header_lines':9
+}
 include_csv_samples_bool=True
 access=None
 created_by=None
@@ -60,7 +60,7 @@ else:
         filter_plate_sample_list=zip(filterd['plate_id'], filterd['sample_no'])
     else:
         filter_plate_sample_list=filterd['sample_no']
-#TODO else:
+
 exp_names=[d['name'] for d in dlist]
 newexpd={}
 newexpd['description']='Combination of exp '+','.join(exp_names)+'. '+';'.join([d['description'] for d in dlist])
@@ -87,21 +87,26 @@ for d, di in zip(dlist,exp_info_dlist):
             keep_run=False
             files_keys=[k for k in d[rk] if k.startswith('files_technique__')]
             for fk in files_keys:
-                for fn in d[rk][fk].keys():#don't use iterator because deleting as we go and not sure how that works
-                    fd=d[rk][fk][fn]
-                    if (not 'sample_no' in fd.keys()) or fd['sample_no']==0:
-                        keepbool=include_sample_0
-                    else:
-                        inlist=(pid,fd['sample_no']) in filter_plate_sample_list if ('plate_id' in filterd.keys()) else fd['sample_no'] in filter_plate_sample_list
-                        keepbool=inlist if include_csv_samples_bool else not inlist
-                    if not keepbool:
-                        del d[rk][fk][fn]
+                for ftk in d[rk][fk].keys():
+                    ftd=d[rk][fk][ftk]
+                    for fn in ftd.keys():#don't use iterator because deleting as we go 
+                        fd=ftd[fn]
+                        if (not 'sample_no' in fd.keys()) or fd['sample_no']==0:
+                            keepbool=include_sample_0
+                        else:
+                            inlist=(pid,fd['sample_no']) in filter_plate_sample_list if ('plate_id' in filterd.keys()) else fd['sample_no'] in filter_plate_sample_list
+                            keepbool=inlist if include_csv_samples_bool else not inlist
+                        if not keepbool:
+                            del ftd[fn]
+                    if len(d[rk][fk][ftk])==0:#all samples deleted so delete the whole section
+                        del d[rk][fk][ftk]
                 if len(d[rk][fk])==0:#all samples deleted so delete the whole section
                     del d[rk][fk]
                 else:
                     keep_run=True# so any nonempty files list will trigger keeping run
         if keep_run:
             newexpd['run__%d' %new_run_counter]=d[rk]
+            newexpd['run__%d' %new_run_counter]['original_exp_name']=d['name']
             new_run_counter+=1
     
 saveexp_txt_dat(newexpd, erroruifcn=None, saverawdat=False, experiment_type=newexpd['experiment_type'], rundone=rundone, runtodonesavep=None, savefolder=None, file_attr_and_existence_check=False)
