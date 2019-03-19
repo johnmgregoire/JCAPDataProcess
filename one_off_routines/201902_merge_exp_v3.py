@@ -23,26 +23,39 @@ from fcns_io import *
 from fcns_ui import *
 
 
-plate_exp_str='40745: 20190221.092325,50690: 20190221.094047,51545: 20190221.102607,51253: 20190221.095553,51365: 20190221.101035,51477: 20190221.110210'
+if 0:
+    #post pets intersection of samples with pre
+    plate_exp_str=r'40745: 20190228.110547.copied-20190301222931021PST,50690: 20190228.110155.copied-20190301222931021PST,51545: 20190228.110440.copied-20190301222931021PST,51253: 20190228.105542.copied-20190301222931021PST,51365: 20190228.105808.copied-20190301222931021PST,51477: 20190228.104732.copied-20190301222931021PST,51433: 20190304.113409.done'
+    plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
+    exp_info_dlist=[dict({},run_use='data-postPETS',plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
+    filter_plate_sample_fileattrd=None
+elif 1:
 
-plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
+    plate_exp_str=r'40745: 20190227.095056.copied-20190228082609825PST,50690: 20190228.095246.copied-20190301222931021PST,51545: 20190228.132533.copied-20190301222931021PST,51253: 20190228.103343.copied-20190301222931021PST,51365: 20190227.100856.copied-20190228082609825PST,51477: 20190227.101033.copied-20190228082609825PST,51433: 20190304.113120.done'
 
-#exp_info_dlist must have a list fo dicts, 1 for each exp to be concatenated, each with a key exp_folder_path for each entry and optional keys are plate_id (needed for csv filtering) and run_use (to overwrite the run use in the concatenated exp)
-exp_info_dlist=[dict({},run_use='data-prePETS',plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
+    plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
+
+    #exp_info_dlist must have a list fo dicts, 1 for each exp to be concatenated, each with a key exp_folder_path for each entry and optional keys are plate_id (needed for csv filtering) and run_use (to overwrite the run use in the concatenated exp)
+    exp_info_dlist=[dict({},run_use='data-prePETS',plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
 
 
-plate_exp_str='40745: 20190221.184540,50690: 20190221.184632,51545: 20190221.184733,51253: 20190221.185033,51365: 20190221.184901,51477: 20190221.184951'
-plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
+    plate_exp_str=r'40745: 20190227.094406.copied-20190228082609825PST,50690: 20190227.093453.copied-20190228082609825PST,51545: 20190227.094332.copied-20190228082609825PST,51253: 20190228.103025.copied-20190301222931021PST,51365: 20190227.094456.copied-20190228082609825PST,51477: 20190228.103557.copied-20190301222931021PST,51433: 20190304.113329.done'
+    plate_exp_tups=[s.partition(': ')[::2] for s in plate_exp_str.split(',')]
 
-#exp_info_dlist must have a list fo dicts, 1 for each exp to be concatenated, each with a key exp_folder_path for each entry and optional keys are plate_id (needed for csv filtering) and run_use (to overwrite the run use in the concatenated exp)
-exp_info_dlist+=[dict({},run_use='data-postPETS', plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
+    #exp_info_dlist must have a list fo dicts, 1 for each exp to be concatenated, each with a key exp_folder_path for each entry and optional keys are plate_id (needed for csv filtering) and run_use (to overwrite the run use in the concatenated exp)
+    exp_info_dlist+=[dict({},run_use='data-postPETS', plate_id=pl,exp_folder_path='L:\processes\experiment\eche\%s.done' %ex) for pl,ex in plate_exp_tups]
+    
+    if 0:
+        filter_plate_sample_fileattrd=None
+    else:
+        filter_plate_sample_fileattrd={'p':r'L:\processes\analysis\eche\20190304.131739.done\ana__2__num_samples_averaged-I.A_ave.csv', \
+        'keys':'sample_no,runint,plate_id,SmpRunPlate_Association,num_samples_averaged,I.A_ave'.split(','), \
+        'num_header_lines':9
+        }
 
 #def combine_exps(exp_info_dlist,filter_plate_sample_fileattrd=None,include_csv_samples_bool=True,access=None,created_by=None,experiment_type=None,include_sample_0=True,rundone='.run')
-#filter_plate_sample_fileattrd=None
-filter_plate_sample_fileattrd={'p':r'L:\processes\analysis\eche\20190222.134030.done\ana__2__num_samples_averaged-I.A_ave.csv', \
-'keys':'sample_no,runint,plate_id,SmpRunPlate_Association,num_samples_averaged,I.A_ave'.split(','), \
-'num_header_lines':9
-}
+
+
 include_csv_samples_bool=True
 access=None
 created_by=None

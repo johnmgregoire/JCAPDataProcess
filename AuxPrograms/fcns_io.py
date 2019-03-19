@@ -730,7 +730,7 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
     p=experiment_path_folder
     fn=os.path.split(p)[1][:15]+ext_str #15 characters in YYYYMMDD.HHMMSS
 
-    if (os.path.isdir(p) or os.path.isdir(os.path.split(p)[0])) and os.path.isabs(p):#os.path.isdir(os.path.split(p)[0]) presumably is to catch .zip "folders" that aren't a dir but their parent will be
+    if (os.path.isdir(p) or (p.endswith('.zip') and os.path.isdir(os.path.split(p)[0]))) and os.path.isabs(p):#os.path.isdir(os.path.split(p)[0]) presumably is to catch .zip "folders" that aren't a dir but their parent will be
         p#don't need to do anything
     else:
         if ext_str=='.exp':
