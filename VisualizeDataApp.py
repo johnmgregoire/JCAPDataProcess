@@ -312,9 +312,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     if cels_set_ordered:
                         self.inkjetconcentrationadjustment=True#if asking and doing it then don't ask again this import
                         els=cels_set_ordered
+                    else:
+                        self.inkjetconcentrationadjustment=False#if asking and not doing it then don't ask again this import
             else:
-                els=ans
-
+                els=ans #if inkjetconcentrationadjustment denied then els is now the channel labels
+                
+            if len(set(els))<len(els):#non standard ink where a element label for a channel (1 channel could be a multielement label)  and if labels are duplicated that will break the dictionary math below so revert to dflt
+                els=['A', 'B', 'C', 'D']
+                
             if els is None:
                 print 'cannot find elements for ', str(rund['parameters']['plate_id'])
                 masterels=['A', 'B', 'C', 'D']
@@ -348,6 +353,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     idialog.exec_()
                 masterels=['A', 'B', 'C', 'D']
 
+        
         if masterels is None or masterels==['A', 'B', 'C', 'D']:
             self.ellabels=['A', 'B', 'C', 'D']
             self.platemap4keys_default=['A', 'B', 'C', 'D']
@@ -359,6 +365,13 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #            elif len(self.ellabels)<=4:
 #                self.platemap4keys_default=self.ellabels[:4]
             else:#if no ellabels are missing in platemap then they were all recalculated meaning that platemap signals are not good for composition plots so give the option to use multi-ink-calculated compositions
+                if len(masterels)<4:#can get here when multi element inks calculated to elemental compositions and there are fewer than 4 elements and don't want to mix with platemap channels so 0 pad other channels.
+                    masterels+=['X']*(4-len(masterels))
+                    for runk, rund in self.expfiledict.iteritems():
+                        if not runk.startswith('run__'):
+                            continue
+                        [d.update([('X', 0.)]) for d in rund['platemapdlist']]
+                
                 if ellabelsforquatplots=='ask':
                     if self.GUIMODE:
                         ans=userinputcaller(self, inputs=[('A', str, masterels[0]), ('B', str, masterels[1]), ('C', str, masterels[2]), ('D', str, masterels[3])], title='Enter element labels for quaternary plots or close to use platemap',  cancelallowed=True)
@@ -439,6 +452,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 #                    for oldlet, el in zip(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.ellabels):
 #                        d[el]=d[oldlet]
         self.ellabelsLineEdit.setText(','.join(self.ellabels))
+
     def openontheflyfolder(self, folderpath=None, platemappath=None, plateidstr=None):#assume on -the-fly will never involve a .zip
         if folderpath is None:
             folderpath=mygetdir(self, markstr='folder for on-the-fly analysis')
