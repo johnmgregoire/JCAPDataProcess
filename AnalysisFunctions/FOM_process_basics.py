@@ -8,9 +8,11 @@ from fcns_io import *
 from Analysis_Master import *
 
 
-
-from myternaryutility import TernaryPlot
-TernaryPlotInstance=TernaryPlot((1, 1, 1), outline=False)
+try:
+    from myternaryutility import TernaryPlot
+    TernaryPlotInstance=TernaryPlot((1, 1, 1), outline=False)
+except:
+    print 'myternaryutility not found - some analysis in FOM_Porcess_basics will be unavailable.'
 
 #    def stdgetapplicablefomfiles(anadict, params={}):
 #    
@@ -102,7 +104,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
         
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         self.getapplicablefomfiles(anadict)
-        self.processnewparams() 
+        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass) 
         '''
         the 'process_fom' types of analysis must call processnewparams during getapplicable filenames because usually the ana__k needs 
         to be updated in getapplicablefilenames before prcoessing new params and if there is an error therin the fieldlist will be set to [] so 

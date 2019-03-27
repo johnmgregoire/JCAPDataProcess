@@ -14,6 +14,19 @@ def createcsvfilstr(fomdlist, fomkeys, intfomkeys=[], strfomkeys=[], fmt='%.5e')
     return s
 
 
+def createcsvfilstr_bare(fomdlist, fomkeys, intfomkeys=[], strfomkeys=[], fmt='%.5e', return_file_desc=False):#for each sample, if fom not available inserts NaN. Use to be datadlist with fomd as a key but now assume list of fomd
+    if fomkeys is None:#doesn't add Nan to missing foms like  createcsvfilstr does
+        fomkeys=[k for k in fomdlist[0].keys() if not (k in intfomkeys or k in strfomkeys)]
+    lines=[','.join(['%d' %d[nk] for nk in intfomkeys]+['%s' %d[nk] for nk in strfomkeys]+[fmt %d[k] for k in fomkeys])\
+        for d in fomdlist\
+        ]
+    s='\n'.join(lines).replace('nan', 'NaN').replace('inf', 'NaN')
+    s='\n'.join([','.join(intfomkeys+strfomkeys+fomkeys), s])
+    if return_file_desc:
+        file_desc='csv_file;%s;1;%d' %(','.join(intfomkeys+strfomkeys+fomkeys), len(lines))
+        return file_desc, s
+    return s
+    
 class selectexportfom(QDialog):
     def __init__(self, parent, fomkeys, title='select FOMs to export. sample_no will be automatically included'):
         super(selectexportfom, self).__init__(parent)

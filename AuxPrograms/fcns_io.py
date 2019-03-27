@@ -551,8 +551,12 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         elif 'pets' in expfiledict['experiment_type']:
                             numhead_numdata_fcn=lambda lines: get_numhead_numdata_petsdtafiles(lines)
                             readlinesfcn=lambda f:f.readlines(1000)#only need the header so read
+                        else:
+                            print 'NO FILE READER AVAILABLE FOR FILE TYPE ', k3
+                            readlinesfcn=lambda f:None
                     else:
                         print 'NO FILE READER AVAILABLE FOR FILE TYPE ', k3
+                        readlinesfcn=lambda f:None
 
                 for fn, fileattrstr in typed.items():#here do not use iteritems since possible for entries to be deleted in the loop and cannot modify dictionary being iterated
                     try:
@@ -577,7 +581,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                     if savefolder is None and saverawdat:#save raw data into the dictionary. empty files allowed here but not below - not supported for all exp types
                         expfiledict[k][k2][k3][fn]=readfcn(os.path.splitext(fn), lines)
                     else:
-                        if k3 in ['image_files'] or k3.startswith('binary'):#list here the types of files that should not be converted to binary
+                        if k3 in ['image_files'] or k3.startswith('binary') or lines is None:#list here the types of files that should not be converted to binary
                             s=fileattrstr#no sample_no appended or any modifications made to file attr str  for image_files, etc.
                         else:
                             if saverawdat:
@@ -604,7 +608,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                                     s='%s;%d;%d;%s' %(first2attrs.strip(), filed['num_header_lines'], filed['num_data_rows'], samplestr.strip())
                             elif fileattrstr.count(';')==4:#full info already , e.g. due to import of line from .exp or a completed .rcp
                                 s=fileattrstr
-                            elif fileattrstr.count(';')==1:#probably read from .rcp and fileattrstr contains file_type and keys so take that and append headerlines and datarows
+                            elif fileattrstr.count(';')==1:#probably read from .rcp and fileattrstr contains file_type and keys so take that and append headerlines and datarows. TODO: this could be made to find the sample_no when attrs is file_type;sample_no to enable filtering by sample_no but the resulting exp is fine
                                 s='%s;%d;%d' %(fileattrstr.strip(), filed['num_header_lines'], filed['num_data_rows'])
                                 if trytoappendmissingsample:
                                     try:
@@ -666,7 +670,10 @@ def saveinterdata(p, interd, keys=None, savetxt=True, fmt='%.4e'):
     if keys is None:
         keys=sorted(interd.keys())
     if savetxt:
-        arr=numpy.array([[fmt %v for v in interd[kv]] for kv in keys]).T
+        if isinstance(fmt, str):
+            arr=numpy.array([[fmt %v for v in interd[kv]] for kv in keys]).T
+        else:
+            arr=numpy.array([[fmt[kv] %v for v in interd[kv]] for kv in keys]).T
         s='\t'.join(keys)+'\n'
         s+='\n'.join(['\t'.join(a) for a in arr])
         with open(p, mode='w') as f:
@@ -1478,20 +1485,21 @@ def get_numhead_numdata_echetxtfiles(lines):
     numdata=len(lines)-numhead
     return {'num_header_lines': numhead,'num_data_rows': numdata}
 
-def get_numhead_numdata_petsdtafiles(lines):
+def get_numhead_numdata_petsdtafiles(lines, searchstr='CURVE'):
     for count, l in enumerate(lines):
-        if l.startswith('CURVE\tTABLE\t'):
-            numdata=int(l.partition('CURVE\tTABLE\t')[2].strip())
+        if l.startswith(searchstr):
+            #numdata=int(l.partition(searchstr)[2].strip())
             break
     numhead=count+3
+    numdata=len(lines)-numhead-(1 if len(lines[-1].strip())==0 else 0)
     return {'num_header_lines': numhead,'num_data_rows': numdata}
 
-def read_dta_pstat_file(path, lines=None, addparams=False):
+def read_dta_pstat_file(path, lines=None, addparams=False, searchstr='CURVE'):
     if lines is None:
         f=open(path, mode='r')
         lines=f.readlines()
         f.close()
-    filed=get_numhead_numdata_petsdtafiles(lines)
+    filed=get_numhead_numdata_petsdtafiles(lines, searchstr=searchstr)
     d={}
     if addparams:
         for k, v in filed:
@@ -1509,6 +1517,11 @@ def read_dta_pstat_file(path, lines=None, addparams=False):
         d[k]=arr
     return  d
 
+def mock_eche_dict_from_dta_dict(dta_file_dict):
+    d={}
+    for k, kdta in [('t(s)', 'T'), ('Ewe(V)', 'Sig'), ('I(A)', 'Im')]:
+        d[k]=dta_file_dict[kdta]
+    return d
 def smp_dict_generaltxt(path, delim='\t', returnsmp=True, addparams=False, lines=None, returnonlyattrdict=False): # can have raw data files with UV-vis or ECHE styles or a fom file with column headings as first line, in which case smp=None
     if returnsmp:
         smp=None
@@ -1694,6 +1707,7 @@ readdatafiledict=dict([\
     ('uvis', lambda ext, lines:smp_dict_generaltxt('', lines=lines, addparams=True,returnsmp=False)), \
     ('pets', lambda ext, lines:read_dta_pstat_file('', lines=lines, addparams=True)), \
     ('xrfs', lambda ext, lines:None), \
+    ('ecms', lambda ext, lines:None), \
     ])
 
 def getanadefaultfolder(erroruifcn=None):

@@ -42,8 +42,34 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
     return num_files_considered, filedlist
 
 
+def getapplicablefilenames_byuse_tech_type(expfiledict, usek, techk, typek, runklist=None, requiredparams=[]):
+    requiredparams=[(rp+techk) if rp.endswith('__') else rp for rp in requiredparams]
+    requiredparams+=['plate_id']
+    if runklist is None:
+        runklist=expfiledict.keys()
+    runklist=[runk for runk in runklist \
+    if runk.startswith('run__') and \
+        (usek in expfiledict[runk]['run_use']) and \
+        ('files_technique__'+techk) in expfiledict[runk].keys() and \
+        typek in expfiledict[runk]['files_technique__'+techk].keys()]
+
+    num_files_considered=numpy.int32([len(expfiledict[runk]['files_technique__'+techk][typek]) for runk in runklist]).sum()
+    filedlist=[dict(\
+                        dict([(reqparam, expfiledict[runk]['parameters'][reqparam]) for reqparam in requiredparams]),\
+                                     expkeys=[runk, 'files_technique__'+techk, typek, fnk], run=runk, fn=fnk, techk=techk, sample_no=v['sample_no'] if 'sample_no' in v.keys() else 0, \
+                                     )\
+            for runk in runklist \
+            for fnk, v in expfiledict[runk]['files_technique__'+techk][typek].iteritems()\
+            if not (False in [reqparam in expfiledict[runk]['parameters'].keys() for reqparam in requiredparams])\
+            ]
+
+    filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
+    filedlist=[dict(d, run_foms=expfiledict[d['run']]['run_foms'] if 'run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
+    
+    return num_files_considered, filedlist
+    
 def stdcheckoutput(fomdlist, fomnames, filedlist):
-    nancount=[(not k in d) or numpy.isnan(d[k]) for d in fomdlist for k in fomnames].count(True)
+    nancount=[(not k in d) or (isinstance(d[k], float) and numpy.isnan(d[k])) for d in fomdlist for k in fomnames].count(True)
     nancount+=len(fomnames)*(len(filedlist)-len(fomdlist))#any missing fomd  (there is a filed but not fomd) counts as len(fomnames) wirth fo NaN
     return nancount, 1.*nancount/(len(fomdlist)*len(fomnames))
 
@@ -365,7 +391,7 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
     self.activeana['run_use_option']=self.usek
     self.activeana['plot_parameters']=self.analysisclass.plotparams
     plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
-    self.activeana['plate_ids']=plateidsliststr
+    self.activeana['plate_ids']="''" if len(plateidsliststr)==0 else plateidsliststr
     le, desc=self.paramsdict_le_dflt['description']
     s=str(le.text()).strip()
     if not (len(s)==0 or 'null' in s):

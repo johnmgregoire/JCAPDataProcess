@@ -46,11 +46,13 @@ from FOM_process_basics import *
 from FOM_process_merge import *
 from import_scipy_foruvis import *
 from eche_spectral import Analysis__SpectralPhoto
+from ecms import Analysis__ECMS_Time_Join, Analysis__ECMS_Calibration
 AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis__Efin(), Analysis__EchemMinMax(), Analysis__Etafin(), Analysis__Iave(), Analysis__Eave(), Analysis__Etaave(), Analysis__Iphoto(), Analysis__Ephoto(), Analysis__Etaphoto(), \
    Analysis__E_Ithresh(), Analysis__Eta_Ithresh(), \
    Analysis__Pphotomax(), Analysis__SpectralPhoto(), \
    Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS(), \
-   Analysis__XRFS_EDAX(), Analysis__PlatemapComps()\
+   Analysis__XRFS_EDAX(), Analysis__PlatemapComps(), \
+   Analysis__ECMS_Time_Join(), Analysis__ECMS_Calibration(), \
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
