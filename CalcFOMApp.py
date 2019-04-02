@@ -1521,17 +1521,17 @@ if __name__ == "__main__":
             super(MainMenu, self).__init__(None)
             self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', **kwargs)
             
-            self.calcui.importana(p=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana')
-            for tech in ['CV1', 'CV2','CV3']:
-                for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
-                    if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__ECMS_Fit_MS':
-                        self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
-                        self.calcui.getactiveanalysisclass()
-                        self.calcui.analysisclass.params['eche_techniques']=tech
-                        self.calcui.processeditedparams()
-                        break
-                
-                self.calcui.analyzedata()
+#            self.calcui.importana(p=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana')
+#            for tech in ['CV1', 'CV2','CV3']:
+#                for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
+#                    if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__ECMS_Fit_MS':
+#                        self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
+#                        self.calcui.getactiveanalysisclass()
+#                        self.calcui.analysisclass.params['eche_techniques']=tech
+#                        self.calcui.processeditedparams()
+#                        break
+#                
+#                self.calcui.analyzedata()
             
             #self.calcui.importexp(exppath=r'K:\processes\experiment\eche\20161021.105822.copied-20161021221009715PDT\20161021.105822.exp')
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
