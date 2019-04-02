@@ -111,10 +111,11 @@ class Analysis_Master_nointer():
         numnan, fracnan=stdcheckoutput(self.fomdlist, self.fomnames, self.filedlist)
         return fracnan<=critfracnan, \
         '%d FOMs, %.2f of attempted calculations, are NaN or missing' %(numnan, fracnan)
-    def initfiledicts(self, runfilekeys=[]):
+    def initfiledicts(self, runfilekeys=[], runklist=None):
         self.multirunfiledict=dict({}, fom_files={})
         if len(runfilekeys)>0:
-            runklist=sorted(list(set([filed['run'] for filed in self.filedlist])))
+            if runklist is None:
+                runklist=sorted(list(set([filed['run'] for filed in self.filedlist])))
             self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
         else:
             self.runfiledict={}

@@ -13,7 +13,6 @@ def createcsvfilstr(fomdlist, fomkeys, intfomkeys=[], strfomkeys=[], fmt='%.5e')
     s='\n'.join([','.join(['sample_no']+intfomkeys+strfomkeys+fomkeys), s])
     return s
 
-
 def createcsvfilstr_bare(fomdlist, fomkeys, intfomkeys=[], strfomkeys=[], fmt='%.5e', return_file_desc=False):#for each sample, if fom not available inserts NaN. Use to be datadlist with fomd as a key but now assume list of fomd
     if fomkeys is None:#doesn't add Nan to missing foms like  createcsvfilstr does
         fomkeys=[k for k in fomdlist[0].keys() if not (k in intfomkeys or k in strfomkeys)]
