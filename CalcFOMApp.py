@@ -20,6 +20,8 @@ import matplotlib.cm as cm
 #import pylab
 #import pickle
 
+#__file__=r'D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\CalcFOMApp.py'
+
 projectpath=os.path.split(os.path.abspath(__file__))[0]
 sys.path.append(os.path.join(projectpath,'QtForms'))
 sys.path.append(os.path.join(projectpath,'AuxPrograms'))
@@ -120,50 +122,55 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.techniquedictlist=[]
 
         self.plotwsetup()
-        button_fcn=[\
-        (self.BatchPushButton, self.runbatchprocess), \
-        (self.ImportExpPushButton, self.importexp), \
-        (self.ImportAnaPushButton, self.importana), \
-        (self.OpenInfoPushButton, self.importfrominfo), \
-        (self.EditAnalysisParamsPushButton, self.editanalysisparams), \
-        (self.AnalyzeDataPushButton, self.analyzedata), \
-        (self.ViewResultPushButton, self.viewresult), \
-        (self.SaveViewPushButton, self.saveview), \
-        (self.EditDfltVisPushButton, self.editvisparams), \
-        (self.SaveAnaPushButton, self.saveana), \
-        (self.ClearAnalysisPushButton, self.clearanalysis_pushbutton), \
-        (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
-        (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
-        (self.UpdatePlotPushButton, self.plotwithcaution), \
-        (self.OpenAuxExpAnaPushButton, self.openauxexpana), \
-        (self.RaiseErrorPushButton, self.raiseerror), \
-        (self.AttachMiscPushButton, self.attachfilestoana), \
-        ]
-        #(self.UndoExpPushButton, self.undoexpfile), \
-        for button, fcn in button_fcn:
-            QObject.connect(button, SIGNAL("pressed()"), fcn)
+        if guimode:
+            button_fcn=[\
+            (self.BatchPushButton, self.runbatchprocess), \
+            (self.ImportExpPushButton, self.importexp), \
+            (self.ImportAnaPushButton, self.importana), \
+            (self.OpenInfoPushButton, self.importfrominfo), \
+            (self.EditAnalysisParamsPushButton, self.editanalysisparams), \
+            (self.AnalyzeDataPushButton, self.analyzedata), \
+            (self.ViewResultPushButton, self.viewresult), \
+            (self.SaveViewPushButton, self.saveview), \
+            (self.EditDfltVisPushButton, self.editvisparams), \
+            (self.SaveAnaPushButton, self.saveana), \
+            (self.ClearAnalysisPushButton, self.clearanalysis_pushbutton), \
+            (self.ClearSingleAnalysisPushButton, self.clearsingleanalysis), \
+            (self.ImportAnalysisParamsPushButton, self.importanalysisparams), \
+            (self.UpdatePlotPushButton, self.plotwithcaution), \
+            (self.OpenAuxExpAnaPushButton, self.openauxexpana), \
+            (self.RaiseErrorPushButton, self.raiseerror), \
+            (self.AttachMiscPushButton, self.attachfilestoana), \
+            ]
+            #(self.UndoExpPushButton, self.undoexpfile), \
+            for button, fcn in button_fcn:
+                QObject.connect(button, SIGNAL("pressed()"), fcn)
+    
+            QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
+    
+    
+            QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
+            
+    
+            QObject.connect(self.ExpRunUseComboBox,SIGNAL("activated(QString)"),self.fillruncheckboxes)
+    
+            #QObject.connect(self.TechTypeButtonGroup,SIGNAL("buttonClicked(QAbstractButton)"),self.fillanalysistypes)
+            self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
+    
+            QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+            QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
+    
+    
+            QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
+            QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
+            QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
+            QObject.connect(self.usedaqtimeCheckBox,SIGNAL("stateChanged()"),self.plot_generatedata)
+    
+            QObject.connect(self.AnaTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
 
-        QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
-
-
-        QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
-        self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)
-
-        QObject.connect(self.ExpRunUseComboBox,SIGNAL("activated(QString)"),self.fillruncheckboxes)
-
-        #QObject.connect(self.TechTypeButtonGroup,SIGNAL("buttonClicked(QAbstractButton)"),self.fillanalysistypes)
-        self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
-
-        QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
-        QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
-
-
-        QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
-        QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
-        QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
-        QObject.connect(self.usedaqtimeCheckBox,SIGNAL("stateChanged()"),self.plot_generatedata)
-
-        QObject.connect(self.AnaTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
+        self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
+        
+        self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)    
 
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
@@ -185,7 +192,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         self.getplatemapCheckBox.setChecked(True)
 
-        self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
+        
         self.exppath='null'
         self.tempanafolder=''
         self.expzipclass=None
@@ -1546,7 +1553,7 @@ if __name__ == "__main__":
 #                
 #                self.calcui.analyzedata()
             
-#            self.calcui.importexp(exppath=r'L:\processes\experiment\temp\20190403.113948.done\20190403.113948.exp')
+#            self.calcui.importexp(exppath=r'L:\processes\experiment\temp\20190403.132935.done\20190403.132935.exp')
 #            cb=self.calcui.AnalysisNamesComboBox
 #            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__ECMS_Time_Join')]
 #            cb.setCurrentIndex(selind[0])

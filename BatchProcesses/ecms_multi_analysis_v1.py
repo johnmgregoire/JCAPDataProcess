@@ -28,7 +28,7 @@ anasaveextension='.run'
 
 #providing these paths will skip the generation of the exp/ana
 expname=None#r'L:\processes\experiment\eche\20171128.160211.done'#None#r'eche\20171115.163552.exp'#None#r'eche\20170727.133340.exp'#None#r'eche\20170727.173030'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
-ananame=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana'#None
+ananame=r'L:\processes\analysis\temp\20190403.133916.run\20190403.133916.ana'#r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana'#None
 
 
 expdestchoice='temp'
@@ -134,8 +134,9 @@ for lossfcn in ['L2_3x_first_half_3x_positive','L2_5x_positive','L2', 'L1', 'Log
 #    openwindow()
 #    break
     calcui.analyzedata()
+    
 anasavefolder=calcui.saveana(dontclearyet=True, anatype=anadestchoice, rundone=anasaveextension)
-
+openwindow()
 
 #if expname is None:
 #    if os.path.isdir(runfoldername):

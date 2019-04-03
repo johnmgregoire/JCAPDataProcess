@@ -17,7 +17,7 @@ from scipy import signal
 from scipy.optimize import minimize_scalar
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
-analysismasterclass=Analysis_Master_nointer()
+#analysismasterclass=Analysis_Master_nointer()
 
 
 loss_fcn_dict={\
@@ -89,7 +89,20 @@ def get_time_struct_dta(p):
 #class Analysis__ECMS_Time_Join(Analysis_Master_inter):
     
     
-    
+###these lines for seeding line by line execution of perform
+if 0:
+    calcFOMDialogclass=form.calcui
+    form=MainMenu(None, execute=False, modifyanainplace=False,guimode=False)
+    calcFOMDialogclass.importexp(exppath=r'L:\processes\experiment\temp\20190403.132935.done\20190403.132935.exp')
+    cb=calcFOMDialogclass.AnalysisNamesComboBox
+    selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__ECMS_Time_Join')]
+    cb.setCurrentIndex(selind[0])
+    calcFOMDialogclass.analysisclass.params['eche_techniques']='CV3,CV6,CV9'
+    calcFOMDialogclass.processeditedparams()
+    calcFOMDialogclass.getactiveanalysisclass()
+    destfolder, expdatfolder, writeinterdat, anak, zipclass, anauserfomd, expfiledict=calcFOMDialogclass.tempanafolder, calcFOMDialogclass.expfolder, True, 'ana__1', calcFOMDialogclass.expzipclass, {}, calcFOMDialogclass.expfiledict
+    self=calcFOMDialogclass.analysisclass
+
 
 class Analysis__ECMS_Time_Join(Analysis_Master_inter):
     def __init__(self):
@@ -133,7 +146,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                 
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.fomnames=[self.fomnames[0]]
-        self.fomnames+=['eche_technique','fn_eche']
+        self.fomnames+=['eche_technique','fn_eche']#not supposed to put the string foms here but usine writefombare so it's ok
         self.fomnames+=['fn_mass__%s' %mass for mass in self.masses]#here fns are per sample,plate,technique
         for filed in self.filedlist_ms:
             mass=filed['fn'].rpartition('__')[2].partition('.')[0]
@@ -145,7 +158,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
             filed['start_time']=time.mktime(filed['start_time'])
             filed['end_time']=filed['start_time']+filed['ms_time_ms'][-1]/1000.
             filed['epoch(s)']=filed['ms_time_ms']/1000.+filed['start_time']-self.params['mass_spec_lag_time_s']
-        
+        self.filedlist_ms=[fd for fd in self.filedlist_ms if 'epoch(s)' in fd.keys()]#remove the ones not matching masses
         self.fomdlist=[]
         for filed in self.filedlist:
             if numpy.isnan(filed['sample_no']):
@@ -164,6 +177,9 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                 datadict=readechemtxt(p, interpretheaderbool=True)
                 filed['end_time']=datadict['Epoch']-2082844800.# 2082844800 is the s between the LV and python epochs and the labview eposh is at file save so subtract the duration of the measurement to get start time
                 filed['start_time']=filed['end_time']-datadict['t(s)'][-1]
+                for k in datadict.keys():
+                    if not k in ['t(s)','Ewe(V)','I(A)']:
+                        del datadict[k]
                 
             datadict['t(s)']=np.float64(datadict['t(s)'])
             datadict['Ewe(Vrhe)']=datadict['Ewe(V)']-filed['reference_vrhe']
