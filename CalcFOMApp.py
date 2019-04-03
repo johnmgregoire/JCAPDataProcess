@@ -1532,8 +1532,28 @@ if __name__ == "__main__":
 #                        break
 #                
 #                self.calcui.analyzedata()
+
+#            self.calcui.importana(p=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana')
+#            for lossfcn in ['L2_5x_positive','L2', 'L1', 'LogCosh_1E9', 'L2_5x_first_half', 'L2_inv_prop_to_time']:
+#                for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
+#                    if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__ECMS_Fit_MS':
+#                        self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
+#                        self.calcui.getactiveanalysisclass()
+#                        self.calcui.analysisclass.params['eche_techniques']='CV3'
+#                        self.calcui.analysisclass.params['loss_fcn']=lossfcn
+#                        self.calcui.processeditedparams()
+#                        break
+#                
+#                self.calcui.analyzedata()
             
-            #self.calcui.importexp(exppath=r'K:\processes\experiment\eche\20161021.105822.copied-20161021221009715PDT\20161021.105822.exp')
+#            self.calcui.importexp(exppath=r'L:\processes\experiment\temp\20190403.113948.done\20190403.113948.exp')
+#            cb=self.calcui.AnalysisNamesComboBox
+#            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__ECMS_Time_Join')]
+#            cb.setCurrentIndex(selind[0])
+#            self.calcui.analysisclass.params['eche_techniques']='CV3,CV6,CV9'
+#            self.calcui.processeditedparams()
+#            self.calcui.getactiveanalysisclass()
+
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')

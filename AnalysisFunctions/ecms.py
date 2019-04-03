@@ -19,7 +19,18 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 analysismasterclass=Analysis_Master_nointer()
 
-    
+
+loss_fcn_dict={\
+'L2_5x_positive':lambda resid: np.where(resid>0.,5.*resid**2,resid**2),\
+'L2':lambda resid: resid**2,\
+'L1':lambda resid: np.abs(resid),\
+'LogCosh_1E9':lambda resid: np.log(np.cosh(resid*1.e9)),\
+'L2_5x_first_half':lambda resid: np.where(np.arange(len(resid))<(len(resid)//2),5.*resid**2,resid**2),\
+'L2_3x_first_half_3x_positive':lambda resid: np.where(np.arange(len(resid))<(len(resid)//2),3.*np.where(resid>0.,3.*resid**2,resid**2),np.where(resid>0.,5.*resid**2,resid**2)),\
+'L2_inv_prop_to_time':lambda resid: (np.arange(len(resid))+1.)[::-1]*resid**2,\
+}
+
+
 def read_ecms_simulation_data(ms_simulation_model,species_list):
     fold=tryprependpath(ECMSPROCESSFOLDERS, '', testfile=False, testdir=True)
     fold=os.path.join(fold,ms_simulation_model)
@@ -134,7 +145,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
             filed['start_time']=time.mktime(filed['start_time'])
             filed['end_time']=filed['start_time']+filed['ms_time_ms'][-1]/1000.
             filed['epoch(s)']=filed['ms_time_ms']/1000.+filed['start_time']-self.params['mass_spec_lag_time_s']
-            
+        
         self.fomdlist=[]
         for filed in self.filedlist:
             if numpy.isnan(filed['sample_no']):
@@ -291,9 +302,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
     def check_output(self):
         return True, 'nothing checked - only misc output'
 
-loss_fcn_dict={\
-'L2_5x_positive':lambda resid: np.where(resid>0.,5.*resid**2,resid**2),\
-}
+
 
 ##TEMP
 #anak='ana__3'
@@ -590,6 +599,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         fitsummaryd={}
                         fitsummaryd['model_params']=model_pars
                         fitsummaryd['Loss_contribution']=resid_fcn(Ip_1)
+                        fitsummaryd['Residual']=Ip_1*mod_out - ms_sig
                         fitsummaryd['Fit_MS(torr)']=Ip_1*mod_out
                         fitsummaryd['Adjusted_MS(torr)']=ms_sig
                         fitsummaryd['Ip(A)']=Ip_1*mod_ip
@@ -673,8 +683,9 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     p=os.path.join(destfolder, fnm)
                     with open(p,mode='wb') as f:
                         pickle.dump(fitsummarydlist,f)
+
                     self.multirunfiledict['misc_files'][fnm]='ecms_fitsummary_pck_file;'
-                
+
                 for s in ['Ip(A)','FE']:
                     rawlend['%s_Total' %s]=np.array([rawlend[k] for k in rawlend.keys() if k.startswith(s)]).sum(axis=0)
                 

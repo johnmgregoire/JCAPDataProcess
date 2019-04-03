@@ -1766,7 +1766,7 @@ def saveana_tempfolder(anafilestr, srcfolder, erroruifcn=None, skipana=True, ana
             for fn in os.listdir(srcfolder):
                 if fn.startswith('.') or '.db' in fn:
                     continue
-                if skipana and (fn.endswith('.ana') or fn.endswith('.pck')):
+                if skipana and (fn.endswith('.ana') or (fn.endswith('.pck') and fn[0].isdigit())):#and pck files generated in analysis shouldn't start with a number
                     continue
                 if movebool:
                     shutil.move(os.path.join(srcfolder, fn), os.path.join(savefolder, fn))
