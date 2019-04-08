@@ -29,6 +29,8 @@ anasaveextension='.run'
 #providing these paths will skip the generation of the exp/ana
 expname=None#r'L:\processes\experiment\eche\20171128.160211.done'#None#r'eche\20171115.163552.exp'#None#r'eche\20170727.133340.exp'#None#r'eche\20170727.173030'#None#r'eche\20170717.155030.run'#None#r'xrfs\20170518.122412'
 ananame=r'L:\processes\analysis\temp\20190403.133916.run\20190403.133916.ana'#r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana'#None
+eche_techniques='CV9'
+lossfcns=['L2_3x_first_half_3x_positive','L2_5x_positive','L2', 'L1', 'LogCosh_1E9', 'L2_5x_first_half', 'L2_inv_prop_to_time']
 
 
 expdestchoice='temp'
@@ -126,9 +128,9 @@ def plot_new_fom(visdataui, fom_name):
 
 
 calcui.importana(p=ananame)
-for lossfcn in ['L2_3x_first_half_3x_positive','L2_5x_positive','L2', 'L1', 'LogCosh_1E9', 'L2_5x_first_half', 'L2_inv_prop_to_time']:
+for lossfcn in lossfcns:
     select_procana_fcn(calcui, 'ECMS_Fit_MS')
-    calcui.analysisclass.params['eche_techniques']='CV3'
+    calcui.analysisclass.params['eche_techniques']=eche_techniques
     calcui.analysisclass.params['loss_fcn']=lossfcn
     calcui.processeditedparams()
 #    openwindow()
