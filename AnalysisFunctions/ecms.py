@@ -408,7 +408,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
 class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'ms_simulation_model':'1G_v1','species':'H2,CH4,C2H4','eche_techniques':'CV3','max_per_species_FE':1.1,'loss_fcn':'L2_5x_positive','select_ana':'ana__1','cal_ana':'ana__2','voltage_error_V':0.04,'num_voltage_errors_to_abort':10,'SGfilter_nptsoneside':64,'SGfilter_order':3,'ignore_FE_time_start_end_s':8.,'resistance_to_compensate_Ohm':60.,'max_current_valid_FE':-0.00003,'min_max_each_fit_param':'[0.1,1.6,],[-1.4,-0.4]'}
+        self.dfltparams={'ms_simulation_model':'1G_v2','species':'H2,CH4,C2H4','eche_techniques':'CV9','max_per_species_FE':1.1,'loss_fcn':'L2_5x_positive','select_ana':'ana__1','cal_ana':'ana__2','voltage_error_V':0.04,'num_voltage_errors_to_abort':10,'SGfilter_nptsoneside':64,'SGfilter_order':3,'ignore_FE_time_start_end_s':8.,'resistance_to_compensate_Ohm':60.,'max_current_valid_FE':-0.00003,'min_max_each_fit_param':'[0.1,1.6],[-1.4,-0.4]'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__ECMS_Fit_MS'
         self.requiredkeys=[]
