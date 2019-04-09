@@ -653,7 +653,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     fitsummarydlist=[]
                     l_fitloss=[]
                     interlend['rawselectinds']=rsinds
-                    interlend['Adjusted_MS(torr)']=ms_sig
+                    interlend['Adjusted_MS(torr)__%s' %sp]=ms_sig
                     
                     for model_pars_ind in allow_fit_par_inds:
                         model_pars=sim_lib_dict['model_params'][model_pars_ind]
@@ -687,7 +687,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         fitsummarydlist+=[fitsummaryd]
                     bestfitind=np.argmin(l_fitloss)
                     for k in ['Ip(A)','Soltn_conc(mM)','Adjusted_MS(torr)','Fit_MS(torr)','Loss_contribution']:
-                        interlend[k]=fitsummarydlist[bestfitind][k]
+                        interlend['%s__%s' %(k,sp)]=fitsummarydlist[bestfitind][k]
                     Ip_1_bestfit=fitsummarydlist[bestfitind]['Ip_1']
                     
                     

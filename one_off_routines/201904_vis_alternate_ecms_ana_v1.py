@@ -32,7 +32,7 @@ def get_colors_fom_cmap(fomarr, vmin, vmax, cmap):#if need over/under colors tho
 #plt.plot([0,1],[0,1])
 #plt.show()
 
-anap=r'L:\processes\analysis\temp\20190405.195937.run\20190405.195937.ana'#None
+anap=r'L:\processes\analysis\temp\20190407.164248.run\20190407.164248.ana'#None
 
 anad=readana(anap)
 
