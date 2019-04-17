@@ -408,7 +408,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
 class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
-        self.dfltparams={'ms_simulation_model':'1G_v2','species':'H2,CH4,C2H4','eche_techniques':'CV9','max_per_species_FE':1.1,'loss_fcn':'L2_3x_first_half_3x_positive','select_ana':'ana__1','cal_ana':'ana__2','voltage_error_V':0.04,'num_voltage_errors_to_abort':10,'SGfilter_nptsoneside':64,'SGfilter_order':3,'ignore_FE_time_start_end_s':8.,'resistance_to_compensate_Ohm':60.,'max_current_valid_FE':-0.00003,'min_max_each_fit_param':'[0.1,1.6],[-1.4,-0.4]'}
+        self.dfltparams={'ms_simulation_model':'1G_v2','species':'H2,CH4,C2H4','eche_techniques':'CV9','max_per_species_FE':1.1,'loss_fcn':'L2_3x_first_half_3x_positive','select_ana':'ana__1','cal_ana':'ana__2','voltage_error_V':0.01,'num_voltage_errors_to_abort':30,'remove_voltage_error_points':1, 'SGfilter_nptsoneside':64,'SGfilter_order':3,'ignore_FE_time_start_end_s':8.,'resistance_to_compensate_Ohm':60.,'max_current_valid_FE':-0.00003,'min_max_each_fit_param':'[0.1,1.6],[-1.4,-0.4]'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__ECMS_Fit_MS'
         self.requiredkeys=[]
@@ -602,9 +602,10 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
         
                 rawlend['segment_index']=segment_index_arr
                 rawlend['Ismooth(A)']=echem_i_smooth
+                rawlend['EweSimulated(Vrhe)']=sim_basis_v
                 rawlend['Ewe.Error(V)']=vdiff
                 rawlend['valid_FE_bool']=np.int32(echem_fe_test_inds)
-                rawlend['Ewe(compensatedVrhe)']=echem_v-echem_i_smooth*self.params['resistance_to_compensate_Ohm']                
+                rawlend['Ewe(compensatedVrhe)']=sim_basis_v-echem_i_smooth*self.params['resistance_to_compensate_Ohm']                
                 
                 for spcount,sp in enumerate(species):
                     fni = '%s__species__%s_%s_interlen.txt' % (anak, sp, fnlabel)
