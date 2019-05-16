@@ -28,8 +28,8 @@ else:
 
     EXPERIMENT_DROP_FOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments', r'K:\experiments']
 
-    XRFSPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments\xrfs\calibration_libraries', r'K:\experiments\xrfs\calibration_libraries', ]
-    
+    XRFSPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments\xrfs\user\calibration_libraries', r'K:\experiments\xrfs\user\calibration_libraries', ]
+
     ECMSPROCESSFOLDERS=[r'\\htejcap.caltech.edu\share\home\experiments\anec\SIMULATION_LIBRARIES', r'K:\experiments\anec\SIMULATION_LIBRARIES', ]
 
 
