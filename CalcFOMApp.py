@@ -55,6 +55,7 @@ AnalysisClasses=[Analysis__Imax(), Analysis__Imin(), Analysis__Ifin(), Analysis_
    Analysis__TR_UVVIS(), Analysis__BG(),Analysis__T_UVVIS(),Analysis__DR_UVVIS(), \
    Analysis__XRFS_EDAX(), Analysis__PlatemapComps(), \
    Analysis__ECMS_Time_Join(), Analysis__ECMS_Calibration(), \
+   Analysis__Iphotothresh(), \
     ]
 
 FOMProcessClasses=[Analysis__AveCompDuplicates(), Analysis__Process_XRFS_Stds(), \
@@ -145,32 +146,32 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             #(self.UndoExpPushButton, self.undoexpfile), \
             for button, fcn in button_fcn:
                 QObject.connect(button, SIGNAL("pressed()"), fcn)
-    
+
             QObject.connect(self.UserFOMLineEdit,SIGNAL("editingFinished()"),self.updateuserfomd)
-    
-    
+
+
             QObject.connect(self.RunSelectTreeWidget, SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.runselectionchanged)
-            
-    
+
+
             QObject.connect(self.ExpRunUseComboBox,SIGNAL("activated(QString)"),self.fillruncheckboxes)
-    
+
             #QObject.connect(self.TechTypeButtonGroup,SIGNAL("buttonClicked(QAbstractButton)"),self.fillanalysistypes)
             self.TechTypeButtonGroup.buttonClicked[QAbstractButton].connect(self.fillanalysistypes)
-    
+
             QObject.connect(self.AnalysisNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
             QObject.connect(self.FOMProcessNamesComboBox,SIGNAL("activated(QString)"),self.getactiveanalysisclass)
-    
-    
+
+
             QObject.connect(self.fomplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
             QObject.connect(self.CompPlotTypeComboBox,SIGNAL("activated(QString)"),self.plot_generatedata)
             QObject.connect(self.stdcsvplotchoiceComboBox,SIGNAL("activated(QString)"),self.plot_preparestandardplot)
             QObject.connect(self.usedaqtimeCheckBox,SIGNAL("stateChanged()"),self.plot_generatedata)
-    
+
             QObject.connect(self.AnaTreeWidget, SIGNAL('itemDoubleClicked(QTreeWidgetItem*, int)'), self.edittreeitem)
 
         self.AnaTreeWidgetFcns=treeclass_anadict(self.AnaTreeWidget)
-        
-        self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)    
+
+        self.runtreeclass=treeclass_anadict(self.RunSelectTreeWidget)
 
         self.paramsdict_le_dflt=dict([\
          ('access', [self.AccessLineEdit, 'hte']), \
@@ -192,7 +193,7 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
 
         self.getplatemapCheckBox.setChecked(True)
 
-        
+
         self.exppath='null'
         self.tempanafolder=''
         self.expzipclass=None
@@ -1527,7 +1528,7 @@ if __name__ == "__main__":
         def __init__(self, previousmm, execute=True, **kwargs):
             super(MainMenu, self).__init__(None)
             self.calcui=calcfomDialog(self, title='Calculate FOM from EXP', **kwargs)
-            
+
 #            self.calcui.importana(p=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana')
 #            for tech in ['CV1', 'CV2','CV3']:
 #                for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
@@ -1537,7 +1538,7 @@ if __name__ == "__main__":
 #                        self.calcui.analysisclass.params['eche_techniques']=tech
 #                        self.calcui.processeditedparams()
 #                        break
-#                
+#
 #                self.calcui.analyzedata()
 
 #            self.calcui.importana(p=r'L:\processes\analysis\temp\20190402.124053.run\20190402.124053.ana')
@@ -1550,9 +1551,9 @@ if __name__ == "__main__":
 #                        self.calcui.analysisclass.params['loss_fcn']=lossfcn
 #                        self.calcui.processeditedparams()
 #                        break
-#                
+#
 #                self.calcui.analyzedata()
-            
+
 #            self.calcui.importexp(exppath=r'L:\processes\experiment\temp\20190403.132935.done\20190403.132935.exp')
 #            cb=self.calcui.AnalysisNamesComboBox
 #            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__ECMS_Time_Join')]

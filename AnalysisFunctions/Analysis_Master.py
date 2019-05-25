@@ -38,7 +38,7 @@ def stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=None, re
 
     filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
     filedlist=[dict(d, run_foms=expfiledict[d['run']]['run_foms'] if 'run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
-    
+
     return num_files_considered, filedlist
 
 
@@ -65,9 +65,9 @@ def getapplicablefilenames_byuse_tech_type(expfiledict, usek, techk, typek, runk
 
     filedlist=[dict(d, user_run_foms=expfiledict[d['run']]['user_run_foms'] if 'user_run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
     filedlist=[dict(d, run_foms=expfiledict[d['run']]['run_foms'] if 'run_foms' in expfiledict[d['run']].keys() else {}) for d in filedlist]#has to be here because only place with access to expfiledict
-    
+
     return num_files_considered, filedlist
-    
+
 def stdcheckoutput(fomdlist, fomnames, filedlist):
     nancount=[(not k in d) or (isinstance(d[k], float) and numpy.isnan(d[k])) for d in fomdlist for k in fomnames].count(True)
     nancount+=len(fomnames)*(len(filedlist)-len(fomdlist))#any missing fomd  (there is a filed but not fomd) counts as len(fomnames) wirth fo NaN
@@ -85,10 +85,10 @@ class Analysis_Master_nointer():
         self.fomnames=[]
         self.plotparams={}
         self.csvheaderdict=dict({}, csv_version='1')
-    
+
     def getgeneraltype(self):#make this fucntion so it is inhereted
         return 'standard'
-    
+
     def prepareanafilestuples__runk_typek_multirunbool(self):
         runk_typek_b=sorted([('multi_run', typek, True) for typek in self.multirunfiledict.keys() if len(self.multirunfiledict[typek])>0])
         runk_typek_b+=sorted([(runk, typek, False) for runk, rund in self.runfiledict.iteritems() for typek in rund.keys() if len(rund[typek])>0])
@@ -100,7 +100,7 @@ class Analysis_Master_nointer():
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=self.requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
-    
+
     def check_input(self, critfracapplicable=0.9):
         fracapplicable=1.*len(self.filedlist)/self.num_files_considered
         return fracapplicable>critfracapplicable, \
@@ -119,7 +119,7 @@ class Analysis_Master_nointer():
             self.runfiledict=dict([(runk, dict([(fk, {}) for fk in runfilekeys])) for runk in runklist])
         else:
             self.runfiledict={}
-    
+
     def prepare_filedlist(self, filedlist, expfiledict, expdatfolder=None, expfolderzipclass=None, fnk='fn'):
         #for every dict in filedlist, updates by reference to add keys readfcn and readfcn_args that can be called to get the data arr for that file, for zip or folder, .dat or ascii
         #some similarities to buildrunpath_selectfile but since trying to batch prepare things can't use this file-by-file approach
@@ -135,7 +135,7 @@ class Analysis_Master_nointer():
             expfolderzipclass=gen_zipclass(expdatfolder)
             if bool(expfolderzipclass):
                 closeziplist+=[expfolderzipclass]#close this at the end of perform only if it was created here
-                
+
         if runk_or_none is None:
             #first an exp folde r(not zip) and then an exp zip are handled for raw .dat file. if the .dat file exists then d.update returns None and otherwise the runk is put fofr further processing below
             if not bool(expfolderzipclass):
@@ -147,7 +147,7 @@ class Analysis_Master_nointer():
                 runk_or_none=[\
                   d.update([('readfcn', readbinary_selinds), ('readfcn_args', (os.path.join(expdatfolder, d[fnk]+'.dat'), d['nkeys'])), ('readfcn_kwargs', {'keyinds':d['keyinds'], 'zipclass':expfolderzipclass})])\
                       if expfolderzipclass.fn_in_archive(d[fnk]+'.dat') else d['run'] for d in filedlist]
-        
+
         runstoopen=list(set([runk for runk in runk_or_none if not runk is None]))
         for runk in runstoopen:
             runp=expfiledict[runk]['run_path']
@@ -161,7 +161,7 @@ class Analysis_Master_nointer():
             [\
               d.update([('readfcn', readtxt_selectcolumns), ('readfcn_args', (pathjoinfcn(d[fnk]), )), ('readfcn_kwargs', {'num_header_lines':d['num_header_lines'], 'selcolinds':d['keyinds'], 'zipclass':runzipclass, 'delim':None})])\
                 for rk, d in zip(runk_or_none, filedlist) if rk==runk]
-        
+
         return closeziplist
     def readdata(self, p, numkeys, keyinds, num_header_lines=0, zipclass=None):
         if not (os.path.isdir(os.path.split(p)[0]) or os.path.isdir(os.path.split(os.path.split(p)[0])[0])):
@@ -175,35 +175,35 @@ class Analysis_Master_nointer():
 #        pt=<buildrunpath>(p) could try to build the run path but assume that if expdatfolder exists then the appropriate .dat is there
         dataarr=readtxt_selectcolumns(p, selcolinds=keyinds, delim=None, num_header_lines=num_header_lines, zipclass=zipclass)#this could read ascii version in .ana for anlaysis that builds on analysis (e.g. CV_photo), or hypothetically in .exp but nothing as of 201509 that write ascii to .exp - this may be needed for on-the-fly
         return dataarr
-    
+
     def genuserfomdlist(self, anauserfomd, appendtofomdlist=True):
-        
-        #user_run_foms and run_foms shoudl not have any overlapping keys, if they are present their items will be appended and filtered for overlap with fom names and anauserfoms 
+
+        #user_run_foms and run_foms shoudl not have any overlapping keys, if they are present their items will be appended and filtered for overlap with fom names and anauserfoms
         userfomdlist=[dict(\
         [(k, v) for k, v in \
             ((d['user_run_foms'].items() if 'user_run_foms' in d.keys() else []) \
             +(d['run_foms'].items() if 'run_foms' in d.keys() else [])) \
                             if not (k in self.fomnames or k in anauserfomd.keys())]\
         ) for d in self.filedlist]
-        
+
         userfomdlist=[dict([(k, v) for k, v in d['run_foms'].iteritems() if not (k in self.fomnames or k in anauserfomd.keys())]) if 'run_foms' in d.keys() else {} for d in self.filedlist]
         #if anything is str, then all will be str
         strkeys=set([k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)])
         floatkeys=list(set([k for d in userfomdlist for k in d.keys()]).difference(strkeys))
         strkeys=list(strkeys)
-        
+
         #fill i missing values withappropriate defaults. would also filter any unnecesary keys but there aren't and it wouldn't be necessary anyway
         userfomdlist=[dict([(k, str(d[k]) if k in d.keys() else '') for k in strkeys]+[(k, float(d[k]) if k in d.keys() else numpy.nan) for k in floatkeys]) for d in userfomdlist]
 
         if len(userfomdlist)<len(self.fomdlist):#for typicaly analysis filedlit and fomdlit are same length but for process fom filedlist is only the fom files and fomdlist is arbitrary length - in this case shouldn't have anr run-based FOMs anyway so this is just a formality
             userfomdlist=[userfomdlist[0]]*len(self.fomdlist)
-        
+
         anauserfomd=dict([(k, v) for k, v in anauserfomd.iteritems() if not k in self.fomnames])
         strkeys+=[k for k, v in anauserfomd.iteritems() if isinstance(v, str)]
         floatkeys+=[k for k, v in anauserfomd.iteritems() if not isinstance(v, str)]
-        
+
         userfomdlist=[dict(d, **anauserfomd) for d in userfomdlist]
-        
+
         if appendtofomdlist:
             self.fomdlist=[dict(d, **userd) for d, userd in zip(self.fomdlist, userfomdlist)]#adds user foms to fomdlist dicts but the corresponding keys are NOT in self.fomnames
         return sorted(strkeys), sorted(floatkeys), userfomdlist
@@ -235,33 +235,33 @@ class Analysis_Master_nointer():
         if createdummyfomdlist:
             self.fomdlist=[dict([(k, numpy.nan) for k in self.fomnames], sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2])) for filed in self.filedlist]
         strkeys, floatkeys, userfomdlist=self.genuserfomdlist(anauserfomd)
-        
+
         if fn is None:
             fn='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
         self.multirunfiledict['fom_files'][fn]=\
           self.writefom_bare(destfolder, fn, strkeys=strkeys+strkeys_fomdlist, floatkeys=floatkeys+self.fomnames[num_intfoms_at_start_of_fomdlist:], intfomkeys=['runint','plate_id']+self.fomnames[:num_intfoms_at_start_of_fomdlist])
-        
+
     def writefom_bare(self, destfolder, fn, strkeys=[], floatkeys=None, intfomkeys=['runint','plate_id']):
         if floatkeys is None:
             floatkeys=self.fomnames
         self.csvfilstr=createcsvfilstr(self.fomdlist, floatkeys, intfomkeys=intfomkeys, strfomkeys=strkeys)#, fn=fnf)self.fomnames
         if destfolder is None:
             return
-        
+
         allfomnames=['sample_no']+intfomkeys+strkeys+floatkeys#this is the order in createcsvfilstr and doesn't allow int userfoms
-        
+
         p=os.path.join(destfolder,fn)
         totnumheadlines=writecsv_smpfomd(p, self.csvfilstr, headerdict=self.csvheaderdict)
         self.primarycsvpath=p#every writefom goes through here to set the primarycsvpath for the analysis class
         return '%s;%s;%d;%d' %('csv_fom_file', ','.join(allfomnames), totnumheadlines, len(self.fomdlist))
-        
+
 class Analysis_Master_inter(Analysis_Master_nointer):
     def make_inter_fn_start(self, anak, runint=None):
         if runint is None:
             return anak
         else:
             return '%s__run__%d' %(anak,runint)
-        
+
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
@@ -325,7 +325,7 @@ class calcfom_mock_class():
         self.paramsdict_le_dflt={}
         self.paramsdict_le_dflt['description']='custom analysis'
 
-    
+
 def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argument is called self sothsi function appears the same as it would as part of the calcfomdialogclass
     #minimal requirements of self: expfolder,anadict,tempanafolder,userfomd,expfiledict,expzipclass,guimode,paramsdict_le_dflt['description']
     if self.analysisclass is None:
@@ -341,7 +341,7 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
                 return checkmsg
 
     expdatfolder=self.expfolder
-    
+
     anak=gethighestanak(self.anadict, getnextone=True)
     #try:
     if 1:
@@ -369,12 +369,12 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
             if killana:
                 removefiles(self.tempanafolder, [k for d in \
                         ([self.analysisclass.multirunfiledict]+self.analysisclass.runfiledict.values()) for typed in d.values() for k in typed.keys()])
-            
+
     if killana:
         return checkmsg#anadict not been modified yet
-    
+
     self.anadict[anak]={}
-    
+
     self.activeana=self.anadict[anak]
     if not checkbool:
         self.activeana['check_output_message']=checkmsg
@@ -386,7 +386,7 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
             self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.multirunfiledict[typek])
         else:
             self.activeana[frunk][typek]=copy.deepcopy(self.analysisclass.runfiledict[runk][typek])
-            
+
     self.activeana['name']=self.analysisclass.analysis_name
     self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
     self.activeana['run_use_option']=self.usek
@@ -410,7 +410,7 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
                 self.activeana['parameters'][k][v2]=str(v2)
         else:
             self.activeana['parameters'][k]=str(v)
-    
+
     #the A,B,C,D order is editable as a analysisclass paramete and if it is not the nontrivial case, bump it up to an ana__ key for ease in finding in visualization
     if 'parameters' in self.activeana.keys() and 'platemap_comp4plot_keylist' in self.activeana['parameters'].keys() and self.activeana['parameters']['platemap_comp4plot_keylist']!='A,B,C,D':
         self.activeana['platemap_comp4plot_keylist']=self.activeana['parameters']['platemap_comp4plot_keylist']

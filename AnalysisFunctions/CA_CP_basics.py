@@ -111,81 +111,158 @@ class Analysis__Etafin(Analysis_Master_inter):
 
 class Analysis__EchemMinMax(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
-        self.dfltparams={'measurement_area.mm2': 'rcp', 'override_Vrhe.ref': 'rcp'}
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__EchemMinMax'
-        self.requiredkeys=['t(s)', 'Ewe(V)', 'I(A)']
-        self.optionalkeys=[]
-        self.requiredparams=['reference_vrhe']
-        self.fomnames=['Emin.Vrhe', 'Emax.Vrhe', 'Jmin.mAcm2', 'Jmax.mAcm2']
-        self.plotparams=dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis']='t(s)'
-        self.plotparams['plot__1']['series__1']='Ewe(Vrhe)'
-        self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
-        self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name=self.fomnames[0], colormap='jet_r', colormap_over_color='(0.,0.,0.)', colormap_under_color='(0.5,0.,0.)')
+        self.analysis_fcn_version = "1.1"
+        self.dfltparams = {"measurement_area.mm2": "rcp", "override_Vrhe.ref": "rcp"}
+        self.params = copy.copy(self.dfltparams)
+        self.analysis_name = "Analysis__EchemMinMax"
+        self.requiredkeys = ["t(s)", "Ewe(V)", "I(A)"]
+        self.optionalkeys = []
+        self.requiredparams = ["reference_vrhe"]
+        self.fomnames = ["Emin.Vrhe", "Emax.Vrhe", "Jmin.mAcm2", "Jmax.mAcm2"]
+        self.plotparams = dict({}, plot__1={})
+        self.plotparams["plot__1"]["x_axis"] = "t(s)"
+        self.plotparams["plot__1"]["series__1"] = "J(mAcm2)"
+        self.csvheaderdict = dict({}, csv_version="1", plot_parameters={})
+        self.csvheaderdict["plot_parameters"]["plot__1"] = dict(
+            {},
+            fom_name="Jmin.mAcm2",
+            colormap="viridis_r",
+            colormap_over_color="",
+            colormap_under_color="",
+        )
+
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
-        if self.params['override_Vrhe.ref']=='rcp':
-            if 'reference_vrhe' not in filed.keys():
-                print('reference_vrhe key not found in run rcp. specify override_Vrhe.ref parameter')
-                vrhe=dataarr[1]-numpy.nan
+        if self.params["override_Vrhe.ref"] == "rcp":
+            if "reference_vrhe" not in filed.keys():
+                print(
+                    "reference_vrhe key not found in run rcp. specify override_Vrhe.ref parameter"
+                )
+                vrhe = dataarr[1] - numpy.nan
             else:
-                vrhe=dataarr[1]-filed['reference_vrhe']
+                vrhe = dataarr[1] - filed["reference_vrhe"]
         else:
-            vrhe=dataarr[1]-numpy.float(self.params['override_Vrhe.ref'])
-        emin=numpy.min(vrhe)
-        emax=numpy.max(vrhe)
-        if self.params['measurement_area.mm2']=='rcp':
-            if 'measurement_area' not in filed.keys():
-                print('measurement_area key not found in run rcp. specify measurement_area.mm2 parameter')
+            vrhe = dataarr[1] - numpy.float(self.params["override_Vrhe.ref"])
+        emin = numpy.min(vrhe)
+        emax = numpy.max(vrhe)
+        if self.params["measurement_area.mm2"] == "rcp":
+            if "measurement_area" not in filed.keys():
+                print(
+                    "measurement_area key not found in run rcp. specify measurement_area.mm2 parameter"
+                )
                 mm_area = 0
             else:
-                mm_area = numpy.float(filed['measurement_area'])
+                mm_area = numpy.float(filed["measurement_area"])
         else:
-            mm_area = numpy.float(self.params['measurement_area.mm2'])
-        jscale = numpy.nan if mm_area==0 else 1E5/mm_area
-        jmAcm2=dataarr[2]*jscale
-        jmin=numpy.min(jmAcm2)
-        jmax=numpy.max(jmAcm2)
-        ftl=[(self.fomnames[0], emin), (self.fomnames[1], emax), (self.fomnames[2], jmin), (self.fomnames[3], jmax)]
-        rld=dict([('t(s)', dataarr[0]), ('Ewe(Vrhe)', vrhe), ('J(mAcm2)', jmAcm2)])
+            mm_area = numpy.float(self.params["measurement_area.mm2"])
+        jscale = numpy.nan if mm_area == 0 else 1e5 / mm_area
+        jmAcm2 = dataarr[2] * jscale
+        jmin = numpy.min(jmAcm2)
+        jmax = numpy.max(jmAcm2)
+        ftl = [
+            (self.fomnames[0], emin),
+            (self.fomnames[1], emax),
+            (self.fomnames[2], jmin),
+            (self.fomnames[3], jmax),
+        ]
+        rld = dict([("t(s)", dataarr[0]), ("Ewe(Vrhe)", vrhe), ("J(mAcm2)", jmAcm2)])
         return ftl, rld, {}
-    def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
-        self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
-        closeziplist=self.prepare_filedlist(self.filedlist, expfiledict, expdatfolder=expdatfolder, expfolderzipclass=zipclass, fnk='fn')
-        self.fomdlist=[]
+
+    def perform(
+        self,
+        destfolder,
+        expdatfolder=None,
+        writeinterdat=True,
+        anak="",
+        zipclass=None,
+        anauserfomd={},
+        expfiledict=None,
+    ):
+        self.initfiledicts(runfilekeys=["inter_rawlen_files", "inter_files"])
+        closeziplist = self.prepare_filedlist(
+            self.filedlist,
+            expfiledict,
+            expdatfolder=expdatfolder,
+            expfolderzipclass=zipclass,
+            fnk="fn",
+        )
+        self.fomdlist = []
         for filed in self.filedlist:
-            if numpy.isnan(filed['sample_no']):
+            if numpy.isnan(filed["sample_no"]):
                 if self.debugmode:
                     raiseTEMP
                 continue
-            fn=filed['fn']
+            fn = filed["fn"]
             try:
-                dataarr=filed['readfcn'](*filed['readfcn_args'], **filed['readfcn_kwargs'])
-                fomtuplist, rawlend, interlend=self.fomtuplist_rawlend_interlend(dataarr, filed)
+                dataarr = filed["readfcn"](
+                    *filed["readfcn_args"], **filed["readfcn_kwargs"]
+                )
+                fomtuplist, rawlend, interlend = self.fomtuplist_rawlend_interlend(
+                    dataarr, filed
+                )
             except:
                 if self.debugmode:
                     raiseTEMP
-                fomtuplist, rawlend, interlend=[(k, numpy.nan) for k in self.fomnames], {}, {}#if error have the sample written below so fomdlist stays commensurate with filedlist, but fill everythign with NaN and no interdata
+                fomtuplist, rawlend, interlend = (
+                    [(k, numpy.nan) for k in self.fomnames],
+                    {},
+                    {},
+                )  # if error have the sample written below so fomdlist stays commensurate with filedlist, but fill everythign with NaN and no interdata
                 pass
-            if not numpy.isnan(filed['sample_no']):#do not save the fom but can save inter data
-                self.fomdlist+=[dict(fomtuplist, sample_no=filed['sample_no'], plate_id=filed['plate_id'], run=filed['run'], runint=int(filed['run'].partition('run__')[2]))]
+            if not numpy.isnan(
+                filed["sample_no"]
+            ):  # do not save the fom but can save inter data
+                self.fomdlist += [
+                    dict(
+                        fomtuplist,
+                        sample_no=filed["sample_no"],
+                        plate_id=filed["plate_id"],
+                        run=filed["run"],
+                        runint=int(filed["run"].partition("run__")[2]),
+                    )
+                ]
             if destfolder is None:
                 continue
-            runint=int(filed['run'].partition('run__')[2])
-            if len(rawlend.keys())>0:
-                fnr='%s__%s_rawlen.txt' %(self.make_inter_fn_start(anak,runint),os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fnr)
-                kl=saveinterdata(p, rawlend, keys=['t(s)', 'Ewe(Vrhe)', 'J(mAcm2)'], savetxt=True)
-                self.runfiledict[filed['run']]['inter_rawlen_files'][fnr]='%s;%s;%d;%d;%d' %('eche_inter_rawlen_file', ','.join(kl), 1, len(rawlend[kl[0]]), filed['sample_no'])
-            if 'rawselectinds' in interlend.keys():
-                fni='%s__%s_interlen.txt' %(self.make_inter_fn_start(anak,runint),os.path.splitext(fn)[0])
-                p=os.path.join(destfolder,fni)
-                kl=saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed['run']]['inter_files'][fni]='%s;%s;%d;%d;%d' %('eche_inter_interlen_file', ','.join(kl), 1, len(interlend[kl[0]]), filed['sample_no'])
+            runint = int(filed["run"].partition("run__")[2])
+            if len(rawlend.keys()) > 0:
+                fnr = "%s__%s_rawlen.txt" % (
+                    self.make_inter_fn_start(anak, runint),
+                    os.path.splitext(fn)[0],
+                )
+                p = os.path.join(destfolder, fnr)
+                kl = saveinterdata(
+                    p, rawlend, keys=["t(s)", "Ewe(Vrhe)", "J(mAcm2)"], savetxt=True
+                )
+                self.runfiledict[filed["run"]]["inter_rawlen_files"][fnr] = (
+                    "%s;%s;%d;%d;%d"
+                    % (
+                        "eche_inter_rawlen_file",
+                        ",".join(kl),
+                        1,
+                        len(rawlend[kl[0]]),
+                        filed["sample_no"],
+                    )
+                )
+            if "rawselectinds" in interlend.keys():
+                fni = "%s__%s_interlen.txt" % (
+                    self.make_inter_fn_start(anak, runint),
+                    os.path.splitext(fn)[0],
+                )
+                p = os.path.join(destfolder, fni)
+                kl = saveinterdata(p, interlend, savetxt=True)
+                self.runfiledict[filed["run"]]["inter_files"][fni] = (
+                    "%s;%s;%d;%d;%d"
+                    % (
+                        "eche_inter_interlen_file",
+                        ",".join(kl),
+                        1,
+                        len(interlend[kl[0]]),
+                        filed["sample_no"],
+                    )
+                )
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
             zc.close()
+
 
 class Analysis__Iave(Analysis_Master_nointer):
     def __init__(self):
@@ -389,7 +466,7 @@ class Analysis__Etaphoto(Analysis__Iphoto):
 
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
-        fomtuplist, rawlend, interlend=self.photofcn(d)
+        fomtuplist, rawlend, interlend=self.photofcn(d, filed)
         #names are from fomlist so correct, just shift values
         fomtuplist=[(k, referenceshiftfcn(v, filed['reference_e0'], filed['redox_couple_type'])) for k, v in fomtuplist]
 
@@ -406,7 +483,149 @@ class Analysis__Etaphoto(Analysis__Iphoto):
         return fomtuplist, rawlend, interlend
 
 
+class Analysis__Iphotothresh(Analysis__Iphoto):
+    def __init__(self):
+        self.analysis_fcn_version = "1"
+        self.dfltparams = dict(
+            [
+                ("frac_illum_segment_start", 0.4),
+                ("frac_illum_segment_end", 0.95),
+                ("frac_dark_segment_start", 0.4),
+                ("frac_dark_segment_end", 0.95),
+                ("illum_key", "Toggle"),
+                ("illum_time_shift_s", 0.0),
+                ("illum_threshold", 0.5),
+                ("illum_invert", 0),
+                ("num_illum_cycles", 1),
+                ("from_end", True),
+                ("nearest_Erhe.V", ""),
+                ("nearest_t.s", ""),
+            ]
+        )
+        self.params = copy.copy(self.dfltparams)
+        self.analysis_name = "Analysis__Iphotothresh"
+        self.requiredkeys = [
+            "I(A)",
+            "Ewe(V)",
+            "t(s)",
+            "Toggle",
+        ]  # 0th is array whose photoresponse is being calculate, -1th is the Illum signal, and the rest get processed along the way
+        self.optionalkeys = []
+        self.requiredparams = ["reference_vrhe", "redox_couple_type"]
+        self.fomnames = [
+            "I.A_photothresh",
+            "Ewe.V_illnearest",
+            "t.s_illnearest",
+        ]
+        self.plotparams = dict({}, plot__1={})
+        self.plotparams["plot__1"]["x_axis"] = "t(s)"
+        self.plotparams["plot__1"]["series__1"] = "I(A)"
+        self.plotparams["plot__1"]["series__2"] = "IllumBool"
+        self.csvheaderdict = dict({}, csv_version="1", plot_parameters={})
+        self.csvheaderdict["plot_parameters"]["plot__1"] = dict(
+            {},
+            fom_name=self.fomnames[0],
+            colormap="viridis",
+            colormap_over_color="",
+            colormap_under_color="",
+        )
 
+    def fomtuplist_rawlend_interlend(self, dataarr, filed):
+        d = dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
+        # ugly hack for getting I.A_photo into initial fomtuplist
+        self.fomnames = ["I.A_photo", "I.A_photo_ill", "I.A_photo_dark"] + self.fomnames
+        fomtuplist, rawlend, interlend = self.photofcn(d, filed)
+        self.fomnames = self.fomnames[3:]
+
+        ts = np.array(interlend["t(s)_ill"])
+        ewe = np.array(interlend["Ewe(V)_ill"])
+        iph = np.array(interlend["I(A)_illdiff"])
+        nonnaninds = np.union1d(np.where(1-np.isnan(ewe))[0], np.where(1-np.isnan(iph))[0])
+        ts = ts[nonnaninds]
+        ewe = ewe[nonnaninds]
+        iph = iph[nonnaninds]
+        ncycs = np.int(self.params["num_illum_cycles"])
+        fend = self.params["from_end"]
+
+        if (  # combined loss find nearest
+            self.params["nearest_Erhe.V"] is not ""
+            and self.params["nearest_t.s"] is not ""
+        ):
+            # print "combo threshold"
+            ewe_range = np.max(ewe) - np.min(ewe)
+            ewe_thresh = np.float(self.params["nearest_Erhe.V"]) + filed["reference_vrhe"]
+            ts_thresh = np.float(self.params["nearest_t.s"])
+
+            mininds = np.argsort(
+                (np.abs(ts - ts_thresh)/np.max(ts)) + (np.abs(ewe - ewe_thresh)/ewe_range)
+            )
+            ewe_mindiff = ewe[mininds[0]]
+            ts_mindiff = ts[mininds[0]]
+            ithresh = iph[mininds[0]]
+            fomtuplist = [
+                ("I.A_photothresh", ithresh),
+                ("Ewe.V_illnearest", ewe_mindiff),
+                ("t.s_illnearest", ts_mindiff),
+            ]
+        elif (  # look for nearest Ewe.V, use from_end boolean
+            self.params["nearest_Erhe.V"] is not ""
+            and self.params["nearest_t.s"] is ""
+        ):
+            # print "closest Erhe.V"
+            ewe_thresh = np.float(self.params["nearest_Erhe.V"]) + filed["reference_vrhe"]
+            if fend:
+                ts = ts[::-1]
+                ewe = ewe[::-1]
+                iph = iph[::-1]
+
+            counter = 1
+            while counter < len(ewe) + 1:
+                if any(
+                    [
+                        ewe[counter] > ewe_thresh and ewe[counter - 1] < ewe_thresh,
+                        ewe[counter] < ewe_thresh and ewe[counter - 1] > ewe_thresh,
+                    ]
+                ):
+                    break
+                else:
+                    counter += 1
+            indrange = np.arange(
+                counter - 1 - np.floor(ncycs / 2), counter + 1 + np.floor(ncycs / 2), 1, dtype=np.int16
+            )
+            mininds = np.argsort(ewe[indrange])
+
+            ewe_mindiff = ewe[indrange][mininds[0]]
+            ts_mindiff = ts[indrange[mininds[0]]]
+            ithresh = np.mean(iph[indrange][mininds[0:ncycs]])
+            fomtuplist = [
+                ("I.A_photothresh", ithresh),
+                ("Ewe.V_illnearest", ewe_mindiff),
+                ("t.s_illnearest", ts_mindiff),
+            ]
+        elif (  # look for nearest t.s, ignore Ewe.V
+            self.params["nearest_Erhe.V"] is ""
+            and self.params["nearest_t.s"] is not ""
+        ):
+            # print "closest t.s"
+            ts_thresh = np.float(self.params["nearest_t.s"])
+            mininds = np.argsort((ts - ts_thresh) ** 2)
+            ts_mindiff = ts[mininds[0]]
+            ewe_mindiff = ewe[mininds[0]]
+            ithresh = np.mean(iph[mininds[0:ncycs]])
+            fomtuplist = [
+                ("I.A_photothresh", ithresh),
+                ("Ewe.V_illnearest", ewe_mindiff),
+                ("t.s_illnearest", ts_mindiff),
+            ]
+        else:  # both thresholds are none return standard Iphoto analysis
+            # print "using standard Iphoto"
+            fomd = {k: v for k, v in fomtuplist}
+            fomtuplist = [
+                ("I.A_photothresh", fomd["I.A_photo"]),
+                ("Ewe.V_illnearest", numpy.nan),
+                ("t.s_illnearest", numpy.nan),
+            ]
+        return fomtuplist, rawlend, interlend
 
 
 class Analysis__E_Ithresh(Analysis_Master_nointer):
