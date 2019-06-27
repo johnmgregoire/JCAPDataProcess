@@ -286,7 +286,9 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             p=selectexpanafile(self, exp=True, markstr='Select .exp/.pck EXP file, or containing .zip')
             if len(p)>0:
                 self.importauxexpana(p, exp=True)
-
+        if len(p)==0:#cancelled out of everything so clear aux
+            self.aux_exp_dlist=[]
+            self.aux_ana_dlist=[]
     def importauxexpana(self, auxexpanapath, exp=False):
         ext_str='.exp' if exp else '.ana'
         dlist=self.aux_exp_dlist if exp else self.aux_ana_dlist

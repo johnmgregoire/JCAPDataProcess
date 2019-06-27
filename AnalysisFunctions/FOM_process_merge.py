@@ -10,7 +10,7 @@ from FOM_process_basics import FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, Analysis
 
 class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
     def __init__(self):
-        self.analysis_fcn_version='3'
+        self.analysis_fcn_version='4'
         self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'remove_samples_not_in_aux':1, 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'match_plate_id':1, 'key_append_all_aux':'none'}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Merge_Aux_Ana'
@@ -170,7 +170,13 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             #if 1:
                 fomd, self.csvheaderdict=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=True, zipclass=None, includestrvals=False)#str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 
-                process_keys=filed['process_keys']
+                if self.params['select_fom_keys']=='ALL':
+                    keysearchlist=['']
+                else:
+                    keysearchlist=self.params['select_fom_keys'].split(',')
+                    keysearchlist=[s.strip() for s in keysearchlist if len(s.strip())>0]
+        
+                process_keys=[k for k in filed['process_keys'] if not 'aux_' in k and (True in [s in k for s in keysearchlist])]#new in v4, previously select_fom_keys ignored, but regardless don't all aux_ keys from prior fom csv because those are being added in the merge and don't want ambiguity
                 #along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
                 auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
                 
