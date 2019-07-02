@@ -1592,14 +1592,22 @@ if __name__ == "__main__":
 #
 #                self.calcui.analyzedata()
 
-#            self.calcui.importexp(exppath=r'L:\processes\experiment\temp\20190403.132935.done\20190403.132935.exp')
-#            cb=self.calcui.AnalysisNamesComboBox
-#            selind=[i for i in range(int(cb.count())) if str(cb.itemText(i)).startswith('Analysis__ECMS_Time_Join')]
-#            cb.setCurrentIndex(selind[0])
-#            self.calcui.analysisclass.params['eche_techniques']='CV3,CV6,CV9'
+#            self.calcui.importexp(exppath=r'//htejcap.caltech.edu/share/data/hte_jcap_app_proto/experiment/eche/20170802.120418.copied-20170802221206976PDT.zip\20170802.120418.exp')
+#            self.calcui.analyzedata()
+#            self.calcui.importauxexpana(r'L:\processes\analysis\ssrl\20190624.140000.run\20190624.140000.ana', exp=False)
+#
+#            for i in range(1, int(self.calcui.FOMProcessNamesComboBox.count())):
+#                if (str(self.calcui.FOMProcessNamesComboBox.itemText(i)).partition('(')[0])=='Analysis__FOM_Interp_Merge_Ana':
+#                    self.calcui.FOMProcessNamesComboBox.setCurrentIndex(i)
+#                    self.calcui.getactiveanalysisclass()
+#                    c=self.calcui.analysisclass
+#                    break
+#            c.params.update({'select_aux_keys':'ALL', 'aux_ana_ints':'9',  'interp_is_phasemap':1})
 #            self.calcui.processeditedparams()
 #            self.calcui.getactiveanalysisclass()
-
+#            #self.calcui.exec_()
+#            self.calcui.analyzedata()
+            
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160218.162704.run\20160218.162704.exp')
             #TRdata:
             #self.calcui.importexp(exppath=r'K:\processes\experiment\temp\20160222.104337.run\20160222.104337.exp')

@@ -516,8 +516,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
 
 class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
     def __init__(self):
-        self.analysis_fcn_version='3'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_comp':0, 'num_pts_in_2d_extrapolation':6}
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_phasemap':0, 'interp_is_comp':0, 'num_pts_in_2d_extrapolation':6}
         #remove_samples_not_in_aux not used and is effectively =0 here, select_aux_keys is the keys which will be interpolated and must not be in the destination ana and must not include interp_keys, interp_keys can be a keyword for using platemap or a list of 1 (for interp1d) or 2 (2d) keys that are present in both ana being merged.
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Interp_Merge_Ana'
@@ -591,8 +590,11 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                     newfomd[k]=fomd[k]
                 
                 keys_to_interp=self.params['select_aux_keys'].split(',')
+                if self.params['interp_is_phasemap']==1:#need to sort so that phase con calculation so it can be used for mask in shift calculation
+                    sorttup=lambda k: (0 if k.startswith('phase_concentration.') else 1, int(k.partition('.')[2]) if k.partition('.')[2].isdigit() else 99999, k)
+                    keys_to_interp=[tup[2] for tup in sorted([sorttup(k) for k in keys_to_interp])]
                 self.fomnames=process_keys+keys_to_interp
-
+                
                 if self.interp_type=='xy':
                     fcn=interpolate.griddata#interpolate.interp2d
                     num_interpdim=2
@@ -631,26 +633,62 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                             self.src_x_then_y[i]+=[tup[i] for tup in toappend]
                     
                 for k, dataind in zip(keys_to_interp, range(num_interpdim, len(allkeys))):
-                    if num_interpdim==1:
-                        intrp1dfcn=fcn(self.src_x_then_y[0], self.src_x_then_y[dataind], **self.interpkwargs)
-                        newfomd[k]=intrp1dfcn(dest_x)
+                    
+                    zvals=numpy.array(self.src_x_then_y[dataind])
+                    
+                    if self.params['interp_is_phasemap']==1 and k.startswith('shift_factor.'):
+                        maskkey='phase_concentration.'+k.partition('.')[2]
+                        if maskkey in keys_to_interp:
+                            maskdataind=keys_to_interp.index(maskkey)+num_interpdim
+                            inds=numpy.where(numpy.array(self.src_x_then_y[maskdataind])>0.)[0]#phase map only has meaningful shift values when phase conc is nonzero
+                            destinds=numpy.where(newfomd[maskkey]>0.)[0]#not only mask but only interp where necessary, phase_conc already interpolated so can set shift to 0 where phase_conc is already 0.
+                            if len(inds)<=1:#can't interp with 1 point. may need to increase this threshold and use nearest interp
+                                newfomd[k]=numpy.zeros(len(dest_x), dtype='float64')
+                                newfomd[k][destinds]=zvals[inds].mean()
+                                continue
+                            d_x=dest_x[destinds]
+                        else:#don't bother interpolating if shift doesn't have a matching phase conc
+                            newfomd[k]=numpe.ones(len(dest_x), dtype='float64')*nump.nan
+                            continue
                     else:
-                        newfomd[k]=fcn(numpy.float64(self.src_x_then_y[:num_interpdim]).T, self.src_x_then_y[dataind], dest_x, **self.interpkwargs)
+                        inds=numpy.where(numpy.logical_not(numpy.isnan(zvals)))[0]
+                        d_x=dest_x
+                    zvals=zvals[inds]
+                    if num_interpdim==1:
+                        xvals=numpy.array(self.src_x_then_y[0])[inds]
+                        intrp1dfcn=fcn(xvals, zvals, **self.interpkwargs)
+                        ans=intrp1dfcn(d_x)
+                    else:
+                        xvals=numpy.float64(self.src_x_then_y[:num_interpdim]).T
+                        xvals=xvals[inds]
+                        ans=fcn(xvals, zvals, d_x, **self.interpkwargs)
                         if self.need_to_extrapolate_separately:
-                            naninds=np.where(np.isnan(newfomd[k]))[0]
+                            naninds=numpy.where(numpy.isnan(ans))[0]
                             if len(naninds)>0:
-                                newfomd[k][naninds]=linear_2d_extrapolation(numpy.float64(self.src_x_then_y[:num_interpdim]).T, numpy.array(self.src_x_then_y[dataind]), dest_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_2d_extrapolation'])
+                                ans[naninds]=linear_2d_extrapolation(xvals, numpy.array(zvals), d_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_2d_extrapolation'])
+                    if self.params['interp_is_phasemap']==1 and k.startswith('shift_factor.'):
+                        newfomd[k]=numpy.zeros(len(dest_x), dtype='float64')
+                        newfomd[k][destinds]=ans
+                    else:
+                        newfomd[k]=ans
                 
                 if self.params['interp_is_comp']:
-                    keys_to_interp_orig=[k.replace('AtFrac', 'InterpRaw') if 'AtFrac' in k else (k+'InterpRaw') for k in keys_to_interp]
+                    keystonormalize=keys_to_interp
+                elif self.params['interp_is_phasemap']:
+                    keystonormalize=[k for k in keys_to_interp if k.startswith('phase_concentration.')]
+                else:
+                    keystonormalize=[]
+                if len(keystonormalize)>0:
+                    keys_to_interp_orig=[k.replace('AtFrac', 'InterpRaw') if 'AtFrac' in k else (k+'InterpRaw') for k in keystonormalize]
                     self.fomnames+=keys_to_interp_orig
-                    for k, kraw in zip(keys_to_interp, keys_to_interp_orig):
+                    for k, kraw in zip(keystonormalize, keys_to_interp_orig):
                         newfomd[kraw]=newfomd[k]
                         newfomd[k][newfomd[k]<0]=0.
-                    normarr=numpy.float64([newfomd[k] for k in keys_to_interp]).sum(axis=0)
-                    for k in keys_to_interp:
+                    normarr=numpy.float64([newfomd[k] for k in keystonormalize]).sum(axis=0)
+                    for k in keystonormalize:
                         newfomd[k]/=normarr
-
+                
+                    
                 allkeys=list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+self.fomnames+self.strkeys_fomdlist#str=valued keys don't go into fomnames
                 self.fomdlist=[dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])]
 
