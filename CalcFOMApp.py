@@ -32,6 +32,7 @@ sys.path.append(os.path.join(projectpath,'AnalysisFunctions'))
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
+from csvfilewriter import createcsvfilstr_bare
 from CalcFOMForm import Ui_CalcFOMDialog
 from SaveButtonForm import Ui_SaveOptionsDialog
 from fcns_compplots import *
@@ -721,16 +722,19 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
         self.viewresult(anasavefolder=anasavefolder)#just hide+show so shouldn't get hung here
         self.importexp(expfiledict=self.expfiledict, exppath=self.exppath)
 
-    def clearsingleanalysis(self):
+    def clearsingleanalysis(self, anak=None):
         keys=sort_dict_keys_by_counter(self.anadict, keystartswith='ana__')
-        if len(keys)==0:
-            return
-        i=userselectcaller(self, options=keys, title='select ana__ to delete')
-        if i is None:
-            return
-        if len(keys)==1:
-            self.clearanalysis_pushbutton()
-            return
+        if anak is None:
+            if len(keys)==0:
+                return
+            i=userselectcaller(self, options=keys, title='select ana__ to delete')
+            if i is None:
+                return
+            if len(keys)==1:
+                self.clearanalysis_pushbutton()
+                return
+        else:
+            i=keys.index(anak)
         anad=self.anadict[keys[i]]
         fnlist=[fn for d in [v for k, v in anad.iteritems() if k.startswith('files_') and isinstance(v, dict)] for d2 in d.itervalues() for fn in d2.keys()]
         removefiles(self.tempanafolder, fnlist)
@@ -1442,6 +1446,38 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
                 self.getactiveanalysisclass()
                 return True
         return False
+    
+    def create_default_fom_csv_from_runfiles(self, anak):
+        smplist=[]
+        fomdl=[]
+        if 'plate_ids' in self.anadict[anak].keys() and not ',' in self.anadict[anak]['plate_ids']:
+            pid=int(self.anadict[anak]['plate_ids'])
+        else:
+            print 'ABORTING fom csv creation because only supported for single plate_id ana__'
+            return
+        for rk, rd in self.anadict[anak].items():
+            if not rk.startswith('files_run__'):
+                continue
+            runint=int(rk[11:])
+            for tk, td in rd.items():
+                for fn, fd in td.items():
+                    if isinstance(fd, str):
+                        fd=createfileattrdict(fd)
+                    if 'sample_no' in fd.keys() and fd['sample_no']>0 and not fd['sample_no'] in smplist:
+                        smplist+=[fd['sample_no']]
+                        fomdl+=[{'sample_no':fd['sample_no'], 'runint':runint, 'plate_id':pid}]#if sample_no appears in multiple runs (which shouldn't happen) the csv will contain first run found
+        file_desc, s=createcsvfilstr_bare(fomdl, [], intfomkeys=['sample_no', 'runint', 'plate_id'], return_file_desc=True)
+        fn='%s__samplelog.csv' %anak
+        p=os.path.join(self.tempanafolder, fn)
+        with open(p, mode='w') as f:
+            f.write(s)
+        if not 'files_multi_run' in self.anadict[anak].keys():
+            self.anadict[anak]['files_multi_run']={}
+        if not 'fom_files' in self.anadict[anak]['files_multi_run'].keys():
+            self.anadict[anak]['files_multi_run']['fom_files']={}
+        self.anadict[anak]['files_multi_run']['fom_files'][fn]=file_desc
+        self.updateana()#the .ana file is not written - only udpating the anadict within this calcui
+
 class treeclass_anadict():
     def __init__(self, tree):
         self.treeWidget=tree

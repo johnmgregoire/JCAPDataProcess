@@ -364,8 +364,10 @@ def append_resampled_merged_patterns_to_ana(l_anapath=None, l_anak_patterns=None
                 L=numpts_log_spacing_coef(qmin, qmax, q_log_space_coef)#will round down num points to be sure q_rasmp within bounds of qmin,qmax
                 q_resamp=qmin*(q_log_space_coef**(numpy.arange(L)))
             else:
-                print 'resampling required for merging at this time'
-                return
+                L=numpy.sum([len(q) for q in l_q]) #preserve total num q values, which is oversampling if overlapped Q values
+                q_resamp=numpy.linspace(qmin, qmax, L)
+#                print 'resampling required for merging at this time'
+#                return
             #assume all patterns same l_q
             qresampfcn=lambda l_z: numpy.array([interpolate.InterpolatedUnivariateSpline(q, z, k=resamp_interp_order, ext='zeros')(q_resamp) for q,z in zip(l_q,l_z)])#functino resamps on whole array even if there are lots out of bounds. l_q is local var from smpcount==0 and is used for all later interps
             
