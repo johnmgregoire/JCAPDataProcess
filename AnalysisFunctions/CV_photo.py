@@ -566,7 +566,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     sigma=ywt,
                     maxfev=10000,
                     ftol=tollist[tolind],
-                    bounds=fitbnds,
+                    # bounds=fitbnds,
                 )
                 break
             except RuntimeError:
