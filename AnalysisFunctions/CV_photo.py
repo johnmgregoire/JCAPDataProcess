@@ -202,10 +202,11 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             "sigFit_shape_err.V",
         ]
 
-        if self.params["function_type"] == "sigmoid_asymmetric":
+        if self.params["function_type"].startswith("sigmoid_asymmetric"):
             self.fomnames += ["sigFit_shape2.V", "sigFit_shape2_err.V"]
-        if self.params["function_type"] == "sigmoid":
+        elif "0asymptote" not in self.params["function_type"]:
             self.fomnames += ["sigFit_lower.A", "sigFit_lower_err.A"]
+        self.fitconds = True if self.params["function_type"].endswith("_lims") else False
 
         self.fomdlist = []
         for filed in self.filedlist:
@@ -488,7 +489,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             numpy.argmin(numpy.abs(iphoto_fitrng - numpy.median(iphoto_fitrng)))
         ]
 
-        if self.params["function_type"] == "sigmoid_0asymptote":
+        if self.params["function_type"].startswith("sigmoid_0asymptote"):
             fitfn = tpl
             fnstring = "lambda t, Cu, A, k: (Cu/(1+np.exp((A-t)/k)))"
             fitbnds = (
@@ -496,7 +497,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 numpy.array([numpy.inf, numpy.inf, numpy.inf]),
             )
             p_init = [max(ewetrim_fitrng), 1, 1]
-        elif self.params["function_type"] == "sigmoid_asymmetric":
+        elif self.params["function_type"].startswith("sigmoid_asymmetric"):
             fitfn = fpl_2shapes
             fnstring = "lambda t, Cu, A, k, k2: fpl(t,0,Cu,A,fpl(t,k,k2,A,min(k,k2)))"
             fitbnds = (
@@ -534,7 +535,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         maxtol = self.params["max_log_ftol"]
         tollist = numpy.logspace(mintol, maxtol, maxtol - mintol + 1)
 
-        if self.params["function_type"] == "sigmoid_asymmetric":
+        if self.params["function_type"].startswith("sigmoid_asymmetric"):
             tolind = 0
             while tolind < len(tollist):
                 try:
@@ -554,6 +555,8 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             if tolind == len(tollist):
                 fomtuplist = nantuplist
                 miscfilestr = None
+        else:
+            p_init = p_init if self.fitconds else None
 
         tolind = 0
         while tolind < len(tollist):
@@ -566,7 +569,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     sigma=ywt,
                     maxfev=10000,
                     ftol=tollist[tolind],
-                    # bounds=fitbnds,
+                    bounds=fitbnds if self.fitconds else (-numpy.inf, numpy.inf),
                 )
                 break
             except RuntimeError:
@@ -653,14 +656,14 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         interd["rawselectinds"] = numpy.array(
             [i for i, v in enumerate(map(rangefunc, ttrim)) if v][cyc_start:cyc_end]
         )
-        if self.params["function_type"] == "sigmoid_0asymptote":
+        if self.params["function_type"].startswith("sigmoid_0asymptote"):
             shape = fitcoeff[2]
             shape_err = fiterrs[2]
             inflec = fitcoeff[1]
             inflec_err = fiterrs[1]
             upper = fitcoeff[0]
             upper_err = fiterrs[0]
-        elif self.params["function_type"] == "sigmoid_asymmetric":
+        elif self.params["function_type"].startswith("sigmoid_asymmetric"):
             shape = fitcoeff[2]
             shape_err = fiterrs[2]
             shape2 = fitcoeff[3]
