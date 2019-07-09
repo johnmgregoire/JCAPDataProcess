@@ -176,7 +176,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     keysearchlist=self.params['select_fom_keys'].split(',')
                     keysearchlist=[s.strip() for s in keysearchlist if len(s.strip())>0]
         
-                process_keys=[k for k in filed['process_keys'] if not 'aux_' in k and (True in [s in k for s in keysearchlist])]#new in v4, previously select_fom_keys ignored, but regardless don't all aux_ keys from prior fom csv because those are being added in the merge and don't want ambiguity
+                process_keys=[k for k in filed['process_keys'] if (not 'aux_' in k) and (True in [s in k for s in keysearchlist]) and k in fomd.keys()]#new in v4, previously select_fom_keys ignored, but regardless don't all aux_ keys from prior fom csv because those are being added in the merge and don't want ambiguity
                 #along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
                 auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
                 

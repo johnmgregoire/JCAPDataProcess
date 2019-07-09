@@ -36,9 +36,14 @@ plate_list=[s[:-1] for s in serial_list]
 #plate_list=plate_list[plate_list.index('4847'):]
 #plate_list=['3557']
 #plate_list=plate_list[1:]
+
 for pid in plate_list:
     print 'STARTING ',pid
     d=importinfo(pid)
+    if 0:
+        els='-'.join([el for el in getelements_plateidstr(pid) if not el in ['Ar']])
+        els+='/Pt' if True in ['Pt' in pd['elements'] for pd in d['prints'].values()] else ('/'+d['substrate'])
+        print d['serial_no'],'\t',els
     if not 'analyses' in d:
         continue
     l=[]
@@ -86,7 +91,7 @@ for pid in plate_list:
     c=calcui.analysisclass
     c.params['select_ana']='ana__2'
     c.params['select_aux_keys']='AtFrac'
-    c.params['select_aux_ints']='2'
+    c.params['aux_ana_ints']='2'
     c.params['interp_is_comp']=1
     c.processnewparams(calcFOMDialogclass=calcui, recalc_filedlist=True)
     
