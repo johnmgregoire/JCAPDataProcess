@@ -586,8 +586,8 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                 #along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
                 auxfomd_list=[readcsvdict(os.path.join(self.auxpath, auxfiled['fn']), auxfiled, returnheaderdict=False, zipclass=None, includestrvals=False) for auxfiled in self.auxfiledlist]
                 
-                if params['plate_ids']!='ALL':
-                    pids=[int(s.strip()) for s in params['plate_ids'].split(',')]
+                if self.params['plate_ids']!='ALL':
+                    pids=[int(s.strip()) for s in self.params['plate_ids'].split(',')]
                     for count in range(len(auxfomd_list)):
                         auxfomd=auxfomd_list[count]
                         if not 'plate_id' in auxfomd.keys():
