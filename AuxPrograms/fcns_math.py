@@ -988,7 +988,27 @@ def linear_2d_extrapolation(xy, z, xy_to_extrapolate, num_pts_in_lin_fit=6):#ret
         if extra_pts==num_pts_in_lin_fit:#cannot perform 2d extrap here
             print 'extrap failed because locally data is in 1d'
             new_z+=[np.nan]
+            continue
         A = np.vstack([xf, yf, np.ones(len(xf))]).T
         fitcoefs=np.linalg.lstsq(A, zf)[0]
         new_z+=[(fitcoefs*np.array([xi,yi,1.])).sum()]
+    return np.float64(new_z)
+
+def linear_1d_extrapolation(x, z, x_to_extrapolate, num_pts_in_lin_fit=6):
+    new_z=[]
+    for xi in x_to_extrapolate:
+        dist_tups=sorted([((xv-xi)**2,count) for count,(xv,zv) in enumerate(zip(x,z)) if not np.isnan(zv)])
+        for extra_pts in range(num_pts_in_lin_fit+1):#try up to twice as many points if necessary to get unique x and y values
+            fitinds=[tup[1] for tup in dist_tups[:num_pts_in_lin_fit+extra_pts]]
+            xf=x[fitinds]
+            zf=z[fitinds]
+            if (xf[0]==xf).prod()==0:#if more than 1 x value 
+                break
+        if extra_pts==num_pts_in_lin_fit:#cannot perform 2d extrap here
+            print 'extrap failed because locally data is in 1d'
+            new_z+=[np.nan]
+            continue
+        c=np.polyfit(xf, zf, 1)
+        f = np.poly1d(c)
+        new_z+=[f(xi)]
     return np.float64(new_z)
