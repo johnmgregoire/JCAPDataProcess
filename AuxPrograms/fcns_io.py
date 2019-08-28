@@ -542,7 +542,7 @@ def datastruct_expfiledict(expfiledict, savefolder=None, trytoappendmissingsampl
                         numhead_numdata_fcn=lambda lines: get_numhead_numdata_smpoptfiles(lines)
                         readlinesfcn=lambda f:f.readlines(50)#only need the first lines so read 50 bytes
                     elif k3=='pstat_files':
-                        if 'eche' in expfiledict['experiment_type']:
+                        if 'eche' in expfiledict['experiment_type'] or 'ecms' in expfiledict['experiment_type']:
                             numhead_numdata_fcn=lambda lines: get_numhead_numdata_echetxtfiles(lines)
                             readlinesfcn=lambda f:f.readlines()
                         elif 'edep' in expfiledict['experiment_type']:

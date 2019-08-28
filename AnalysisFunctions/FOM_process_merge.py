@@ -516,8 +516,8 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
 
 class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
     def __init__(self):
-        self.analysis_fcn_version='5'
-        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_phasemap':0, 'interp_is_comp':0, 'num_pts_in_2d_extrapolation':6, 'plate_ids':'ALL'}
+        self.analysis_fcn_version='6'
+        self.dfltparams={'select_ana': 'ana__1', 'select_fom_keys':'ALL', 'select_aux_keys':'ALL', 'aux_ana_path':'self', 'aux_ana_ints':'ALL', 'interp_keys':'platemap_xy', 'fill_value':'extrapolate', 'kind':'linear', 'interp_is_phasemap':0, 'interp_is_comp':0, 'num_pts_in_extrapolation':6, 'plate_ids':'ALL'}
         #remove_samples_not_in_aux not used and is effectively =0 here, select_aux_keys is the keys which will be interpolated and must not be in the destination ana and must not include interp_keys, interp_keys can be a keyword for using platemap or a list of 1 (for interp1d) or 2 (2d) keys that are present in both ana being merged.
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__FOM_Interp_Merge_Ana'
@@ -536,6 +536,8 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
         interp_keys=self.params['interp_keys']
         if interp_keys=='platemap_xy':
             self.interp_type='xy'
+        elif interp_keys=='platemap_xy_line':
+            self.interp_type='xy_line'
         else:
             self.interp_type=[s.strip() for s in interp_keys.split(',')]
         
@@ -560,15 +562,23 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
         elif 'nan' in self.params['fill_value'] or 'NaN' in self.params['fill_value']:
             self.interpkwargs={'fill_value':numpy.nan}
             self.interpkwargs['kind']=self.params['kind']
-        elif ',' in self.params['fill_value']:
+            self.interpkwargs['bounds_error']=False
+        elif ',' in self.params['fill_value']:#this not supported in scipy 0.16 so will cause error
             a, b, c=self.params['fill_value'].partition(',')
             a=float(a.strip())
             c=float(c.strip())
             self.interpkwargs={'fill_value':(a, c)}
             self.interpkwargs['kind']=self.params['kind']
-        else:
-            self.interpkwargs={'fill_value':self.params['fill_value']}
+            self.interpkwargs['bounds_error']=False
+        elif self.params['fill_value']=='extrapolate':#this case only needed for 1d extrapolation since standard scipy is 0.16 and it doesn't support extrapolation
+            self.need_to_extrapolate_separately=True
+            self.interpkwargs={'fill_value':numpy.nan}
             self.interpkwargs['kind']=self.params['kind']
+            self.interpkwargs['bounds_error']=False
+        else:
+            self.interpkwargs={'fill_value':float(self.params['fill_value'])}
+            self.interpkwargs['kind']=self.params['kind']
+            self.interpkwargs['bounds_error']=False
         
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):#must have same arguments as regular AnaylsisClass
         self.initfiledicts()
@@ -606,9 +616,9 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                     keys_to_interp=[tup[2] for tup in sorted([sorttup(k) for k in keys_to_interp])]
                 self.fomnames=process_keys+keys_to_interp
                 
-                if self.interp_type=='xy':
-                    fcn=interpolate.griddata#interpolate.interp2d
-                    num_interpdim=2
+                if self.interp_type in ['xy', 'xy_line']:
+                    
+                    
                     for runint in list(set(fomd['runint'])):#use the first platemaqp you find and aux better be same platemap
                         rund=expfiledict['run__%d' %runint]
                         if 'platemapdlist' in rund.keys():
@@ -617,15 +627,39 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                             xl=[d['x'] for d in dl]
                             yl=[d['y'] for d in dl]
                             break
-                    allkeys=['x', 'y']+keys_to_interp
-                    self.src_x_then_y=[[] for i in range(len(allkeys))]
-                    for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
-                        xaux=[xl[smps.index(smp)] for smp in auxfomd['sample_no']]
-                        yaux=[yl[smps.index(smp)] for smp in auxfomd['sample_no']]
-                        toappend=[tup for tup in zip(xaux, yaux, *[auxfomd[k] for k in allkeys[2:]]) if (not numpy.nan in tup) and not True in [newval in l for newval, l in zip(tup, self.src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
-                        for i in range(len(allkeys)):
-                            self.src_x_then_y[i]+=[tup[i] for tup in toappend]
-                    dest_x=numpy.float64([[xl[smps.index(smp)], yl[smps.index(smp)]] for smp in fomd['sample_no']])
+                    if self.interp_type=='xy':
+                        fcn=interpolate.griddata#interpolate.interp2d
+                        num_interpdim=2
+                        allkeys=['x', 'y']+keys_to_interp
+                        self.src_x_then_y=[[] for i in range(len(allkeys))]
+                        for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):
+                            xaux=[xl[smps.index(smp)] for smp in auxfomd['sample_no']]
+                            yaux=[yl[smps.index(smp)] for smp in auxfomd['sample_no']]
+                            toappend=[tup for tup in zip(xaux, yaux, *[auxfomd[k] for k in allkeys[num_interpdim:]]) if (not numpy.nan in tup) and not True in [newval in l for newval, l in zip(tup, self.src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
+                            for i in range(len(allkeys)):
+                                self.src_x_then_y[i]+=[tup[i] for tup in toappend]
+                        dest_x=numpy.float64([[xl[smps.index(smp)], yl[smps.index(smp)]] for smp in fomd['sample_no']])
+                    elif self.interp_type=='xy_line':
+                        fcn=interpolate.interp1d
+                        num_interpdim=1
+                        allkeys=['x_line']+keys_to_interp
+                        self.src_x_then_y=[[] for i in range(len(allkeys))]
+                        xaux_all=[xl[smps.index(smp)] for auxfomd in auxfomd_list for smp in auxfomd['sample_no']]
+                        yaux_all=[yl[smps.index(smp)] for auxfomd in auxfomd_list for smp in auxfomd['sample_no']]
+                        #all x,y used here and then duplicates screend out below
+                        m,b=numpy.polyfit(xaux_all,yaux_all,1)# fit set of x,y to line to get slope
+                        rot=numpy.arctan(m) #find rotation angle and rotation transform to remove the slope, i.e. turn into a horizontal line where only x coordinate is needed
+                        c,s=numpy.cos(-rot),numpy.sin(-rot)
+                        linparam=lambda x, y:x*c-y*s
+                        for auxfomd, auxfiled in zip(auxfomd_list, self.auxfiledlist):#****
+                            xaux=numpy.array([xl[smps.index(smp)] for smp in auxfomd['sample_no']])
+                            yaux=numpy.array([yl[smps.index(smp)] for smp in auxfomd['sample_no']])
+                            toappend=[tup for tup in zip(linparam(xaux, yaux), *[auxfomd[k] for k in allkeys[num_interpdim:]]) if (not numpy.nan in tup) and not True in [newval in l for newval, l in zip(tup, self.src_x_then_y[:num_interpdim])]]#num pts by num data arrays, don't allow the interp coords to be duplicated
+                            for i in range(len(allkeys)):
+                                self.src_x_then_y[i]+=[tup[i] for tup in toappend]
+                        dest_x=numpy.float64([linparam(xl[smps.index(smp)], yl[smps.index(smp)]) for smp in fomd['sample_no']])
+                        newfomd['Posn_along_line']=dest_x
+                        self.fomnames+=['Posn_along_line']
                 else:
                     if len(self.interp_type)==2:
                         #fcn=interpolate.interp2d
@@ -669,6 +703,10 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                         xvals=numpy.array(self.src_x_then_y[0])[inds]
                         intrp1dfcn=fcn(xvals, zvals, **self.interpkwargs)
                         ans=intrp1dfcn(d_x)
+                        if self.need_to_extrapolate_separately:
+                            naninds=numpy.where(numpy.isnan(ans))[0]
+                            if len(naninds)>0:
+                                ans[naninds]=linear_1d_extrapolation(xvals, numpy.array(zvals), d_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_extrapolation'])
                     else:
                         xvals=numpy.float64(self.src_x_then_y[:num_interpdim]).T
                         xvals=xvals[inds]
@@ -676,7 +714,7 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                         if self.need_to_extrapolate_separately:
                             naninds=numpy.where(numpy.isnan(ans))[0]
                             if len(naninds)>0:
-                                ans[naninds]=linear_2d_extrapolation(xvals, numpy.array(zvals), d_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_2d_extrapolation'])
+                                ans[naninds]=linear_2d_extrapolation(xvals, numpy.array(zvals), d_x[naninds], num_pts_in_lin_fit=self.params['num_pts_in_extrapolation'])
                     if self.params['interp_is_phasemap']==1 and k.startswith('shift_factor.'):
                         newfomd[k]=numpy.zeros(len(dest_x), dtype='float64')
                         newfomd[k][destinds]=ans
