@@ -1708,6 +1708,7 @@ readdatafiledict=dict([\
     ('pets', lambda ext, lines:read_dta_pstat_file('', lines=lines, addparams=True)), \
     ('xrfs', lambda ext, lines:None), \
     ('ecms', lambda ext, lines:None), \
+    ('xtrn', lambda ext, lines:None), \
     ])
 
 def getanadefaultfolder(erroruifcn=None):
