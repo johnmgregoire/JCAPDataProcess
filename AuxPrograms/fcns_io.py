@@ -315,14 +315,44 @@ def get_xrfs_stds_csv(startswithstr='', searchstr='.csv', transkey='transition',
 def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True):
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
-            f=open(path, mode='r')
+            if path.startswith('/'):
+                path = ('J:/hte_jcap_app_proto/run%s' %(path))
+                print path
+
+            if '.zip' in path:
+                with zipfile.ZipFile(path.split('\\')[0]) as zf:
+                    with zf.open(path.split('\\')[1], 'rU') as f:
+                        lines=f.readlines()
+            else:
+                with open(path,mode='r') as f:
+                    lines=f.readlines()
         except:
             try:
-                f=open(path, mode='r')
+                if path.startswith('/'):
+                    path = ('J:/hte_jcap_app_proto/run%s' %(path))
+                    print path
+
+                if '.zip' in path:
+                    with zipfile.ZipFile(path.split('\\')[0]) as zf:
+                        with zf.open(path.split('\\')[1], 'rU') as f:
+                            lines=f.readlines()
+                else:
+                    with open(path,mode='r') as f:
+                        lines=f.readlines()
             except:
-                f=open(path, mode='r')
-        lines=f.readlines()
-        f.close()
+                if path.startswith('/'):
+                    path = ('J:/hte_jcap_app_proto/run%s' %(path))
+                    print path
+
+                if '.zip' in path:
+                    with zipfile.ZipFile(path.split('\\')[0]) as zf:
+                        with zf.open(path.split('\\')[1], 'rU') as f:
+                            lines=f.readlines()
+                else:
+                    with open(path,mode='r') as f:
+                        lines=f.readlines()
+        # lines=f.readlines()
+        # f.close()
     d={}
     z=[]
     for count, l in enumerate(lines):
@@ -698,7 +728,7 @@ def tryprependpath(preppendfolderlist, p, testfile=True, testdir=True):
 
 def getdropfolder_exptype(datatype):
     return tryprependpath(EXPERIMENT_DROP_FOLDERS, os.path.join(datatype, 'drop'))
-    
+
 def get_relative_path_for_exp_or_ana_full_path(p, exp=False):
     dbpath_folds=(EXPFOLDERS_J+EXPFOLDERS_L) if exp else (ANAFOLDERS_J+ANAFOLDERS_L)
     rp=compareprependpath(dbpath_folds, p, replaceslash=True)
@@ -745,7 +775,7 @@ def buildexppath(experiment_path_folder, ext_str='.exp'):#exp path is the path o
         else:
             p=prepend_root_exp_path(p, exp=False)
 
-    
+
     #from here down : turn an exp folder into an exp file
     if os.path.isfile(os.path.join(p, fn)):
         return os.path.join(p, fn)
@@ -997,7 +1027,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_
             return (p, pmidstr) if return_pmidstr else p
         with open(infop, mode='r') as f:
             s=f.read(1000)
-        
+
         if pmfold=='' or not infokey in s:
             if not erroruifcn is None:
                 p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
@@ -1086,7 +1116,7 @@ def get_multielementink_concentrationinfo(printd, els, return_defaults_if_none=F
             if len(els_set)<len(els):#only known cases of this (same element used in multiple print channels and no concentration info provided) is when Co printed in library and as internal reference, in which case 2 channels never printed together but make code assume each ink with equal concentration regardless of duplicates
                 conc_el_chan=numpy.zeros((len(els_set), len(els)), dtype='float64')
                 cels_set_ordered=[]
-                for j, cel in enumerate(els):#assume 
+                for j, cel in enumerate(els):#assume
                     if not cel in cels_set_ordered:
                         cels_set_ordered+=[cel]
                     i=cels_set_ordered.index(cel)
@@ -2228,5 +2258,3 @@ def read_xrfs_batch_summary_csv(p, zipclass=None, select_columns_headings__maind
     if closezip:
         zipclass.close()
     return d
-
-

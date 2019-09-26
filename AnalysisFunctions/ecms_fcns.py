@@ -1,5 +1,6 @@
 import numpy, copy, operator
-import time,pickle
+import time, pickle, zipfile
+
 if __name__ == "__main__":
     import os, sys
     #__file__=r'D:\Google Drive\Documents\PythonCode\JCAP\JCAPDataProcess\AnalysisFunctions\ecms.py'
@@ -41,19 +42,19 @@ def get_colors_fom_cmap(fomarr, vmin, vmax, cmap):#if need over/under colors tho
     sm.set_array(fomarr)
     cols=np.float32(map(sm.to_rgba, fomarr))[:, :3]
     return cols
-    
+
 def read_ecms_simulation_data(ms_simulation_model,species_list):
     fold=tryprependpath(ECMSPROCESSFOLDERS, '', testfile=False, testdir=True)
     fold=os.path.join(fold,ms_simulation_model)
-    
+
     d={}
-    
+
     p=os.path.join(fold,'model_params.npy')
     d['model_params']=np.load(p, allow_pickle=False)
 
     p=os.path.join(fold,'metadata.txt')
     with open(p,mode='r') as f: metad=filedict_lines(f.readlines())
-    
+
     d['metadata']=metad
     d['echem_profile']={}
     for k,v in d['metadata'].iteritems():
@@ -62,7 +63,7 @@ def read_ecms_simulation_data(ms_simulation_model,species_list):
         d['metadata'][k]=[attemptnumericconversion_tryintfloat(v2) for v2 in v.split(',')] if ',' in v else attemptnumericconversion_tryintfloat(v)
     for k,v in metad['echem_profile'].iteritems():
         d['echem_profile'][k]=np.array([attemptnumericconversion_tryintfloat(v2) for v2 in v.split(',')]) if ',' in v else attemptnumericconversion_tryintfloat(v)
-    
+
     for s in species_list:
         p=os.path.join(fold,'library_%s.npy' %s)
         d[s]={}
@@ -74,14 +75,24 @@ def read_ecms_simulation_data(ms_simulation_model,species_list):
 
 #p=r'K:\experiments\anec\2019 ECMS\rcp\demo_181102 CuZn library_43962\20181102_MS_43962\20181102_mass__2.csv'
 def read_hiden_csv(p):
-    with open(p,mode='r') as f:
-        lines=f.readlines()
+    if p.startswith('/'):
+        p = ('J:/hte_jcap_app_proto/run%s' %(p))
+        # print p
+
+    if '.zip' in p:
+        with zipfile.ZipFile(p.split('\\')[0]) as zf:
+            with zf.open(p.split('\\')[1], 'rU') as f:
+                lines=f.readlines()
+    else:
+        with open(p,mode='r') as f:
+            lines=f.readlines()
+
     date_time_str=[l.strip() for l in lines if l.startswith('"Date",')][0]
     ms_start_time=time.strptime(' '.join(date_time_str.split(',')[1::2]), '%m/%d/%Y %I:%M:%S %p')
     i=[count for count,l in enumerate(lines) if l.startswith('"Time",')][0]
     msl=[]
     vl=[]
-    
+
     for l in lines[i+1:]:
         ms,v=l.split(',')[1:3]
         msl+=[int(ms)]
@@ -123,14 +134,14 @@ def eche_split_current_by_sweep_and_generate_intended_voltage(tech,sim_lib_dict,
         return sweep_currents,sim_basis_v,echem_i_smooth,np.array(segment_index_arr)
     else:
         print 'technique not supperted for ecms analysis'
-            
-    
+
+
 ###these lines for seeding line by line execution of perform
 if 0:#in spyder open new concolse, run __file__ and then up to and include MainMenu definition in CalcFomApp. then run __file__= and code up to here, then run rest of thiss sectino, then run specific load to prepare running perform line by line
-    mainapp=QApplication(sys.argv)    
+    mainapp=QApplication(sys.argv)
     form=MainMenu(None, execute=False, modifyanainplace=False,guimode=False)
     calcFOMDialogclass=form.calcui
-    
+
 if 0:
     calcFOMDialogclass.importexp(exppath=r'L:\processes\experiment\temp\20190403.132935.done\20190403.132935.exp')
     cb=calcFOMDialogclass.AnalysisNamesComboBox
@@ -163,11 +174,11 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
         self.dfltparams={'eche_techniques':'CV3,CV6,CV9','masses':'2,15,26','mass_spec_lag_time_s':5.,'post_eche_time_for_MS_settle_s':60.}
         self.params=copy.copy(self.dfltparams)
         self.analysis_name='Analysis__ECMS_Time_Join'
-        
+
         self.requiredkeys=[]
         self.optionalkeys=[]
         self.requiredparams=['reference_vrhe']
-        
+
         self.fomnames=['num_MS_masses']
         self.plotparams=dict({}, plot__1={})
         self.plotparams['plot__1']['x_axis']='t(s)'
@@ -175,28 +186,28 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
 
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='num_masses', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
-        
+
+
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
 
         self.processnewparams(calcFOMDialogclass=calcFOMDialogclass)
         return self.filedlist
-        
+
     def processnewparams(self, calcFOMDialogclass=None):
         expfiledict=calcFOMDialogclass.expfiledict
         try:
             self.eche_techniques=self.params['eche_techniques'].split(',')#ultimatley get this from CV* in params
             self.masses=self.params['masses'].split(',')
         except:
-            self.filedlist=[]    
+            self.filedlist=[]
         self.num_files_considered, self.filedlist_ms=getapplicablefilenames_byuse_tech_type(expfiledict,'data','HidenMID','hiden_single_mass_files')
         self.filedlist=[d for tech in self.eche_techniques for d in getapplicablefilenames_byuse_tech_type(expfiledict,'data',tech,'pstat_files',requiredparams=self.requiredparams)[1]]
         self.description='%s on %s' %(','.join(self.fomnames), ','.join(self.eche_techniques))
-    
+
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         if destfolder is None:
             return
-                
+
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'])
         self.fomnames=[self.fomnames[0]]
         self.fomnames+=['eche_technique','fn_eche']#not supposed to put the string foms here but usine writefombare so it's ok
@@ -233,11 +244,11 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                 for k in datadict.keys():
                     if not k in ['t(s)','Ewe(V)','I(A)']:
                         del datadict[k]
-                
+
             datadict['t(s)']=np.float64(datadict['t(s)'])
             datadict['Ewe(Vrhe)']=datadict['Ewe(V)']-filed['reference_vrhe']
             datadict['epoch(s)']=datadict['t(s)']+filed['start_time']
-            
+
             fnr = '%s__%s_rawlen.txt' % (anak, os.path.splitext(fn)[0])
             rp = os.path.join(destfolder, fnr)
             kl = saveinterdata(rp, datadict, savetxt=True)
@@ -247,7 +258,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                             len(datadict[kl[0]]), filed['sample_no'])
             fomd['fn_eche']=fnr
             fomd['eche_technique']=filed['techk']
-                
+
             num_ms_found=0
             for msfiled in self.filedlist_ms:
                 if msfiled['start_time']<=filed['start_time'] and msfiled['end_time']>=filed['end_time']:
@@ -257,19 +268,19 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                     interlend={}
                     interlend['rawselectinds']=inds
                     interlend['ms_adjusted_epoch(s)_mass__%s' %msfiled['mass']]=msfiled['epoch(s)'][msinds]
-                    interlend['MS(torr)_mass__%s' %msfiled['mass']]=msfiled['ms_torr'][msinds]      
+                    interlend['MS(torr)_mass__%s' %msfiled['mass']]=msfiled['ms_torr'][msinds]
                     indsarr=np.array(inds)
                     for k in datadict.keys():
                         if 't(s)' in k:
                             continue
                         interlend[k+'_MS']=datadict[k][inds]
-                        if 'Ewe' in k:#for MS beyond the end of eche time, assume open circuit, NaN=unknown potential and 0 current 
+                        if 'Ewe' in k:#for MS beyond the end of eche time, assume open circuit, NaN=unknown potential and 0 current
                             interlend[k+'_MS'][indsarr==-1]=np.nan
                         elif 'I' in k:
                             interlend[k+'_MS'][indsarr==-1]=0.
                     #the t(s)_MS is still on the echem time scale but use the MS time values (not the closest ones) and let the time extend beyond the end of the echem
                     interlend['t(s)_MS']=msfiled['epoch(s)'][msinds]-datadict['epoch(s)'][0]
-                            
+
                     fni = '%s__mass__%s_%s_interlen.txt' % (anak, msfiled['mass'], os.path.splitext(fn)[0])
                     p = os.path.join(destfolder, fni)
                     fmtd=dict([(k,'%.2f' if 'epoch' in k else ('%d' if k=='rawselectinds' else '%.4e')) for k in interlend.keys()])
@@ -282,7 +293,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
             if num_ms_found==0:
                 print 'DID NOT FIND MS DATA FOR ',fn
             fomd[self.fomnames[0]]=num_ms_found
- 
+
             self.fomdlist+=[dict(fomd, sample_no=filed['sample_no'], plate_id=filed['plate_id'], runint=int(filed['run'].partition('run__')[2]))]
         ffn='%s__%s.csv' %(anak,'-'.join(self.fomnames[:3]))#name file by foms but onyl inlcude the 1st 3 to avoid long names
         self.multirunfiledict['fom_files'][ffn]=\
@@ -310,11 +321,11 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.num_files_considered, self.filedlist=getapplicablefilenames_byuse_tech_type(expfiledict,'data','HidenMID','hiden_single_mass_files', requiredparams=self.requiredparams)
-        
+
         self.description='ECMS calibration - no samples'
-        return self.filedlist   
-        
-        
+        return self.filedlist
+
+
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         if destfolder is None:
             return
@@ -323,7 +334,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
         base_r0,base_r1=[float(s.strip()) for s in self.params['baseline_times_to_ave_wrt_valve_open_s'].split(',')]
         cal_frac0,cal_frac1=[float(s.strip()) for s in self.params['frac_cal_duration_to_use'].split(',')]
         masses=self.params['masses'].split(',')
-        
+
         misccsvdlist=[]
         for filed in self.filedlist:
             mass=filed['fn'].rpartition('__')[2].partition('.')[0]
@@ -355,7 +366,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
             misccsvdict['instrument_QE']=QE
             misccsvdict['QE_wrt_modelling_basis']=ref_cal_factor/cal_factor
             misccsvdlist+=[misccsvdict]
-        
+
         csvfn='%s__ecms_calibration.csv' %anak
 
         filedesc,filestr=createcsvfilstr_bare(misccsvdlist,None,strfomkeys=['species','mass'],return_file_desc=True)
@@ -364,7 +375,7 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
             f.write(filestr)
         self.multirunfiledict['misc_files']={}
         self.multirunfiledict['misc_files'][csvfn]=filedesc
-        
+
         self.fomdlist=[]
         self.primarycsvpath=''
     def check_output(self):
@@ -403,8 +414,8 @@ class Analysis__ECMS_Calibration(Analysis_Master_nointer):
 ##self.runfiledict['run__1']['inter_rawlen_files']={}
 ##self.runfiledict['run__1']['inter_files']={}
 #anauserfomd={}
-        
-        
+
+
 class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
     def __init__(self):
         self.analysis_fcn_version='1'
@@ -421,7 +432,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
 
         self.csvheaderdict=dict({}, csv_version='1', plot_parameters={})
         self.csvheaderdict['plot_parameters']['plot__1']=dict({}, fom_name='max.FETotal', colormap='jet', colormap_over_color='(0.5,0.,0.)', colormap_under_color='(0.,0.,0.)')
-    
+
 
     def getapplicablefomfiles(self, anadict):#called by getapplicablefilenames
         if not anadict is None and self.params['select_ana'] in anadict.keys():
@@ -429,10 +440,10 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
 
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):#just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         self.getapplicablefomfiles(anadict)
-        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass,anadict=anadict) 
+        self.processnewparams(calcFOMDialogclass=calcFOMDialogclass,anadict=anadict)
         '''
-        the 'process_fom' types of analysis must call processnewparams during getapplicable filenames because usually the ana__k needs 
-        to be updated in getapplicablefilenames before prcoessing new params and if there is an error therin the fieldlist will be set to [] so 
+        the 'process_fom' types of analysis must call processnewparams during getapplicable filenames because usually the ana__k needs
+        to be updated in getapplicablefilenames before prcoessing new params and if there is an error therin the fieldlist will be set to [] so
         getapplicablefilenames does not need to be run again
         '''
         return self.filedlist
@@ -447,16 +458,16 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
         if not self.params['cal_ana'] in anadict.keys():
             self.filedlist=[]
             return
-        
+
         try:
-            fn,keystr=anadict[self.params['cal_ana']]['files_multi_run']['misc_files'].items()[0]            
+            fn,keystr=anadict[self.params['cal_ana']]['files_multi_run']['misc_files'].items()[0]
             self.cal_filed=createfileattrdict(keystr, fn=fn)
             self.cal_filed['fn']=fn
         except:
             self.cal_filed=None
             self.filedlist=[]
             return
-        
+
         try:
             self.data_filed_dict={}
             for k,v in anadict[self.params['select_ana']].iteritems():
@@ -469,19 +480,19 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             self.data_filed_dict=None
             self.filedlist=[]
             return
-        
+
         try:
             strlist=self.params['min_max_each_fit_param'].split('],[')
             self.minmax_fitpars=[eval(s.strip('[]')) for s in strlist]
         except:
             self.data_filed_dict=None
             self.filedlist=[]
-            return  
+            return
         self.description='Fit ECMS from %s calibrated by %s to the %s models' %(self.params['select_ana'], self.params['cal_ana'],self.params['ms_simulation_model'])
     def perform(self, destfolder, expdatfolder=None, writeinterdat=True, anak='', zipclass=None, anauserfomd={}, expfiledict=None):
         '''
         fom_csv are 1 file per technique
-            within each fom_csv there is per sample,plate 
+            within each fom_csv there is per sample,plate
                 max.FETotal that is the sum over species and max over time
             eche_technique
                 fn_bestfit_eche
@@ -508,7 +519,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             Fit_MS(torr)__<sp>
 
         iterlen files are per technique per sample,plate per species and saved as fn_bestfit_species__<sp>
-            length is that of the MS data and includes    
+            length is that of the MS data and includes
             Ip(A)
             Soltn_conc(mM)
             Adjusted_MS(torr)
@@ -521,41 +532,41 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
 
         if self.cal_filed is None or self.data_filed_dict is None:
             return
-            
+
         loss_fcn=loss_fcn_dict[self.params['loss_fcn']]
         species=[s.strip() for s in self.params['species'].split(',')]
         sim_lib_dict=read_ecms_simulation_data(self.params['ms_simulation_model'],species)
-        
+
         #this check function looks for True when par out of range, but only checks if minmax provided correctly, so defaults to allow pars
         check_pars_out_of_range=lambda pars: True in [(v<minmax[0] or v>minmax[1]) for minmax,v in zip(self.minmax_fitpars,pars) if isinstance(minmax,tuple) and len(minmax)==2]
         allow_fit_par_inds=[ind for ind,model_pars in enumerate(sim_lib_dict['model_params']) if not check_pars_out_of_range(model_pars)]
-        
+
         cal_p=os.path.join(destfolder,self.cal_filed['fn'])
         calfomd=readcsvdict(cal_p, self.cal_filed, returnheaderdict=False,includestrvals=True)
-        
+
         filed=self.filedlist[0]
                     #self.strkeys_fomdlist=[]
-        
+
         fn=filed['fn']
         fig=plt.Figure()#figsize not working? figsize=(30,7))
 
         canvas=FigureCanvas(fig)
 
-        
+
         datafomd=readcsvdict(os.path.join(destfolder, fn), filed, returnheaderdict=False, zipclass=None, includestrvals=True)
         runintset=sorted(list(set(datafomd['runint'])))
-        
+
         runklist=['run__%d' %ri for ri in runintset]
         self.initfiledicts(runfilekeys=['inter_rawlen_files','inter_files'],runklist=runklist)
         self.multirunfiledict['misc_files']={}
-        
-        
-        
+
+
+
         tech_list=list(datafomd['eche_technique'])
         tech_set=sorted(list(set(tech_list)))
-        
+
         summ_plot_fom_keys=['Echem.charge.C']+['%s.charge.C' %sp for sp in species]+['Other.charge.C']
-        
+
         techd_fomdlist={}
         for techcount,tech in enumerate(tech_set):#per technique
             if not tech in self.params['eche_techniques']:#direct search in param string
@@ -563,50 +574,50 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             self.fomnames=['max.FETotal']#reset every technique in case keys are different
             self.strkeys_fomdlist=['eche_technique','fn_bestfit_eche']
             techd_fomdlist[tech]=[]
-            
+
             pid_sid_datafomind__this_tech=sorted([(pid,sid,count) for count,(pid,sid,te) in enumerate(zip(datafomd['plate_id'],datafomd['sample_no'],tech_list)) if te==tech])
-            datafominds=[tup[2] for tup in pid_sid_datafomind__this_tech]            
+            datafominds=[tup[2] for tup in pid_sid_datafomind__this_tech]
 
             tech_summary_plot_data=dict([('FE__%s' %sp,[[] for i in range(len(datafominds))]) for sp in species],fomlistd=dict([(fomk,[]) for fomk in summ_plot_fom_keys]))
             #each FE__ is a list by sample and then a list by CV segment and then a x,y tuple
-            
+
             for smpcount, datafomind in enumerate(datafominds):# per sample,plate
-            
+
                 fig.clf()
                 fomd={}
                 rawlend={}
-                            
-                
+
+
                 for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING)+['eche_technique']:
                     fomd[k]=datafomd[k][datafomind]
-        
-                    
+
+
                 fn_eche=datafomd['fn_eche'][datafomind]
                 fnlabel='__'.join(fn_eche.split('__')[2:]).rpartition('_rawlen')[0]
                 fnr = '%s__%s_rawlen.txt' % (anak, fnlabel)
                 fomd['fn_bestfit_eche']=fnr
                 fnrm0 = '%s__%s_rawlen.png' % (anak, fnlabel)
                 fnrm1 = '%s__%s_rawlen.svg' % (anak, fnlabel)
-                
+
                 p=os.path.join(destfolder,fn_eche)
                 fd=self.data_filed_dict[fn_eche]
                 inds=[fd['keys'].index(k) for k in 't(s),Ewe(Vrhe),I(A)'.split(',')]
                 echem_t,echem_v,echem_i=getarrs_filed(p,fd,selcolinds=inds)
-        
+
                 sweep_currents,sim_basis_v,echem_i_smooth,segment_index_arr=eche_split_current_by_sweep_and_generate_intended_voltage(tech,sim_lib_dict,echem_t,echem_i,smooth_paramd=self.params)
                 vdiff=echem_v-sim_basis_v
                 if np.isnan(sim_basis_v).sum()>0 or (np.abs(vdiff)>self.params['voltage_error_V']).sum()>self.params['num_voltage_errors_to_abort']:#echem_t contains points beyond the profile time
                     print 'measured voltages do not match the echem_profile. Aborting'
                     continue
                 echem_fe_test_inds=(echem_t>self.params['ignore_FE_time_start_end_s']) & ((echem_t[-1]-echem_t)>self.params['ignore_FE_time_start_end_s']) & (echem_i_smooth<self.params['max_current_valid_FE'])
-        
+
                 rawlend['segment_index']=segment_index_arr
                 rawlend['Ismooth(A)']=echem_i_smooth
                 rawlend['EweSimulated(Vrhe)']=sim_basis_v
                 rawlend['Ewe.Error(V)']=vdiff
                 rawlend['valid_FE_bool']=np.int32(echem_fe_test_inds)
-                rawlend['Ewe(compensatedVrhe)']=sim_basis_v-echem_i_smooth*self.params['resistance_to_compensate_Ohm']                
-                
+                rawlend['Ewe(compensatedVrhe)']=sim_basis_v-echem_i_smooth*self.params['resistance_to_compensate_Ohm']
+
                 for spcount,sp in enumerate(species):
                     fni = '%s__species__%s_%s_interlen.txt' % (anak, sp, fnlabel)
                     ki='fn_bestfit_species__%s' %sp
@@ -619,29 +630,29 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                             #self.fomnames+=[k]
                             self.strkeys_fomdlist+=[k]
                         fomd[k]=v
-                    
-                    
+
+
                     calind=list(calfomd['species']).index(sp)
                     cald={}
                     for k,v in calfomd.iteritems():
                         cald[k]=v[calind]
-                    
+
                     msfn=datafomd['fn_mass__%d' %cald['mass']][datafomind]
                     p=os.path.join(destfolder,msfn)
                     fd=self.data_filed_dict[msfn]
                     inds=[fd['keys'].index(k) for k in ('t(s)_MS,rawselectinds,MS(torr)_mass__%d'%cald['mass']).split(',')]
                     ms_t,rsinds,ms_torr=getarrs_filed(p,fd,selcolinds=inds)
-                    
+
                     ms_sig=ms_torr[:]
                     ms_sig-=cald['baseline.torr']
                     ms_sig/=cald['QE_wrt_modelling_basis']
-                    
-                    
+
+
                     inds=[np.argmin((t-echem_t)**2) for t in ms_t]
                     echem_i_smooth_at_ms_times=echem_i_smooth[inds]
                     echem_i_smooth_at_ms_times[ms_t>echem_t[-1]]=np.nan
-                    
-                    
+
+
                     def get_sim_arrs_paramind_timewerteche(paramind,timewrteche):
                         mod_t=sim_lib_dict[sp]['time(s)'][paramind]
                         inds=[np.argmin((t-mod_t)**2) for t in timewrteche]
@@ -649,26 +660,26 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         mod_c,mod_ip,mod_out=[sim_lib_dict[sp][k][paramind][inds] for k in ['conc_in_soltn(M)','Ip(A)','output(torr)']]
                         mod_out*=cald['instrument_QE']
                         return mod_t,mod_c,mod_ip,mod_out
-                    
+
                     interlend={}
                     fitsummarydlist=[]
                     l_fitloss=[]
                     interlend['rawselectinds']=rsinds
                     interlend['Adjusted_MS(torr)__%s' %sp]=ms_sig
-                    
+
                     for model_pars_ind in allow_fit_par_inds:
                         model_pars=sim_lib_dict['model_params'][model_pars_ind]
                         mod_t,mod_c,mod_ip,mod_out=get_sim_arrs_paramind_timewerteche(model_pars_ind,ms_t)
                         emod_t,emod_c,emod_ip,emod_out=get_sim_arrs_paramind_timewerteche(model_pars_ind,echem_t)
-                        
+
                         max_fe_i1_is_1=max((-emod_ip/echem_i_smooth)[echem_fe_test_inds])
                         Ip_1_max=self.params['max_per_species_FE']/max_fe_i1_is_1
-                        
+
                         resid_fcn=lambda Ip_1: loss_fcn(Ip_1*mod_out - ms_sig)
                         res = minimize_scalar(lambda x:np.sum(resid_fcn(x)))
                         Ip_1 = res.x
                         Ip_1=0. if Ip_1<0. else (Ip_1_max if Ip_1>Ip_1_max else Ip_1)
-                
+
                         fitsummaryd={}
                         fitsummaryd['model_params']=model_pars
                         fitsummaryd['Loss_contribution']=resid_fcn(Ip_1)
@@ -684,34 +695,34 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         fitloss=fitsummaryd['Loss_contribution'].sum()
                         l_fitloss+=[fitloss]
                         fitsummaryd['fitloss']=fitloss
-                        
+
                         fitsummarydlist+=[fitsummaryd]
                     bestfitind=np.argmin(l_fitloss)
                     for k in ['Ip(A)','Soltn_conc(mM)','Adjusted_MS(torr)','Fit_MS(torr)','Loss_contribution']:
                         interlend['%s__%s' %(k,sp)]=fitsummarydlist[bestfitind][k]
                     Ip_1_bestfit=fitsummarydlist[bestfitind]['Ip_1']
-                    
-                    
+
+
                     mod_t,mod_c,mod_ip,mod_out=get_sim_arrs_paramind_timewerteche(allow_fit_par_inds[bestfitind],echem_t)
-        
+
                     rawlend['Ip(A)__%s' %sp]=-Ip_1_bestfit*mod_ip
                     rawlend['Soltn_conc(mM)__%s' %sp]=Ip_1_bestfit*mod_c
                     rawlend['Fit_MS(torr)__%s' %sp]=Ip_1_bestfit*mod_out
                     rawlend['FE__%s' %sp]=-Ip_1_bestfit*mod_ip/echem_i_smooth
-                    
+
                     fomd['%s_bestfit.fitloss' %sp]=fitsummarydlist[bestfitind]['fitloss']
                     fomd['%s.maxFE' %sp]=max(rawlend['FE__%s' %sp][echem_fe_test_inds])
                     fomd['%s.charge.C' %sp]=(rawlend['Ip(A)__%s' %sp][:-1]*(echem_t[1:]-echem_t[:-1])).sum()
-                    
+
                     fomd['%s.Ip1.A' %sp]=Ip_1_bestfit
                     for parname,v in zip(sim_lib_dict['metadata']['parameter_names'],sim_lib_dict['model_params'][allow_fit_par_inds[bestfitind]]):
                         fomd['%s_bestfit.%s' %(sp,parname)]=v
-                    
+
                     #########start plotting section
                     plt.clf()
                     ax1=plt.subplot(1,2, 1)
                     ax2=plt.subplot(1,2,2)
-                    
+
                     plt.subplots_adjust(left=.08, bottom=.08, right=.96, top=.94, wspace=0.43)
                     ax=ax2
                     ax.cla()
@@ -726,7 +737,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     cb.set_label('loss per param set')
                     ax.set_xlabel(sim_lib_dict['metadata']['parameter_names'][0])
                     ax.set_ylabel(sim_lib_dict['metadata']['parameter_names'][1])
-                    
+
                     ax=ax1
                     ax.cla()
                     plt.sca(ax)
@@ -739,11 +750,11 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     axt=ax.twinx()
                     axt.plot(echem_t,rawlend['FE__%s' %sp],'b-')
                     axt.set_ylabel('FE__%s' %sp)
-                   
-                        
+
+
                     #########finish plotting section
-                                    
-                    
+
+
                     p=os.path.join(destfolder, fnim0)
                     self.multirunfiledict['misc_files'][fnim0]='ecms_fitsummary_png_file;'
                     plt.savefig(p, dpi=300)
@@ -766,12 +777,12 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
 
                 for s in ['Ip(A)','FE']:
                     rawlend['%s_Total' %s]=np.array([rawlend[k] for k in rawlend.keys() if k.startswith(s)]).sum(axis=0)
-                
+
                 fomd['max.FETotal']=np.max(rawlend['FE_Total'])
                 totcharge_species=np.sum([fomd['%s.charge.C' %sp] for sp in species])
                 fomd['Echem.charge.C']=(echem_i_smooth[:-1]*(echem_t[1:]-echem_t[:-1])).sum()
                 fomd['Other.charge.C']=fomd['Echem.charge.C']-totcharge_species
-                
+
                 ###start plot section
                 cols=['b', 'g','r', 'c', 'm', 'y']
                 plt.clf()
@@ -795,7 +806,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                 ax=ax3
                 ax.cla()
                 plt.sca(ax)
-                
+
                 for segi in range(max(segment_index_arr)+1):
                     ls='--' if (segi%2)==1 else '-'
                     inds=np.where(segment_index_arr==segi)[0]
@@ -803,20 +814,20 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     ax.plot(rawlend['Ewe(compensatedVrhe)'][inds],echem_i_smooth[inds],'k'+ls)
                     axr=ax.twinx()
                     axr.plot(echem_v,rawlend['Ewe.Error(V)'],'r'+ls)
-                    
+
                     for sp in species:
                         k='FE__%s' %sp
                         tech_summary_plot_data[k][smpcount]+=[(rawlend['Ewe(compensatedVrhe)'][inds],rawlend[k][inds])]
                 for fomk in summ_plot_fom_keys:
                     tech_summary_plot_data['fomlistd'][fomk]+=[fomd[fomk] if fomk in fomd.keys() else np.nan]
-                        
-                        
+
+
                     #tech_summary_plot_data=[]
                 plt.plot([],[],'b-',label='raw I(V)')
                 plt.plot([],[],'k-',label='smooth I(compV)')
                 plt.plot([],[],'r-',label='Verror(V)')
                 plt.legend(loc=loc, fontsize='small', frameon=False)
-                
+
                 ###finish plot section
                 p=os.path.join(destfolder, fnrm0)
                 self.multirunfiledict['misc_files'][fnrm0]='ecms_png_file;'
@@ -831,22 +842,22 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                             fnr] = '%s;%s;%d;%d;%d' % (
                                 'eche_inter_rawlen_file', ','.join(kl), 1,
                                 len(rawlend[kl[0]]), fomd['sample_no'])
-                            
+
                 techd_fomdlist[tech]+=[fomd]
-                
+
                 for k in fomd.keys():
                     if not k in self.fomnames+self.strkeys_fomdlist+list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING):
                        self.fomnames+=[k]
-            
+
             #start summary plot
             fig.clf()
             max_samples_to_plot=15
             smps=[tup[1] for tup in pid_sid_datafomind__this_tech][:max_samples_to_plot]
             cols=get_colors_fom_cmap(range(len(smps)), 0, len(smps)-1, 'jet')
-    
+
             for spcount,sp in enumerate(species[:3]):
                 ax=plt.subplot(2,2,spcount+1)
-                k='FE__%s' %sp    
+                k='FE__%s' %sp
                 for count, (col, seglist, smp) in enumerate(zip(cols, tech_summary_plot_data[k], smps)):
                     for segcount,(x,y) in enumerate(seglist):
                         ls='--' if segcount%2==1 else '-'
@@ -862,11 +873,11 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             ax.set_xticklabels(['%d' %smp for smp in smps],rotation=45.)
             for ticklabel, tickcolor in zip(ax.get_xticklabels(), cols):
                 ticklabel.set_color(tickcolor)
-            
+
             plt.xlim(-0.5, len(smps)+2.9)
             plt.legend(loc=1,fontsize='small', frameon=False,numpoints=1,handlelength =0)
             plt.subplots_adjust(left=.11, bottom=.11, right=.96, top=.97, wspace=0.25,hspace=.12)
-            
+
             fnsummim='%s__tech__%s__Jp_FE' %(anak,tech)
             p=os.path.join(destfolder, fnsummim+'.png')
             self.multirunfiledict['misc_files'][fnsummim+'.png']='ecms_png_file;'
@@ -875,6 +886,6 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             self.multirunfiledict['misc_files'][fnsummim+'.svg']='ecms_svg_file;'
             plt.savefig(p)
             #end summary plot
-            
+
             self.fomdlist=techd_fomdlist[tech]
             self.writefom(destfolder, anak, anauserfomd=anauserfomd, strkeys_fomdlist=self.strkeys_fomdlist,fn='%s__tech__%s__%s.csv' %(anak,tech, '-'.join(self.fomnames[:3])))
