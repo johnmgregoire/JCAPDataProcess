@@ -1,3 +1,9 @@
+'''
+routine for appending ECMS anas into a source ana (creates a copy), but doesn't
+work with VisualizeDataApp since auxiliary anas won't have experiments/runs that
+exist in source experiment/runs; may be useful only for fom csv merging
+'''
+
 import sys
 import shutil
 import os
@@ -9,7 +15,7 @@ sys.path.append(os.path.join(os.getcwd(), 'AuxPrograms'))
 from fcns_io import readana, timestampname, strrep_filedict
 
 # specify ana type
-type = 'ecms'
+anatype = 'ecms'
 
 # ana name, ana_int
 anas_to_merge = [
@@ -23,7 +29,7 @@ anas_to_merge = [
 
 ### append anas, first ana in list will be used as source
 
-paths_to_merge = [p for p in glob('L:\\processes\\analysis\\%s\\*\\*.ana' %(type)) if any([a in p for a,i in anas_to_merge])]
+paths_to_merge = [p for p in glob('L:\\processes\\analysis\\%s\\*\\*.ana' %(anatype)) if any([a in p for a,i in anas_to_merge])]
 
 source_anap = paths_to_merge[0]
 source_anai = anas_to_merge[0][1]
@@ -51,6 +57,7 @@ for i in range(len(paths_to_merge[1:])):
     merge_cols=merge_dict['ana__%i' %(merge_anai)]['files_multi_run']['fom_files'][merge_fn]['keys']
 
     merge_df = pd.read_csv(merge_csv_path, skiprows=merge_skip, names=merge_cols)
+    merge_df = merge_df[~(merge_df['sample_no'].astype('str') + '_' + merge_df['plate_id'].astype('str')).isin(['%i_%i' %(s, p) for s, p in zip(fom_dict['sample_no'], fom_dict['plate_id'])])]
     merge_df.insert(3, 'anaidx', i+1)
 
     merge_cols=merge_cols[:3] + ['anaidx'] + merge_cols[3:]
@@ -77,14 +84,15 @@ new_ana_block = {
     "analysis_general_type": source_dict['ana__%i' %(source_anai)]['analysis_general_type'],
     "plot_parameters": source_dict['ana__%i' %(source_anai)]['plot_parameters'],
     "plate_ids": ','.join([str(p) for p in set(fom_dict['plate_id'])]),
-    "description": 'Append csv_fom_files with unique sample_no, plate_id, keeping intersection of fom names',
+    "description": '; '.join(['process ana__%i' %(source_anai)] + source_dict['ana__%i' %(source_anai)]['description'].split('; ')[1:]),
+    "run_use_option": "data",
     "files_multi_run": {
         "fom_files": {
             new_ana_fn: {
                 "file_type": "csv_fom_file",
                 "keys": keep_cols,
                 "num_data_rows": len(fom_dict['sample_no']),
-                "num_header_lines": 1
+                "num_header_lines": 9
             }
         }
     }
@@ -95,7 +103,10 @@ source_dict['ana__%i' %(last_ana_int+1)] = new_ana_block
 new_ts = timestampname()
 source_dict["name"] = new_ts
 
-new_anadir = 'L:\\processes\\analysis\\%s\\%s.run' %(type, new_ts)
+new_anadir = 'L:\\processes\\analysis\\%s\\%s.run' %(anatype, new_ts)
+
+
+
 os.makedirs(new_anadir)
 
 source_anadir = os.path.dirname(source_anap)
@@ -115,7 +126,16 @@ with open(os.path.join(new_anadir, '%s.ana' %(new_ts)), 'w') as f:
 pickle.dump(source_dict, open(os.path.join(new_anadir, '%s.pck' %(new_ts)), 'w'))
 
 
-fomstrlist=[', '.join(keep_cols)] + [', '.join(z) for z in zip(*[[str(x) for x in fom_dict[k]] for k in keep_cols])]
+fomstrlist = ['1\t%i\t%i\t7' %(len(keep_cols), len(fom_dict['sample_no']))] + \
+             ['csv_version: 1'] + \
+             ['plot_parameters:'] + \
+             ['    plot__1:'] + \
+             ['        colormap: viridis'] + \
+             ['        colormap_over_color: (0.993248, 0.906157, 0.143936)'] + \
+             ['        colormap_under_color: (0.267004, 0.004874, 0.329415)'] + \
+             ['        fom_name: max.FETotal'] + \
+             [','.join(keep_cols)] + \
+             [','.join(z) for z in zip(*[[str(x) for x in fom_dict[k]] for k in keep_cols])]
 fomfilestr='\n'.join(fomstrlist)
 
 with open(os.path.join(new_anadir, new_ana_fn), 'w') as f:
