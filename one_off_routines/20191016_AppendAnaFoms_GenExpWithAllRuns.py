@@ -5,8 +5,7 @@ import pickle
 import pandas as pd
 from glob import glob
 from copy import copy
-sys.path.append(os.path.split(os.getcwd())[0])
-sys.path.append(os.path.join(os.getcwd(), 'AuxPrograms'))
+sys.path.append(os.path.join(os.path.basename(os.getcwd()), 'AuxPrograms'))
 
 from fcns_io import timestampname, strrep_filedict, rcp_to_dict
 
