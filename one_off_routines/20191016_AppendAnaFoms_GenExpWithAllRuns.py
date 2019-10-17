@@ -195,3 +195,7 @@ expfilestr = '\n'.join(new_expstrlist)
 
 with open(os.path.join(new_expdir, '%s.exp' % (new_ts)), 'w') as f:
     f.write(expfilestr)
+
+
+print('merged ana:  ' + os.path.join(new_anadir, '%s.ana' % (new_ts)))
+print('merged exp:  ' + os.path.join(new_expdir, '%s.exp' % (new_ts)))
