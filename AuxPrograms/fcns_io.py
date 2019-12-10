@@ -1091,7 +1091,12 @@ def getelements_plateidstr(plateidstr_or_filed, multielementink_concentrationinf
     if print_key_or_keyword=='screening_print_id':
         printdlist=[printd for printd in infofiled['prints'].values() if 'id' in printd.keys() and printd['id']==infofiled['screening_print_id']]
         if len(printdlist)==0:
-            return None
+            noscreen_printdlist=[printd for printd in infofiled['prints']] # check for valid prints
+            if len(noscreen_printdlist)==0:
+                return None
+            else:
+                noscreen_printdlist.sort(key=lambda x: int(x['id']), reverse=True)
+                printdlist = noscreen_printdlist
         printd=printdlist[0]
     else:
         printd=infofiled['prints'][print_key_or_keyword]
