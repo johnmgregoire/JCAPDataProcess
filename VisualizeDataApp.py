@@ -317,7 +317,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             else:
                 els=ans #if inkjetconcentrationadjustment denied then els is now the channel labels
                 
-            if len(set(els))<len(els):#non standard ink where a element label for a channel (1 channel could be a multielement label)  and if labels are duplicated that will break the dictionary math below so revert to dflt
+            if not els is None and len(set(els))<len(els):#non standard ink where a element label for a channel (1 channel could be a multielement label)  and if labels are duplicated that will break the dictionary math below so revert to dflt
                 els=['A', 'B', 'C', 'D']
                 
             if els is None:
