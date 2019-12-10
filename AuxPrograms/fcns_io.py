@@ -1029,17 +1029,17 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_
             s=f.read(1000)
 
         if pmfold=='' or not infokey in s:
-            if not erroruifcn is None:
-                p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
-            return (p, pmidstr) if return_pmidstr else p
-        pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
-        if pmidstr=='':
             infod = rcp_to_dict(infop)
             if 'prints' in infod.keys():
                 printdlist = [v for k,v in infod['prints']]
                 printdlist.sort(key=lambda x: int(x['id']), reverse=True)
                 printd = printdlist[0]
                 pmidstr = printd['map_id']
+            else:
+                if not erroruifcn is None:
+                    p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
+                return (p, pmidstr) if return_pmidstr else p
+        pmidstr=s.partition(infokey)[2].partition('\n')[0].strip()
     fns=[fn for fn in os.listdir(pmfold) if fn.startswith('0'*(4-len(pmidstr))+pmidstr+'-') and fn.endswith('-mp.txt')]
     if len(fns)!=1:
         if not erroruifcn is None:
