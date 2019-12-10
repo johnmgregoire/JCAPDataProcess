@@ -1031,7 +1031,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_
         if pmfold=='' or not infokey in s:
             infod = rcp_to_dict(infop)
             if 'prints' in infod.keys():
-                printdlist = [v for k,v in infod['prints']]
+                printdlist = [v for k,v in infod['prints'].items()]
                 printdlist.sort(key=lambda x: int(x['id']), reverse=True)
                 printd = printdlist[0]
                 pmidstr = printd['map_id']
