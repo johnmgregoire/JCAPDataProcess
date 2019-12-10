@@ -1028,7 +1028,7 @@ def getplatemappath_plateid(plateidstr, erroruifcn=None, infokey='screening_map_
         with open(infop, mode='r') as f:
             s=f.read(1000)
 
-        if pmfold=='' or not infokey in s:
+        if pmfold=='' or (not infokey in s and not 'prints' in s):
             if not erroruifcn is None:
                 p=erroruifcn('', tryprependpath(PLATEMAPFOLDERS, ''))
             return (p, pmidstr) if return_pmidstr else p
