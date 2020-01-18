@@ -316,12 +316,11 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
     if lines is None:
         try:#need to sometimes try twice so might as well try 3 times
             if path.startswith('/'):
-                path = ('J:/hte_jcap_app_proto/run%s' %(path))
-                print path
-
-            if '.zip' in path:
-                with zipfile.ZipFile(path.split('\\')[0]) as zf:
-                    with zf.open(path.split('\\')[1], 'rU') as f:
+                p = ('J:/hte_jcap_app_proto/run%s' %(path))
+                target = os.path.basename(p)
+                zipfn = os.path.dirname(p) if '.zip' in p else '%s.zip' %(os.path.dirname(p))
+                with zipfile.ZipFile(zipfn) as zf:
+                    with zf.open(target, 'rU') as f:
                         lines=f.readlines()
             else:
                 with open(path,mode='r') as f:
@@ -329,24 +328,22 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
         except:
             try:
                 if path.startswith('/'):
-                    path = ('J:/hte_jcap_app_proto/run%s' %(path))
-                    print path
-
-                if '.zip' in path:
-                    with zipfile.ZipFile(path.split('\\')[0]) as zf:
-                        with zf.open(path.split('\\')[1], 'rU') as f:
+                    p = ('J:/hte_jcap_app_proto/run%s' %(path))
+                    target = os.path.basename(p)
+                    zipfn = os.path.dirname(p) if '.zip' in p else '%s.zip' %(os.path.dirname(p))
+                    with zipfile.ZipFile(zipfn) as zf:
+                        with zf.open(target, 'rU') as f:
                             lines=f.readlines()
                 else:
                     with open(path,mode='r') as f:
                         lines=f.readlines()
             except:
                 if path.startswith('/'):
-                    path = ('J:/hte_jcap_app_proto/run%s' %(path))
-                    print path
-
-                if '.zip' in path:
-                    with zipfile.ZipFile(path.split('\\')[0]) as zf:
-                        with zf.open(path.split('\\')[1], 'rU') as f:
+                    p = ('J:/hte_jcap_app_proto/run%s' %(path))
+                    target = os.path.basename(p)
+                    zipfn = os.path.dirname(p) if '.zip' in p else '%s.zip' %(os.path.dirname(p))
+                    with zipfile.ZipFile(zipfn) as zf:
+                        with zf.open(target, 'rU') as f:
                             lines=f.readlines()
                 else:
                     with open(path,mode='r') as f:

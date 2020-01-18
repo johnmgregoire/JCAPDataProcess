@@ -77,11 +77,10 @@ def read_ecms_simulation_data(ms_simulation_model,species_list):
 def read_hiden_csv(p):
     if p.startswith('/'):
         p = ('J:/hte_jcap_app_proto/run%s' %(p))
-        # print p
-
-    if '.zip' in p:
-        with zipfile.ZipFile(p.split('\\')[0]) as zf:
-            with zf.open(p.split('\\')[1], 'rU') as f:
+        target = os.path.basename(p)
+        zipfn = os.path.dirname(p) if '.zip' in p else '%s.zip' %(os.path.dirname(p))
+        with zipfile.ZipFile(zipfn) as zf:
+            with zf.open(target, 'rU') as f:
                 lines=f.readlines()
     else:
         with open(p,mode='r') as f:

@@ -391,8 +391,13 @@ def calcfom_analyzedata_calcfomdialogclass(self, checkinputbool=True):#this argu
     self.activeana['analysis_fcn_version']=self.analysisclass.analysis_fcn_version
     self.activeana['run_use_option']=self.usek
     self.activeana['plot_parameters']=self.analysisclass.plotparams
-    plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
-    self.activeana['plate_ids']="''" if len(plateidsliststr)==0 else plateidsliststr
+    active_int = int(anak.split("__")[-1])
+    if active_int>1 and self.analysisclass.analysis_name=='Analysis__ECMS_Calibration':
+        self.activeana['plate_ids'] = self.anadict['ana__%i' %(active_int-1)]['plate_ids']
+        plateidsliststr=self.activeana['plate_ids']
+    else:
+        plateidsliststr=','.join('%d' %i for i in sorted(list(set([d['plate_id'] for d in self.analysisclass.fomdlist]))))
+        self.activeana['plate_ids']="''" if len(plateidsliststr)==0 else plateidsliststr
     le, desc=self.paramsdict_le_dflt['description']
     s=str(le.text()).strip()
     if not (len(s)==0 or 'null' in s):
