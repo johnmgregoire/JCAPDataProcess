@@ -27,7 +27,7 @@ from FOM_process_basics import *
 import numpy as np
 from scipy import signal
 from scipy.optimize import minimize_scalar
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
 loss_fcn_dict = {

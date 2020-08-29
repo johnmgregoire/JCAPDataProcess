@@ -8,11 +8,11 @@ from PyQt5.QtGui import *
 import operator
 import matplotlib
 
-# from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 # try:
-#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QTAgg as NavigationToolbar
 # except ImportError:
-#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 projectpath = os.path.split(os.path.abspath(__file__))[0]
 sys.path.append(os.path.join(projectpath, "QtForms"))
 sys.path.append(os.path.join(projectpath, "AuxPrograms"))

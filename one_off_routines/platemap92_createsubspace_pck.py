@@ -49,7 +49,7 @@ for indpair in inds_comb:
     tc=gen_target_comp(indpair)
     inds_dlist=np.array([i for i, c in enumerate(comps_all) if within_tol_calc(c, tc)])
     sortedtups=sorted([((comps_all[i]>0.).sum(dtype='int32'), comps_all[i][indpair[0]], comps_all[i][indpair[1]], dlist[i]['Sample'], i) for i in inds_dlist])
-    
+
     inds_dlist2=map(operator.itemgetter(-1), sortedtups)
     subdlist=[dlist[i] for i in inds_dlist2]
     subspace_dict[indpair]={}
@@ -67,7 +67,7 @@ for indpair in inds_comb:
     subspace_dict[indpair]['subplot_info_each_alloy_chan']={}
     subplotd=subspace_dict[indpair]['subplot_info_each_alloy_chan']
     subplotd['alloy_chan_inds']=indtrio
-    
+
     for i in indtrio:
         subplotd[i]={}
         ad=subplotd[i]
@@ -83,9 +83,9 @@ for indpair in inds_comb:
         ad['host_ab_ratio__subplot']=a_to_b[inds]
         ad['host_ab_comp__subplot']=ab_comp[inds]
         ad['sample_no_array__subplot']=subspace_dict[indpair]['sample_no_array'][inds]
-        
+
         map(operator.itemgetter(-1), sortedtups)
-        
+
         partialtups=[(tup[0], tup[1]) for tup in sortedtups]
         tupsetlist=sorted(list(set(partialtups)))
         row_index=[tupsetlist.index(tup) for tup in partialtups]
@@ -135,7 +135,7 @@ with open(sp, mode='wb') as f:pickle.dump(subspace_dict, f)
 #    c[i0]=0.6667
 #    c[i1]=0.3333
 #    return c
-#    
+#
 #inds_comb=inds_comb[:1]
 #
 #target_comps=[gen_target_comp(inds) for inds in inds_comb]
@@ -226,11 +226,11 @@ with open(sp, mode='wb') as f:pickle.dump(subspace_dict, f)
 #from PyQt4.QtCore import *
 #from PyQt4.QtGui import *
 #from quaternary_faces_shells import ternaryfaces_shells
-#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 #try:
-#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QTAgg as NavigationToolbar
 #except ImportError:
-#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 #from matplotlib.figure import Figure
 #
 #
@@ -257,7 +257,7 @@ with open(sp, mode='wb') as f:pickle.dump(subspace_dict, f)
 #        self.mpl_connect('button_press_event', self.myclick)
 #        self.clicklist=[]
 #        self.cbax=None
-#    
+#
 #
 #    def myclick(self, event):
 #        if not (event.xdata is None or event.ydata is None):
@@ -270,11 +270,11 @@ with open(sp, mode='wb') as f:pickle.dump(subspace_dict, f)
 #    def __init__(self, comps, parent=None, title='', folderpath=None):
 #        super(dialog, self).__init__(parent)
 #
-#        
+#
 #        plotw=plotwidget(self)
-#        
+#
 #        ax=plotw.axes
-#        
+#
 #
 #        inds=np.where(comps[:, -1]==0.)[0]
 #        comps=comps[inds, :-1]
@@ -288,41 +288,41 @@ with open(sp, mode='wb') as f:pickle.dump(subspace_dict, f)
 #        self.tf=ternaryfaces_shells(ax, nintervals=intervs)
 #        self.tf.label()
 #        self.tf.scatter(comps, cols, skipinds=[0, 1, 2, 3], s='patch')
-#        
+#
 #        #only select comps
 #        plotw2=plotwidget(self, projection3d=True)
-#        
-#        
+#
+#
 #        ax=plotw2.axes
 #        #unary
-#        
+#
 #        stpquat=QuaternaryPlot(ax)
 #
 #        stpquat.scatter(comps, c=cols, s=100, edgecolors='none')
 #        stpquat.label()
 #
-#        
+#
 #        QObject.connect(plotw, SIGNAL("genericclickonplot"), self.plotclick)
 #        QObject.connect(plotw2, SIGNAL("genericclickonplot"), self.plotclick)
-#        
+#
 #        mainlayout=QGridLayout()
 #        mainlayout.addWidget(plotw, 0, 0)
 #        mainlayout.addWidget(plotw2, 1, 0)
 #
-#        
+#
 #        self.setLayout(mainlayout)
-#    
+#
 #    def plotclick(self, coords_button_ax):
 #        xc, yc, button, ax=coords_button_ax
 #        print self.tf.toComp(xc, yc)
-#        
+#
 #class MainMenu(QMainWindow):
 #    def __init__(self):
 #        super(MainMenu, self).__init__(None)
-#        
+#
 #        x=dialog(comps)
 #        x.exec_()
-#        
+#
 #mainapp=QApplication(sys.argv)
 #form=MainMenu()
 #form.show()
