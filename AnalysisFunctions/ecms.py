@@ -1,5 +1,6 @@
 # try:
 from ecms_fcns import *
+
 # except:
 #     class Analysis__ECMS_Time_Join():
 #         def __init__(self):
@@ -18,5 +19,4 @@ from ecms_fcns import *
 #             return []
 #
 #     print 'ECMS analysis cannot be run because there is no scipy.signal.savgol_filter function'
-
-#analysismasterclass=Analysis_Master_nointer()
+# analysismasterclass=Analysis_Master_nointer()

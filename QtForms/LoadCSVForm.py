@@ -1,153 +1,251 @@
 # -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'Z:\Documents\PythonCode\JCAP\JCAPDataProcess\QtDesign\LoadCSVForm.ui'
 #
 # Created: Thu Feb 18 10:30:25 2016
 #      by: PyQt4 UI code generator 4.9
 #
 # WARNING! All changes made in this file will be lost!
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-from PyQt4 import QtCore, QtGui
-
-try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    _fromUtf8 = lambda s: s
 
 class Ui_LoadCSVDialog(object):
     def setupUi(self, LoadCSVDialog):
-        LoadCSVDialog.setObjectName(_fromUtf8("LoadCSVDialog"))
+        LoadCSVDialog.setObjectName("LoadCSVDialog")
         LoadCSVDialog.resize(325, 344)
-        self.buttonBox = QtGui.QDialogButtonBox(LoadCSVDialog)
+        self.buttonBox = QtWidgets.QDialogButtonBox(LoadCSVDialog)
         self.buttonBox.setGeometry(QtCore.QRect(120, 310, 161, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
-        self.ellabelsLineEdit = QtGui.QLineEdit(LoadCSVDialog)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
+        self.buttonBox.setObjectName("buttonBox")
+        self.ellabelsLineEdit = QtWidgets.QLineEdit(LoadCSVDialog)
         self.ellabelsLineEdit.setGeometry(QtCore.QRect(210, 30, 101, 20))
         self.ellabelsLineEdit.setReadOnly(False)
-        self.ellabelsLineEdit.setObjectName(_fromUtf8("ellabelsLineEdit"))
-        self.label = QtGui.QLabel(LoadCSVDialog)
+        self.ellabelsLineEdit.setObjectName("ellabelsLineEdit")
+        self.label = QtWidgets.QLabel(LoadCSVDialog)
         self.label.setGeometry(QtCore.QRect(170, 20, 41, 31))
-        self.label.setObjectName(_fromUtf8("label"))
-        self.label_15 = QtGui.QLabel(LoadCSVDialog)
+        self.label.setObjectName("label")
+        self.label_15 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_15.setGeometry(QtCore.QRect(10, 110, 61, 21))
-        self.label_15.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_15.setObjectName(_fromUtf8("label_15"))
-        self.sampleComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_15.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_15.setObjectName("label_15")
+        self.sampleComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.sampleComboBox.setGeometry(QtCore.QRect(80, 110, 121, 22))
-        self.sampleComboBox.setObjectName(_fromUtf8("sampleComboBox"))
-        self.xComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.sampleComboBox.setObjectName("sampleComboBox")
+        self.xComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.xComboBox.setGeometry(QtCore.QRect(80, 160, 191, 22))
-        self.xComboBox.setObjectName(_fromUtf8("xComboBox"))
-        self.label_16 = QtGui.QLabel(LoadCSVDialog)
+        self.xComboBox.setObjectName("xComboBox")
+        self.label_16 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_16.setGeometry(QtCore.QRect(10, 160, 61, 21))
-        self.label_16.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_16.setObjectName(_fromUtf8("label_16"))
-        self.yComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_16.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_16.setObjectName("label_16")
+        self.yComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.yComboBox.setGeometry(QtCore.QRect(80, 180, 191, 22))
-        self.yComboBox.setObjectName(_fromUtf8("yComboBox"))
-        self.label_17 = QtGui.QLabel(LoadCSVDialog)
+        self.yComboBox.setObjectName("yComboBox")
+        self.label_17 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_17.setGeometry(QtCore.QRect(10, 180, 61, 21))
-        self.label_17.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_17.setObjectName(_fromUtf8("label_17"))
-        self.aComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_17.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_17.setObjectName("label_17")
+        self.aComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.aComboBox.setGeometry(QtCore.QRect(80, 200, 191, 22))
-        self.aComboBox.setObjectName(_fromUtf8("aComboBox"))
-        self.label_18 = QtGui.QLabel(LoadCSVDialog)
+        self.aComboBox.setObjectName("aComboBox")
+        self.label_18 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_18.setGeometry(QtCore.QRect(10, 200, 61, 21))
-        self.label_18.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_18.setObjectName(_fromUtf8("label_18"))
-        self.bComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_18.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_18.setObjectName("label_18")
+        self.bComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.bComboBox.setGeometry(QtCore.QRect(80, 220, 191, 22))
-        self.bComboBox.setObjectName(_fromUtf8("bComboBox"))
-        self.label_19 = QtGui.QLabel(LoadCSVDialog)
+        self.bComboBox.setObjectName("bComboBox")
+        self.label_19 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_19.setGeometry(QtCore.QRect(10, 220, 61, 21))
-        self.label_19.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_19.setObjectName(_fromUtf8("label_19"))
-        self.cComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_19.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_19.setObjectName("label_19")
+        self.cComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.cComboBox.setGeometry(QtCore.QRect(80, 240, 191, 22))
-        self.cComboBox.setObjectName(_fromUtf8("cComboBox"))
-        self.label_20 = QtGui.QLabel(LoadCSVDialog)
+        self.cComboBox.setObjectName("cComboBox")
+        self.label_20 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_20.setGeometry(QtCore.QRect(10, 240, 61, 21))
-        self.label_20.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_20.setObjectName(_fromUtf8("label_20"))
-        self.dComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_20.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_20.setObjectName("label_20")
+        self.dComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.dComboBox.setGeometry(QtCore.QRect(80, 260, 191, 22))
-        self.dComboBox.setObjectName(_fromUtf8("dComboBox"))
-        self.label_21 = QtGui.QLabel(LoadCSVDialog)
+        self.dComboBox.setObjectName("dComboBox")
+        self.label_21 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_21.setGeometry(QtCore.QRect(10, 260, 61, 21))
-        self.label_21.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_21.setObjectName(_fromUtf8("label_21"))
-        self.codeComboBox = QtGui.QComboBox(LoadCSVDialog)
+        self.label_21.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_21.setObjectName("label_21")
+        self.codeComboBox = QtWidgets.QComboBox(LoadCSVDialog)
         self.codeComboBox.setGeometry(QtCore.QRect(80, 280, 191, 22))
-        self.codeComboBox.setObjectName(_fromUtf8("codeComboBox"))
-        self.label_22 = QtGui.QLabel(LoadCSVDialog)
+        self.codeComboBox.setObjectName("codeComboBox")
+        self.label_22 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_22.setGeometry(QtCore.QRect(10, 280, 61, 21))
-        self.label_22.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.label_22.setObjectName(_fromUtf8("label_22"))
-        self.plateidLineEdit = QtGui.QLineEdit(LoadCSVDialog)
+        self.label_22.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.label_22.setObjectName("label_22")
+        self.plateidLineEdit = QtWidgets.QLineEdit(LoadCSVDialog)
         self.plateidLineEdit.setGeometry(QtCore.QRect(80, 30, 71, 20))
-        self.plateidLineEdit.setText(_fromUtf8(""))
-        self.plateidLineEdit.setObjectName(_fromUtf8("plateidLineEdit"))
-        self.plateidPushButton = QtGui.QPushButton(LoadCSVDialog)
+        self.plateidLineEdit.setText("")
+        self.plateidLineEdit.setObjectName("plateidLineEdit")
+        self.plateidPushButton = QtWidgets.QPushButton(LoadCSVDialog)
         self.plateidPushButton.setGeometry(QtCore.QRect(10, 20, 61, 31))
-        self.plateidPushButton.setObjectName(_fromUtf8("plateidPushButton"))
-        self.label_2 = QtGui.QLabel(LoadCSVDialog)
+        self.plateidPushButton.setObjectName("plateidPushButton")
+        self.label_2 = QtWidgets.QLabel(LoadCSVDialog)
         self.label_2.setGeometry(QtCore.QRect(80, 60, 91, 16))
-        self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.platemapLineEdit = QtGui.QLineEdit(LoadCSVDialog)
+        self.label_2.setObjectName("label_2")
+        self.platemapLineEdit = QtWidgets.QLineEdit(LoadCSVDialog)
         self.platemapLineEdit.setGeometry(QtCore.QRect(80, 80, 231, 20))
-        self.platemapLineEdit.setText(_fromUtf8(""))
-        self.platemapLineEdit.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        self.platemapLineEdit.setObjectName(_fromUtf8("platemapLineEdit"))
-        self.platemapPushButton = QtGui.QPushButton(LoadCSVDialog)
+        self.platemapLineEdit.setText("")
+        self.platemapLineEdit.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
+        self.platemapLineEdit.setObjectName("platemapLineEdit")
+        self.platemapPushButton = QtWidgets.QPushButton(LoadCSVDialog)
         self.platemapPushButton.setGeometry(QtCore.QRect(10, 70, 61, 31))
-        self.platemapPushButton.setObjectName(_fromUtf8("platemapPushButton"))
-        self.useplatemapCheckBox = QtGui.QCheckBox(LoadCSVDialog)
+        self.platemapPushButton.setObjectName("platemapPushButton")
+        self.useplatemapCheckBox = QtWidgets.QCheckBox(LoadCSVDialog)
         self.useplatemapCheckBox.setGeometry(QtCore.QRect(70, 140, 141, 17))
-        self.useplatemapCheckBox.setObjectName(_fromUtf8("useplatemapCheckBox"))
-
+        self.useplatemapCheckBox.setObjectName("useplatemapCheckBox")
         self.retranslateUi(LoadCSVDialog)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), LoadCSVDialog.accept)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), LoadCSVDialog.reject)
+        self.buttonBox.accepted.connect(LoadCSVDialog.accept)
+        self.buttonBox.rejected.connect(LoadCSVDialog.reject)
         QtCore.QMetaObject.connectSlotsByName(LoadCSVDialog)
 
     def retranslateUi(self, LoadCSVDialog):
-        LoadCSVDialog.setWindowTitle(QtGui.QApplication.translate("LoadCSVDialog", "ChooseImagesToSave", None, QtGui.QApplication.UnicodeUTF8))
-        self.ellabelsLineEdit.setText(QtGui.QApplication.translate("LoadCSVDialog", "A,B,C,D", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("LoadCSVDialog", "Element\n"
-"labels", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_15.setText(QtGui.QApplication.translate("LoadCSVDialog", "sample_no", None, QtGui.QApplication.UnicodeUTF8))
-        self.sampleComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.xComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_16.setText(QtGui.QApplication.translate("LoadCSVDialog", "x", None, QtGui.QApplication.UnicodeUTF8))
-        self.yComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_17.setText(QtGui.QApplication.translate("LoadCSVDialog", "y", None, QtGui.QApplication.UnicodeUTF8))
-        self.aComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_18.setText(QtGui.QApplication.translate("LoadCSVDialog", "A", None, QtGui.QApplication.UnicodeUTF8))
-        self.bComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_19.setText(QtGui.QApplication.translate("LoadCSVDialog", "B", None, QtGui.QApplication.UnicodeUTF8))
-        self.cComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_20.setText(QtGui.QApplication.translate("LoadCSVDialog", "C", None, QtGui.QApplication.UnicodeUTF8))
-        self.dComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_21.setText(QtGui.QApplication.translate("LoadCSVDialog", "D", None, QtGui.QApplication.UnicodeUTF8))
-        self.codeComboBox.setToolTip(QtGui.QApplication.translate("LoadCSVDialog", "Apply all other filteres in this section to only this run", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_22.setText(QtGui.QApplication.translate("LoadCSVDialog", "code", None, QtGui.QApplication.UnicodeUTF8))
-        self.plateidPushButton.setText(QtGui.QApplication.translate("LoadCSVDialog", "Load from\n"
-"plateid", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("LoadCSVDialog", "platemap path", None, QtGui.QApplication.UnicodeUTF8))
-        self.platemapPushButton.setText(QtGui.QApplication.translate("LoadCSVDialog", "Load\n"
-"platemap", None, QtGui.QApplication.UnicodeUTF8))
-        self.useplatemapCheckBox.setText(QtGui.QApplication.translate("LoadCSVDialog", "Use platemap for these:", None, QtGui.QApplication.UnicodeUTF8))
+        LoadCSVDialog.setWindowTitle(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog", "ChooseImagesToSave", None
+            )
+        )
+        self.ellabelsLineEdit.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "A,B,C,D", None)
+        )
+        self.label.setText(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog", "Element\n" "labels", None
+            )
+        )
+        self.label_15.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "sample_no", None)
+        )
+        self.sampleComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.xComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_16.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "x", None)
+        )
+        self.yComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_17.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "y", None)
+        )
+        self.aComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_18.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "A", None)
+        )
+        self.bComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_19.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "B", None)
+        )
+        self.cComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_20.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "C", None)
+        )
+        self.dComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_21.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "D", None)
+        )
+        self.codeComboBox.setToolTip(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog",
+                "Apply all other filteres in this section to only this run",
+                None,
+            )
+        )
+        self.label_22.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "code", None)
+        )
+        self.plateidPushButton.setText(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog", "Load from\n" "plateid", None
+            )
+        )
+        self.label_2.setText(
+            QtCore.QCoreApplication.translate("LoadCSVDialog", "platemap path", None)
+        )
+        self.platemapPushButton.setText(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog", "Load\n" "platemap", None
+            )
+        )
+        self.useplatemapCheckBox.setText(
+            QtCore.QCoreApplication.translate(
+                "LoadCSVDialog", "Use platemap for these:", None
+            )
+        )
 
 
 if __name__ == "__main__":
     import sys
-    app = QtGui.QApplication(sys.argv)
-    LoadCSVDialog = QtGui.QDialog()
+
+    app = QtWidgets.QApplication(sys.argv)
+    LoadCSVDialog = QtWidgets.QDialog()
     ui = Ui_LoadCSVDialog()
     ui.setupUi(LoadCSVDialog)
     LoadCSVDialog.show()
     sys.exit(app.exec_())
-

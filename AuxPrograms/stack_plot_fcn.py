@@ -4,15 +4,13 @@ answer:
 http://stackoverflow.com/questions/2225995/how-can-i-create-stacked-line-graph-with-matplotlib
 (http://stackoverflow.com/users/66549/doug)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-#import six
-#from moves import xrange
-
+# import six
+# from moves import xrange
 import numpy as np
 
-__all__ = ['stackplot']
+__all__ = ["stackplot"]
 
 
 def stackplot(axes, x, *args, **kwargs):
@@ -41,37 +39,29 @@ def stackplot(axes, x, *args, **kwargs):
     :class:`~matplotlib.collections.PolyCollection`, one for each
     element in the stacked area plot.
     """
-
     if len(args) == 1:
         y = np.atleast_2d(*args)
     elif len(args) > 1:
         y = np.row_stack(args)
-
-    labels = iter(kwargs.pop('labels', []))
-
-    colors = kwargs.pop('colors', None)
+    labels = iter(kwargs.pop("labels", []))
+    colors = kwargs.pop("colors", None)
     if colors is not None:
         axes.set_color_cycle(colors)
-
-    baseline = kwargs.pop('baseline', 'zero')
+    baseline = kwargs.pop("baseline", "zero")
     # Assume data passed has not been 'stacked', so stack it here.
     stack = np.cumsum(y, axis=0)
-
     r = []
-    if baseline == 'zero':
-        first_line = 0.
-
-    elif baseline == 'sym':
+    if baseline == "zero":
+        first_line = 0.0
+    elif baseline == "sym":
         first_line = -np.sum(y, 0) * 0.5
         stack += first_line[None, :]
-
-    elif baseline == 'wiggle':
+    elif baseline == "wiggle":
         m = y.shape[0]
         first_line = (y * (m - 0.5 - np.arange(0, m)[:, None])).sum(0)
         first_line /= -m
         stack += first_line
-
-    elif baseline == 'weighted_wiggle':
+    elif baseline == "weighted_wiggle":
         m, n = y.shape
         center = np.zeros(n)
         total = np.sum(y, 0)
@@ -88,17 +78,27 @@ def stackplot(axes, x, *args, **kwargs):
         errstr = "Baseline method %s not recognised. " % baseline
         errstr += "Expected 'zero', 'sym', 'wiggle' or 'weighted_wiggle'"
         raise ValueError(errstr)
-
     # Color between x = 0 and the first array.
-    r.append(axes.fill_between(x, first_line, stack[0, :],
-                               facecolor=colors[0],
-                               label= next(labels, None),
-                               **kwargs))
-
+    r.append(
+        axes.fill_between(
+            x,
+            first_line,
+            stack[0, :],
+            facecolor=colors[0],
+            label=next(labels, None),
+            **kwargs
+        )
+    )
     # Color between array i-1 and array i
     for i in xrange(len(y) - 1):
-        r.append(axes.fill_between(x, stack[i, :], stack[i + 1, :],
-                                   facecolor= colors[i+1],
-                                   label= next(labels, None),
-                                   **kwargs))
+        r.append(
+            axes.fill_between(
+                x,
+                stack[i, :],
+                stack[i + 1, :],
+                facecolor=colors[i + 1],
+                label=next(labels, None),
+                **kwargs
+            )
+        )
     return r

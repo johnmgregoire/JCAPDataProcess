@@ -1,30 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Nov 7 17:02:32 2017
-
 @author: helge.stein
-
 -------this class is a work in progress-------
 TODO: adjust perform function similar to CV photo that this class works smoothly with JCAPDataProcess
 TODO: write files to spec into anafolder
 """
-
-
 import sys, os
 
 projectroot = os.path.split(os.getcwd())[0]
-
 sys.path.append(projectroot)
-sys.path.append(os.path.join(projectroot, 'QtForms'))
-sys.path.append(os.path.join(projectroot, 'AuxPrograms'))
-sys.path.append(os.path.join(projectroot, 'OtherApps'))
-sys.path.append(os.path.join(projectroot, 'BatchProcesses'))
-sys.path.append(os.path.join(projectroot, 'AnalysisFunctions'))
-
+sys.path.append(os.path.join(projectroot, "QtForms"))
+sys.path.append(os.path.join(projectroot, "AuxPrograms"))
+sys.path.append(os.path.join(projectroot, "OtherApps"))
+sys.path.append(os.path.join(projectroot, "BatchProcesses"))
+sys.path.append(os.path.join(projectroot, "AnalysisFunctions"))
 from fcns_io import *
-
 import numpy as np
-
 from scipy.optimize import curve_fit  # curve fitting
 from scipy.signal import savgol_filter as savgol  # smoothing
 from scipy.signal import argrelextrema  # finding extrema in fast CVs
@@ -37,49 +29,68 @@ except:
     from pyearth import Earth as MARS
 
 
-class mars_class():
-    def __init__(self, exp_path, filekeystoget, testmode=True, plate_idstr=None, access='hte', filetype='pstat_files',
-                 pot_shift=0, curr_factor=1):
-        #this is modeled after CV_photo
-        self.analysis_fcn_version = '1'
-        self.analysis_name = 'Analysis__ORR'
-        self.requiredkeys = [
-            't(s)', 'Ewe(V)','I(A)'
-        ]
+class mars_class:
+    def __init__(
+        self,
+        exp_path,
+        filekeystoget,
+        testmode=True,
+        plate_idstr=None,
+        access="hte",
+        filetype="pstat_files",
+        pot_shift=0,
+        curr_factor=1,
+    ):
+        # this is modeled after CV_photo
+        self.analysis_fcn_version = "1"
+        self.analysis_name = "Analysis__ORR"
+        self.requiredkeys = ["t(s)", "Ewe(V)", "I(A)"]
         self.optionalkeys = []
-        self.requiredparams = ['reference_e0', 'reference_vrhe', 'redox_couple_type']
+        self.requiredparams = ["reference_e0", "reference_vrhe", "redox_couple_type"]
         self.fomnames = [
-            'noise_lvl','curr_lminter_model','lminter','zinter','max_slope',
-            'redpot_f_var','oxpot_f_var','oxpot_f','redpot_f','curr_lminter_data'
+            "noise_lvl",
+            "curr_lminter_model",
+            "lminter",
+            "zinter",
+            "max_slope",
+            "redpot_f_var",
+            "oxpot_f_var",
+            "oxpot_f",
+            "redpot_f",
+            "curr_lminter_data",
         ]
-        #TODO; ensure these values are passed correctly
-        self.dfltparams = dict([ \
-            ('slope_trunc', 0.00001), ('savgol_window', 151), \
-            ('savgol_order', 0.3), ('ex_order', 0.51), \
-            ('use_smY', True)])
-
-        #as this anaclass requires a fast and slow cv scan the data should also be viewable
+        # TODO; ensure these values are passed correctly
+        self.dfltparams = dict(
+            [
+                ("slope_trunc", 0.00001),
+                ("savgol_window", 151),
+                ("savgol_order", 0.3),
+                ("ex_order", 0.51),
+                ("use_smY", True),
+            ]
+        )
+        # as this anaclass requires a fast and slow cv scan the data should also be viewable
         self.plotparams = dict({}, plot__1={})
-        self.plotparams['plot__1']['x_axis'] = 'Ewe(V)'
-        self.plotparams['plot__1']['series__1'] = 'I(A)'
-        self.plotparams['plot__1']['series__2'] = 'Y_h'
-        self.plotparams['plot__2'] = {}
-        self.plotparams['plot__2']['x_axis'] = 'Ewe(V)'
-        self.plotparams['plot__2']['series__1'] = 'smY'
-        self.plotparams['plot__2']['series__2'] = 'srYs'
-        self.plotparams['plot__3'] = {}
-        self.plotparams['plot__2']['x_axis'] = 'Ewe(V)_fast'
-        self.plotparams['plot__2']['series__1'] = 'I(A)_fast'
-        self.plotparams['plot__2']['series__2'] = 'srYf'
-        self.csvheaderdict = dict({}, csv_version='1', plot_parameters={})
-        #TODO: fix this so it reflects the FOMs this class creates?
-        self.csvheaderdict['plot_parameters']['plot__1'] = dict(
+        self.plotparams["plot__1"]["x_axis"] = "Ewe(V)"
+        self.plotparams["plot__1"]["series__1"] = "I(A)"
+        self.plotparams["plot__1"]["series__2"] = "Y_h"
+        self.plotparams["plot__2"] = {}
+        self.plotparams["plot__2"]["x_axis"] = "Ewe(V)"
+        self.plotparams["plot__2"]["series__1"] = "smY"
+        self.plotparams["plot__2"]["series__2"] = "srYs"
+        self.plotparams["plot__3"] = {}
+        self.plotparams["plot__2"]["x_axis"] = "Ewe(V)_fast"
+        self.plotparams["plot__2"]["series__1"] = "I(A)_fast"
+        self.plotparams["plot__2"]["series__2"] = "srYf"
+        self.csvheaderdict = dict({}, csv_version="1", plot_parameters={})
+        # TODO: fix this so it reflects the FOMs this class creates?
+        self.csvheaderdict["plot_parameters"]["plot__1"] = dict(
             {},
-            fom_name='Pmax.W',
-            colormap='jet',
-            colormap_over_color='(0.5,0.,0.)',
-            colormap_under_color='(0.,0.,0.)')
-
+            fom_name="Pmax.W",
+            colormap="jet",
+            colormap_over_color="(0.5,0.,0.)",
+            colormap_under_color="(0.,0.,0.)",
+        )
         # init all necessary values
         self.exp_path = exp_path
         self.filekeystoget = filekeystoget
@@ -92,39 +103,48 @@ class mars_class():
         self.fomdict = {}
         self.potID = 1  # hardcoded .. if this ever changes this will produce an error
         self.currID = 3
-
         self.get_data()
-        #self.perform_sig()
+        # self.perform_sig()
         self.perform_mars()
-        #self.perform_amars()
-        #self.write_data()
-
+        # self.perform_amars()
+        # self.write_data()
 
     def get_data(self):
-        self.data = {key: get_file_dicts_containing_data( self.exp_path, [key], self.filetype, sample_list=None) for key in
-                     self.filekeystoget}
-
-        self.cv_keys = [key for key in self.filekeystoget if 'CV' in key]
-        print 'CV keys {}'.format(self.cv_keys)
-
-        '''
+        self.data = {
+            key: get_file_dicts_containing_data(
+                self.exp_path, [key], self.filetype, sample_list=None
+            )
+            for key in self.filekeystoget
+        }
+        self.cv_keys = [key for key in self.filekeystoget if "CV" in key]
+        print "CV keys {}".format(self.cv_keys)
+        """
         this seems a bit off but I want this class to be able to tell without user input which
         CV is the fast and which is the slow one (i.e. the .rcp)
-        '''
-        fn = {cv_key:self.data[cv_key].keys() for cv_key in self.cv_keys}
-        print(fn)
+        """
+        fn = {cv_key: self.data[cv_key].keys() for cv_key in self.cv_keys}
+        print (fn)
         scanspeeds = {}
         for cv_key in self.cv_keys:
             for f in fn[cv_key]:
-                t, pot = self.data[cv_key][f]['data_arr'][0, :], self.data[cv_key][f]['data_arr'][1, :]
-            #this just needs to run once
+                t, pot = (
+                    self.data[cv_key][f]["data_arr"][0, :],
+                    self.data[cv_key][f]["data_arr"][1, :],
+                )
+            # this just needs to run once
             scanspeeds[cv_key] = np.abs(np.diff(pot) / np.diff(t)).mean()
         self.fast_cv_key = scanspeeds.keys()[np.argmax(scanspeeds.values())]
         self.slow_cv_key = scanspeeds.keys()[np.argmin(scanspeeds.values())]
-        print 'Done importing data!'
+        print "Done importing data!"
 
-
-    def marsmodelorr(self, use_smY=True, slope_trunc=0.00001, savgol_window=151, savgol_order=3, ex_order=51):
+    def marsmodelorr(
+        self,
+        use_smY=True,
+        slope_trunc=0.00001,
+        savgol_window=151,
+        savgol_order=3,
+        ex_order=51,
+    ):
         Xf, Yf = self.Xf_, self.Yf_
         X, Y = self.X_, self.Y_
         fom = {}
@@ -137,26 +157,32 @@ class mars_class():
         else:
             model.fit(X, Y)
         Y_h = model.predict(X)
-        '''
-        calculate dydx based on mars model to get knots and intercepts as this is 
+        """
+        calculate dydx based on mars model to get knots and intercepts as this is
         complicated to extract from hinge functions
-        '''
+        """
         diff1 = np.diff(Y_h) / np.diff(X)
         tdiff1 = diff1 - np.nanmin(diff1)
         tdiff1 = tdiff1 / np.nanmax(tdiff1)
-        #calculate slopes of linear segments
-        ID = [i for i in range(1, len(tdiff1)) if np.abs(tdiff1[i] - tdiff1[i - 1]) > slope_trunc]
+        # calculate slopes of linear segments
+        ID = [
+            i
+            for i in range(1, len(tdiff1))
+            if np.abs(tdiff1[i] - tdiff1[i - 1]) > slope_trunc
+        ]
         ID.insert(0, 0)
         ID.append(np.argmax(X))  # this might cause an error
-        slopes = [np.nanmean(diff1[ID[i - 1]:ID[i]]) for i in range(1, len(ID) - 1)]
+        slopes = [np.nanmean(diff1[ID[i - 1] : ID[i]]) for i in range(1, len(ID) - 1)]
         a = [Y_h[ID[i]] - slopes[i] * X[ID[i]] for i in range(len(ID) - 2)]
         IDM, IDm = np.argmax(slopes), np.argmin(np.abs(slopes))
         # intercept of highest slope and zero as well as highest slope and lowest slope
-        fom['zinter'] = -a[IDM] / slopes[IDM]
-        fom['lminter'] = (a[IDM] - a[IDm]) / (slopes[IDm] - slopes[IDM])
-        fom['max_slope'] = slopes[IDM]
-        fom['curr_lminter_model'] = fom['lminter'] * slopes[IDM] + a[IDM]
-        fom['curr_lminter_data'] = np.mean(Y[np.where(np.abs(X - fom['lminter']) < 0.5)[0]])
+        fom["zinter"] = -a[IDM] / slopes[IDM]
+        fom["lminter"] = (a[IDM] - a[IDm]) / (slopes[IDm] - slopes[IDM])
+        fom["max_slope"] = slopes[IDM]
+        fom["curr_lminter_model"] = fom["lminter"] * slopes[IDM] + a[IDM]
+        fom["curr_lminter_data"] = np.mean(
+            Y[np.where(np.abs(X - fom["lminter"]) < 0.5)[0]]
+        )
         # calculate how the CV curves kight look like without the 'ORR part'
         srYs = smY - model.predict(X)
         srYf = savgol(Yf - model.predict(Xf), savgol_window, savgol_order)
@@ -166,31 +192,42 @@ class mars_class():
         redID_f = argrelextrema(srYf, np.less, order=ex_order)
         oxID_f = argrelextrema(srYf, np.greater, order=ex_order)
         # calc some more foms like position of redox waves
-        fom['redpot_f'], fom['redpot_f_var'] = np.nanmean(Xf[redID_f]), np.nanstd(Xf[redID_f])
-        fom['oxpot_f'], fom['oxpot_f_var'] = np.nanmean(Xf[oxID_f]), np.nanstd(Xf[oxID_f])
-        fom['X'], fom['Xf'] = X, Xf
-        fom['srYs'], fom['srYf'], fom['smY'] = srYs, srYf, smY
-        fom['Y'], fom['Yf'], fom['Y_h'] = Y, Yf, Y_h
-        fom['noise_lvl'] = np.sum((Y_h - Y) ** 2, axis=0)
+        fom["redpot_f"], fom["redpot_f_var"] = (
+            np.nanmean(Xf[redID_f]),
+            np.nanstd(Xf[redID_f]),
+        )
+        fom["oxpot_f"], fom["oxpot_f_var"] = (
+            np.nanmean(Xf[oxID_f]),
+            np.nanstd(Xf[oxID_f]),
+        )
+        fom["X"], fom["Xf"] = X, Xf
+        fom["srYs"], fom["srYf"], fom["smY"] = srYs, srYf, smY
+        fom["Y"], fom["Yf"], fom["Y_h"] = Y, Yf, Y_h
+        fom["noise_lvl"] = np.sum((Y_h - Y) ** 2, axis=0)
         self.fom = fom
 
     def perform_mars(self):
         fn = {cv_key: self.data[cv_key].keys() for cv_key in self.cv_keys}
-        for fs, ff in zip(fn[self.slow_cv_key],fn[self.fast_cv_key]):
-            sample_no = self.data[self.slow_cv_key][fs]['sample_no']
-            self.X_, self.Y_ = self.data[self.slow_cv_key][fs]['data_arr'][self.potID, :], \
-                               self.data[self.slow_cv_key][fs]['data_arr'][self.currID, :]
-            self.Xf_, self.Yf_ = self.data[self.fast_cv_key][ff]['data_arr'][self.potID, :], \
-                                 self.data[self.fast_cv_key][ff]['data_arr'][self.currID, :]
+        for fs, ff in zip(fn[self.slow_cv_key], fn[self.fast_cv_key]):
+            sample_no = self.data[self.slow_cv_key][fs]["sample_no"]
+            self.X_, self.Y_ = (
+                self.data[self.slow_cv_key][fs]["data_arr"][self.potID, :],
+                self.data[self.slow_cv_key][fs]["data_arr"][self.currID, :],
+            )
+            self.Xf_, self.Yf_ = (
+                self.data[self.fast_cv_key][ff]["data_arr"][self.potID, :],
+                self.data[self.fast_cv_key][ff]["data_arr"][self.currID, :],
+            )
             self.marsmodelorr()
-            self.fom['sample_no'] = sample_no
-            print('Finished Sample #{}'.format(sample_no))
-            self.fomdict[self.fom['sample_no']] = self.fom
+            self.fom["sample_no"] = sample_no
+            print ("Finished Sample #{}".format(sample_no))
+            self.fomdict[self.fom["sample_no"]] = self.fom
 
     def save_data(self):
         pass
 
-'''
+
+"""
 #implement this function
     def getapplicablefilenames(self, expfiledict, usek, techk, typek, runklist=None, anadict=None, calcFOMDialogclass=None):
         self.requiredkeys[-1]=self.params['illum_key']
@@ -198,13 +235,11 @@ class mars_class():
         if self.params['illum_key']=='t(s)':
             self.echem_params_key='echem_params__'+techk
             requiredparams+=[self.echem_params_key]#['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']
-            
         self.num_files_considered, self.filedlist=stdgetapplicablefilenames(expfiledict, usek, techk, typek, runklist=runklist, requiredkeys=self.requiredkeys, requiredparams=requiredparams)
         self.description='%s on %s' %(','.join(self.fomnames), techk)
         return self.filedlist
 #implement this funnction as it apparently contains how the extra files are created
     def photofcn(self, d, filed):
-
         ikey=self.params['illum_key']
         tshift=self.params['illum_time_shift_s']
         interdict={}
@@ -213,12 +248,9 @@ class mars_class():
             illumtimeshift(d, ikey, 't(s)', tshift)
         if self.params['illum_invert']:
             d[ikey]=-1*d[ikey]
-
         interd={}
-        
         if self.params['illum_key']=='t(s)':
             ikey=[filed[self.echem_params_key][k] for k in ['toggle_dark_time_init', 'toggle_illum_time', 'toggle_illum_duty', 'toggle_illum_period']]
-        
         err=calcdiff_ill_caller(d, interd, ikey=ikey, thresh=self.params['illum_threshold'], \
             ykeys=[self.requiredkeys[0]], xkeys=list(self.requiredkeys[1:-1]), \
             illfracrange=(self.params['frac_illum_segment_start'], self.params['frac_illum_segment_end']), \
@@ -230,7 +262,6 @@ class mars_class():
             #try:
             if err or len(interd[illkey])==0:
                 return [(fomk, numpy.nan) for fomk in self.fomnames], {}, {}
-
             ncycs=self.params['num_illum_cycles']
             fromend=self.params['from_end']
             if fromend:
@@ -242,7 +273,6 @@ class mars_class():
                 fomtuplist+=[(fomk, numpy.nan)]
             else:
                 fomtuplist+=[(fomk, arr[:ncycs].mean())]
-
         return fomtuplist, dict([('IllumBool', d['IllumBool'])]), interd
         #except:
         #    pass
@@ -250,11 +280,8 @@ class mars_class():
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         d=dict([(k, v) for k, v in zip(self.requiredkeys, dataarr)])
         return self.photofcn(d, filed)
-'''
-
-
-
-'''
+"""
+"""
 #sigmoid fitting from old script it is essentially the same as CV_phot's fitting exept for the overpotental part
 def splitLVS(X, Y):  # split the linear sweeps
     up = np.reshape(np.where(np.diff(X) > 0), -1, 1)
@@ -262,7 +289,6 @@ def splitLVS(X, Y):  # split the linear sweeps
     iup = np.argsort(X[up])
     idown = np.argsort(X[down])
     return X[up[iup]], Y[up[iup]], X[down], Y[up]
-
 def fitSigmoid(Xu, Yu):  # fit a sigmoid to data that allows assymetry
     fpl = lambda t, Cl, Cu, A, k: (Cl + ((Cu - Cl) / (1 + np.exp((A - t) / k))))
     tpl = lambda t, Cu, A, k: (Cu / (1 + np.exp((A - t) / k)))
@@ -281,7 +307,6 @@ def fitSigmoid(Xu, Yu):  # fit a sigmoid to data that allows assymetry
     fom['popt'], fom['pcov'], fom['intercept'], fom['overpotential'], fom[
         'slope'] = popt, pcov, intercept, overpotential, m
     return fom
-
 fomlist_sig = []
 for i in range(len(data['files_technique__CV2'][1][:])):
     sample_no = data['files_technique__CV2'][2][i]
@@ -290,7 +315,6 @@ for i in range(len(data['files_technique__CV2'][1][:])):
     Ysm = savgol(Y[ID], 151, 3)
     fomlist_sig.append([fitSigmoid(X[ID], Ysm), sample_no])
     print(i)
-    
 fomlist = []
 for i in range(len(data['files_technique__CV2'][1][:])):
     sample_no = data['files_technique__CV2'][2][i]
@@ -304,11 +328,9 @@ for i in range(len(data['files_technique__CV2'][1][:])):
     fomlist.append([marsmodelorr(xdict, ydict), sample_no])
     print(i)
 # run a test
-'''
-
-#expname = r'\eche\20171218.222905.done'
-expname = r'\eche\20180109.122753.done'
-filekeystoget = ['files_technique__CV2', 'files_technique__CV4', 'files_technique__CA5']
-ftype = 'pstat_files'
-
-mc = mars_class(exp_path=expname, filekeystoget=filekeystoget,filetype=ftype)
+"""
+# expname = r'\eche\20171218.222905.done'
+expname = r"\eche\20180109.122753.done"
+filekeystoget = ["files_technique__CV2", "files_technique__CV4", "files_technique__CA5"]
+ftype = "pstat_files"
+mc = mars_class(exp_path=expname, filekeystoget=filekeystoget, filetype=ftype)
