@@ -37,7 +37,7 @@ from LoadCSVApp import loadcsvDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 from OpenFromInfoApp import openfrominfoDialog
 from CalcFOMApp import AnalysisClasses
 

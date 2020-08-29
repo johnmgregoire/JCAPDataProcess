@@ -38,7 +38,7 @@ from SaveButtonForm import Ui_SaveOptionsDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 from Analysis_Master import calcfom_analyzedata_calcfomdialogclass, gethighestanak
 from CA_CP_basics import *
 from CV_photo import *

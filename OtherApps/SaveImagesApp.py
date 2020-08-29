@@ -33,7 +33,7 @@ from SaveImagesBatchForm import Ui_SaveImagesBatchDialog
 from fcns_compplots import *
 
 # from quatcomp_plot_options import quatcompplotoptions
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
     def __init__(
         self,

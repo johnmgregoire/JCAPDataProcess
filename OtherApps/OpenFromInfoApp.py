@@ -19,7 +19,7 @@ from OpenFromInfoForm import Ui_OpenFromInfoDialog
 from fcns_compplots import *
 from quatcomp_plot_options import quatcompplotoptions
 
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
     def __init__(self, parent, runtype="", exp=True, ana=True, run=False):
         super(openfrominfoDialog, self).__init__(parent)

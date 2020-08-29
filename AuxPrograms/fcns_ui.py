@@ -82,22 +82,18 @@ def mygetopenfile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
-            QFileDialog.getOpenFileName(
-                xparent,
-                "".join(["Select file to open:", markstr]),
-                os.path.join(xpath, filename).replace("\\", "/"),
-            )
+        returnfn = QFileDialog.getOpenFileName(
+            xparent,
+            "".join(["Select file to open:", markstr]),
+            os.path.join(xpath, filename).replace("\\", "/"),
         )[0]
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
-        QFileDialog.getOpenFileName(
-            parent,
-            "".join(["Select file to open: ", markstr]),
-            os.path.join(xpath, filename).replace("\\", "/"),
-        )
+    return QFileDialog.getOpenFileName(
+        parent,
+        "".join(["Select file to open: ", markstr]),
+        os.path.join(xpath, filename).replace("\\", "/"),
     )[0]
 
 
@@ -125,22 +121,18 @@ def mygetsavefile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
-            QFileDialog.getSaveFileName(
-                xparent,
-                "".join(["Select file for save: ", markstr]),
-                os.path.join(xpath, filename).replace("\\", "/"),
-            )
+        returnfn = QFileDialog.getSaveFileName(
+            xparent,
+            "".join(["Select file for save: ", markstr]),
+            os.path.join(xpath, filename).replace("\\", "/"),
         )[0]
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
-        QFileDialog.getSaveFileName(
-            parent,
-            "".join(["Select file for save: ", markstr]),
-            os.path.join(xpath, filename).replace("\\", "/"),
-        )
+    return QFileDialog.getSaveFileName(
+        parent,
+        "".join(["Select file for save: ", markstr]),
+        os.path.join(xpath, filename).replace("\\", "/"),
     )[0]
 
 
@@ -148,18 +140,14 @@ def mygetdir(parent=None, xpath="%s" % os.getcwd(), markstr=""):
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
-            QFileDialog.getExistingDirectory(
-                xparent, "".join(["Select directory:", markstr]), xpath
-            )
+        returnfn = QFileDialog.getExistingDirectory(
+            xparent, "".join(["Select directory:", markstr]), xpath
         )
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
-        QFileDialog.getExistingDirectory(
-            parent, "".join(["Select directory:", markstr]), xpath
-        )
+    return QFileDialog.getExistingDirectory(
+        parent, "".join(["Select directory:", markstr]), xpath
     )
 
 

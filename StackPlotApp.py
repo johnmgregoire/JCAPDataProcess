@@ -25,7 +25,7 @@ from StackPlotForm import Ui_StackPlotDialog
 from SaveImagesApp import *
 from LoadCSVApp import loadcsvDialog
 
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 from OpenFromInfoApp import openfrominfoDialog
 from StackPlotClasses import StackClasses
 

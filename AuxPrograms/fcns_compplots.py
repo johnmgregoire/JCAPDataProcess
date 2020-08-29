@@ -27,7 +27,7 @@ import pylab
 PyCodePath = os.path.split(
     os.path.split(os.path.split(os.path.realpath(__file__))[0])[0]
 )[0]
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 wd = os.getcwd()
 sys.path.append(os.path.join(PyCodePath, "PythonCompositionPlots"))
 from myternaryutility import TernaryPlot

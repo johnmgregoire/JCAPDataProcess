@@ -28,7 +28,7 @@ from fcns_compplots import plotwidget
 from Analysis_Master import Analysis_Master_nointer
 from ExternalImportForm import Ui_ExternalImportDialog
 
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 analysismasterclass = Analysis_Master_nointer()
 
 

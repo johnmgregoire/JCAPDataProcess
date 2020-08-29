@@ -37,7 +37,7 @@ from DBPaths import *
 
 # from matplotlib.ticker import FuncFormatter
 # from matplotlib.ticker import ScalarFormatter
-# matplotlib.rcParams['backend.qt4'] = 'PyQt5'
+
 class SaveOptionsDialog(QDialog, Ui_SaveOptionsDialog):
     def __init__(self, parent, dflt):
         super(SaveOptionsDialog, self).__init__(parent)
