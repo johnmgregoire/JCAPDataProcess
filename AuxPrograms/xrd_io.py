@@ -171,6 +171,8 @@ def get_externalimportdatad_xrds_folder(p, parent=None):
                     rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
 
         rcpd['name']=bsmld['timestamp']
+        if 'machine_name' in bsmld.keys():
+            bsmld['machine_name'] = bsmld['machine_name'].lower().replace("desktop-hgk6u1o", "hte-xrds-01")
         rcpd['parameters']=copy.deepcopy(bsmld['paramd'])
         rcpdlist+=[rcpd]
 
