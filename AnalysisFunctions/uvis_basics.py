@@ -209,7 +209,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
-        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
+        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850]),('rescale_Tlight_factor',1.0)])
         
 #         "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
 #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
@@ -457,6 +457,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             raise ValueError('Insufficient signals to remove %d initial signals and %d end signals'\
             %(self.params['exclinitcols'],self.params['exclfincols']))
         else:
+            refd['Tlight']*=self.params['rescale_Tlight_factor']
             inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['R_av-signal']=Rdataarr[1+self.params['exclinitcols']:Rdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
@@ -691,7 +692,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
       #TODO int, float, str or dict types and in dict the options are float, int, str  
         self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
         ('mthd','T'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
-        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850])])
+        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850]),('rescale_Tlight_factor',1.0)])
         
         #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
 #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
@@ -820,6 +821,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             raise ValueError('Insufficient signals to remove %d initial signals and %d end signals'\
             %(self.params['exclinitcols'],self.params['exclfincols']))
         else:
+            refd['Tlight']*=self.params['rescale_Tlight_factor']
             inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
             inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
             inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend['T_fullrng'])
