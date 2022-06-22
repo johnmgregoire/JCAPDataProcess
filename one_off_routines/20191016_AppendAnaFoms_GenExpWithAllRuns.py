@@ -76,15 +76,15 @@ for anaidx, (anaint, anap) in enumerate(tups_to_merge):
     exp_run_ids += [int(x) for x in expd['run_ids'].strip().split(',')]
     exp_plate_ids += expd['plate_ids'].strip().split(',')
 
-    run_blocks = [k for k in expd.keys() if 'run__' in k]
+    run_blocks = [k for k in list(expd.keys()) if 'run__' in k]
     run_blocks.sort(key=lambda x: int(x.replace('run__', '')))
     for rblk in run_blocks:
         # TODO: filter duplicate samples out of expd? perhaps not necessary if runint splits same sample nums
         new_expd['run__%i' % (int(rblk.replace('run__', '')) +
                               batchruncounts)] = copy(expd[rblk])
 
-    fomcsv = [k for k, v in anablk['files_multi_run']
-              ['fom_files'].items() if v.startswith('csv_fom_file')][0]
+    fomcsv = [k for k, v in list(anablk['files_multi_run']
+              ['fom_files'].items()) if v.startswith('csv_fom_file')][0]
     ftype, colnamestr, skipstr, colnumstr = anablk['files_multi_run']['fom_files'][fomcsv].strip(
     ).split(';')
     colnames = colnamestr.strip().split(',')
@@ -97,13 +97,13 @@ for anaidx, (anaint, anap) in enumerate(tups_to_merge):
     ana_sample_list = [s for s in list(
         fomdf['sample_no'].values) if s not in all_samples_list]
 
-    file_blocks = [k for k in anablk.keys() if 'files_run__' in k]
+    file_blocks = [k for k in list(anablk.keys()) if 'files_run__' in k]
     file_blocks.sort(key=lambda x: int(x.replace('files_run__', '')))
     for fblk in file_blocks:
         newfblk = {}
-        for subk in anablk[fblk].keys():  # update new ana dict
+        for subk in list(anablk[fblk].keys()):  # update new ana dict
             newfblk[subk] = {}
-            for fn, infostr in anablk[fblk][subk].items():
+            for fn, infostr in list(anablk[fblk][subk].items()):
                 if int(infostr.split(';')[-1]) in ana_sample_list:
                     newfn = '__'.join(['ana__1'] + fn.split('__')[2:])
                     newfblk[subk][newfn] = infostr
@@ -166,10 +166,10 @@ with open(os.path.join(new_anadir, new_ana_fn), 'w') as f:
 def dict_to_rcp(d, level=0):
     essentialkeys = ['name', 'ana_version' 'exp_version', 'analysis_type', 'experiment_type',
                      'description', 'plate_ids', 'run_ids', 'created_by', 'access', 'parameters', 'run_use_option']
-    prekeys = [k for k in essentialkeys if k in d.keys()]
-    postkeys = [k for k in d.keys() if k not in prekeys and k.split(
+    prekeys = [k for k in essentialkeys if k in list(d.keys())]
+    postkeys = [k for k in list(d.keys()) if k not in prekeys and k.split(
         '__')[-1].isdigit()]
-    midkeys = [k for k in d.keys() if k not in prekeys and k not in postkeys]
+    midkeys = [k for k in list(d.keys()) if k not in prekeys and k not in postkeys]
     postkeys.sort(key=lambda x: int(x.split('__')[-1]))
     midkeys.sort()
     strlist = []
@@ -196,5 +196,5 @@ with open(os.path.join(new_expdir, '%s.exp' % (new_ts)), 'w') as f:
     f.write(expfilestr)
 
 
-print('merged ana:  ' + os.path.join(new_anadir, '%s.ana' % (new_ts)))
-print('merged exp:  ' + os.path.join(new_expdir, '%s.exp' % (new_ts)))
+print(('merged ana:  ' + os.path.join(new_anadir, '%s.ana' % (new_ts))))
+print(('merged exp:  ' + os.path.join(new_expdir, '%s.exp' % (new_ts))))

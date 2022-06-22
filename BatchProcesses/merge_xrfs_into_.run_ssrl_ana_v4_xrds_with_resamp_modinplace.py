@@ -26,7 +26,7 @@ calcui.getplatemapCheckBox.setChecked(True)
 folder=r'L:\processes\analysis\xrds'
 fns=[fn for fn in os.listdir(folder) if fn.endswith('.run')]#20170922.125037.run and 20170922.124034.run
 for fn in fns:
-    print 'starting ', fn
+    print('starting ', fn)
     anafolder=os.path.join(folder, fn)
 #    if True in [s.startswith('ana__6_') for s in os.listdir(anafolder)]:
 #        print 'skipping becuase already done ', fn
@@ -44,20 +44,20 @@ for fn in fns:
 
     calcui.importana(p=p)
 
-    print 'after merge then reimport ', calcui.anadict['experiment_name']
+    print('after merge then reimport ', calcui.anadict['experiment_name'])
     pidstr=calcui.anadict['plate_ids']
     if ',' in pidstr:
-        print 'skipping ', fn, pidstr
+        print('skipping ', fn, pidstr)
         continue
     infod=importinfo(pidstr)
     #for ank in sort_dict_keys_by_counter(infod['analyses'], keystartswith='analyses__'):#use 
     analysesd=infod['analyses']
-    xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.iteritems() if v['type']=='xrfs'])
+    xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.items() if v['type']=='xrfs'])
     if len(xrfstups)==0:
-        print 'no xrfs data for ', fn
+        print('no xrfs data for ', fn)
         continue
     relapth_xrfsana=xrfstups[-1][1]['path']#latest created_at analyses__ dict
-    print 'using xrfs ', relapth_xrfsana
+    print('using xrfs ', relapth_xrfsana)
     calcui.importauxexpana(relapth_xrfsana, exp=False)
 
     for i in range(1, int(calcui.FOMProcessNamesComboBox.count())):
@@ -79,7 +79,7 @@ for fn in fns:
     calcui.analyzedata()
     anakeys=sort_dict_keys_by_counter(calcui.anadict, keystartswith='ana__')
     if len(anakeys)==tempnum:
-        print '***; %s; %s' %(relapth_xrfsana, fn)
+        print('***; %s; %s' %(relapth_xrfsana, fn))
         #continue
         calcui.exec_()
     xrfsmergedanak=anakeys[-1]

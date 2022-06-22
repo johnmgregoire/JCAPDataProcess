@@ -12,11 +12,11 @@ def get_colors_fom_cmap(fomarr, vmin, vmax, cmap):#if need over/under colors tho
     norm=colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
     sm=cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array(fomarr)
-    cols=np.float32(map(sm.to_rgba, fomarr))[:, :3]
+    cols=np.float32(list(map(sm.to_rgba, fomarr)))[:, :3]
     return cols
 
 def create_sample_color_dict(fomd, fomk, vmin, vmax, cmap):#fomd has column headings including sample_no and fomk is the column heading of desired fom, then this creates a dict where keys are sample numbers and values are colors according the fom and cmap
-    return dict(zip(fomd['sample_no'], get_colors_fom_cmap(fomd[fomk], vmin, vmax, cmap)))
+    return dict(list(zip(fomd['sample_no'], get_colors_fom_cmap(fomd[fomk], vmin, vmax, cmap))))
     
 def plot_spinel_subspace(ax, Aind_A2B, Bind_A2B, ind_primaryalloyelement,  ellabels=['A','B','C','D','E'], sample_color_dict=None, labelaxes=True):
     
@@ -35,7 +35,7 @@ def plot_spinel_subspace(ax, Aind_A2B, Bind_A2B, ind_primaryalloyelement,  ellab
         
         if sample_color_dict is None:
             col=['b', 'm', 'orange', 'g'][o-2]
-        elif s in sample_color_dict.keys():
+        elif s in list(sample_color_dict.keys()):
             col=sample_color_dict[s]
             if np.isnan(col).sum():
                 col=None

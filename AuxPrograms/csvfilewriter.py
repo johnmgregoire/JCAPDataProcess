@@ -10,7 +10,7 @@ def createcsvfilstr(
     smparr = [d["sample_no"] for d in fomdlist]
     fomarr_smps = numpy.array(
         [
-            [(k in d.keys() and (d[k],) or (numpy.nan,))[0] for k in fomkeys]
+            [(k in list(d.keys()) and (d[k],) or (numpy.nan,))[0] for k in fomkeys]
             for d in fomdlist
         ]
     )
@@ -33,7 +33,7 @@ def createcsvfilstr_bare(
 ):  # for each sample, if fom not available inserts NaN. Use to be datadlist with fomd as a key but now assume list of fomd
     if fomkeys is None:  # doesn't add Nan to missing foms like  createcsvfilstr does
         fomkeys = [
-            k for k in fomdlist[0].keys() if not (k in intfomkeys or k in strfomkeys)
+            k for k in list(fomdlist[0].keys()) if not (k in intfomkeys or k in strfomkeys)
         ]
     lines = [
         ",".join(

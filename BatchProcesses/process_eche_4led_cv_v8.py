@@ -157,7 +157,7 @@ else:
     #exppath=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_L, expname)
 
 
-print exppath
+print(exppath)
 
 
 analysis_to_do_tups=[\
@@ -175,7 +175,7 @@ if ananame is None:
 
     currentana=1
     for count,(techtypesearch, ana_fcn, isprocess, paramd,cm2convertbool) in enumerate(analysis_to_do_tups):
-        print 'calculating ana__%s, %s' %(currentana, ana_fcn)
+        print('calculating ana__%s, %s' %(currentana, ana_fcn))
         #calcui.exec_()
         select_techtype(techtypesearch)
         if isprocess:
@@ -186,7 +186,7 @@ if ananame is None:
                 calcui.exec_();raiseerror
         if len(paramd)>0:
             updateanalysisparams(calcui, paramd)
-        print 'parameters updated, performing calculation'
+        print('parameters updated, performing calculation')
         
         calcuierror=calcui.analyzedata()
         currentana+=1
@@ -194,7 +194,7 @@ if ananame is None:
         if calcuierror:
             calcui.exec_();raiseerror
         if cm2convertbool:
-            print 'converting to m*/cm2'
+            print('converting to m*/cm2')
             calcui.batch_set_params_for_photo_mAcm2_scaling(measurement_area=measurement_area_override)
             
             calcuierror=calcui.analyzedata()
@@ -204,7 +204,7 @@ if ananame is None:
                 calcui.exec_();raiseerror
 
     #calcui.exec_()
-    pidstr=`calcui.expfiledict['run__1']['parameters']['plate_id']`
+    pidstr=repr(calcui.expfiledict['run__1']['parameters']['plate_id'])
     merge_interp_xrfs_single_plate_id(calcui, ananame=None, pidstr=pidstr, l_anak_to_merge=['ana__2', 'ana__4', 'ana__6', 'ana__8', 'ana__12'], save_extension=None)
     anasavefolder=calcui.saveana(dontclearyet=True, anatype=anadestchoice, rundone='.run')
 
@@ -217,7 +217,7 @@ else:
 visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(9)
 visdataui.plot_preparestandardplot()
 choosexyykeys(visdataui, ['E.eV_illum', 'EQE', 'None'])
-for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].iteritems():
+for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].items():
     p=os.path.join(anasavefolder, fn)
     vectrofiled=readcsvdict(p, filed, returnheaderdict=False, zipclass=None, includestrvals=False, delim=',')
     if numpy.all(vectrofiled['EQE']>mineqeforplot):
@@ -239,11 +239,11 @@ for i in stdplotinds:
     if len(inds)>0:
         samplestoplot=list(visdataui.fomplotd['sample_no'][inds])
         filterinds=[ind for ind, smp in enumerate(visdataui.fomplotd['sample_no']) if smp in samplestoplot]
-        for k in visdataui.fomplotd.keys():
+        for k in list(visdataui.fomplotd.keys()):
             if isinstance(visdataui.fomplotd[k], numpy.ndarray):
                 visdataui.fomplotd[k]=visdataui.fomplotd[k][filterinds]
             else:
-                print k
+                print(k)
         vmin=max(0, visdataui.fomplotd['fom'].min())*0.99
         vmax=numpy.percentile(visdataui.fomplotd['fom'], 95.)
         if visdataui.fomplotd['fom'].max()<1.1*vmax:
@@ -263,11 +263,11 @@ for i in stdplotinds:
             samplestoplot=list(visdataui.fomplotd['sample_no'][inds])
             plot_new_fom(visdataui, 'Fill_factor')
             filterinds=[ind for ind, smp in enumerate(visdataui.fomplotd['sample_no']) if smp in samplestoplot]
-            for k in visdataui.fomplotd.keys():
+            for k in list(visdataui.fomplotd.keys()):
                 if isinstance(visdataui.fomplotd[k], numpy.ndarray):
                     visdataui.fomplotd[k]=visdataui.fomplotd[k][filterinds]
                 else:
-                    print k
+                    print(k)
             vmin=max(0, visdataui.fomplotd['fom'].min())*0.99
             vmax=min(0.8, visdataui.fomplotd['fom'].max())*1.01
             if not numpy.all((visdataui.fomplotd['fom']<vmin)|(visdataui.fomplotd['fom']>vmax)):                

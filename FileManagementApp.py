@@ -46,7 +46,7 @@ class filemanDialog(QDialog, Ui_FileManDialog):
         self.anafolder = tryprependpath(ANAFOLDERS_L, "")
         self.expfolder = tryprependpath(EXPFOLDERS_L, "")
         if len(self.anafolder) == 0 and len(self.expfolder) == 0:
-            print "cannot find exp or ana folder"
+            print("cannot find exp or ana folder")
             return
 
     def deletefolders(self):
@@ -69,7 +69,7 @@ class filemanDialog(QDialog, Ui_FileManDialog):
             ]
             for p in delpaths:
                 shutil.rmtree(p, ignore_errors=True)
-                print "removed ", p
+                print("removed ", p)
         if bool(mainitem.checkState(0)):
             idialog = messageDialog(
                 self,

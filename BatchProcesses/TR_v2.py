@@ -96,7 +96,7 @@ def batch_pvdbool(fn):
         lines=f.readlines()
     infofiled=filedict_lines(lines)
     
-    methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in v2.iteritems() if k3.startswith('method')]
+    methods=[v3 for k, v in infofiled.items() if k.startswith('prints') for k2, v2 in v.items() if k2.startswith('prints') for k3, v3 in v2.items() if k3.startswith('method')]
     return '', ('PVD' in methods, )
     
 def batch_exp(fn, expui=expui):
@@ -121,7 +121,7 @@ def batch_exp(fn, expui=expui):
             expui.importruns_folder(folderp=os.path.join(p, zfn))
     expui.batchuvissingleplate_norefdata()
     
-    if (not 'experiment_type' in expui.expfiledict.keys()) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
+    if (not 'experiment_type' in list(expui.expfiledict.keys())) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
         if skiponerror:
             return 'ERROR - betchexp failed for %s' %pT, False
         else:
@@ -165,7 +165,7 @@ for batchcount, batchline in enumerate(batchlines):
     if forceana or not 'ana_path' in batchline:
         if expbool:
             calcui.importexp(expfiledict=expfiledict, exppath=exppath)
-            for runk, rund in calcui.expfiledict.iteritems():#copy over any platemap info
+            for runk, rund in calcui.expfiledict.items():#copy over any platemap info
                 if not runk.startswith('run__'):
                     continue
                 rcpfile=rund['rcp_file']

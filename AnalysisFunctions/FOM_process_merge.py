@@ -67,7 +67,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         ):  # since "self" won't be found in aux ana, this only allows self to be used if no aux ana loaded. if loaded then aux_ana_path will be auto updated below
             if (
                 calcFOMDialogclass is None
-                or not "ana__1" in calcFOMDialogclass.anadict.keys()
+                or not "ana__1" in list(calcFOMDialogclass.anadict.keys())
             ):
                 self.filedlist = []
                 return self.filedlist
@@ -124,7 +124,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                         False
                         in [
                             self.previous_params[k] == v
-                            for k, v in self.params.iteritems()
+                            for k, v in self.params.items()
                         ]
                     )
                 ):  # first time through or a param has changed since end of last function call then open a file. if want to change the file will need tro change a parameter
@@ -146,14 +146,14 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     )  # the 'keys' get defined within this trial reading
                     readcsvdict(p, fileattrd)
                     if not "sample_no" in fileattrd["keys"]:
-                        print "sample_no required as a column in .csv"
+                        print("sample_no required as a column in .csv")
                         raise ValueError()
                     if False in [k == filterchars(k) for k in fileattrd["keys"]]:
-                        print "a key in the selected .csv hs an illegal character"
+                        print("a key in the selected .csv hs an illegal character")
                         raise ValueError()
                     self.auxd["custom"]["files_multi_run"]["fom_files"][fnk] = fileattrd
             except:
-                print "error reading custom .csv file"
+                print("error reading custom .csv file")
                 self.params = copy.copy(self.dfltparams)
                 self.filedlist = []
                 return
@@ -194,8 +194,8 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             anak_list = [
                 k
                 for k in anak_list
-                if ("files_multi_run" in self.auxd[k].keys())
-                and ("fom_files" in self.auxd[k]["files_multi_run"].keys())
+                if ("files_multi_run" in list(self.auxd[k].keys()))
+                and ("fom_files" in list(self.auxd[k]["files_multi_run"].keys()))
             ]
         if self.params["select_aux_keys"] == "ALL":
             keysearchlist = [""]
@@ -214,7 +214,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             reqdkeysset = (
                 ["plate_id"]
                 if (
-                    "match_plate_id" in self.params.keys()
+                    "match_plate_id" in list(self.params.keys())
                     and self.params["match_plate_id"]
                 )
                 else []
@@ -233,7 +233,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             if not k in additionl_required_params_aux
         ]  # don't allow aux key overlap with existing keys in any of the fom csvs in play
         if (
-            "key_append_all_aux" in self.params.keys()
+            "key_append_all_aux" in list(self.params.keys())
             and self.params["key_append_all_aux"] != "none"
         ):
             aux_key_append = self.params["key_append_all_aux"]
@@ -243,7 +243,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
         for anak in anak_list:
             for fnk, filed in self.auxd[anak]["files_multi_run"][
                 "fom_files"
-            ].iteritems():
+            ].items():
                 if (
                     keystestfcn(filed)
                     and len(keysfcn(filed, aux_key_append, existkeys)) > 0
@@ -316,7 +316,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     for k in filed["process_keys"]
                     if (not "aux_" in k)
                     and (True in [s in k for s in keysearchlist])
-                    and k in fomd.keys()
+                    and k in list(fomd.keys())
                 ]  # new in v4, previously select_fom_keys ignored, but regardless don't all aux_ keys from prior fom csv because those are being added in the merge and don't want ambiguity
                 # along_for_the_ride_keys=list(set(fomd.keys()).difference(set(process_keys)))
                 auxfomd_list = [
@@ -330,12 +330,12 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     for auxfiled in self.auxfiledlist
                 ]
                 newfomd = {}
-                fomd_plt_smp_list = zip(matchplateidfcn(fomd), fomd["sample_no"])
+                fomd_plt_smp_list = list(zip(matchplateidfcn(fomd), fomd["sample_no"]))
                 if self.params["remove_samples_not_in_aux"]:
                     plt_smp_list = set(fomd_plt_smp_list)
                     for auxfomd in auxfomd_list:
                         plt_smp_list = plt_smp_list.intersection(
-                            zip(matchplateidfcn(auxfomd), auxfomd["sample_no"])
+                            list(zip(matchplateidfcn(auxfomd), auxfomd["sample_no"]))
                         )
                     plt_smp_list = sorted(list(plt_smp_list))
                     inds = [fomd_plt_smp_list.index(tup) for tup in plt_smp_list]
@@ -350,7 +350,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     ):
                         newfomd[k] = fomd[k]
                 if len(plt_smp_list) == 0:
-                    print "no samples match - skipping merge"
+                    print("no samples match - skipping merge")
                     continue
                 self.fomnames = process_keys
                 self.strkeys_fomdlist = ["aux_anak"]
@@ -358,7 +358,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     [""] * len(newfomd["sample_no"]), dtype="|S8"
                 )  # S8 is ana__NNN'
                 plateidinanyaux = True in [
-                    "plate_id" in auxfomd.keys() for auxfomd in auxfomd_list
+                    "plate_id" in list(auxfomd.keys()) for auxfomd in auxfomd_list
                 ]
                 if plateidinanyaux and not matchplateidbool:
                     self.strkeys_fomdlist += ["aux_plate_id"]
@@ -393,7 +393,7 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                             else k
                         ][auxfomdinds]
                     if (
-                        "plate_id" in auxfomd.keys() and not matchplateidbool
+                        "plate_id" in list(auxfomd.keys()) and not matchplateidbool
                     ):  # if not matching by plate_id then the aux plate_id could be different so need to save it. This will arise for parent/child merges
                         newfomd["aux_plate_id"][fomdinds] = numpy.array(
                             auxfomd["plate_id"][auxfomdinds], dtype="|S8"
@@ -404,13 +404,13 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
                     + self.strkeys_fomdlist
                 )  # str=valued keys don't go into fomnames
                 self.fomdlist = [
-                    dict(zip(allkeys, tup))
+                    dict(list(zip(allkeys, tup)))
                     for tup in zip(*[newfomd[k] for k in allkeys])
                 ]
                 # copy custom merge file to the ana
                 if self.params["aux_ana_path"] == "custom":
                     newfn = "%s__%s" % (anak, auxfiled["fn"])
-                    if not "misc_files" in self.multirunfiledict.keys():
+                    if not "misc_files" in list(self.multirunfiledict.keys()):
                         self.multirunfiledict["misc_files"] = {}
                     self.multirunfiledict["misc_files"][newfn] = "%s;%s;%d;%d" % (
                         "csv_fom_file",
@@ -430,13 +430,13 @@ class Analysis__FOM_Merge_Aux_Ana(Analysis_Master_FOM_Process):
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped filter/smooth of file ", fn
+                print("skipped filter/smooth of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
-            print destfolder, anak, anauserfomd, self.strkeys_fomdlist
+            print(destfolder, anak, anauserfomd, self.strkeys_fomdlist)
             self.writefom(
                 destfolder,
                 anak,
@@ -483,8 +483,8 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
         calcFOMDialogclass=None,
     ):  # just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         if True in [
-            not "platemapdlist" in rund.keys()
-            for runk, rund in calcFOMDialogclass.expfiledict.iteritems()
+            not "platemapdlist" in list(rund.keys())
+            for runk, rund in calcFOMDialogclass.expfiledict.items()
             if runk.startswith("run__")
         ]:
             # all platemaps must be available
@@ -504,7 +504,7 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
             )
         except:
             self.value_when_missing = numpy.nan
-        self.params["value_when_missing"] = ` self.value_when_missing `
+        self.params["value_when_missing"] = repr( self.value_when_missing)
 
     def perform(
         self,
@@ -529,8 +529,8 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                     includestrvals=False,
                 )  # str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 process_keys = filed["process_keys"]
-                if not "plate_id" in fomd.keys():
-                    print "no plate_id - skipped filter/smooth of file ", fn
+                if not "plate_id" in list(fomd.keys()):
+                    print("no plate_id - skipped filter/smooth of file ", fn)
                     self.fomdlist = []
                     continue
                 allplateids = sorted(list(set(fomd["plate_id"])))
@@ -605,16 +605,16 @@ class Analysis__FOM_Merge_PlatemapComps(Analysis_Master_FOM_Process):
                 self.strkeys_fomdlist = []
                 allkeys = list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) + self.fomnames
                 self.fomdlist = [
-                    dict(zip(allkeys, tup)) for tup in zip(*[fomd[k] for k in allkeys])
+                    dict(list(zip(allkeys, tup))) for tup in zip(*[fomd[k] for k in allkeys])
                 ]
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped filter/smooth of file ", fn
+                print("skipped filter/smooth of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,
@@ -664,8 +664,8 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
         calcFOMDialogclass=None,
     ):  # just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         if True in [
-            not "platemapdlist" in rund.keys()
-            for runk, rund in calcFOMDialogclass.expfiledict.iteritems()
+            not "platemapdlist" in list(rund.keys())
+            for runk, rund in calcFOMDialogclass.expfiledict.items()
             if runk.startswith("run__")
         ]:
             # all platemaps must be available
@@ -683,11 +683,11 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
         ]
         nd = l_ndims[0]
         if False in [nd == v for v in l_ndims]:
-            print "param_space dimensions do not match"
+            print("param_space dimensions do not match")
             self.filedlist = []
             return
         if nd > (4 if self.params["is_comp_space"] else 3):
-            print "param_space must be no bigger than 3D or quaternary"
+            print("param_space must be no bigger than 3D or quaternary")
             self.filedlist = []
             return
         try:
@@ -698,15 +698,15 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                 ]
             )
         except:
-            print "error calculating end points from %s and %s" % (
+            print("error calculating end points from %s and %s" % (
                 self.params["line_start"],
                 self.params["line_stop"],
-            )
+            ))
             self.filedlist = []
             return
         list_pmkeys = [
-            rund["platemapdlist"][0].keys() if "platemapdlist" in rund.keys() else None
-            for runk, rund in calcFOMDialogclass.expfiledict.iteritems()
+            list(rund["platemapdlist"][0].keys()) if "platemapdlist" in list(rund.keys()) else None
+            for runk, rund in calcFOMDialogclass.expfiledict.items()
             if runk.startswith("run__")
         ]
         if (
@@ -734,7 +734,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                 if allowablefiledselected:
                     if not filed in self.filedlist:
                         self.filedlist = []
-                        print "param space has to be from platemap or a single csv"
+                        print("param space has to be from platemap or a single csv")
                         return
                 else:
                     self.filedlist = [
@@ -759,7 +759,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                 if allowablefiledselected:
                     if not filed in self.filedlist:
                         self.filedlist = []
-                        print "param space has to be from platemap or a single csv"
+                        print("param space has to be from platemap or a single csv")
                         return
                 else:
                     self.filedlist = [
@@ -767,7 +767,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                     ]  # if using key from filed then make it the only one to be analyzed
                     allowablefiledselected = True
                 continue
-            print "cannot find source for param space key %s" % k
+            print("cannot find source for param space key %s" % k)
             self.filedlist = []  # cannot find a key
             return
         self.params["keys_param_space"] = ",".join(
@@ -820,7 +820,7 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                             axisvals[runinds] = numpy.array(
                                 [
                                     platemapdlist[smps.index(smp)][k]
-                                    if k in platemapdlist[smps.index(smp)].keys()
+                                    if k in list(platemapdlist[smps.index(smp)].keys())
                                     else numpy.nan
                                     for smp in fomd["sample_no"][runinds]
                                 ]
@@ -854,17 +854,17 @@ class Analysis__Filter_Linear_Projection(Analysis_Master_FOM_Process):
                 self.strkeys_fomdlist = []
                 allkeys = list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) + self.fomnames
                 self.fomdlist = [
-                    dict(zip(allkeys, tup))
+                    dict(list(zip(allkeys, tup)))
                     for tup in zip(*[fomd[k][inds] for k in allkeys])
                 ]
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped filter/smooth of file ", fn
+                print("skipped filter/smooth of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,
@@ -1010,12 +1010,12 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                     pids = [int(s.strip()) for s in self.params["plate_ids"].split(",")]
                     for count in range(len(auxfomd_list)):
                         auxfomd = auxfomd_list[count]
-                        if not "plate_id" in auxfomd.keys():
+                        if not "plate_id" in list(auxfomd.keys()):
                             continue
                         boolarr = numpy.array(
                             [pid in pids for pid in auxfomd["plate_id"]]
                         )
-                        for k in auxfomd.keys():
+                        for k in list(auxfomd.keys()):
                             auxfomd[k] = auxfomd[k][boolarr]
                 newfomd = {}
                 for k in list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) + process_keys:
@@ -1040,7 +1040,7 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                         set(fomd["runint"])
                     ):  # use the first platemaqp you find and aux better be same platemap
                         rund = expfiledict["run__%d" % runint]
-                        if "platemapdlist" in rund.keys():
+                        if "platemapdlist" in list(rund.keys()):
                             dl = rund["platemapdlist"]
                             smps = [d["Sample"] for d in dl]
                             xl = [d["x"] for d in dl]
@@ -1166,7 +1166,7 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                         for i in range(len(allkeys)):
                             self.src_x_then_y[i] += [tup[i] for tup in toappend]
                 for k, dataind in zip(
-                    keys_to_interp, range(num_interpdim, len(allkeys))
+                    keys_to_interp, list(range(num_interpdim, len(allkeys)))
                 ):
                     zvals = numpy.array(self.src_x_then_y[dataind])
                     if self.params["interp_is_phasemap"] == 1 and k.startswith(
@@ -1268,17 +1268,17 @@ class Analysis__FOM_Interp_Merge_Ana(Analysis__FOM_Merge_Aux_Ana):
                     + self.strkeys_fomdlist
                 )  # str=valued keys don't go into fomnames
                 self.fomdlist = [
-                    dict(zip(allkeys, tup))
+                    dict(list(zip(allkeys, tup)))
                     for tup in zip(*[newfomd[k] for k in allkeys])
                 ]
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped filter/smooth of file ", fn
+                print("skipped filter/smooth of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,

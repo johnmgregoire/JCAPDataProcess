@@ -52,7 +52,7 @@ visdataui=form.visdataui
 
 
 exppath=buildexppath(expname)
-print exppath
+print(exppath)
 
     
 def select_ana_fcn(calcui, analabel):
@@ -121,11 +121,11 @@ for count, datause in enumerate(['background', 'data']):
             calcui.exec_();raiseerror
         updateanalysisparams(calcui, calcui.analysisclass.dfltparams)#this includes using ana__1  which was just created above and will inlcude all transitions so we can find the transititons that match the ellist
 
-        elcpskeylist=calcui.fomdlist[0].keys()
+        elcpskeylist=list(calcui.fomdlist[0].keys())
         trlistforquant=[]
         bckndcps=[]
         for el in ellist:
-            kl=[k for k in elcpskeylist if k.startswith(el+'.') and k.endswith('.CPS') and (k.rpartition('.')[0] in calcui.analysisclass.xrfs_stds_dict.keys())]
+            kl=[k for k in elcpskeylist if k.startswith(el+'.') and k.endswith('.CPS') and (k.rpartition('.')[0] in list(calcui.analysisclass.xrfs_stds_dict.keys()))]
             if len(kl)==1:#could conceivably have more than 1 transntion be quantified and in stds but not handling that now
                 trlistforquant+=[kl[0].rpartition('.')[0]]
                 bckndcps+=[numpy.mean([d[kl[0]] for d in calcui.fomdlist])]#average over all samples in this "background" ana
@@ -149,12 +149,12 @@ calcuierror=calcui.analyzedata()#ana__4
 if calcuierror:
     calcui.exec_();raiseerror
 
-runintliststr=','.join([`ri` for ri in sorted(list(set([d['runint'] for d in calcui.fomdlist])))])
+runintliststr=','.join([repr(ri) for ri in sorted(list(set([d['runint'] for d in calcui.fomdlist])))])
 
 Atrliststr=','.join([s.partition('.')[0]+'.PM.AtFrac' for s in trlistforquant])
 Btrliststr=','.join([s+'.AtFrac' for s in trlistforquant])
 
-print Atrliststr, Btrliststr, runintliststr
+print(Atrliststr, Btrliststr, runintliststr)
 if not select_procana_fcn(calcui, 'Process_B_vs_A_ByRun'):
     calcui.exec_();raiseerror
 
@@ -162,14 +162,14 @@ if not select_procana_fcn(calcui, 'Process_B_vs_A_ByRun'):
 #updateanalysisparams(calcui, calcui.analysisclass.dfltparams)
 calcui.analysisclass.params.update(calcui.analysisclass.dfltparams)
 #updateanalysisparams(calcui, {'select_ana': 'ana__4'})
-print calcui.analysisclass.params
+print(calcui.analysisclass.params)
 updateanalysisparams(calcui, {'select_ana': 'ana__4', \
 'fom_keys_B':Btrliststr, 'fom_keys_A':Atrliststr, 'runints_B':runintliststr, 'runints_A':runintliststr})
-print calcui.analysisclass.params
+print(calcui.analysisclass.params)
 updateanalysisparams(calcui, {\
 'keys_to_keep':'.CPS,.PM.AtFrac', 'method':'B_comp_dist_wrt_A', 'relative_key_append':'_CompDiff', 'AandBoffset':'0.'\
 })
-print calcui.analysisclass.params
+print(calcui.analysisclass.params)
 calcuierror=calcui.analyzedata()#ana__5
 if calcuierror:
     calcui.exec_();raiseerror

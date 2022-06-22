@@ -59,13 +59,13 @@ def get_externalimportdatad_ssrl_batchresults(
     gd = g["deposition"]
     q = g["xrd"]["qcounts"].attrs["q"]
     npts = len(q)
-    if "qcounts_subbcknd" in g["xrd"].keys():
+    if "qcounts_subbcknd" in list(g["xrd"].keys()):
         q_subbcknd = g["xrd"]["qcounts_subbcknd"].attrs["q"]
         npts_subbcknd = len(q_subbcknd)
     else:
         q_subbcknd = None
     if (
-        "selectROI" in gd.keys()
+        "selectROI" in list(gd.keys())
     ):  # make Analysis__SSRL_XRF_Comps ana block if possible but otherwise multirun_ana_files keeps its initialized value above
         gr = gd["selectROI"]
         gs = g["spec"]
@@ -85,7 +85,7 @@ def get_externalimportdatad_ssrl_batchresults(
                 "headline": headline,
             }
         ]
-    xy_images = numpy.array(zip(gd["pmp_x"][:], gd["pmp_y"][:]))
+    xy_images = numpy.array(list(zip(gd["pmp_x"][:], gd["pmp_y"][:])))
     imdir = os.path.join(p, "images")
     if os.path.isdir(imdir):
         imdir_files = os.listdir(imdir)

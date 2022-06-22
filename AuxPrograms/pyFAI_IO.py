@@ -63,11 +63,11 @@ class ssrl_integrator:
                             line.split("=")[1].strip("\n")
                         )
                     except ValueError:
-                        print (
+                        print((
                             "Param for {} is not numeric but {}.".format(
                                 *line.strip("\n").split("=")
                             )
-                        )
+                        ))
         self.params["pxs"] = 79  # magic factor
 
     def perform_integration(self):
@@ -96,7 +96,7 @@ class ssrl_integrator:
                         comments="",
                         fmt="%.5f,%.5f",
                     )
-            print "{} integrated and saved as .npy to {}".format(fn, fn_npy)
+            print("{} integrated and saved as .npy to {}".format(fn, fn_npy))
         # assuming the image meta infos like qvals etc are the same in a run
         picklepfn = os.path.join(self.import_path, "pck2d_chi_q_vals.pck")
         with open(picklepfn, "wb") as qchi2binary:

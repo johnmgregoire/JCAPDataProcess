@@ -31,14 +31,14 @@ def stdgetapplicablefilenames(
     ]
     requiredparams += ["plate_id"]
     if runklist is None:
-        runklist = expfiledict.keys()
+        runklist = list(expfiledict.keys())
     runklist = [
         runk
         for runk in runklist
         if runk.startswith("run__")
         and (usek in expfiledict[runk]["run_use"])
-        and ("files_technique__" + techk) in expfiledict[runk].keys()
-        and typek in expfiledict[runk]["files_technique__" + techk].keys()
+        and ("files_technique__" + techk) in list(expfiledict[runk].keys())
+        and typek in list(expfiledict[runk]["files_technique__" + techk].keys())
     ]
     num_files_considered = numpy.int32(
         [
@@ -69,13 +69,13 @@ def stdgetapplicablefilenames(
             ],
         )
         for runk in runklist
-        for fnk, v in expfiledict[runk]["files_technique__" + techk][typek].iteritems()
-        if "keys" in v.keys()
+        for fnk, v in expfiledict[runk]["files_technique__" + techk][typek].items()
+        if "keys" in list(v.keys())
         and not (False in [reqk in v["keys"] for reqk in requiredkeys])
         and not (
             False
             in [
-                reqparam in expfiledict[runk]["parameters"].keys()
+                reqparam in list(expfiledict[runk]["parameters"].keys())
                 for reqparam in requiredparams
             ]
         )
@@ -88,7 +88,7 @@ def stdgetapplicablefilenames(
         dict(
             d,
             user_run_foms=expfiledict[d["run"]]["user_run_foms"]
-            if "user_run_foms" in expfiledict[d["run"]].keys()
+            if "user_run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -97,7 +97,7 @@ def stdgetapplicablefilenames(
         dict(
             d,
             run_foms=expfiledict[d["run"]]["run_foms"]
-            if "run_foms" in expfiledict[d["run"]].keys()
+            if "run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -113,14 +113,14 @@ def getapplicablefilenames_byuse_tech_type(
     ]
     requiredparams += ["plate_id"]
     if runklist is None:
-        runklist = expfiledict.keys()
+        runklist = list(expfiledict.keys())
     runklist = [
         runk
         for runk in runklist
         if runk.startswith("run__")
         and (usek in expfiledict[runk]["run_use"])
-        and ("files_technique__" + techk) in expfiledict[runk].keys()
-        and typek in expfiledict[runk]["files_technique__" + techk].keys()
+        and ("files_technique__" + techk) in list(expfiledict[runk].keys())
+        and typek in list(expfiledict[runk]["files_technique__" + techk].keys())
     ]
     num_files_considered = numpy.int32(
         [
@@ -140,14 +140,14 @@ def getapplicablefilenames_byuse_tech_type(
             run=runk,
             fn=fnk,
             techk=techk,
-            sample_no=v["sample_no"] if "sample_no" in v.keys() else 0,
+            sample_no=v["sample_no"] if "sample_no" in list(v.keys()) else 0,
         )
         for runk in runklist
-        for fnk, v in expfiledict[runk]["files_technique__" + techk][typek].iteritems()
+        for fnk, v in expfiledict[runk]["files_technique__" + techk][typek].items()
         if not (
             False
             in [
-                reqparam in expfiledict[runk]["parameters"].keys()
+                reqparam in list(expfiledict[runk]["parameters"].keys())
                 for reqparam in requiredparams
             ]
         )
@@ -156,7 +156,7 @@ def getapplicablefilenames_byuse_tech_type(
         dict(
             d,
             user_run_foms=expfiledict[d["run"]]["user_run_foms"]
-            if "user_run_foms" in expfiledict[d["run"]].keys()
+            if "user_run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -165,7 +165,7 @@ def getapplicablefilenames_byuse_tech_type(
         dict(
             d,
             run_foms=expfiledict[d["run"]]["run_foms"]
-            if "run_foms" in expfiledict[d["run"]].keys()
+            if "run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -205,15 +205,15 @@ class Analysis_Master_nointer:
         runk_typek_b = sorted(
             [
                 ("multi_run", typek, True)
-                for typek in self.multirunfiledict.keys()
+                for typek in list(self.multirunfiledict.keys())
                 if len(self.multirunfiledict[typek]) > 0
             ]
         )
         runk_typek_b += sorted(
             [
                 (runk, typek, False)
-                for runk, rund in self.runfiledict.iteritems()
-                for typek in rund.keys()
+                for runk, rund in self.runfiledict.items()
+                for typek in list(rund.keys())
                 if len(rund[typek]) > 0
             ]
         )
@@ -415,13 +415,13 @@ class Analysis_Master_nointer:
                     (k, v)
                     for k, v in (
                         (
-                            d["user_run_foms"].items()
-                            if "user_run_foms" in d.keys()
+                            list(d["user_run_foms"].items())
+                            if "user_run_foms" in list(d.keys())
                             else []
                         )
-                        + (d["run_foms"].items() if "run_foms" in d.keys() else [])
+                        + (list(d["run_foms"].items()) if "run_foms" in list(d.keys()) else [])
                     )
-                    if not (k in self.fomnames or k in anauserfomd.keys())
+                    if not (k in self.fomnames or k in list(anauserfomd.keys()))
                 ]
             )
             for d in self.filedlist
@@ -430,27 +430,27 @@ class Analysis_Master_nointer:
             dict(
                 [
                     (k, v)
-                    for k, v in d["run_foms"].iteritems()
-                    if not (k in self.fomnames or k in anauserfomd.keys())
+                    for k, v in d["run_foms"].items()
+                    if not (k in self.fomnames or k in list(anauserfomd.keys()))
                 ]
             )
-            if "run_foms" in d.keys()
+            if "run_foms" in list(d.keys())
             else {}
             for d in self.filedlist
         ]
         # if anything is str, then all will be str
         strkeys = set(
-            [k for d in userfomdlist for k, v in d.iteritems() if isinstance(v, str)]
+            [k for d in userfomdlist for k, v in d.items() if isinstance(v, str)]
         )
         floatkeys = list(
-            set([k for d in userfomdlist for k in d.keys()]).difference(strkeys)
+            set([k for d in userfomdlist for k in list(d.keys())]).difference(strkeys)
         )
         strkeys = list(strkeys)
         # fill i missing values withappropriate defaults. would also filter any unnecesary keys but there aren't and it wouldn't be necessary anyway
         userfomdlist = [
             dict(
-                [(k, str(d[k]) if k in d.keys() else "") for k in strkeys]
-                + [(k, float(d[k]) if k in d.keys() else numpy.nan) for k in floatkeys]
+                [(k, str(d[k]) if k in list(d.keys()) else "") for k in strkeys]
+                + [(k, float(d[k]) if k in list(d.keys()) else numpy.nan) for k in floatkeys]
             )
             for d in userfomdlist
         ]
@@ -459,10 +459,10 @@ class Analysis_Master_nointer:
         ):  # for typicaly analysis filedlit and fomdlit are same length but for process fom filedlist is only the fom files and fomdlist is arbitrary length - in this case shouldn't have anr run-based FOMs anyway so this is just a formality
             userfomdlist = [userfomdlist[0]] * len(self.fomdlist)
         anauserfomd = dict(
-            [(k, v) for k, v in anauserfomd.iteritems() if not k in self.fomnames]
+            [(k, v) for k, v in anauserfomd.items() if not k in self.fomnames]
         )
-        strkeys += [k for k, v in anauserfomd.iteritems() if isinstance(v, str)]
-        floatkeys += [k for k, v in anauserfomd.iteritems() if not isinstance(v, str)]
+        strkeys += [k for k, v in anauserfomd.items() if isinstance(v, str)]
+        floatkeys += [k for k, v in anauserfomd.items() if not isinstance(v, str)]
         userfomdlist = [dict(d, **anauserfomd) for d in userfomdlist]
         if appendtofomdlist:
             self.fomdlist = [
@@ -649,7 +649,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                 ]
             if destfolder is None:
                 continue
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -666,7 +666,7 @@ class Analysis_Master_inter(Analysis_Master_nointer):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -691,13 +691,13 @@ class Analysis_Master_inter(Analysis_Master_nointer):
 def gethighestanak(anadict, getnextone=False):
     kfcn = lambda i: "ana__%d" % i
     i = 1
-    while kfcn(i) in anadict.keys():
+    while kfcn(i) in list(anadict.keys()):
         i += 1
     if getnextone:
         anak = kfcn(i)
     else:
         anak = kfcn(i - 1)
-        if not anak in anadict.keys():
+        if not anak in list(anadict.keys()):
             return None
     return anak
 
@@ -770,10 +770,10 @@ def calcfom_analyzedata_calcfomdialogclass(
                         k
                         for d in (
                             [self.analysisclass.multirunfiledict]
-                            + self.analysisclass.runfiledict.values()
+                            + list(self.analysisclass.runfiledict.values())
                         )
-                        for typed in d.values()
-                        for k in typed.keys()
+                        for typed in list(d.values())
+                        for k in list(typed.keys())
                     ],
                 )
     if killana:
@@ -784,7 +784,7 @@ def calcfom_analyzedata_calcfomdialogclass(
         self.activeana["check_output_message"] = checkmsg
     for runk, typek, b in runk_typek_b:
         frunk = "files_" + runk
-        if not frunk in self.activeana.keys():
+        if not frunk in list(self.activeana.keys()):
             self.activeana[frunk] = {}
         if b:
             self.activeana[frunk][typek] = copy.deepcopy(
@@ -830,17 +830,17 @@ def calcfom_analyzedata_calcfomdialogclass(
     le.setText("")  # clear description to clear any user-entered comment
     if len(self.analysisclass.params) > 0:
         self.activeana["parameters"] = {}
-    for k, v in self.analysisclass.params.iteritems():
+    for k, v in self.analysisclass.params.items():
         if isinstance(v, dict):
             self.activeana["parameters"][k] = {}
-            for k2, v2 in v.iteritems():
+            for k2, v2 in v.items():
                 self.activeana["parameters"][k][v2] = str(v2)
         else:
             self.activeana["parameters"][k] = str(v)
     # the A,B,C,D order is editable as a analysisclass paramete and if it is not the nontrivial case, bump it up to an ana__ key for ease in finding in visualization
     if (
-        "parameters" in self.activeana.keys()
-        and "platemap_comp4plot_keylist" in self.activeana["parameters"].keys()
+        "parameters" in list(self.activeana.keys())
+        and "platemap_comp4plot_keylist" in list(self.activeana["parameters"].keys())
         and self.activeana["parameters"]["platemap_comp4plot_keylist"] != "A,B,C,D"
     ):
         self.activeana["platemap_comp4plot_keylist"] = self.activeana["parameters"][
@@ -855,7 +855,7 @@ def calcfom_analyzedata_calcfomdialogclass(
                         set(
                             [
                                 compareprependpath(FOMPROCESSFOLDERS, p)
-                                for p in self.analysisclass.filter_path__runint.values()
+                                for p in list(self.analysisclass.filter_path__runint.values())
                             ]
                         )
                     )

@@ -49,7 +49,7 @@ p_parentfn=lambda x: os.path.join(p_parentdir,x)
 
 dirl = [x for x in os.listdir(pp_parentdir) if os.path.isdir(pp_parentfn(x))]
 for dirn in dirl:
-    print dirn
+    print(dirn)
     p=p_parentfn(dirn)
     pp=pp_parentfn(dirn)
     if os.path.exists(p) and os.path.exists(pp):

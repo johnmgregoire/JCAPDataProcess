@@ -287,11 +287,11 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                 txtlines += [(fn, a)]
         if (len(lines) + len(txtlines)) > 0:
             da = anadict["ana__%d" % self.repr_anaint_plots]
-            if not "files_multi_run" in da.keys():
+            if not "files_multi_run" in list(da.keys()):
                 da["files_multi_run"] = {}
             df = da["files_multi_run"]
             if len(lines) > 0:
-                if not "image_files" in df.keys():
+                if not "image_files" in list(df.keys()):
                     df["image_files"] = {}
                 d = df["image_files"]
                 for fn, a in lines:
@@ -299,7 +299,7 @@ class saveimagesDialog(QDialog, Ui_SaveImagesDialog):
                         fn
                     ] = a  # if fn exists and was overwritten this will jdo nothing or update the attrstr
             if len(txtlines) > 0:
-                if not "txt_files" in df.keys():
+                if not "txt_files" in list(df.keys()):
                     df["txt_files"] = {}
                 d = df["txt_files"]
                 for fn, a in txtlines:
@@ -333,7 +333,7 @@ class saveimagesbatchDialog(QDialog, Ui_SaveImagesBatchDialog):
         self.selectcomboboxinds = sorted(
             [
                 d["comboind"]
-                for d in self.widgetTopLevelItems.values()
+                for d in list(self.widgetTopLevelItems.values())
                 if bool(d["item"].checkState(0))
             ]
         )

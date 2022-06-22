@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 try:
     import xylib
 except:
@@ -22,7 +22,7 @@ def get_vamas_as_dict_containing_blocks(filename):
         # from xylib: column 0 is pseudo-column with point indices
         for i in range(len(col_names)):
             col_values.append([block.get_column(i+1).get_value(j) for j in range(nrow)])
-        all_blocks[name] = {col_names[i]:col_values[j] for i,j in zip(range(ncol),range(len(col_names)))}
+        all_blocks[name] = {col_names[i]:col_values[j] for i,j in zip(list(range(ncol)),list(range(len(col_names))))}
     return all_blocks
 
 '''

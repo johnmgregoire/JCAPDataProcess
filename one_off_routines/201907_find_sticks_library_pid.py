@@ -40,10 +40,10 @@ for pid in plate_list:
     d=importinfo(pid)
     els=[el for el in getelements_plateidstr(pid) if not el in ['Ar','O']]
     eltup=tuple(sorted(els))
-    sublib=lib_pt if True in ['Pt' in pd['elements'] for pd in d['prints'].values()] else lib_fto
+    sublib=lib_pt if True in ['Pt' in pd['elements'] for pd in list(d['prints'].values())] else lib_fto
         
     matches=[ln for timeint,elt,ln in lib_tups if eltup==elt]
     if len(matches)==0:
-        print ','.join([d['serial_no'],'',sublib])
+        print(','.join([d['serial_no'],'',sublib]))
     else:
-        print ','.join([d['serial_no'],matches[0],sublib])
+        print(','.join([d['serial_no'],matches[0],sublib]))

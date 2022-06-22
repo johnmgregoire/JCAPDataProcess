@@ -86,13 +86,13 @@ class setup_rcp_and_exp_xpss:
                 return_pmidstr=True,
             )
             if ans is None:
-                print "aborting because failed retrieval of platemap id for plate :", self.plate_idstr
+                print("aborting because failed retrieval of platemap id for plate :", self.plate_idstr)
                 return True
             self.pmidstr = ans[1]
         dropfolder = getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             # messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
-            print "Aborting SAVE because cannot find drop folder"
+            print("Aborting SAVE because cannot find drop folder")
             return True
         if (not testmode) and not os.path.isdir(dropfolder):
             os.mkdir(dropfolder)
@@ -113,7 +113,7 @@ class setup_rcp_and_exp_xpss:
                     shutil.rmtree(self.runfolderpath)
                 else:
                     # messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-                    print "Aborting SAVE because %s folder exists" % rcpmainfolder
+                    print("Aborting SAVE because %s folder exists" % rcpmainfolder)
                     return True
             os.mkdir(self.runfolderpath)
         return False
@@ -171,9 +171,9 @@ class setup_rcp_and_exp_xpss:
             # this looks strange but somehowit sometimes won't find
             # the appropriate key for 3114 Chemical symbol or formula
             ID_ChemKey = [
-                i for i in range(len(spec.keys())) if "3113" in spec.keys()[i]
+                i for i in range(len(list(spec.keys()))) if "3113" in list(spec.keys())[i]
             ]
-            element_an = spec[spec.keys()[ID_ChemKey[0]]].strip("\n")
+            element_an = spec[list(spec.keys())[ID_ChemKey[0]]].strip("\n")
             transition = spec["3114 Transition or charge state"].strip("\n")
             temp["technique"].append("{}-{}{}".format(method, element_an, transition))
             temp["passE"].append(spec[" 42 Pass energy"])
@@ -185,12 +185,12 @@ class setup_rcp_and_exp_xpss:
 
     def get_params(self):
         self.get_all_params()
-        self.params = {key: [] for key in self.allparams.keys()}
+        self.params = {key: [] for key in list(self.allparams.keys())}
         # attention: this returns the techniques alphabetically sorted
         # and not how they appear in the file so ID sort needs to be performed
         val, IDx = np.unique(self.allparams["technique"], return_index=True)
         for ID in IDx[np.argsort(IDx)]:
-            for key in self.allparams.keys():
+            for key in list(self.allparams.keys()):
                 self.params[key].append(self.allparams[key][ID])
 
     def parse_spec_files(self):
@@ -209,7 +209,7 @@ class setup_rcp_and_exp_xpss:
                     -4:
                 ]  # forcing naming convention i.e. 4080.cal
             except (ValueError):
-                print "Filename {} not correct!".format(IDStr)
+                print("Filename {} not correct!".format(IDStr))
         # generate meta file in which all important info is stored
         # in meta now the infor for each spectrum is stored
         self.get_params()
@@ -223,7 +223,7 @@ class setup_rcp_and_exp_xpss:
             self.pre_parsed[0][" 151 Date Acquired"]
         ).strftime("%d%y%m.%H%M%S")
         self.run_params_dict = {}
-        for key in self.params.keys():
+        for key in list(self.params.keys()):
             if key == "technique":
                 self.technique_names = self.params["technique"]
                 self.run_params_dict["technique_names"] = self.technique_names
@@ -286,7 +286,7 @@ class setup_rcp_and_exp_xpss:
             d.update({k: v}) for d in [exprund["parameters"], rcpdict["parameters"]]
         ]
         self.add_run_param("plate_id", self.plate_idstr)
-        for k, v in self.run_params_dict.iteritems():
+        for k, v in self.run_params_dict.items():
             v = (
                 self.strrep_generic_file_dict_value_sp(v).strip("[").rstrip("]")
             )  # make lists comma delimited but without the brackets
@@ -333,8 +333,8 @@ class setup_rcp_and_exp_xpss:
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict["name"] + ".rcp")
         if testmode:
-            print "THIS IS THE RCP FILE THAT WOULD BE SAVED:"
-            print rcpfilestr
+            print("THIS IS THE RCP FILE THAT WOULD BE SAVED:")
+            print(rcpfilestr)
             return
         with open(p, mode="w") as f:
             f.write(rcpfilestr)
@@ -487,13 +487,13 @@ class setup_rcp_and_exp_xpss:
                 return_pmidstr=True,
             )
             if ans is None:
-                print "aborting because failed retrieval of platemap id for plate :", self.plate_idstr
+                print("aborting because failed retrieval of platemap id for plate :", self.plate_idstr)
                 return True
             self.pmidstr = ans[1]
         dropfolder = getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             # messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
-            print "Aborting SAVE because cannot find drop folder"
+            print("Aborting SAVE because cannot find drop folder")
             return True
         if (not testmode) and not os.path.isdir(dropfolder):
             os.mkdir(dropfolder)
@@ -514,7 +514,7 @@ class setup_rcp_and_exp_xpss:
                     shutil.rmtree(self.runfolderpath)
                 else:
                     # messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-                    print "Aborting SAVE because %s folder exists" % rcpmainfolder
+                    print("Aborting SAVE because %s folder exists" % rcpmainfolder)
                     return True
             os.mkdir(self.runfolderpath)
         return False
@@ -572,9 +572,9 @@ class setup_rcp_and_exp_xpss:
             # this looks strange but somehowit sometimes won't find
             # the appropriate key for 3114 Chemical symbol or formula
             ID_ChemKey = [
-                i for i in range(len(spec.keys())) if "3113" in spec.keys()[i]
+                i for i in range(len(list(spec.keys()))) if "3113" in list(spec.keys())[i]
             ]
-            element_an = spec[spec.keys()[ID_ChemKey[0]]].strip("\n")
+            element_an = spec[list(spec.keys())[ID_ChemKey[0]]].strip("\n")
             transition = spec["3114 Transition or charge state"].strip("\n")
             temp["technique"].append("{}-{}{}".format(method, element_an, transition))
             temp["passE"].append(spec[" 42 Pass energy"])
@@ -587,12 +587,12 @@ class setup_rcp_and_exp_xpss:
 
     def get_params(self):
         self.get_all_params()
-        self.params = {key: [] for key in self.allparams.keys()}
+        self.params = {key: [] for key in list(self.allparams.keys())}
         # attention: this returns the techniques alphabetically sorted
         # and not how they appear in the file so ID sort needs to be performed
         val, IDx = np.unique(self.allparams["technique"], return_index=True)
         for ID in IDx[np.argsort(IDx)]:
-            for key in self.allparams.keys():
+            for key in list(self.allparams.keys()):
                 self.params[key].append(self.allparams[key][ID])
 
     def parse_spec_files(self):
@@ -611,7 +611,7 @@ class setup_rcp_and_exp_xpss:
                     -4:
                 ]  # forcing naming convention i.e. 4080.cal
             except (ValueError):
-                print "Filename {} not correct!".format(IDStr)
+                print("Filename {} not correct!".format(IDStr))
         # generate meta file in which all important info is stored
         # in meta now the infor for each spectrum is stored
         self.get_params()
@@ -625,7 +625,7 @@ class setup_rcp_and_exp_xpss:
             self.pre_parsed[0][" 151 Date Acquired"]
         ).strftime("%d%y%m.%H%M%S")
         self.run_params_dict = {}
-        for key in self.params.keys():
+        for key in list(self.params.keys()):
             if key == "technique":
                 self.technique_names = self.params["technique"]
                 self.run_params_dict["technique_names"] = self.technique_names
@@ -688,7 +688,7 @@ class setup_rcp_and_exp_xpss:
             d.update({k: v}) for d in [exprund["parameters"], rcpdict["parameters"]]
         ]
         self.add_run_param("plate_id", self.plate_idstr)
-        for k, v in self.run_params_dict.iteritems():
+        for k, v in self.run_params_dict.items():
             v = (
                 self.strrep_generic_file_dict_value_sp(v).strip("[").rstrip("]")
             )  # make lists comma delimited but without the brackets
@@ -735,8 +735,8 @@ class setup_rcp_and_exp_xpss:
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict["name"] + ".rcp")
         if testmode:
-            print "THIS IS THE RCP FILE THAT WOULD BE SAVED:"
-            print rcpfilestr
+            print("THIS IS THE RCP FILE THAT WOULD BE SAVED:")
+            print(rcpfilestr)
             return
         with open(p, mode="w") as f:
             f.write(rcpfilestr)

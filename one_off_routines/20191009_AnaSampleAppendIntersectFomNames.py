@@ -35,7 +35,7 @@ source_anap = paths_to_merge[0]
 source_anai = anas_to_merge[0][1]
 source_dict = readana(source_anap)
 
-source_fn=source_dict['ana__%i' %(source_anai)]['files_multi_run']['fom_files'].keys()[0]
+source_fn=list(source_dict['ana__%i' %(source_anai)]['files_multi_run']['fom_files'].keys())[0]
 source_skip=source_dict['ana__%i' %(source_anai)]['files_multi_run']['fom_files'][source_fn]['num_header_lines']
 source_csv_path=os.path.join(os.path.dirname(source_anap), source_fn)
 keep_cols=source_dict['ana__%i' %(source_anai)]['files_multi_run']['fom_files'][source_fn]['keys']
@@ -51,7 +51,7 @@ for i in range(len(paths_to_merge[1:])):
     merge_anai = anas_to_merge[1:][i][1]
     merge_dict = readana(merge_anap)
 
-    merge_fn=merge_dict['ana__%i' %(merge_anai)]['files_multi_run']['fom_files'].keys()[0]
+    merge_fn=list(merge_dict['ana__%i' %(merge_anai)]['files_multi_run']['fom_files'].keys())[0]
     merge_skip=merge_dict['ana__%i' %(merge_anai)]['files_multi_run']['fom_files'][merge_fn]['num_header_lines']
     merge_csv_path=os.path.join(os.path.dirname(merge_anap), merge_fn)
     merge_cols=merge_dict['ana__%i' %(merge_anai)]['files_multi_run']['fom_files'][merge_fn]['keys']
@@ -68,7 +68,7 @@ for i in range(len(paths_to_merge[1:])):
         fom_dict[k]+=aux_dict[k]
 
 
-last_ana_int = max([int(s.replace('ana__', '')) for s in source_dict.keys() if 'ana__' in s])
+last_ana_int = max([int(s.replace('ana__', '')) for s in list(source_dict.keys()) if 'ana__' in s])
 new_ana_fn = 'ana__%i__' %(last_ana_int+1) + '__'.join(source_fn.split('__')[2:])
 
 new_ana_block = {

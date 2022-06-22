@@ -50,8 +50,8 @@ for pid, fold in zip(pids, folds):
     
     with open(psmp, mode='r') as f:
         lines=f.readlines()
-    smp_this_plate=[`int(myeval(l.strip()))` for l in lines]
-    print [(pid, smp) for smp in smp_this_plate if not (pid, smp) in pid_smp_tups]
+    smp_this_plate=[repr(int(myeval(l.strip()))) for l in lines]
+    print([(pid, smp) for smp in smp_this_plate if not (pid, smp) in pid_smp_tups])
     inds_old_new=[(pid_smp_tups.index((pid, smp)), count) for count, smp in enumerate(smp_this_plate) if (pid, smp) in pid_smp_tups]
     
     with open(pspec, mode='r') as f:
@@ -59,20 +59,20 @@ for pid, fold in zip(pids, folds):
     #print '***',''.join(lines[:10])
     
     spectra_line_tups+=[(i_old, ('I%d=' %(i_old+1))+backtostring(evalraman(lines[i_new]))) for i_old, i_new in inds_old_new]
-    print '^^^',[(i_new, lines[i_new]) for i_old, i_new in inds_old_new if i_old==0]
+    print('^^^',[(i_new, lines[i_new]) for i_old, i_new in inds_old_new if i_old==0])
     with open(pwave, mode='r') as f:
         lines=f.readlines()
     q_string='Q='+','.join([l.strip() for count, l in enumerate(lines)])+'\n' #assume this is the same every time
 
 new_lines+=[q_string]
 
-print 'LENGTH CHECK:',  len(pidlist), len(spectra_line_tups)
+print('LENGTH CHECK:',  len(pidlist), len(spectra_line_tups))
 new_lines+=[s for i, s in sorted(spectra_line_tups)]
 
-print 'NOT FOUND:'
-print '\n'.join(['%s,%s'%tup for count, tup in enumerate(pid_smp_tups) if not count in [i for i, s in sorted(spectra_line_tups)]])
-print '\n'.join([`count` for count, tup in enumerate(pid_smp_tups) if not count in [i for i, s in sorted(spectra_line_tups)]])
-print set([pidlist[i] for i, s in sorted(spectra_line_tups) ])
+print('NOT FOUND:')
+print('\n'.join(['%s,%s'%tup for count, tup in enumerate(pid_smp_tups) if not count in [i for i, s in sorted(spectra_line_tups)]]))
+print('\n'.join([repr(count) for count, tup in enumerate(pid_smp_tups) if not count in [i for i, s in sorted(spectra_line_tups)]]))
+print(set([pidlist[i] for i, s in sorted(spectra_line_tups) ]))
 
 newfilestr=''.join(new_lines)
 with open(pnew, mode='w') as f:

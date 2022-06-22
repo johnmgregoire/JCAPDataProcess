@@ -188,7 +188,7 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
 
     def fomtuplist_rawlend_interlend(self, dataarr, filed):
         if self.params["override_Vrhe.ref"] == "rcp":
-            if "reference_vrhe" not in filed.keys():
+            if "reference_vrhe" not in list(filed.keys()):
                 print(
                     "reference_vrhe key not found in run rcp. specify override_Vrhe.ref parameter"
                 )
@@ -200,7 +200,7 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
         emin = numpy.min(vrhe)
         emax = numpy.max(vrhe)
         if self.params["measurement_area.mm2"] == "rcp":
-            if "measurement_area" not in filed.keys():
+            if "measurement_area" not in list(filed.keys()):
                 print(
                     "measurement_area key not found in run rcp. specify measurement_area.mm2 parameter"
                 )
@@ -278,7 +278,7 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
             if destfolder is None:
                 continue
             runint = int(filed["run"].partition("run__")[2])
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -297,7 +297,7 @@ class Analysis__EchemMinMax(Analysis_Master_inter):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -680,7 +680,7 @@ class Analysis__Etaphoto(Analysis__Iphoto):
             dataarr[0], filed["reference_e0"], filed["redox_couple_type"]
         )
         # names in interlendict are based on Ewe(V)key so fix these.
-        keystochange = [k for k in interlend.keys() if k.startswith("Ewe")]
+        keystochange = [k for k in list(interlend.keys()) if k.startswith("Ewe")]
         for oldk in keystochange:
             newk = "Eta" + oldk[3:]
             interlend[newk] = referenceshiftfcn(

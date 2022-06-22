@@ -62,7 +62,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
                 break
         ans = userinputcaller(
             self,
-            inputs=[("Num. header lines (incl headings)", int, ` linecount `)],
+            inputs=[("Num. header lines (incl headings)", int, repr( linecount))],
             title="Enter # header lines in .csv",
             cancelallowed=True,
         )
@@ -118,7 +118,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
         else:
             self.platemapLineEdit.setText("")
             self.useplatemapCheckBox.setChecked(False)
-            for cb in self.comboboxdict.values():
+            for cb in list(self.comboboxdict.values()):
                 cb.setCurrentIndex(0)
         self.findsamplecolumn()
         self.setplatemapoption()
@@ -134,19 +134,19 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
                 includestrvals=False,
             )
         except:
-            print "csv load aborted due to issue with opening .csv"
+            print("csv load aborted due to issue with opening .csv")
             self.csvd = None
             return
         for k in [
             "runint",
             "anaint",
         ]:  # do not allow these keys because no guarantee they will match with the exp and anafiledict in visualizer
-            if k in self.csvd.keys():
+            if k in list(self.csvd.keys()):
                 del self.csvd[k]
-        if "plate_id" in self.csvd.keys():
-            self.plateidLineEdit.setText(` self.csvd["plate_id"][0] `)
+        if "plate_id" in list(self.csvd.keys()):
+            self.plateidLineEdit.setText(repr( self.csvd["plate_id"][0]))
             # self.getinfousingplateid()#could auto do this but may nto want to sometimes so let user clikc the button
-        for k, cb in self.comboboxdict.items():
+        for k, cb in list(self.comboboxdict.items()):
             if k == "sample_no":
                 s = "Use row number"
             else:
@@ -158,7 +158,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
                 )  # fom choices are not associated with particular indeces of the l_ structures
             cb.setCurrentIndex(0)
         self.fileattrd["num_data_rows"] = len(self.csvd[k])
-        self.fileattrd["keys"] = self.csvd.keys()
+        self.fileattrd["keys"] = list(self.csvd.keys())
 
     def getinfousingplateid(self):
         plateidstr = str(self.plateidLineEdit.text())
@@ -225,7 +225,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
         return pmpath
 
     def defaultplatemaparray(self, k):
-        csvrownum = numpy.arange(len(self.csvd[self.csvd.keys()[0]])) + 1
+        csvrownum = numpy.arange(len(self.csvd[list(self.csvd.keys())[0]])) + 1
         if k == "sample_no":
             return csvrownum
         if k == "x" or k == "y":
@@ -236,7 +236,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
 
     def createadhocplatemapdlist(self):
         arrd = {}
-        for k, cb in self.comboboxdict.items():
+        for k, cb in list(self.comboboxdict.items()):
             # no platemap available so use dummy or column values for each item
             if int(cb.currentIndex()) == 0:
                 arrd[k] = self.defaultplatemaparray(k)
@@ -245,7 +245,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
                 arrd[k] = self.csvd[csvk]
         # transpose the arrays to a dlist
         return [
-            dict([(k, arrd[k][i]) for k in arrd.keys()])
+            dict([(k, arrd[k][i]) for k in list(arrd.keys())])
             for i in range(len(arrd["sample_no"]))
         ]
 
@@ -266,7 +266,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
             adhocbool = True
             self.platemapLineEdit.setText("ad hoc")
         elif (
-            not "platemapdlist" in self.rund.keys()
+            not "platemapdlist" in list(self.rund.keys())
         ):  # the existing platemap sent from visualizer to be used,.......just load it again
             pmpath = self.openplatemap(
                 uselineeditpath=True, settrue=False
@@ -292,15 +292,15 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
             idialog.exec_()
             return
         if adhocbool:
-            print "ad-hoc platemap created fro loaded csv with %d samples" % len(
+            print("ad-hoc platemap created fro loaded csv with %d samples" % len(
                 self.rund["platemapdlist"]
-            )
+            ))
         elif self.useplatemapCheckBox.isChecked():
-            print "csv loaded with %d samples, which were located in the platemap" % len(
+            print("csv loaded with %d samples, which were located in the platemap" % len(
                 samplesinplatemap
-            )
+            ))
         else:  # if using platemap for the rest then this is "normal" like a .csv from an ana and we're done. otherwise, parse it down to only the used sample_no since there are cusotm modifications. if adhoc platemap then this is already done
-            print "csv loaded and with custom platemap modifications for the following keys:"
+            print("csv loaded and with custom platemap modifications for the following keys:")
             platemapinds = [
                 self.rund["platemapsamples"].index(smp)
                 for smp in self.csvd["sample_no"]
@@ -308,12 +308,12 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
             newpmdlist = [self.rund["platemapdlist"][i] for i in platemapinds]
             self.rund["platemapdlist"] = copy.copy(newpmdlist)
             self.rund["platemapsamples"] = list(self.csvd["sample_no"])
-            for k, cb in self.comboboxdict.items():
+            for k, cb in list(self.comboboxdict.items()):
                 if (
                     k == "sample_no" or int(cb.currentIndex()) == 0
                 ):  # ==0 means default value but to get here must have read the platemap and assume that these keys are there so dont' need to create default values, just use existing platemap ones
                     continue
-                print k
+                print(k)
                 csvk = str(cb.currentText())
                 arr = self.csvd[csvk]
                 # goes through each platemapd and reaplces k with v from csvd column
@@ -323,7 +323,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
         self.fomdlist = [
             dict(
                 [("anaint", 0), ("runint", runint)]
-                + [(k, self.csvd[k][i]) for k in self.csvd.keys()]
+                + [(k, self.csvd[k][i]) for k in list(self.csvd.keys())]
             )
             for i in range(len(self.csvd["sample_no"]))
         ]
@@ -331,7 +331,7 @@ class loadcsvDialog(QDialog, Ui_LoadCSVDialog):
             len(self.fomdlist) == 0
         ):  # not sure why this would happen but just in case to avoid later exceptions
             self.error = True
-        self.fomnames = self.fomdlist[0].keys()
+        self.fomnames = list(self.fomdlist[0].keys())
         self.runfilesdict = {}
         csvfn = os.path.split(self.csvpath)[1]
         for d in self.fomdlist:

@@ -45,8 +45,8 @@ def import_CU_Multi_Bcknd_as_ana_block(srcfolder,anafolder,fom_segment_min_index
             inds=[count for count,k in enumerate(orig_summ_keys) if 'bcknd_weight__' in k]
             i0=inds[0]
             i1=inds[-1]
-            if inds!=range(i0,i1+1):
-                print 'WARNING NON CONSEC KEYS: ',inds,orig_summ_keys
+            if inds!=list(range(i0,i1+1)):
+                print('WARNING NON CONSEC KEYS: ',inds,orig_summ_keys)
             keep_summ_keys=orig_summ_keys[i0:i1+1]
             new_key_str=','.join([keystr]+keep_summ_keys)
             filelists[0].append('%s: csv_fom_file;%s;19;%d' %(nfn,new_key_str,len(lines)-1))
@@ -69,7 +69,7 @@ def import_CU_Multi_Bcknd_as_ana_block(srcfolder,anafolder,fom_segment_min_index
         
             tups.append((smp,1,pid,(x[:,2]>0.5).sum(),(x[:,3]>0.5).sum(),get_num_segments(x[:,2]),get_num_segments(x[:,3]),x[:,2].max(),x[:,3].max()))
             
-            filelists[2].append('%s: rams_inter_rawlen_file;%s;1;%d;%d' %(nfn,','.join(d.keys()),len(x),smp))
+            filelists[2].append('%s: rams_inter_rawlen_file;%s;1;%d;%d' %(nfn,','.join(list(d.keys())),len(x),smp))
         elif fn=='Bcknd_Init.txt':
             with open(pr,mode='r') as f: lines=f.readlines()
             lines=[indent*2+l.strip() for l in lines]

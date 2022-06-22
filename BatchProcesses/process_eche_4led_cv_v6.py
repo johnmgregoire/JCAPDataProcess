@@ -157,7 +157,7 @@ else:
     #exppath=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_L, expname)
 
 
-print exppath
+print(exppath)
 if ananame is None:
     calcui.importexp(exppath=exppath)
 
@@ -172,7 +172,7 @@ if ananame is None:
         ('CV5','Pphotomax',False,{'v_extend_lower': -0.1, 'v_extend_upper': 0, 'sweep_direction': 'cathodic'},True),\
         ('CV5','Pphotomax',False,{'v_extend_lower': .03, 'v_extend_upper': 0, 'sweep_direction': 'cathodic'},True),\
         ]):
-        print 'calculating ana__%s, %s' %(currentana, ana_fcn)
+        print('calculating ana__%s, %s' %(currentana, ana_fcn))
         #calcui.exec_()
         select_techtype(techtypesearch)
         if isprocess:
@@ -183,7 +183,7 @@ if ananame is None:
                 calcui.exec_();raiseerror
         if len(paramd)>0:
             updateanalysisparams(calcui, paramd)
-        print 'parameters updated, performing calculation'
+        print('parameters updated, performing calculation')
         
         calcuierror=calcui.analyzedata()
         currentana+=1
@@ -191,7 +191,7 @@ if ananame is None:
         if calcuierror:
             calcui.exec_();raiseerror
         if cm2convertbool:
-            print 'converting to m*/cm2'
+            print('converting to m*/cm2')
             calcui.batch_set_params_for_photo_mAcm2_scaling(measurement_area=measurement_area_override)
             
     #        if not select_ana_fcn(calcui, 'Process_B_vs_A_ByRun'):
@@ -223,7 +223,7 @@ else:
 visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(9)
 visdataui.plot_preparestandardplot()
 choosexyykeys(visdataui, ['E.eV_illum', 'EQE', 'None'])
-for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].iteritems():
+for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].items():
     p=os.path.join(anasavefolder, fn)
     vectrofiled=readcsvdict(p, filed, returnheaderdict=False, zipclass=None, includestrvals=False, delim=',')
     if numpy.all(vectrofiled['EQE']>mineqeforplot):
@@ -252,11 +252,11 @@ for i in stdplotinds:
             samplestoplot=list(visdataui.fomplotd['sample_no'][inds])
             plot_new_fom(visdataui, 'Fill_factor')
             filterinds=[ind for ind, smp in enumerate(visdataui.fomplotd['sample_no']) if smp in samplestoplot]
-            for k in visdataui.fomplotd.keys():
+            for k in list(visdataui.fomplotd.keys()):
                 if isinstance(visdataui.fomplotd[k], numpy.ndarray):
                     visdataui.fomplotd[k]=visdataui.fomplotd[k][filterinds]
                 else:
-                    print k
+                    print(k)
             vmin=max(0, visdataui.fomplotd['fom'].min())*0.99
             vmax=min(0.8, visdataui.fomplotd['fom'].max())*1.01
             if not numpy.all((visdataui.fomplotd['fom']<vmin)|(visdataui.fomplotd['fom']>vmax)):                

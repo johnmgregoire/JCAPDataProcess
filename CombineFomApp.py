@@ -37,7 +37,7 @@ def mygetopenfile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
+        returnfn = str(
             QFileDialog.getOpenFileName(
                 xparent,
                 "".join(["Select file to open:", markstr]),
@@ -47,7 +47,7 @@ def mygetopenfile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
+    return str(
         QFileDialog.getOpenFileName(
             parent,
             "".join(["Select file to open: ", markstr]),
@@ -80,7 +80,7 @@ def mygetsavefile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
+        returnfn = str(
             QFileDialog.getSaveFileName(
                 xparent,
                 "".join(["Select file for save: ", markstr]),
@@ -90,7 +90,7 @@ def mygetsavefile(parent=None, xpath="%s" % os.getcwd(), markstr="", filename=""
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
+    return str(
         QFileDialog.getSaveFileName(
             parent,
             "".join(["Select file for save: ", markstr]),
@@ -103,7 +103,7 @@ def mygetdir(parent=None, xpath="%s" % os.getcwd(), markstr=""):
     if parent is None:
         xapp = QApplication(sys.argv)
         xparent = QWidget()
-        returnfn = unicode(
+        returnfn = str(
             QFileDialog.getExistingDirectory(
                 xparent, "".join(["Select directory:", markstr]), xpath
             )
@@ -111,7 +111,7 @@ def mygetdir(parent=None, xpath="%s" % os.getcwd(), markstr=""):
         xparent.destroy()
         xapp.quit()
         return returnfn
-    return unicode(
+    return str(
         QFileDialog.getExistingDirectory(
             parent, "".join(["Select directory:", markstr]), xpath
         )
@@ -265,7 +265,7 @@ class combinefomDialog(QDialog):
                 if True in [l.startswith(k) for k in smpkeys]
             ]
             if len(templist) == 0:
-                print "sample_no not found as left-most column for %s" % dp
+                print("sample_no not found as left-most column for %s" % dp)
             headingslineind, smpkeyind = templist[0]
             smpkey = smpkeys[smpkeyind]
             delim = lines[headingslineind][len(smpkey)]

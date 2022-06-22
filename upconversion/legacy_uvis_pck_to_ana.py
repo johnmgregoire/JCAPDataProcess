@@ -50,7 +50,7 @@ genresfolderp = lambda resultsfolder: os.path.join(
 for expname, ananame, resultsfolder in zip(
     l_expname, l_ananame, l_resultsfolder
 ):  # [-1:]
-    print expname
+    print(expname)
     expfilep = genexpfilep(expname)
     expsavefolderp = genexpsavefolderp(expname)
     expfolderp = os.path.split(expfilep)[0]
@@ -70,13 +70,13 @@ for expname, ananame, resultsfolder in zip(
             continue
         with open(os.path.join(resfolderp, resfns[0] + ".pck"), mode="r") as f:
             rd = pickle.load(f)
-        print "\t".join(
+        print("\t".join(
             [
                 rd["function_parameters"]["darkcode"],
                 rd["function_parameters"]["refcode"],
                 resultsfolder,
             ]
-        )
+        ))
         # continue
     if anabool:
         anad = {}
@@ -89,7 +89,7 @@ for expname, ananame, resultsfolder in zip(
         anak = "ana__1"
         initanaparams = True
         expfiled = readexpasdict(expfilep, createfiledicts=False)
-        runkl = sorted([k for k in expfiled.keys() if k.startswith("run__")])
+        runkl = sorted([k for k in list(expfiled.keys()) if k.startswith("run__")])
         garb, garb, maxrunint = runkl[-1].partition("__")
         maxruncount = eval(maxrunint)
     else:
@@ -109,7 +109,7 @@ for expname, ananame, resultsfolder in zip(
         if 1:  #
             zipsinexp = [
                 os.path.split(v["run_path"])[1]
-                for k, v in expfiled.items()
+                for k, v in list(expfiled.items())
                 if k.startswith("run__")
             ]
             runparentfolder = os.path.split(runp_fullpath)[0]
@@ -153,7 +153,7 @@ for expname, ananame, resultsfolder in zip(
                         Nfilesd[k] = v
         for techcount, tk in enumerate(["DR_UVVIS", "T_UVVIS", "R_UVVIS"]):
             techk = "files_technique__%s" % tk
-            if techk in rund.keys() and "spectrum_files" in rund[techk]:
+            if techk in list(rund.keys()) and "spectrum_files" in rund[techk]:
                 typed = rund[techk]["spectrum_files"]
                 # import R data into .exp
                 if 1 and techcount == 1:  # T_UVVIS
@@ -195,7 +195,7 @@ for expname, ananame, resultsfolder in zip(
                                 if len(k) == 0:
                                     continue
                                 Rfilesd[k] = v
-                for smpfn, filedstr in typed.items():
+                for smpfn, filedstr in list(typed.items()):
                     if not zipclass.fn_in_archive(smpfn):
                         del typed[smpfn]  # fn was in rcp but does not exist
                         continue
@@ -232,7 +232,7 @@ for expname, ananame, resultsfolder in zip(
                             )
                             nrawpts = eval(nrawpts)
                     except:
-                        print "error, skipping ", smpfn
+                        print("error, skipping ", smpfn)
                         del typed[smpfn]  # fn was in rcp but does not exist
                         continue
                     ####if T or DR process the file for ana and initial parameters including the search strs fopr dark and light ref
@@ -242,7 +242,7 @@ for expname, ananame, resultsfolder in zip(
                             with open(os.path.join(resfolderp, resfn), mode="r") as f:
                                 rd = pickle.load(f)
                         except:
-                            print "skipped pck file ", os.path.join(resfolderp, resfn)
+                            print("skipped pck file ", os.path.join(resfolderp, resfn))
                             continue
                         qualityfomkcheck = (
                             lambda fomk: "rescaled" in fomk or "2ndderiv" in fomk
@@ -255,14 +255,14 @@ for expname, ananame, resultsfolder in zip(
                                     ),
                                     fomv,
                                 )
-                                for fomk, fomv in rd["fom"].iteritems()
+                                for fomk, fomv in rd["fom"].items()
                                 if not qualityfomkcheck(fomk)
                             ]
                         )
                         qfomd = dict(
                             [
                                 (fomk.replace("-", "_"), fomv)
-                                for fomk, fomv in rd["fom"].iteritems()
+                                for fomk, fomv in rd["fom"].items()
                                 if qualityfomkcheck(fomk)
                             ]
                         )
@@ -279,8 +279,8 @@ for expname, ananame, resultsfolder in zip(
                             d["name"] = "Analysis__BG_Legacy"
                             d["parameters"] = {}
                             pd = d["parameters"]
-                            for k, v in rd["function_parameters"].items():
-                                pd[k] = ` v `
+                            for k, v in list(rd["function_parameters"].items()):
+                                pd[k] = repr( v)
                             refdarkstr = "0_%s_" % (
                                 rd["function_parameters"]["darkcode"]
                             )
@@ -291,7 +291,7 @@ for expname, ananame, resultsfolder in zip(
                             plotparams["plot__1"]["x_axis"] = "t(s)"
                             plotparams["plot__1"]["series__1"] = (
                                 "abs"
-                                if "abs" in rd["intermediate_arrays"].keys()
+                                if "abs" in list(rd["intermediate_arrays"].keys())
                                 else "Signal_0"
                             )
                             csvheaderdict = dict(
@@ -300,11 +300,11 @@ for expname, ananame, resultsfolder in zip(
                             csvheaderdict["plot_parameters"]["plot__1"] = dict(
                                 {},
                                 fom_name="DA_bgcode_repr"
-                                if "DA_bgcode_repr" in fomd.keys()
+                                if "DA_bgcode_repr" in list(fomd.keys())
                                 else (
                                     "DA_bg_0"
-                                    if "DA_bg_0" in fomd.keys()
-                                    else fomd.keys()[0]
+                                    if "DA_bg_0" in list(fomd.keys())
+                                    else list(fomd.keys())[0]
                                 ),
                                 colormap="jet_r",
                                 colormap_over_color="(0.,0.,0.)",
@@ -353,7 +353,7 @@ for expname, ananame, resultsfolder in zip(
                                             (k, v)
                                             for k, v in rd[
                                                 "intermediate_arrays"
-                                            ].iteritems()
+                                            ].items()
                                             if isinstance(v, numpy.ndarray)
                                             and len(v) == nrawpts
                                         ]
@@ -361,7 +361,7 @@ for expname, ananame, resultsfolder in zip(
                                 else:
                                     if (
                                         not "rawselectinds"
-                                        in rd["intermediate_arrays"].keys()
+                                        in list(rd["intermediate_arrays"].keys())
                                     ):
                                         continue
                                     ninterpts = len(
@@ -372,7 +372,7 @@ for expname, ananame, resultsfolder in zip(
                                             (k, v)
                                             for k, v in rd[
                                                 "intermediate_arrays"
-                                            ].iteritems()
+                                            ].items()
                                             if isinstance(v, numpy.ndarray)
                                             and len(v) == ninterpts
                                         ]
@@ -385,10 +385,10 @@ for expname, ananame, resultsfolder in zip(
                                     )
                                     p = os.path.join(anafolderp, fn)
                                     kl = saveinterdata(p, interd, savetxt=True)
-                                    if not ("files_" + runk) in d.keys():
+                                    if not ("files_" + runk) in list(d.keys()):
                                         d["files_" + runk] = {}
                                         anarund = d["files_" + runk]
-                                    if not fk in anarund.keys():
+                                    if not fk in list(anarund.keys()):
                                         anarund[fk] = {}
                                     kl = saveinterdata(p, interd, savetxt=True)
                                     anarund[fk][fn] = "%s;%s;%d;%d%s" % (
@@ -400,7 +400,7 @@ for expname, ananame, resultsfolder in zip(
                                     )
                 ###copy smp files to reference blocks in the .exp if ana params have been initialized. just loop through them again after ana has been completed for this technique
                 if anabool and initanaparams:
-                    print expname, " initparams not executed"
+                    print(expname, " initparams not executed")
                     # raiseanerror
                     continue
                 if (
@@ -417,13 +417,13 @@ for expname, ananame, resultsfolder in zip(
                     (reflightstr, "ref_light"),
                 ]:
                     refrunk = ""
-                    for smpfn, filedstr in typed.items():
+                    for smpfn, filedstr in list(typed.items()):
                         if smpfn.startswith(refstr):
                             if not refrunk:
                                 maxruncount += 1
                                 refrunk = "run__%d" % (maxruncount)
                                 expfiled[refrunk] = {}
-                                for k, v in rund.iteritems():
+                                for k, v in rund.items():
                                     if k.startswith("files"):
                                         continue
                                     expfiled[refrunk][k] = v
@@ -436,11 +436,11 @@ for expname, ananame, resultsfolder in zip(
                 # break#this break stays here so that only 1 of ['DR_UVVIS', 'T_UVVIS', 'R_UVVIS'] is acted upon
         if 0:  # stop after 1 run
             break
-    usevals = [v["run_use"] for k, v in expfiled.items() if k.startswith("run__")]
+    usevals = [v["run_use"] for k, v in list(expfiled.items()) if k.startswith("run__")]
     if not "ref_dark" in usevals:
-        print expname, "is missing ref_dark"
+        print(expname, "is missing ref_dark")
     if not "ref_light" in usevals:
-        print expname, "is missing ref_light"
+        print(expname, "is missing ref_light")
     if 1:  # save exp
         expfilestr = strrep_filedict(expfiled)
         if not os.path.isdir(expsavefolderp):
@@ -449,7 +449,7 @@ for expname, ananame, resultsfolder in zip(
             try:
                 saverawdat_expfiledict(expfiled, expsavefolderp)
             except:
-                print "raw data nto saveable for ", expsavefolderp
+                print("raw data nto saveable for ", expsavefolderp)
         with open(os.path.join(expsavefolderp, expname + ".exp"), mode="w") as f:
             f.write(expfilestr)
     if 1 and anabool and len(fomdlist) > 0:  # saveana
@@ -466,7 +466,7 @@ for expname, ananame, resultsfolder in zip(
             if len(dlist) == 0:
                 continue
             fomnames = list(
-                set([k for fd in dlist for k in fd.keys()]).difference(
+                set([k for fd in dlist for k in list(fd.keys())]).difference(
                     set(["sample_no", "runint", "plate_id"])
                 )
             )
@@ -480,10 +480,10 @@ for expname, ananame, resultsfolder in zip(
                 fn = "%s__%s.csv" % (anak, "qualityfoms")
             p = os.path.join(anafolderp, fn)
             totnumheadlines = writecsv_smpfomd(p, csvfilstr, headerdict=csvheaderdict)
-            if not "files_multi_run" in d.keys():
+            if not "files_multi_run" in list(d.keys()):
                 d["files_multi_run"] = {}
                 anamultirund = d["files_multi_run"]
-            if not fk in anamultirund.keys():
+            if not fk in list(anamultirund.keys()):
                 anamultirund[fk] = {}
             anamultirund[fk][fn] = "%s;%s;%d;%d" % (
                 fdesc,

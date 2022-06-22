@@ -27,6 +27,7 @@ from fcns_ui import *
 from fcns_compplots import plotwidget
 from Analysis_Master import Analysis_Master_nointer
 from ExternalImportForm import Ui_ExternalImportDialog
+from ssrl_io import *
 
 
 analysismasterclass = Analysis_Master_nointer()
@@ -92,7 +93,6 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         self.AnaSaveComboBox.setCurrentIndex(self.ExpSaveComboBox.currentIndex())
 
     def ssrl_profile_v1(self):
-        from ssrl_io import *
 
         self.importfolderfcn = get_externalimportdatad_ssrl_batchresults
         self.createfiledictsfcn = self.createfiledicts
@@ -158,7 +158,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         afd_udi["copy_fcn"] = self.copy_createudi
         afd_fomudi["copy_fcn"] = self.copy_createfomudi
         for afd in [afd_udi, afd_fomudi]:
-            if not afd["type"] in ana__d.keys():
+            if not afd["type"] in list(ana__d.keys()):
                 ana__d[afd["type"]] = {}
             ana__d[afd["type"]][afd["anafn"]] = afd["fval"]
         xrdanak_anname_options = [
@@ -166,8 +166,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             for k in sort_dict_keys_by_counter(self.anadict, keystartswith="ana__")
             if True
             in [
-                "pattern_files" in d.keys()
-                for k2, d in self.anadict[k].iteritems()
+                "pattern_files" in list(d.keys())
+                for k2, d in self.anadict[k].items()
                 if isinstance(d, dict)
             ]
         ]
@@ -179,7 +179,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                     break
                 xrdselectind += 1
             if xrdselectind == len(xrdanaoptions):
-                print "udi xrd search option not found"
+                print("udi xrd search option not found")
                 return
         elif len(xrdanaoptions) == 1:
             xrdselectind = 0
@@ -194,9 +194,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 return
         anak_xrd, analysis_name__patterns = xrdanak_anname_options[xrdselectind]
         fval = [
-            d["pattern_files"].values()[0]
-            for k2, d in self.anadict[anak_xrd].iteritems()
-            if isinstance(d, dict) and "pattern_files" in d.keys()
+            list(d["pattern_files"].values())[0]
+            for k2, d in self.anadict[anak_xrd].items()
+            if isinstance(d, dict) and "pattern_files" in list(d.keys())
         ][0]
         qkey, intkey = fval.split(";")[1].split(",")[:2]
         udi_dict = {
@@ -209,20 +209,20 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         kl = [
             k
             for k in sort_dict_keys_by_counter(self.anadict, keystartswith="ana__")
-            if "files_multi_run" in self.anadict[k].keys()
-            and "fom_files" in self.anadict[k]["files_multi_run"].keys()
+            if "files_multi_run" in list(self.anadict[k].keys())
+            and "fom_files" in list(self.anadict[k]["files_multi_run"].keys())
         ]
         anak_anname_options = [
             (k, csvfn)
             for k in kl
-            for csvfn, csvfval in self.anadict[k]["files_multi_run"][
+            for csvfn, csvfval in list(self.anadict[k]["files_multi_run"][
                 "fom_files"
-            ].items()
+            ].items())
             if csvfval.count(".AtFrac") > 1
         ]
         anaoptions = ["-".join(tup) for tup in anak_anname_options]
         if len(anaoptions) == 0:
-            print "no comp data found"
+            print("no comp data found")
             # return
             compbool = False
         elif not opttionsearchstr_comps is None:
@@ -232,7 +232,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                     break
                 selectind += 1
             if selectind == len(anaoptions):
-                print "udi comp search option not found"
+                print("udi comp search option not found")
                 compbool = False
             else:
                 compbool = True
@@ -267,13 +267,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         afd_udi["udi_dict"] = udi_dict
         afd_fomudi["udi_dict"] = udi_dict
         self.anadict[anak]["parameters"] = {}
-        for k, v in udi_dict.iteritems():
+        for k, v in udi_dict.items():
             self.anadict[anak]["parameters"][k] = v
         afd_udi["sample_no__ana_filedict_inds"] = sorted(
             [
                 (afd["sample_no"], count,)
                 for count, afd in enumerate(self.ana_filedict_tocopy)
-                if "sample_no" in afd.keys() and afd["type"] == "pattern_files"
+                if "sample_no" in list(afd.keys()) and afd["type"] == "pattern_files"
             ]
         )
         # need to get compositions and xy data and only keep sample_no with this info
@@ -289,7 +289,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         if not udi_dict["anak_comps"] == "none":
             udi_dict["ana_name_comps"] = ananame
         udi_dict["plate_id"] = self.plate_idstr
-        for k, v in udi_dict.iteritems():
+        for k, v in udi_dict.items():
             self.anadict[afd["anak"]]["parameters"][k] = v
         anadict_with_filed = copy.deepcopy(self.anadict)
         convertfilekeystofiled(anadict_with_filed)
@@ -315,7 +315,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             d["pmy"] = udi_dict["xy"][i][1]
             d["runint"] = 1
             d["plate_id"] = int(self.plate_idstr)
-            if "comps" in udi_dict.keys():
+            if "comps" in list(udi_dict.keys()):
                 for k, v in zip(udi_dict["compkeys"], udi_dict["comps"][i]):
                     d[k] = v
                     if i == 0:
@@ -349,7 +349,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         g = h5f[h5f.attrs["default_group"]]
         gs = g["spec"]
         gd = g["deposition"]
-        if "selectROI" in gd.keys():
+        if "selectROI" in list(gd.keys()):
             gr = gd["selectROI"]
         mainh5inds = []
         for k, headline in zip(
@@ -361,29 +361,29 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 [
                     (afd["h5arrind"], afd["anafn"], afd["sample_no"], count)
                     for count, afd in enumerate(self.ana_filedict_tocopy)
-                    if "sample_no" in afd.keys()
-                    and "h5dataset" in afd.keys()
+                    if "sample_no" in list(afd.keys())
+                    and "h5dataset" in list(afd.keys())
                     and afd["h5dataset"] == k
                 ]
             )
             if len(temptups) == 0:
                 continue
-            mainh5inds = map(operator.itemgetter(0), temptups)
-            fns = map(operator.itemgetter(1), temptups)
-            mainsmps = map(operator.itemgetter(2), temptups)
-            finished_inds_ana_filedict_tocopy += map(operator.itemgetter(3), temptups)
+            mainh5inds = list(map(operator.itemgetter(0), temptups))
+            fns = list(map(operator.itemgetter(1), temptups))
+            mainsmps = list(map(operator.itemgetter(2), temptups))
+            finished_inds_ana_filedict_tocopy += list(map(operator.itemgetter(3), temptups))
             temptups = sorted(
                 [
                     (afd["h5arrind"], afd["anafn"], count)
                     for count, afd in enumerate(self.ana_filedict_tocopy)
-                    if (not "sample_no" in afd.keys())
-                    and "h5dataset" in afd.keys()
+                    if (not "sample_no" in list(afd.keys()))
+                    and "h5dataset" in list(afd.keys())
                     and afd["h5dataset"] == k
                 ]
             )
-            nosmp_mainh5inds = map(operator.itemgetter(0), temptups)
-            nosmp_fns = map(operator.itemgetter(1), temptups)
-            finished_inds_ana_filedict_tocopy += map(operator.itemgetter(2), temptups)
+            nosmp_mainh5inds = list(map(operator.itemgetter(0), temptups))
+            nosmp_fns = list(map(operator.itemgetter(1), temptups))
+            finished_inds_ana_filedict_tocopy += list(map(operator.itemgetter(2), temptups))
             qcountsarr = g["xrd"][k][:, :][mainh5inds + nosmp_mainh5inds]
             for fn, qc in zip(fns + nosmp_fns, qcountsarr):
                 lines = [headline]
@@ -394,7 +394,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         templ = [
             (afd, count)
             for count, afd in enumerate(self.ana_filedict_tocopy)
-            if "roi_keys_to_copy" in afd.keys()
+            if "roi_keys_to_copy" in list(afd.keys())
         ]
         if not (len(mainh5inds) == 0 or len(templ) != 1):
             afd, ind = templ[0]
@@ -422,7 +422,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             for anak in sort_dict_keys_by_counter(self.anadict, keystartswith="ana__"):
                 if self.anadict[anak]["name"] == "Analysis__SSRL_Integrate":
                     self.anadict[anak]["parameters"] = {}
-                    for k, v in g["xrd"].attrs.items():
+                    for k, v in list(g["xrd"].attrs.items()):
                         self.anadict[anak]["parameters"][k] = str(v)
                 elif self.anadict[anak]["name"] == "Analysis__SSRL_Process":
                     self.anadict[anak]["parameters"] = {
@@ -564,10 +564,10 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 rcpdict["name"] + rundoneext,
             )
             for fd in rcpd["file_dlist"]:
-                if not fd["tech"] in rcpdict.keys():
+                if not fd["tech"] in list(rcpdict.keys()):
                     rcpdict[fd["tech"]] = {}
                     exprund[fd["tech"]] = {}
-                if not fd["type"] in rcpdict[fd["tech"]].keys():
+                if not fd["type"] in list(rcpdict[fd["tech"]].keys()):
                     rcpdict[fd["tech"]][fd["type"]] = {}
                     exprund[fd["tech"]][fd["type"]] = {}
                 expfnval = str(fd["treeitem"].text(0)).partition(":")[2].strip()
@@ -591,7 +591,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                             if ana__d is None:
                                 anl = [
                                     k
-                                    for k, v in self.anadict.iteritems()
+                                    for k, v in self.anadict.items()
                                     if k.startswith("ana__") and an_name == v["name"]
                                 ]
                                 if len(anl) == 0:
@@ -606,13 +606,13 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                     anak = anl[0]
                                     ana__d = self.anadict[anak]
                                 anrunk = "files_%s" % runk
-                                if not anrunk in ana__d.keys():
+                                if not anrunk in list(ana__d.keys()):
                                     ana__d[anrunk] = {}
                                 ana__d = ana__d[anrunk]
                             modafdlist = self.mod_smp_afd_fcn(afd, anak, smpstr=smp)
                             for modafd in modafdlist:
                                 antypek = modafd["type"]
-                                if not antypek in ana__d.keys():
+                                if not antypek in list(ana__d.keys()):
                                     ana__d[antypek] = {}
                                 ana__d[antypek][modafd["anafn"]] = (
                                     modafd["fval"] + smp
@@ -621,18 +621,18 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             self.all_rcp_dict["rcp_file__%d" % (runcount + 1)] = rcpdict
         if anabool:
             if (
-                "multirun_ana_files" in self.maindatad.keys()
+                "multirun_ana_files" in list(self.maindatad.keys())
                 and len(self.maindatad["multirun_ana_files"]) > 0
             ):
                 for an_name, anafiledlist in self.maindatad[
                     "multirun_ana_files"
-                ].iteritems():
+                ].items():
                     ana__d = None
                     for afd in anafiledlist:
                         if ana__d is None:
                             anl = [
                                 k
-                                for k, v in self.anadict.iteritems()
+                                for k, v in self.anadict.items()
                                 if k.startswith("ana__") and an_name == v["name"]
                             ]
                             if len(anl) == 0:
@@ -647,19 +647,19 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                                 anak = anl[0]
                                 ana__d = self.anadict[anak]
                             anrunk = "files_multi_run"
-                            if not anrunk in ana__d.keys():
+                            if not anrunk in list(ana__d.keys()):
                                 ana__d[anrunk] = {}
                             ana__d = ana__d[anrunk]
                         modafdlist = self.mod_multi_afd_fcn(afd, anak)
                         for modafd in modafdlist:
                             antypek = modafd["type"]
-                            if not antypek in ana__d.keys():
+                            if not antypek in list(ana__d.keys()):
                                 ana__d[antypek] = {}
                             ana__d[antypek][modafd["anafn"]] = modafd["fval"]
                             self.ana_filedict_tocopy += [modafd]
             ananames = [
                 anad["name"]
-                for anak, anad in self.anadict.iteritems()
+                for anak, anad in self.anadict.items()
                 if anak.startswith("ana__")
             ]
             if len(ananames) == 0:
@@ -686,7 +686,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
 
     def add_misc_to_ana(self, p=None, anak=None, anarunk=None, filltreebool=True):
         if anak is None or anarunk is None:
-            if not "ana__1" in self.anadict.keys():
+            if not "ana__1" in list(self.anadict.keys()):
                 return
             anakl = sort_dict_keys_by_counter(
                 self.anadict, keystartswith="ana__"
@@ -694,7 +694,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
             anak = anakl[-1]
             anarunk = "files_multi_run"
             for anak in anakl:
-                if anarunk in self.anadict[anak].keys():
+                if anarunk in list(self.anadict[anak].keys()):
                     break
                 l_anarunk = sort_dict_keys_by_counter(
                     self.anadict[anak], keystartswith="files_run__"
@@ -715,9 +715,9 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 return
             anak = ans[0].strip()
             anarunk = ans[1].strip()
-        if not anak in self.anadict.keys():
+        if not anak in list(self.anadict.keys()):
             return
-        if not anarunk in self.anadict[anak].keys():
+        if not anarunk in list(self.anadict[anak].keys()):
             return
         if p is None:
             p = mygetopenfile(
@@ -739,7 +739,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         afd["fval"] = "xrds_user_import_file;"
         afd["anafn"] = newfn
         afd["copy_fcn"] = self.stdcopy_afd
-        if not afd["type"] in d.keys():
+        if not afd["type"] in list(d.keys()):
             d[afd["type"]] = {}
         d[afd["type"]][afd["anafn"]] = afd["fval"]
         self.ana_filedict_tocopy += [afd]
@@ -768,7 +768,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         k = "".join(st[:2])
         v = st[2].strip()
         if len(v) == 0:
-            print "Error editing param,  no value detected: ", s
+            print("Error editing param,  no value detected: ", s)
             return
         ans = userinputcaller(
             self,
@@ -847,8 +847,8 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 mainitem, rcpd["file_dlist"], k="fn", v="fval"
             )
             for fd in rcpd["file_dlist"]:
-                if "ana_files" in fd.keys():
-                    for an_name, auxfiledlist in fd["ana_files"].items():
+                if "ana_files" in list(fd.keys()):
+                    for an_name, auxfiledlist in list(fd["ana_files"].items()):
                         item = QTreeWidgetItem([an_name], 0)
                         item.setExpanded(False)
                         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
@@ -1030,7 +1030,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
                 fd["xyarr"]
                 for count, rcpd in enumerate(self.maindatad["rcpdlist"])
                 for fd in rcpd["file_dlist"]
-                if "xyarr" in fd.keys()
+                if "xyarr" in list(fd.keys())
             ]
         ).T
         xpmall = fcnx(xall, yall)
@@ -1043,7 +1043,7 @@ class extimportDialog(QDialog, Ui_ExternalImportDialog):
         xyplotinfo = []
         for count, rcpd in enumerate(self.maindatad["rcpdlist"]):
             for fd in rcpd["file_dlist"]:
-                if "xyarr" in fd.keys():
+                if "xyarr" in list(fd.keys()):
                     xv, yv = xypmall.pop(0)
                     if numpy.isnan(xv) or numpy.isnan(yv):
                         continue
@@ -1142,7 +1142,7 @@ class treeclass_filedict:
         for k in sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if k != startkey and not isinstance(v, dict) and not k == "treeitem"
             ]
         ):
@@ -1151,7 +1151,7 @@ class treeclass_filedict:
         for k in sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not k.startswith(laststartswith) and isinstance(v, dict)
             ]
         ):
@@ -1187,14 +1187,14 @@ class treeclass_filedict:
                 d["treeitem"] = item
 
     def nestedfill(self, d, parentitem, laststartswith="files_"):
-        nondictkeys = sorted([k for k, v in d.iteritems() if not isinstance(v, dict)])
+        nondictkeys = sorted([k for k, v in d.items() if not isinstance(v, dict)])
         for k in nondictkeys:
             item = QTreeWidgetItem([": ".join([k, str(d[k])])], 0)
             parentitem.addChild(item)
         dictkeys1 = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not k.startswith(laststartswith) and isinstance(v, dict)
             ]
         )
@@ -1202,7 +1202,7 @@ class treeclass_filedict:
             item = QTreeWidgetItem([k + ":"], 0)
             self.nestedfill(d[k], item)
             parentitem.addChild(item)
-        dictkeys2 = sorted([k for k in d.keys() if k.startswith(laststartswith)])
+        dictkeys2 = sorted([k for k in list(d.keys()) if k.startswith(laststartswith)])
         for k in dictkeys2:
             item = QTreeWidgetItem([k + ":"], 0)
             self.nestedfill(d[k], item)

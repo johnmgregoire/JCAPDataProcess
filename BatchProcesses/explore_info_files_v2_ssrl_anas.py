@@ -24,10 +24,10 @@ def add_entry_for_each_analysis(d, pidstr, anatype='image'):
     with open(infop, mode='r') as f:
         lines=f.readlines()
         infofiled=filedict_lines(lines)
-    if not 'analyses' in infofiled.keys():
+    if not 'analyses' in list(infofiled.keys()):
         return
-    for ak, av in infofiled['analyses'].iteritems():
-        if 'type' in av.keys() and av['type']==anatype:
+    for ak, av in infofiled['analyses'].items():
+        if 'type' in list(av.keys()) and av['type']==anatype:
             anapath=buildanapath(av['path'])
 #            try:
 #                anad=readana(anapath)

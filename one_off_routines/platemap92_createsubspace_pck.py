@@ -19,7 +19,7 @@ pmchans=['A','B','C','D','E']
 dlist=[d for d in dlist if d['code']==0 and np.array([d[k] for k in pmchans]).sum()>0. and np.array([d[k] for k in pmchans]).max()<1.]
 
 comps_all=np.array([[d[k] for k in pmchans] for d in dlist])
-print len(dlist)
+print(len(dlist))
 
 intervs=40
 #comps1=[(1.0*b/intervs, 1.0*c/intervs, 1.0*d/intervs, 1.0*(intervs-a-b-c-d)/intervs, 1.0*a/intervs) for a in np.arange(0,intervs+1)[::-1] for b in np.arange(0,intervs+1-a) for c in np.arange(0, intervs+1-a-b) for d in np.arange(0, intervs+1-a-b-c)][::-1]
@@ -31,7 +31,7 @@ tol=0.07
 
 n=len(pmchans)
 
-chaninds=range(n)
+chaninds=list(range(n))
 
 inds_comb=[s for s in it.permutations(chaninds, 2)]
 
@@ -50,7 +50,7 @@ for indpair in inds_comb:
     inds_dlist=np.array([i for i, c in enumerate(comps_all) if within_tol_calc(c, tc)])
     sortedtups=sorted([((comps_all[i]>0.).sum(dtype='int32'), comps_all[i][indpair[0]], comps_all[i][indpair[1]], dlist[i]['Sample'], i) for i in inds_dlist])
 
-    inds_dlist2=map(operator.itemgetter(-1), sortedtups)
+    inds_dlist2=list(map(operator.itemgetter(-1), sortedtups))
     subdlist=[dlist[i] for i in inds_dlist2]
     subspace_dict[indpair]={}
     subspace_dict[indpair]['sample_no_list']=[d['Sample'] for d in subdlist]
@@ -75,7 +75,7 @@ for indpair in inds_comb:
         ad['other_2_inds__subplot']=(j, k)
         tups_for_sorting=[(comporder[ind], c[i], a_to_b[ind], c[j], ind) for ind, c in enumerate(comps1) if comporder[ind]==2 or c[i]>0.]
         sortedtups=sorted(tups_for_sorting)
-        ad['inds_from_spinel_space']=map(operator.itemgetter(-1), sortedtups)
+        ad['inds_from_spinel_space']=list(map(operator.itemgetter(-1), sortedtups))
         inds=ad['inds_from_spinel_space']
         ad['comp_order__subplot']=comporder[inds]
         ad['comps__subplot']=comps1[inds, :]
@@ -84,7 +84,7 @@ for indpair in inds_comb:
         ad['host_ab_comp__subplot']=ab_comp[inds]
         ad['sample_no_array__subplot']=subspace_dict[indpair]['sample_no_array'][inds]
 
-        map(operator.itemgetter(-1), sortedtups)
+        list(map(operator.itemgetter(-1), sortedtups))
 
         partialtups=[(tup[0], tup[1]) for tup in sortedtups]
         tupsetlist=sorted(list(set(partialtups)))

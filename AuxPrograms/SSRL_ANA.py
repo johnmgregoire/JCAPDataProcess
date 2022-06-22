@@ -40,7 +40,7 @@ for l in lines:
 csvfns = [fn for fn in p_files if fn.endswith(".csv")]
 # h5path=os.path.join(os.path.join(p_processed, 'h5'), sysname+'.h5')
 scan_csv = pd.read_csv(os.path.join(exppath, csvfns[0]), header=1)
-xy_images = numpy.array(zip(scan_csv["   Plate X"], scan_csv["   Plate Y"]))
+xy_images = numpy.array(list(zip(scan_csv["   Plate X"], scan_csv["   Plate Y"])))
 intens = numpy.array(scan_csv["       i0"])
 imdir_files = os.listdir(exppath)
 # integration block ---------------------------------------------------------------------------------
@@ -124,4 +124,4 @@ expdict["experiment_path"] = os.path.join(
 )
 calibfn = sorted([fn for fn in imdir_files if fn.endswith(".calib")])
 expdict["calibfn"] = calibfn[0]
-print strrep_filedict(expdict)
+print(strrep_filedict(expdict))

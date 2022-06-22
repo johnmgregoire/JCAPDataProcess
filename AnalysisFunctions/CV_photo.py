@@ -22,11 +22,11 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
     gui_mode_bool=False,
 ):
     anak_ftklist = [
-        (anak, [ftk for ftk in anav.keys() if "files_run__" in ftk])
-        for anak, anav in anadict.iteritems()
+        (anak, [ftk for ftk in list(anav.keys()) if "files_run__" in ftk])
+        for anak, anav in anadict.items()
         if anak.startswith("ana__")
         and anav["name"] == requiredanalysis
-        and True in ["files_" in ftk for ftk in anav.keys()]
+        and True in ["files_" in ftk for ftk in list(anav.keys())]
     ]
     if len(tech) > 0:
         # if tech=None then don't filter by technique. also if techniuqe not in anad then technique qill not be matched and the ==2 below will require only 1 Iphoto in the existing .ana.
@@ -34,7 +34,7 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
         anak_ftklist = [
             (anak, ftkl)
             for anak, ftkl in anak_ftklist
-            if (not "technique" in anadict[anak].keys())
+            if (not "technique" in list(anadict[anak].keys()))
             or anadict[anak]["technique"] == tech
         ]
     # goes through all inter_files and inter_rawlen_files in all analyses with this correct 'name'. This could be multiple analysis on different runs but if anlaysis done multiple times with different parameters, there is no disambiguation so such sampels are skipped.
@@ -50,7 +50,7 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
             for anak, ftkl in anak_ftklist
             for ftk in ftkl
             for typek in ["inter_files", "inter_rawlen_files"]
-            for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()
+            for fnk, tagandkeys in anadict[anak][ftk][typek].items()
             if ftk == ("files_" + filed["run"])
             and int(tagandkeys.split(";")[4].strip()) == filed["sample_no"]
         ]
@@ -65,11 +65,11 @@ def ECHEPHOTO_checkcompletedanalysis_inter_filedlist(
     if (
         gui_mode_bool and len(filedlist2) == 0 and len(anak_ftklist) > 0
     ):  # the ==2 requirement was not met, which may mean that there was more than 1 Iphoto for that technique
-        print "When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:" % (
+        print("When looking for %s on %s for subsequent analysis, the following ana__ were found, and the requirement is for only 1 ana__ with matching technique:" % (
             requiredanalysis,
             tech,
-        )
-        print [anak for anak, ftkl in anak_ftklist]
+        ))
+        print([anak for anak, ftkl in anak_ftklist])
     return filedlist2  # inside of each filed are key lists ana__inter_filed and ana__inter_rawlen_filed that provide the path through anadict to get to the fn that mathces the fn in filed
 
 
@@ -241,7 +241,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                     tempdataarr = self.readdata(
                         os.path.join(destfolder, interfiled["fn"]),
                         len(interfiled["keys"]),
-                        range(len(interfiled["keys"])),
+                        list(range(len(interfiled["keys"]))),
                         num_header_lines=interfiled["num_header_lines"],
                     )  # no zipclass for destfolder and no self.prepare_filedlist because this files must be here for this action on intermediate data
                     for k, v in zip(interfiled["keys"], tempdataarr):
@@ -276,7 +276,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                 ]
             if destfolder is None:
                 continue
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (anak, os.path.splitext(fn)[0])
                 p = os.path.join(destfolder, fnr)
                 kl = saveinterdata(p, rawlend, savetxt=True)
@@ -290,7 +290,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (anak, os.path.splitext(fn)[0])
                 p = os.path.join(destfolder, fni)
                 kl = saveinterdata(p, interlend, savetxt=True)
@@ -386,9 +386,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             anodstartinds = numpy.append(0, anodstartinds)
         else:
             cathstartinds = numpy.append(0, cathstartinds)
-        anodendinds, cathendinds = map(
-            lambda inds: [i - 1 for i in inds if i > 0], [cathstartinds, anodstartinds]
-        )
+        anodendinds, cathendinds = [[i - 1 for i in inds if i > 0] for inds in [cathstartinds, anodstartinds]]
         if deltaE[-1] > 0:
             anodendinds = numpy.append(anodendinds, len(deltaE) - 1).astype(int)
         else:
@@ -400,23 +398,23 @@ class Analysis__Pphotomax(Analysis_Master_inter):
         cathstartendinds = [
             (start, end) for start, end in zip(cathstartinds, cathendinds)
         ]
-        anodt_tpl, catht_tpl = map(
+        anodt_tpl, catht_tpl = list(map(
             lambda startendinds: [
                 (ttrim[start], ttrim[end]) for (start, end) in startendinds
             ],
             [anodstartendinds, cathstartendinds],
-        )
+        ))
         ## for now, number of sweeps to fit from start or end of measurement will be 'consecutive' (i.e. fit to first three anodic sweeps, but never first + third)
         if self.params["use_sweeps_from_end"]:
-            anodt_tpl, catht_tpl = map(
+            anodt_tpl, catht_tpl = list(map(
                 lambda t_tpl: t_tpl[-1 * self.params["num_sweeps_to_fit"] :],
                 [anodt_tpl, catht_tpl],
-            )
+            ))
         else:
-            anodt_tpl, catht_tpl = map(
+            anodt_tpl, catht_tpl = list(map(
                 lambda t_tpl: t_tpl[: self.params["num_sweeps_to_fit"]],
                 [anodt_tpl, catht_tpl],
-            )
+            ))
         ## time tuples for chosen sweep direction (or both)
         if self.params["sweep_direction"] == "anodic":
             sweepdirproxy = -1
@@ -624,7 +622,7 @@ class Analysis__Pphotomax(Analysis_Master_inter):
             rawlend["P(W)_pred"] = rawlend["I(A)_pred"] * (
                 eo - d["Ewe(V)"]
             )  # * (iminsign)
-        rawlend["FitrngBool"] = map(rangefunc, d["t(s)"])
+        rawlend["FitrngBool"] = list(map(rangefunc, d["t(s)"]))
         # interd assignemnts
         interd["Ewe(V)_fitrng"] = ewetrim_fitrng
         interd["I(A)_fitrng"] = iphoto_fitrng * iphoto_norm + iphoto_offset

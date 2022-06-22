@@ -26,7 +26,7 @@ for s in ananames:
     anap=buildanapath(s)
     anafold=os.path.split(anap)[0]
     ad=readana(anap)
-    pid=`ad['plate_ids']`
+    pid=repr(ad['plate_ids'])
     d=importinfo(pid)
     els='-'.join([el for el in getelements_plateidstr(pid) if not el in ['Ar']])
     foldname='_'.join([pid,els,ad['name'][:8]])
@@ -36,4 +36,4 @@ for s in ananames:
         if fn.endswith('.udi') or fn.endswith('.ana'):
             shutil.copy(os.path.join(anafold,fn),os.path.join(sf,fn))
     sumtablelines+=['\t'.join([pid,d['serial_no'],foldname])]
-print '\n'.join(sumtablelines)
+print('\n'.join(sumtablelines))

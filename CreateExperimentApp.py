@@ -469,7 +469,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             [(d["rcp_file"] + str(count), d) for count, d in enumerate(self.rcpdlist)],
             reverse=True,
         )  # rcpfn is a time stamp so this will be reverse chron order
-        self.rcpdlist = map(operator.itemgetter(1), sorttups)
+        self.rcpdlist = list(map(operator.itemgetter(1), sorttups))
         for d in self.rcpdlist:
             d["name"] = d["rcp_file"].strip().rstrip(".rcp")
             if self.getplatemapCheckBox.isChecked():
@@ -496,7 +496,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             self.experiment_type = "eche"
         self.expparamsdict_le_dflt["experiment_type"][1] = self.experiment_type
         self.expparamsdict_le_dflt["created_by"][1] = self.experiment_type
-        for k, (le, dfltstr) in self.expparamsdict_le_dflt.items():
+        for k, (le, dfltstr) in list(self.expparamsdict_le_dflt.items()):
             if k in ["experiment_type", "created_by"]:
                 le.setText(dfltstr)
         self.updaterunlist()
@@ -631,7 +631,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 # print [evalfilters(fd) for fd in rcpd['filenamedlist']]
             else:  # otherwise we are not considering this one so result is -1, i.e. "N/A"
                 evalfilters = lambda fd: -1
-                print ind, orderinds
+                print(ind, orderinds)
             rcpd["filenamedlist"] = [
                 dict(
                     fd,
@@ -640,7 +640,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                     )(fd["previnexp"], dus),
                 )
                 for fd, evalfiltresult in zip(
-                    rcpd["filenamedlist"], map(evalfilters, rcpd["filenamedlist"])
+                    rcpd["filenamedlist"], list(map(evalfilters, rcpd["filenamedlist"]))
                 )
             ]
             # rcpd['fns_inexp']=
@@ -743,7 +743,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
             smplist = [
                 d["Sample"]
                 for d in rcpd["platemapdlist"]
-                if d["Sample"] in smplist and k in d.keys() and comparefcn(d[k])
+                if d["Sample"] in smplist and k in list(d.keys()) and comparefcn(d[k])
             ]
         return lambda fd: fd["smp"] in smplist
 
@@ -778,7 +778,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         k = "".join(st[:2])
         v = st[2].strip()
         if len(v) == 0:
-            print "Error editing param,  no value detected: ", s
+            print("Error editing param,  no value detected: ", s)
             return
         ans = userinputcaller(
             self,
@@ -885,7 +885,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 expd["run_foms"] = run_foms_fcn(rcpdict_temp)
         # params
         self.expparamstuplist = [("exp_version: 3", [])]
-        for k, (le, dfltstr) in self.expparamsdict_le_dflt.items():
+        for k, (le, dfltstr) in list(self.expparamsdict_le_dflt.items()):
             if "access" in k:  # this handled below now
                 continue
             s = str(le.text()).strip()
@@ -893,17 +893,17 @@ class expDialog(QDialog, Ui_CreateExpDialog):
                 s = dfltstr
             self.expparamstuplist += [(k + ": " + s, [])]
         plateidstemp = [
-            d["plateidstr"] if "plateidstr" in d.keys() else None
-            for dlist in self.expdlist_use.itervalues()
+            d["plateidstr"] if "plateidstr" in list(d.keys()) else None
+            for dlist in self.expdlist_use.values()
             for d in dlist
         ]
         accesslist = [
             s[7:].strip()
             for d2 in [
                 d
-                for dlist in self.expdlist_use.itervalues()
+                for dlist in self.expdlist_use.values()
                 for d in dlist
-                if "rcptuplist" in d.keys()
+                if "rcptuplist" in list(d.keys())
             ]
             for s, l in d2["rcptuplist"]
             if s.startswith("access:")
@@ -943,7 +943,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
         for (
             runk,
             rund,
-        ) in self.parent.calcui.expfiledict.iteritems():  # copy over any platemap info
+        ) in self.parent.calcui.expfiledict.items():  # copy over any platemap info
             if not runk.startswith("run__"):
                 continue
             rcpfile = rund["rcp_file"]
@@ -962,7 +962,7 @@ class expDialog(QDialog, Ui_CreateExpDialog):
 
     def saveexp(self, exptype=None, rundone=None):
         # self.expfilestr, self.expfiledict are read from the tree so will include edited params
-        if not "experiment_type" in self.expfiledict.keys():
+        if not "experiment_type" in list(self.expfiledict.keys()):
             idialog = messageDialog(self, "Aborting SAVE because no data in EXP")
             idialog.exec_()
             return
@@ -1115,7 +1115,7 @@ class treeclass_dlist:
             mainitem.setExpanded(False)
         # add rcps with run__1 as label
         count = 0
-        for k, dlist in expdlist_use.iteritems():
+        for k, dlist in expdlist_use.items():
             for d in dlist:
                 count += 1
                 s = "run__%d:" % (count)
@@ -1162,27 +1162,27 @@ class treeclass_dlist:
                 for lab in runparams:
                     item = QTreeWidgetItem([lab], 1000)
                     mainitem.addChild(item)
-                if "user_run_foms" in d.keys() and len(d["user_run_foms"]) > 0:
+                if "user_run_foms" in list(d.keys()) and len(d["user_run_foms"]) > 0:
                     self.nestedfill(
                         [
                             (
                                 "user_run_foms:",
                                 [
                                     (": ".join(kv), [])
-                                    for kv in d["user_run_foms"].iteritems()
+                                    for kv in d["user_run_foms"].items()
                                 ],
                             )
                         ],
                         mainitem,
                     )
-                if "run_foms" in d.keys() and len(d["run_foms"]) > 0:
+                if "run_foms" in list(d.keys()) and len(d["run_foms"]) > 0:
                     self.nestedfill(
                         [
                             (
                                 "run_foms:",
                                 [
                                     (": ".join(kv), [])
-                                    for kv in d["run_foms"].iteritems()
+                                    for kv in d["run_foms"].items()
                                 ],
                             )
                         ],

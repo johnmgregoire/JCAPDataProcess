@@ -13,7 +13,7 @@ import matplotlib.cm as cm
 from matplotlib import colors
 import pickle
 import time
-import tkMessageBox
+import tkinter.messagebox
 import shutil
 
 
@@ -69,12 +69,12 @@ def linearfit(xdata, ydata, num_knots, min_knotdist, xorder, options, tol):
     else:
         init_x[-1] = xdata[-1]
     init_idxs = [
-        np.argmin(np.abs(xdata - init_x[loc])) for loc in xrange(np.size(init_x))
+        np.argmin(np.abs(xdata - init_x[loc])) for loc in range(np.size(init_x))
     ]
     init_slopes = [
         (ydata[init_idxs[loc + 1]] - ydata[init_idxs[loc]])
         / (xdata[init_idxs[loc + 1]] - xdata[init_idxs[loc]])
-        for loc in xrange(0, len(init_idxs) - 1)
+        for loc in range(0, len(init_idxs) - 1)
     ]
     init_params = np.hstack((ydata[0], init_x, init_slopes))
     res = sp.optimize.minimize(
@@ -180,7 +180,7 @@ def fitresult(
     if not res.success:
         maxiter = 2000
         inittol = tol
-        for i in xrange(int(np.log10(inittol)), int(np.log10(maxtol)) + 1, -1):
+        for i in range(int(np.log10(inittol)), int(np.log10(maxtol)) + 1, -1):
             tol = 10.0 ** i
             res = linearfit(
                 data["hv"],
@@ -377,9 +377,9 @@ def calc_bandgap(
                         abs_expl[i],
                     ) = -1000 * np.ones([3,])
                     bgcode.extend([4])
-            bgknots_lower = filter(lambda a: a != -1000, bgknots_lower)
-            bkgrdknots_lower = filter(lambda a: a != -1000, bkgrdknots_lower)
-            abs_expl = filter(lambda a: a != -1000, abs_expl)
+            bgknots_lower = [a for a in bgknots_lower if a != -1000]
+            bkgrdknots_lower = [a for a in bkgrdknots_lower if a != -1000]
+            abs_expl = [a for a in abs_expl if a != -1000]
             if np.size(bgknots_lower) == 0:
                 bgknots_lower, bkgrdknots_lower, bg, abs_expl = np.ones([4, 1]) * np.NaN
                 bgcode.extend([5])
@@ -423,25 +423,25 @@ def calc_bandgap(
         [
             (abscissa_extn + lstk + "_" + str(idx), eval(lstk)[idx])
             for lstk in fomlist
-            for idx in xrange(min(len(bg), max_numbgs))
+            for idx in range(min(len(bg), max_numbgs))
         ]
     )
     linfitd = dict(
         [
             (abscissa_extn + lstk + "_" + str(idx), eval(lstk)[idx])
             for lstk in linfit_keylist
-            for idx in xrange(min(len(bg), max_numbgs))
+            for idx in range(min(len(bg), max_numbgs))
         ]
     )
     if not calcbg_abscissa:
         linfitd = dict(
-            linfitd.items() + [("knots", knots), ("slopes", slopes), ("y0", params[0])]
+            list(linfitd.items()) + [("knots", knots), ("slopes", slopes), ("y0", params[0])]
         )
     if not np.isnan(abs_expl).all():
         x = np.argmax(
             [
                 fomd[abscissa_extn + "abs_expl_" + str(idx)]
-                for idx in xrange(min(len(bg), max_numbgs))
+                for idx in range(min(len(bg), max_numbgs))
                 if not np.isnan(fomd[abscissa_extn + "abs_expl_" + str(idx)])
             ]
         )
@@ -537,25 +537,25 @@ def runuvvis(data, inputvars):
     fomd = dict(
         [
             (bgtyp + "_" + k, pfomd[bgtyp][k])
-            for bgtyp in pfomd.keys()
-            for k in pfomd[bgtyp].keys()
+            for bgtyp in list(pfomd.keys())
+            for k in list(pfomd[bgtyp].keys())
         ]
     )
     linfitd = dict(
         [
             (bgtyp + "_" + k, plinfitd[bgtyp][k])
-            for bgtyp in plinfitd.keys()
-            for k in plinfitd[bgtyp].keys()
+            for bgtyp in list(plinfitd.keys())
+            for k in list(plinfitd[bgtyp].keys())
         ]
     )
     linfitd = dict(
-        linfitd.items()
+        list(linfitd.items())
         + [
             (k + "_" + str(x), linfitd[k][idx])
-            for k in linfitd.keys()
+            for k in list(linfitd.keys())
             if k.split("_")[-1] in ["knots", "slopes"]
-            for idx, x in enumerate(xrange(len(linfitd[k])))
+            for idx, x in enumerate(range(len(linfitd[k])))
         ]
     )
-    [linfitd.pop(k) for k in linfitd.keys() if not np.isscalar(linfitd[k])]
+    [linfitd.pop(k) for k in list(linfitd.keys()) if not np.isscalar(linfitd[k])]
     return linfitd, fomd

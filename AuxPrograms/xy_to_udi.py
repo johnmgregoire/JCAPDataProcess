@@ -29,9 +29,7 @@ xyd = {}
 wl_CuKa = 1.5406 * 0.1
 replace_X_nan = 50.0
 replace_Y_nan = 47.23
-xyfiles = filter(
-    lambda x: os.path.splitext(x)[-1] == ".xy", map(fn, os.listdir(xyfolder))
-)
+xyfiles = [x for x in map(fn, os.listdir(xyfolder)) if os.path.splitext(x)[-1] == ".xy"]
 specinds = []
 xarr = []
 yarr = []
@@ -86,26 +84,26 @@ udi_dict["sample_no"] = [
             + (np.array(pmpy) - udi_dict["Y"][row]) ** 2
         )
     ]
-    for row in xrange(np.shape(udi_dict["X"])[0])
+    for row in range(np.shape(udi_dict["X"])[0])
 ]
 intsn_twoth_range = np.arange(
-    np.max([x["twoth"][0] for x in xyd.values()]),
-    np.min([x["twoth"][-1] for x in xyd.values()]),
+    np.max([x["twoth"][0] for x in list(xyd.values())]),
+    np.min([x["twoth"][-1] for x in list(xyd.values())]),
     0.005,
 )
 # intsn_twoth_range=np.arange(60.,np.min([x['twoth'][-1] for x in xyd.values()]),0.005)
-for key in xyd.keys():
+for key in list(xyd.keys()):
     xyd[key]["interp_Inte"] = np.interp(
         intsn_twoth_range, xyd[key]["twoth"], xyd[key]["Inte"]
     )
 Qarr = (4 * np.pi * np.sin(np.radians(intsn_twoth_range / 2.0))) / (wl_CuKa)
-Iarr = np.zeros([len(xyd.keys()), len(intsn_twoth_range)])
+Iarr = np.zeros([len(list(xyd.keys())), len(intsn_twoth_range)])
 for idx, key in enumerate(sorted(xyd.keys())):
     Iarr[idx, :] = xyd[key]["interp_Inte"]
     if replace_Int_lessthanzeros:
         Iarr[idx, np.where(Iarr[idx, :] < 0)[0]] = replace_Int_lessthanzeros_val
 if Normalize:
-    for idx in xrange(np.shape(Iarr)[0]):
+    for idx in range(np.shape(Iarr)[0]):
         Iarr[idx, :] = Iarr[idx, :] / np.max(Iarr[idx, :])
 udi_dict["Iarr"] = Iarr
 udi_dict["Q"] = Qarr

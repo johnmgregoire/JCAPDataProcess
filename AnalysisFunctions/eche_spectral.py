@@ -27,11 +27,11 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
     gui_mode_bool=False,
 ):
     anak_ftklist = [
-        (anak, [ftk for ftk in anav.keys() if "files_run__" in ftk])
-        for anak, anav in anadict.iteritems()
+        (anak, [ftk for ftk in list(anav.keys()) if "files_run__" in ftk])
+        for anak, anav in anadict.items()
         if anak.startswith("ana__")
         and anav["name"] == requiredanalysis
-        and True in ["files_run__" in ftk for ftk in anav.keys()]
+        and True in ["files_run__" in ftk for ftk in list(anav.keys())]
     ]
     if len(tech) > 0:
         # if tech=None then don't filter by technique. otherwise only require first 2 characters to be the same so CA1 can be combined with CA4 but not CV4
@@ -53,7 +53,7 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
             num_header_lines=int(tagandkeys.split(";")[2]),
             keys=tagandkeys.split(";")[1].split(","),
         )
-        for fnk, tagandkeys in anad["files_multi_run"]["fom_files"].iteritems()
+        for fnk, tagandkeys in anad["files_multi_run"]["fom_files"].items()
     ]
     interfnks_filedlist = [
         [
@@ -72,7 +72,7 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
             for anak, ftkl in anak_ftklist
             for ftk in ftkl
             for typek in ["inter_files"]
-            for fnk, tagandkeys in anadict[anak][ftk][typek].iteritems()
+            for fnk, tagandkeys in anadict[anak][ftk][typek].items()
             if int(tagandkeys.split(";")[4].strip()) == filed["sample_no"]
         ]
         for filed in filedlist
@@ -84,9 +84,9 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
             echemparamsk = "echem_params__" + anadict[d["anak"]]["technique"]
             runk = d["runk"]
             if (
-                "user_run_foms" in expfiledict[runk].keys()
+                "user_run_foms" in list(expfiledict[runk].keys())
                 and "user_fom_led_wavelength"
-                in expfiledict[runk]["user_run_foms"].keys()
+                in list(expfiledict[runk]["user_run_foms"].keys())
             ):  # user can override wavelength but presently no other params taken from here
                 d["illumination_wavelength"] = float(
                     expfiledict[runk]["user_run_foms"]["user_fom_led_wavelength"]
@@ -95,7 +95,7 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
                 (
                     not False
                     in [
-                        k in expfiledict[runk]["parameters"].keys()
+                        k in list(expfiledict[runk]["parameters"].keys())
                         for k in [
                             "illumination_wavelength",
                             "toggle_value_illumination",
@@ -104,7 +104,7 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
                     ]
                 )
                 and "toggle_value"
-                in expfiledict[runk]["parameters"][echemparamsk].keys()
+                in list(expfiledict[runk]["parameters"][echemparamsk].keys())
             ):
                 togvallist = expfiledict[runk]["parameters"][
                     "toggle_value_illumination"
@@ -115,21 +115,21 @@ def ECHEPHOTO_checkcompletedanalysis_files_by_sample(
                     tv = tv.strip() if isinstance(tv, str) else ("%d" % tv)
                     toglistind = togvals.index(tv)
                     d["toglistind"] = toglistind
-                    for k, v in expfiledict[runk]["parameters"].iteritems():
+                    for k, v in expfiledict[runk]["parameters"].items():
                         if not (k.startswith("illumination_") and "," in v):
                             continue
                         d[k] = attemptnumericconversion_tryintfloat(
                             v.split(",")[toglistind].strip()
                         )
                 else:
-                    for k, v in expfiledict[runk]["parameters"].iteritems():
+                    for k, v in expfiledict[runk]["parameters"].items():
                         if not k.startswith("illumination_") and isinstance(
                             v, (int, float)
                         ):
                             continue
                         d[k] = v
     interfnks_filedlist = [
-        [d for d in dlist if "illumination_wavelength" in d.keys()]
+        [d for d in dlist if "illumination_wavelength" in list(d.keys())]
         for dlist in interfnks_filedlist
     ]
     # the key ana__inter_filedlist gives the above list of inter_files from the right type of ana__ with matched run and sample
@@ -241,13 +241,13 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
             mwvals = [float(s) for s in mwparam.split(",")]
             genmw = (
                 lambda d: mwvals[d["toglistind"]]
-                if "toglistind" in d.keys()
+                if "toglistind" in list(d.keys())
                 else numpy.nan
             )
         elif isinstance(attemptnumericconversion_tryintfloat(mwparam), (float, int)):
             genmw = lambda d: float(attemptnumericconversion_tryintfloat(mwparam))
         else:  # key from interd oarams
-            genmw = lambda d: d[mwparam] if mwparam in d.keys() else numpy.nan
+            genmw = lambda d: d[mwparam] if mwparam in list(d.keys()) else numpy.nan
         spectrum_path = None
         if (
             self.params["spectral_integral_fom_file"] != "None"
@@ -264,13 +264,13 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                     if not (
                         False
                         in [
-                            k in specd.keys()
+                            k in list(specd.keys())
                             for k in [integral_wlkey] + spectrum_integral_keys
                         ]
                     ):
                         spectrum_path = p
                         inds = numpy.argsort(specd[integral_wlkey])
-                        for k, v in specd.items():
+                        for k, v in list(specd.items()):
                             specd[k] = v[inds]
                         limfcns = []
                         for count, limvalstr in enumerate(
@@ -279,7 +279,7 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                             limvalstr = attemptnumericconversion_tryintfloat(limvalstr)
                             if isinstance(limvalstr, str):
                                 if limvalstr != "const":
-                                    print "unknown limit parameter"
+                                    print("unknown limit parameter")
                                     raiseerror
                                 limfcns += [lambda l: l[0 if count == 0 else -1]]
                             else:
@@ -317,9 +317,9 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                         filed["sample_no"]
                     )  # assumption that sample_no is in the fom csv fiel is from the fiel matching above that finds sample_no from the inter_files within this ana__
                     photofomd.update(
-                        [(k, v[fomind]) for k, v in fomd.iteritems() if "photo" in k]
+                        [(k, v[fomind]) for k, v in fomd.items() if "photo" in k]
                     )
-                fomkeyset = fomkeyset.union(photofomd.keys())  # only the photokeys
+                fomkeyset = fomkeyset.union(list(photofomd.keys()))  # only the photokeys
                 if not genmw is None:
                     photofomd["P.mW_illum"] = genmw(interd)
                 photofomd["WL.nm_illum"] = wl
@@ -329,12 +329,12 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                 photofomd["sample_no"] = filed[
                     "sample_no"
                 ]  # sample_no is needed for csv but does not count as a
-            for wlk, photofomd in photofomd_wl.iteritems():
+            for wlk, photofomd in photofomd_wl.items():
                 # fill in any missing foms for each wavelength
                 for k in list(fomkeyset.difference(set(photofomd.keys()))):
                     photofomd[k] = numpy.nan
                 # eqe calcualtion if possible
-                if "I.A_photo" in photofomd.keys() and "P.mW_illum" in photofomd.keys():
+                if "I.A_photo" in list(photofomd.keys()) and "P.mW_illum" in list(photofomd.keys()):
                     iph = photofomd["I.A_photo"]
                     wl = photofomd["WL.nm_illum"]
                     pmw = photofomd["P.mW_illum"]
@@ -343,11 +343,11 @@ class Analysis__SpectralPhoto(Analysis_Master_inter):
                     )  # the constant is hc/e in units of mW nm / A
             floatkeys = (
                 ["E.eV_illum", "WL.nm_illum"]
-                + ([k for k in ["P.mW_illum", "EQE"] if k in photofomd.keys()])
+                + ([k for k in ["P.mW_illum", "EQE"] if k in list(photofomd.keys())])
                 + list(fomkeyset)
             )
             intkeys = ["runint", "anaint"]
-            num_wavelengths = len(photofomd_wl.keys())
+            num_wavelengths = len(list(photofomd_wl.keys()))
             sortedwls = sorted(photofomd_wl.keys())
             wl_dlist = [
                 photofomd_wl[k] for k in sortedwls[::-1]

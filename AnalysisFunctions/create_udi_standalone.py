@@ -65,7 +65,7 @@ def append_udi_to_ana(
     else:
         num_ana = len(l_anapath)
     if num_ana == 0 or not ".run" in l_anapath[0]:
-        print "can only append udi file to analysis with .run status"
+        print("can only append udi file to analysis with .run status")
         return
     l_fns = [os.path.split(p)[1] for p in l_anapath]
     if l_anak_comps is None or len(l_anak_comps) != len(l_anapath):
@@ -75,7 +75,7 @@ def append_udi_to_ana(
             title="Enter ana__# vals containing comps for each .ana",
         )
         if ans is None or ans.count(",") != (num_ana - 1):
-            print "error entering ana ints for comps: ", ans
+            print("error entering ana ints for comps: ", ans)
             return
         l_anak_comps = ["ana__%s" % s.strip() for s in ans.split(",")]
     if l_anak_patterns is None or len(l_anak_patterns) != len(l_anapath):
@@ -85,7 +85,7 @@ def append_udi_to_ana(
             title="Enter ana__# vals containing patterns for each .ana",
         )
         if ans is None or ans.count(",") != (num_ana - 1):
-            print "error entering ana ints for patterns: ", ans
+            print("error entering ana ints for patterns: ", ans)
             return
         l_anak_patterns = ["ana__%s" % s.strip() for s in ans.split(",")]
     l_anadict_zipclass = [
@@ -115,11 +115,11 @@ def append_udi_to_ana(
             isinstance(anadict[anak_comps]["plate_ids"], str)
             and "," in anadict[anak_comps]["plate_ids"]
         ):
-            print "can only use ana__ with single plate_id: ", anap, anak_comps, anadict[
+            print("can only use ana__ with single plate_id: ", anap, anak_comps, anadict[
                 anak_comps
             ][
                 "plate_ids"
-            ]
+            ])
             return
         l_plate_idstr += [
             anadict[anak_comps]["plate_ids"].strip()
@@ -129,7 +129,7 @@ def append_udi_to_ana(
         # loop over all fom_files and find 1 that has comp foms
         for fn, filed in anadict[anak_comps]["files_multi_run"][
             "fom_files"
-        ].iteritems():
+        ].items():
             if isinstance(compkeys, str):
                 found_comp_keys = [k for k in filed["keys"] if compkeys in k]
             else:
@@ -149,18 +149,18 @@ def append_udi_to_ana(
                 l_comp_fomd += [fomd]
                 break
         if fomd is None:
-            print "error finding comps for ", anap
+            print("error finding comps for ", anap)
             return
         # get ana__ block plate_ids and make sure only 1 and that it is the same as comps
         if (
             isinstance(anadict[anak_patterns]["plate_ids"], str)
             and "," in anadict[anak_patterns]["plate_ids"]
         ):
-            print "can only use ana__ with single plate_id: ", anap, anak_comps, anadict[
+            print("can only use ana__ with single plate_id: ", anap, anak_comps, anadict[
                 anak_patterns
             ][
                 "plate_ids"
-            ]
+            ])
             return
         pidstr = (
             anadict[anak_patterns]["plate_ids"].strip()
@@ -168,7 +168,7 @@ def append_udi_to_ana(
             else ("%d" % anadict[anak_patterns]["plate_ids"])
         )
         if pidstr != l_plate_idstr[-1]:
-            print "patterns and comps from different plate_id: ", anap, anak_comps, anadict[
+            print("patterns and comps from different plate_id: ", anap, anak_comps, anadict[
                 anak_comps
             ][
                 "plate_ids"
@@ -176,18 +176,18 @@ def append_udi_to_ana(
                 anak_patterns
             ][
                 "plate_ids"
-            ]
+            ])
             return
         # get all pattern files from any files_run__ block that has them
         l_fn_fd = []
-        for filesrunk, filesrund in anadict[anak_patterns].iteritems():
+        for filesrunk, filesrund in anadict[anak_patterns].items():
             if (
                 not filesrunk.startswith("files_run__")
-                or not pattern_key in filesrund.keys()
+                or not pattern_key in list(filesrund.keys())
             ):
                 continue
             runint = int(filesrunk.partition("files_run__")[2])
-            for fn, filed in filesrund[pattern_key].iteritems():
+            for fn, filed in filesrund[pattern_key].items():
                 if not pattern_fn_search_str in fn:
                     continue
                 if (
@@ -225,7 +225,7 @@ def append_udi_to_ana(
                 els_for_udi += [el]
                 break
     if len(els_for_udi) < 2:
-        print "^^^aborting because only these elements found in ana compositions: ", els_for_udi, pidstr
+        print("^^^aborting because only these elements found in ana compositions: ", els_for_udi, pidstr)
         return
     l_elkey_byel = []
     # get the elkey  or None for each ana
@@ -308,9 +308,9 @@ def append_udi_to_ana(
             udi_dict["Iarr"] += [patternd[intensity_key]]
             udi_dict["pattern_fn"] += [fn]
             if len(udi_dict["Iarr"][-1]) != len(udi_dict["Q"]):
-                print "not all patterns same length: ", len(udi_dict["Iarr"][-1]), len(
+                print("not all patterns same length: ", len(udi_dict["Iarr"][-1]), len(
                     udi_dict["Q"]
-                ), anap, fn
+                ), anap, fn)
                 return
     udi_dict["comps"] = numpy.array(udi_dict["comps"])
     udi_dict["xy"] = numpy.array(udi_dict["xy"])
@@ -426,7 +426,7 @@ def append_resampled_merged_patterns_to_ana(
     else:
         num_ana = len(l_anapath)
     if num_ana == 0 or not ".run" in l_anapath[0]:
-        print "can only append udi file to analysis with .run status"
+        print("can only append udi file to analysis with .run status")
         return
     l_fns = [os.path.split(p)[1] for p in l_anapath]
     if l_anak_patterns is None or len(l_anak_patterns) != len(l_anapath):
@@ -436,7 +436,7 @@ def append_resampled_merged_patterns_to_ana(
             title="Enter ana__# vals containing patterns for each .ana",
         )
         if ans is None or ans.count(",") != (num_ana - 1):
-            print "error entering ana ints for patterns: ", ans
+            print("error entering ana ints for patterns: ", ans)
             return
         l_anak_patterns = ["ana__%s" % s.strip() for s in ans.split(",")]
     if l_pattern_fn_search_str is None or len(l_pattern_fn_search_str) != len(
@@ -450,7 +450,7 @@ def append_resampled_merged_patterns_to_ana(
             title="Enter for each ana__ in each .ana, select the search string, emtpy string to use all pattern files",
         )
         if ans is None or ans.count(",") != (num_ana - 1):
-            print "error entering ana ints for search string: ", ans
+            print("error entering ana ints for search string: ", ans)
             return
         l_pattern_fn_search_str = ["%s" % s.strip() for s in ans.split(",")]
     l_anadict_zipclass = [
@@ -480,9 +480,9 @@ def append_resampled_merged_patterns_to_ana(
             isinstance(anadict[anak_patterns]["plate_ids"], str)
             and "," in anadict[anak_patterns]["plate_ids"]
         ):
-            print "can only use ana__ with single plate_id: ", anap, anadict[
+            print("can only use ana__ with single plate_id: ", anap, anadict[
                 anak_patterns
-            ]["plate_ids"]
+            ]["plate_ids"])
             return
         pidstrtemp = (
             anadict[anak_patterns]["plate_ids"].strip()
@@ -492,23 +492,23 @@ def append_resampled_merged_patterns_to_ana(
         if count == 0:
             pidstr = pidstrtemp
         elif pidstr != pidstrtemp:
-            print "cannot merge patterns from different plate_ids: ", anap, anak_patterns, anadict[
+            print("cannot merge patterns from different plate_ids: ", anap, anak_patterns, anadict[
                 anak_patterns
             ][
                 "plate_ids"
-            ]
+            ])
             return
         # get all pattern files from any files_run__ block that has them
         l_fn_fd = []
         l_smps = []
-        for filesrunk, filesrund in anadict[anak_patterns].iteritems():
+        for filesrunk, filesrund in anadict[anak_patterns].items():
             if (
                 not filesrunk.startswith("files_run__")
-                or not pattern_key in filesrund.keys()
+                or not pattern_key in list(filesrund.keys())
             ):
                 continue
             runint = int(filesrunk.partition("files_run__")[2])
-            for fn, filed in filesrund[pattern_key].iteritems():
+            for fn, filed in filesrund[pattern_key].items():
                 if not pattern_fn_search_str in fn:
                     continue
                 if q_key in filed["keys"] and intensity_key in filed["keys"]:
@@ -520,7 +520,7 @@ def append_resampled_merged_patterns_to_ana(
     for l_smps in l_pattern_l_smps[1:]:
         smps = smps.intersection(set(l_smps))
     if len(smps) == 0:
-        print "no sample_no in common among different pattern anas"
+        print("no sample_no in common among different pattern anas")
         gdfhfg
         return
     lsmps_reconstruction_area_error = []
@@ -613,9 +613,9 @@ def append_resampled_merged_patterns_to_ana(
                 numpatterns_contributing_to_each_qresamp_val > 0
             )[0]
             if len(resampinds_zerofill) > 0:
-                print "there are this many resampled q values that will be zero-filled: ", len(
+                print("there are this many resampled q values that will be zero-filled: ", len(
                     resampinds_zerofill
-                )
+                ))
             weights_2d = numpy.ones(
                 interp_mask_numpatterns_by_qresamp.shape, dtype="float64"
             )
@@ -656,7 +656,7 @@ def append_resampled_merged_patterns_to_ana(
                         weights_2d[activepatterns[1], i:j] = newweights
             else:
                 if gradual_average_overlap_bool:
-                    print "gradual overlap calculation not possible because only implemented for 2-pattern overlaps and the max num of pattern overlaps is ", numpatterns_contributing_to_each_qresamp_val.max(), anap
+                    print("gradual overlap calculation not possible because only implemented for 2-pattern overlaps and the max num of pattern overlaps is ", numpatterns_contributing_to_each_qresamp_val.max(), anap)
                 for patternind in range(weights_2d.shape[0]):
                     weights_2d[patternind, resampinds_ave] = (
                         1.0
@@ -715,10 +715,10 @@ def append_resampled_merged_patterns_to_ana(
         "q_key": q_key,
         "intensity_key": intensity_key,
         "pattern_fn_search_str": tempstr,
-        "q_resample_linear_interval": ` dq `,
-        "q_resample_log_interval": ` q_log_space_coef `,
-        "q_resample_interp_order": ` resamp_interp_order `,
-        "gradual_average_overlap_bool": ` gradual_average_overlap_bool `,
+        "q_resample_linear_interval": repr( dq),
+        "q_resample_log_interval": repr( q_log_space_coef),
+        "q_resample_interp_order": repr( resamp_interp_order),
+        "gradual_average_overlap_bool": repr( gradual_average_overlap_bool),
     }
     newq_key = q_key + "_resampled"
     newintensity_key = intensity_key + "_resampled"
@@ -738,7 +738,7 @@ def append_resampled_merged_patterns_to_ana(
         d["plate_id"] = int(pidstr)
         analysismasterclass.fomdlist += [d]
         filesrunk = "files_run__%d" % runint
-        if not filesrunk in anadict[anak].keys():
+        if not filesrunk in list(anadict[anak].keys()):
             anadict[anak][filesrunk] = {}
             anadict[anak][filesrunk][pattern_key] = {}
         fn = "_".join([anak, newfn])

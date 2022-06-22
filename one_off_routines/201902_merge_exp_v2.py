@@ -47,8 +47,8 @@ if filter_plate_sample_fileattrd is None:
     filter_plate_sample_list=None
 else:
     filterd=readcsvdict(filter_plate_sample_fileattrd['fn'], filter_plate_sample_fileattrd)
-    if 'plate_id' in filterd.keys():
-        filter_plate_sample_list=zip(filterd['plate_id'], filterd['sample_no'])
+    if 'plate_id' in list(filterd.keys()):
+        filter_plate_sample_list=list(zip(filterd['plate_id'], filterd['sample_no']))
     else:
         filter_plate_sample_list=filterd['sample_no']
 #TODO else:
@@ -65,7 +65,7 @@ newexpd['name']=timestampname()
 
 new_run_counter=1
 for d, di in zip(dlist,exp_info_dlist):
-    if 'run_use' in di.keys():
+    if 'run_use' in list(di.keys()):
         d['run_use']=di['run_use']
     
     kl=sort_dict_keys_by_counter(d, keystartswith='run__')
@@ -78,12 +78,12 @@ for d, di in zip(dlist,exp_info_dlist):
             keep_run=False
             files_keys=[k for k in d[rk] if k.startswith('files_technique__')]
             for fk in files_keys:
-                for fn in d[rk][fk].keys():#don't use iterator because deleting as we go and not sure how that works
+                for fn in list(d[rk][fk].keys()):#don't use iterator because deleting as we go and not sure how that works
                     fd=d[rk][fk][fn]
-                    if (not 'sample_no' in fd.keys()) or fd['sample_no']==0:
+                    if (not 'sample_no' in list(fd.keys())) or fd['sample_no']==0:
                         keepbool=include_sample_0
                     else:
-                        inlist=(pid,fd['sample_no']) in filter_plate_sample_list if ('plate_id' in filterd.keys()) else fd['sample_no'] in filter_plate_sample_list
+                        inlist=(pid,fd['sample_no']) in filter_plate_sample_list if ('plate_id' in list(filterd.keys())) else fd['sample_no'] in filter_plate_sample_list
                         keepbool=inlist if include_csv_samples_bool else not inlist
                     if not keepbool:
                         del d[rk][fk][fn]

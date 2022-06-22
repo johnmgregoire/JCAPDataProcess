@@ -3,6 +3,7 @@ import os, os.path, time, copy, pylab, operator
 from scipy import interp
 import matplotlib.pyplot as plt
 import numpy as np
+from functools import reduce
 
 
 def myeval(c):
@@ -48,7 +49,7 @@ def removeoutliers_meanstd(
                     and (arr[i],)
                     or (numpy.append(arr[i0:i], arr[i + 1 : i1]).mean(),)
                 )[0]
-                for i, i0, i1 in zip(range(len(arr)), starti, stopi)
+                for i, i0, i1 in zip(list(range(len(arr))), starti, stopi)
             ],
             dtype=arr.dtype,
         )
@@ -138,11 +139,11 @@ def savgolsmooth(
         deriv
     ]  # this gives the dth ? of the base array (.A) of the pseudoinverse of b
     # precompute the offset values for better performance
-    offsets = range(-1 * side, side + 1)
-    offset_data = zip(offsets, m)
+    offsets = list(range(-1 * side, side + 1))
+    offset_data = list(zip(offsets, m))
     smooth_data = [
         numpy.array([(weight * s[i + offset]) for offset, weight in offset_data]).sum()
-        for i in xrange(side, len(s) - side)
+        for i in range(side, len(s) - side)
     ]
     smooth_data = numpy.array(smooth_data) / (dx ** deriv)
     if binprior > 1:
@@ -252,7 +253,7 @@ class fitfcns:  # datatuples are x1,x2,...,y
                 self.performfit = False
                 self.finalparams = fitout[0]
                 if not fitout[4] in [1, 2]:
-                    print "Fitting Error ", fitout[4], " at ", markstr, ": ", fitout[3]
+                    print("Fitting Error ", fitout[4], " at ", markstr, ": ", fitout[3])
                     self.error = True
                 else:
                     # self.finalparams=fitout[0]
@@ -289,7 +290,7 @@ class fitfcns:  # datatuples are x1,x2,...,y
         parnames = []
         i = 0
         for par in initparams:
-            parnames += ["".join(("coef", ` i `))]
+            parnames += ["".join(("coef", repr( i)))]
             i += 1
         return self.genfit(
             self.poly,
@@ -573,7 +574,7 @@ def removeoutliers_meanstd(
                     and (arr[i],)
                     or (numpy.append(arr[i0:i], arr[i + 1 : i1]).mean(),)
                 )[0]
-                for i, i0, i1 in zip(range(len(arr)), starti, stopi)
+                for i, i0, i1 in zip(list(range(len(arr))), starti, stopi)
             ],
             dtype=arr.dtype,
         )
@@ -627,7 +628,7 @@ def findlinearsegs(
     npts_SGconstdy=2,
 ):
     if 2 * npts_SGconstdy + dydev_nout >= len(y):
-        print "array not long enough to find linear segments"
+        print("array not long enough to find linear segments")
         return [], [], [], [], []
     dy = savgolsmooth(y, nptsoneside=SGnpts, order=2, dx=dx, deriv=1)
     #    lenconstdy=numpy.array([(dy[i]==0. and (0, ) or \
@@ -920,7 +921,7 @@ def findzerosegs(
     maxfracoutliers=0.5,
 ):  # ydev_nout is number of outliers allowed in segment, dn_segstart is how close to each other the segments are allowed to start
     if ydev_nout >= len(y):
-        print "array not long enough to find zero segments"
+        print("array not long enough to find zero segments")
         return [], [], [], []
     y = savgolsmooth(y, nptsoneside=SGnpts, order=2)
     yzero_maxfrac = numpy.abs(y).max() * yzero_maxfrac
@@ -1035,7 +1036,7 @@ def calcmeandEdt_dlist(dlist):
 
 
 def calcsegind_dlist(dlist, SGpts=8):
-    if not "dt" in dlist[0].keys():
+    if not "dt" in list(dlist[0].keys()):
         calcmeandt_dlist(dlist)
     for d in dlist:
         d["Ewe(V)_dtSG"] = savgolsmooth(
@@ -1053,7 +1054,7 @@ def calcsegind_dlist(dlist, SGpts=8):
         for count, (i0, i1) in enumerate(zip(inds[:-1], inds[1:])):
             d["segind"][i0:i1] = count
         d["segprops_dlist"] = []
-        for si, i0 in zip(range(d["segind"].max() + 1), inds[:-1]):
+        for si, i0 in zip(list(range(d["segind"].max() + 1)), inds[:-1]):
             d["segprops_dlist"] += [{}]
             d["segprops_dlist"][-1]["rising"] = rising[i0 + 1]
             inds2 = numpy.where(d["segind"] == si)[0]
@@ -1065,7 +1066,7 @@ def calcsegind_dlist(dlist, SGpts=8):
 
 
 def manualsegind_dlist(dlist, istart=[0], SGpts=8):
-    if not "dt" in dlist[0].keys():
+    if not "dt" in list(dlist[0].keys()):
         calcmeandt_dlist(dlist)
     for d in dlist:
         d["Ewe(V)_dtSG"] = savgolsmooth(
@@ -1102,7 +1103,7 @@ def SegSG_dlist(dlist, SGpts=10, order=1, k="I(A)"):
 def SegdtSG_dlist(dlist, SGpts=10, order=1, k="I(A)", dxk="dt"):
     kSG = k + "_dtSG"
     for d in dlist:
-        if not kSG in d.keys() and dxk in d.keys():
+        if not kSG in list(d.keys()) and dxk in list(d.keys()):
             continue
         d[kSG] = numpy.zeros(d[k].shape, dtype="float32")
         for segd in d["segprops_dlist"]:
@@ -1151,7 +1152,7 @@ def calcdiff_stepill(
     riseinds = numpy.where(illum[1:] & numpy.logical_not(illum[:-1]))[0] + 1
     fallinds = numpy.where(numpy.logical_not(illum[1:]) & illum[:-1])[0] + 1
     if len(fallinds) == 0 and len(riseinds) == 0:
-        print "insufficient light cycles"
+        print("insufficient light cycles")
         return 1
     if illum[0]:
         illstart = 0
@@ -1171,8 +1172,8 @@ def calcdiff_stepill(
             illend = fallinds[0]
     ill_istart, ill_len = istart_len_calc(illstart, illend, illfracrange)
     dark_istart, dark_len = istart_len_calc(darkstart, darkend, darkfracrange)
-    inds_ill = [range(int(ill_istart), int(ill_istart + ill_len))]
-    inds_dark = [range(int(dark_istart), int(dark_istart + dark_len))]
+    inds_ill = [list(range(int(ill_istart), int(ill_istart + ill_len)))]
+    inds_dark = [list(range(int(dark_istart), int(dark_istart + dark_len)))]
     d["inds_ill"] = inds_ill
     d["inds_dark"] = inds_dark
     getillvals = lambda arr: numpy.array([arr[inds].mean() for inds in inds_ill])
@@ -1212,14 +1213,14 @@ def calcdiff_choppedill(
     riseinds = numpy.where(illum[1:] & numpy.logical_not(illum[:-1]))[0] + 1
     fallinds = numpy.where(numpy.logical_not(illum[1:]) & illum[:-1])[0] + 1
     if len(fallinds) == 0 or len(riseinds) == 0:
-        print "insufficient light cycles"
+        print("insufficient light cycles")
         return 1
     riseinds = riseinds[
         riseinds < fallinds[-1]
     ]  # only consider illum if there is a dark before and after
     fallinds = fallinds[fallinds > riseinds[0]]
     if len(fallinds) == 0 or len(riseinds) == 0:
-        print "insufficient light cycles"
+        print("insufficient light cycles")
         return 1
     ill_istart, ill_len = istart_len_calc(riseinds, fallinds, illfracrange)
     darkstart, darkend = numpy.where(numpy.logical_not(illum))[0][[0, -1]]
@@ -1232,18 +1233,18 @@ def calcdiff_choppedill(
     # inds_dark=[range(int(i0), int(i0+ilen)) for i0, ilen in zip(dark_istart, dark_len)]
     indstemp = [
         (
-            range(int(i0ill), int(i0ill + ilenill)),
-            range(int(i0dark), int(i0dark + ilendark)),
+            list(range(int(i0ill), int(i0ill + ilenill))),
+            list(range(int(i0dark), int(i0dark + ilendark))),
         )
         for i0ill, ilenill, i0dark, ilendark in zip(
             ill_istart, ill_len, dark_istart, dark_len
         )
         if ilenill > 0 and ilendark > 0
     ]
-    inds_ill = map(operator.itemgetter(0), indstemp)
-    inds_dark = map(operator.itemgetter(1), indstemp)
+    inds_ill = list(map(operator.itemgetter(0), indstemp))
+    inds_dark = list(map(operator.itemgetter(1), indstemp))
     if dark_len[-1] > 0:
-        inds_dark += [range(int(dark_istart[-1]), int(dark_istart[-1] + dark_len[-1]))]
+        inds_dark += [list(range(int(dark_istart[-1]), int(dark_istart[-1] + dark_len[-1])))]
     else:
         inds_ill = inds_ill[:-1]
     d["inds_ill"] = inds_ill
@@ -1318,13 +1319,13 @@ def calc_comps_multi_element_inks(
     cels_set_ordered_conc = [k + key_append_conc for k in cels_set_ordered]
     [
         d.update(
-            zip(
+            list(zip(
                 cels_set_ordered_conc,
                 (
                     numpy.float32([d[k] for k in inkchannelsused])[numpy.newaxis, :]
                     * conc_el_chan
                 ).sum(axis=1),
-            )
+            ))
         )
         for d in platemapdlist
     ]
@@ -1342,7 +1343,7 @@ def calc_comps_multi_element_inks(
             ]
         comparr2d = concarr / concarr.sum(axis=1)[:, numpy.newaxis]
         [
-            d.update(zip(cels_set_ordered_atfrac, comparr))
+            d.update(list(zip(cels_set_ordered_atfrac, comparr)))
             for d, comparr in zip(platemapdlist, comparr2d)
         ]
     if key_append_conc == "TEMP":
@@ -1383,7 +1384,7 @@ def filterbydistancefromline(
         xyz1 /= xyz1.sum()
         xyz2 /= xyz2.sum()
         if xyz1.size == 1:
-            print "unary compositions do not make sense"
+            print("unary compositions do not make sense")
         elif xyz1.size == 2:
             arr_of_xyz = arr_of_xyz[:, 0]
             xyz1 = xyz1[:1]
@@ -1397,11 +1398,11 @@ def filterbydistancefromline(
             xyz1 = numpy.array(quaternary_comp_to_cart(*xyz1))
             xyz2 = numpy.array(quaternary_comp_to_cart(*xyz2))
         else:
-            print "quinary or higher compositions not supported"
+            print("quinary or higher compositions not supported")
             return None
     else:
         if xyz1.size > 3:
-            print "Only 1D,2D,3D supported"
+            print("Only 1D,2D,3D supported")
             return None
     notnoninds = numpy.where(numpy.logical_not(numpy.isnan(arr_of_xyz)).prod(axis=1))[0]
     numnansamples = len(arr_of_xyz) - len(notnoninds)
@@ -1551,7 +1552,7 @@ def linear_2d_extrapolation(
             ) == 0:  # if more than 1 x value and also more than 1 y value
                 break
         if extra_pts == num_pts_in_lin_fit:  # cannot perform 2d extrap here
-            print "extrap failed because locally data is in 1d"
+            print("extrap failed because locally data is in 1d")
             new_z += [np.nan]
             continue
         A = np.vstack([xf, yf, np.ones(len(xf))]).T
@@ -1579,7 +1580,7 @@ def linear_1d_extrapolation(x, z, x_to_extrapolate, num_pts_in_lin_fit=6):
             if (xf[0] == xf).prod() == 0:  # if more than 1 x value
                 break
         if extra_pts == num_pts_in_lin_fit:  # cannot perform 2d extrap here
-            print "extrap failed because locally data is in 1d"
+            print("extrap failed because locally data is in 1d")
             new_z += [np.nan]
             continue
         c = np.polyfit(xf, zf, 1)

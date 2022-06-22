@@ -54,7 +54,7 @@ anadestchoice=r'temp'
 for anacount, (anafold, compintstr) in enumerate(zip(ananames.split(','), compinstrs.split(','))):
     if anacount!=12:
         continue
-    print anafold
+    print(anafold)
     foldp=os.path.join(r'K:\processes\analysis\temp', anafold)
     if action=='COPY':
         copyfolder_1level(foldp.replace('temp', 'uvis'), foldp)
@@ -85,7 +85,7 @@ for anacount, (anafold, compintstr) in enumerate(zip(ananames.split(','), compin
                 visdataui.fomplotchoiceComboBox.setCurrentIndex(i)
                 break
         if not matchbool:
-            print 'skipping ', fomname
+            print('skipping ', fomname)
             continue
         visdataui.colormapLineEdit.setText(cm)
         visdataui.vminmaxLineEdit.setText((vmin+','+vmax) if (len(vmin)*len(vmax))>0 else '')

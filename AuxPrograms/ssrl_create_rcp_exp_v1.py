@@ -88,13 +88,13 @@ class setup_rcp_and_exp_ssrl:
                 return_pmidstr=True,
             )
             if ans is None:
-                print "aborting because failed retrieval of platemap id for plate :", self.plate_idstr
+                print("aborting because failed retrieval of platemap id for plate :", self.plate_idstr)
                 return True
             self.pmidstr = ans[1]
         dropfolder = getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             # messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
-            print "Aborting SAVE because cannot find drop folder"
+            print("Aborting SAVE because cannot find drop folder")
             return True
         if (not testmode) and not os.path.isdir(dropfolder):
             os.mkdir(dropfolder)
@@ -115,7 +115,7 @@ class setup_rcp_and_exp_ssrl:
                     shutil.rmtree(self.runfolderpath)
                 else:
                     # messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-                    print "Aborting SAVE because %s folder exists" % rcpmainfolder
+                    print("Aborting SAVE because %s folder exists" % rcpmainfolder)
                     return True
             os.mkdir(self.runfolderpath)
         return False
@@ -150,7 +150,7 @@ class setup_rcp_and_exp_ssrl:
             # the class init then ignore
             serial_no_str = os.path.split(self.import_path)[1].partition("_")[0].strip()
             if False in [c.isdigit() for c in serial_no_str]:
-                print "error reading plate_id for ", self.import_path
+                print("error reading plate_id for ", self.import_path)
                 return True
             if len(serial_no_str) >= 5:  # expect serial but this fails if plate_id
                 self.plate_idstr = serial_no_str[:-1]
@@ -227,7 +227,7 @@ class setup_rcp_and_exp_ssrl:
             d.update({k: v}) for d in [exprund["parameters"], rcpdict["parameters"]]
         ]
         self.add_run_param("plate_id", self.plate_idstr)
-        for k, v in self.run_params_dict.iteritems():
+        for k, v in self.run_params_dict.items():
             v = (
                 self.strrep_generic_file_dict_value_sp(v).strip("[").rstrip("]")
             )  # make lists comma delimited but without the brackets
@@ -272,8 +272,8 @@ class setup_rcp_and_exp_ssrl:
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict["name"] + ".rcp")
         if testmode:
-            print "THIS IS THE RCP FILE THAT WOULD BE SAVED:"
-            print rcpfilestr
+            print("THIS IS THE RCP FILE THAT WOULD BE SAVED:")
+            print(rcpfilestr)
             return
         with open(p, mode="w") as f:
             f.write(rcpfilestr)

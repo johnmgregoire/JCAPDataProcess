@@ -24,10 +24,10 @@ def add_entry_for_each_analysis(d, pidstr, anatype='image'):
     with open(infop, mode='r') as f:
         lines=f.readlines()
         infofiled=filedict_lines(lines)
-    if not 'analyses' in infofiled.keys():
+    if not 'analyses' in list(infofiled.keys()):
         return
-    for ak, av in infofiled['analyses'].iteritems():
-        if 'type' in av.keys() and av['type']==anatype:
+    for ak, av in infofiled['analyses'].items():
+        if 'type' in list(av.keys()) and av['type']==anatype:
             anapath=buildanapath(av['path'])
             try:
                 anad=readana(anapath)
@@ -36,12 +36,12 @@ def add_entry_for_each_analysis(d, pidstr, anatype='image'):
                 try:
                     anad=readana(anapath)
                 except:
-                    print 'error reading ana,',  anapath
+                    print('error reading ana,',  anapath)
                     return
             
             ananame=anad['name']
             d[ananame]={'plate_id_str':pidstr, 'analysis':copy.copy(av)}
-            if 'screening_map_id' in infofiled.keys():
+            if 'screening_map_id' in list(infofiled.keys()):
                 d[ananame]['screening_map_id']=infofiled['screening_map_id']
             exppath=buildexppath(anad['experiment_path'])
             try:
@@ -51,24 +51,24 @@ def add_entry_for_each_analysis(d, pidstr, anatype='image'):
                 try:
                     expd=readexpasdict(exppath, returnzipclass=False)
                 except:
-                    print 'error reading exp,',  exppath
+                    print('error reading exp,',  exppath)
                     return
             run_rel_path=expd['run__1']['run_path'].strip()
             runtime=None
-            for rk, rv in infofiled['runs'].iteritems():
+            for rk, rv in infofiled['runs'].items():
                 if rv['path'].strip()==run_rel_path:
                     runtime=database_time_string_to_timestamp(rv['created_at'])
                     break
             if runtime is None:
-                print 'error finding run,', run_rel_path
-            if not 'prints' in infofiled.keys():
+                print('error finding run,', run_rel_path)
+            if not 'prints' in list(infofiled.keys()):
                 return
             printkey, printd=get_most_recent_created_at(infofiled['prints'], beforetime=runtime)
             if printkey is None:
                 return
             d[ananame]['print']=copy.copy(printd)
             
-            if not 'anneals' in infofiled.keys():
+            if not 'anneals' in list(infofiled.keys()):
                 return
             annealkey, anneald=get_most_recent_created_at(infofiled['anneals'], beforetime=runtime)
             if annealkey is None:

@@ -84,7 +84,7 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
         nondictkeys = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not isinstance(v, dict) and not k in skipkeys
             ]
         )
@@ -94,7 +94,7 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
         dictkeys2 = sorted(
             [
                 k
-                for k in d.keys()
+                for k in list(d.keys())
                 if (self.exp and k.startswith("experiments"))
                 or (self.ana and k.startswith("analyses"))
             ]
@@ -105,13 +105,13 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
                 rd = d[k]
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                 # if ('type' in rd.keys() and str(self.typeLineEdit.text()) in rd['type']) and ((not 'quality' in rd.keys()) or str(self.qualityLineEdit.text()) in rd['quality']):
-                if ("searchbool" in rd.keys()) or (
+                if ("searchbool" in list(rd.keys())) or (
                     (
-                        "path" in rd.keys()
+                        "path" in list(rd.keys())
                         and str(self.searchLineEdit.text()) in rd["path"]
                     )
                     and (
-                        "type" in rd.keys()
+                        "type" in list(rd.keys())
                         and str(self.typeLineEdit.text()) in rd["type"]
                     )
                 ):
@@ -127,7 +127,7 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
         dictkeys1 = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if (not k in dictkeys2) and isinstance(v, dict)
             ]
         )
@@ -161,7 +161,7 @@ class openfrominfoDialog(QDialog, Ui_OpenFromInfoDialog):
             if len(fns) > 0:
                 break
         if len(fns) == 0:
-            print "No EXP/ANA found"
+            print("No EXP/ANA found")
             return
         self.infofiled = {}
         if ana:

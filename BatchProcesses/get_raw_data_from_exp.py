@@ -28,9 +28,9 @@ def get_file_dicts_containing_data(expname, filekeystoget, filetype, sample_list
         runp_fullpath=buildrunpath(rund['run_path'])
         rund['zipclass']=gen_zipclass(runp_fullpath)
         for fk in filekeystoget:
-            if not fk in rund.keys():
+            if not fk in list(rund.keys()):
                 continue
-            for fn, filed in rund[fk][filetype].iteritems():
+            for fn, filed in rund[fk][filetype].items():
                 if not fn_must_contain in fn:
                     continue
                 if (not sample_list is None) and (not filed['sample_no'] in sample_list):
@@ -40,16 +40,16 @@ def get_file_dicts_containing_data(expname, filekeystoget, filetype, sample_list
 
                 filed['zipclass']=rund['zipclass']
             
-    for fn, filed in allfilesdict.items():
+    for fn, filed in list(allfilesdict.items()):
         filed['data_arr']=getarrs_filed(filed['fn'], filed, selcolinds=None, trydat=False, zipclass=filed['zipclass'])
     
     if return_list_ordered_by_sample and not sample_list is None:
-        tups=sorted([(sample_list.index(v['sample_no']), v) for v in allfilesdict.values()])
-        dlist=map(operator.itemgetter(1), tups)
+        tups=sorted([(sample_list.index(v['sample_no']), v) for v in list(allfilesdict.values())])
+        dlist=list(map(operator.itemgetter(1), tups))
         return dlist
     elif return_list_ordered_by_sample:#ordered by sample_no but user doesn't yet know the sample_no list (get it as [d['sample_no'] for d in dlist])
-        tups=sorted([(v['sample_no'], v) for v in allfilesdict.values()])
-        dlist=map(operator.itemgetter(1), tups)
+        tups=sorted([(v['sample_no'], v) for v in list(allfilesdict.values())])
+        dlist=list(map(operator.itemgetter(1), tups))
         return dlist
     else:
         return allfilesdict

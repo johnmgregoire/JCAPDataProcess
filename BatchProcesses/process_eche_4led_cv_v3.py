@@ -153,7 +153,7 @@ else:
     #exppath=tryprependpath(EXPFOLDERS_J+EXPFOLDERS_L, expname)
 
 
-print exppath
+print(exppath)
 if anarunpath is None:
     calcui.importexp(exppath=exppath)
 
@@ -214,7 +214,7 @@ else:
 visdataui.stdcsvplotchoiceComboBox.setCurrentIndex(9)
 visdataui.plot_preparestandardplot()
 choosexyykeys(visdataui, ['E.eV_illum', 'EQE', 'None'])
-for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].iteritems():
+for fn, filed in visdataui.anafiledict['ana__9']['files_multi_run']['sample_vector_files'].items():
     p=os.path.join(anasavefolder, fn)
     vectrofiled=readcsvdict(p, filed, returnheaderdict=False, zipclass=None, includestrvals=False, delim=',')
     if numpy.all(vectrofiled['EQE']>mineqeforplot):

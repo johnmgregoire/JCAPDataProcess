@@ -25,7 +25,7 @@ def get_colors_fom_cmap(fomarr, vmin, vmax, cmap):#if need over/under colors tho
     norm=colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
     sm=cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array(fomarr)
-    cols=np.float32(map(sm.to_rgba, fomarr))[:, :3]
+    cols=np.float32(list(map(sm.to_rgba, fomarr)))[:, :3]
     return cols
  
 
@@ -47,7 +47,7 @@ for fomcount,fomk in enumerate(fomkl):
     for count, anak in enumerate(anakl):
         lab=anad[anak]['parameters']['loss_fcn']
         labs+=[lab]
-        fn, fd=anad[anak]['files_multi_run']['fom_files'].items()[0]
+        fn, fd=list(anad[anak]['files_multi_run']['fom_files'].items())[0]
         fomd=readcsvdict(os.path.join(os.path.split(anap)[0], fn), fd, returnheaderdict=False, zipclass=None, includestrvals=True)
         y=[tup[1] for tup in sorted(zip(fomd['sample_no'], fomd[fomk]))]
         yl+=[y]
@@ -55,11 +55,11 @@ for fomcount,fomk in enumerate(fomkl):
     yarr=np.array(yl)
     smps=sorted(list(fomd['sample_no']))
     
-    cols=get_colors_fom_cmap(range(len(smps)), 0, len(smps)-1, 'jet')
+    cols=get_colors_fom_cmap(list(range(len(smps))), 0, len(smps)-1, 'jet')
     
     #ytext=lambda count: (yarr.max()-yarr.min())/(len(smps)+2)*(count+1)+y.min()
     for count, (col, y, smp) in enumerate(zip(cols, yarr.T, smps)):
-        plt.plot(range(len(y)), y, '-', marker='o', label=`smp`,c=col)
+        plt.plot(list(range(len(y))), y, '-', marker='o', label=repr(smp),c=col)
         #plt.text(len(anakl)+1, ytext(count), `smp`, col=col)
     
     plt.xlim(-0.5, len(anakl)+1.5)
@@ -67,7 +67,7 @@ for fomcount,fomk in enumerate(fomkl):
     
     plt.ylabel(fomk)
     ax=plt.gca()
-    ax.set_xticks(range(len(labs)))
+    ax.set_xticks(list(range(len(labs))))
     ax.set_xticklabels(labs,rotation=30.)
 plt.subplots_adjust(left=.1,right=.99,top=.99,bottom=.12,hspace=.07)
 plt.suptitle(os.path.split(anap)[1])

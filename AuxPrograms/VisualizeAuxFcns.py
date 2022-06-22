@@ -10,6 +10,7 @@ import pylab
 from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
+from functools import reduce
 
 
 def createontheflyrundict(expfiledict, expfolder, lastmodtime=0):
@@ -32,8 +33,8 @@ def createontheflyrundict(expfiledict, expfolder, lastmodtime=0):
             returnonlyattrdict=True,
         )
         if len(attrd) == 0:
-            print "error reading ", fn
-            if fn in d.keys():
+            print("error reading ", fn)
+            if fn in list(d.keys()):
                 del d[
                     fn
                 ]  # there was a previous versino of this file that has been overwritten
@@ -72,7 +73,7 @@ def extractplotdinfo(
                 [
                     k
                     for startstr, contstr in calc_comps__starts_contains_tups
-                    for k in d.keys()
+                    for k in list(d.keys())
                     if k.startswith(startstr) and contstr in k
                 ]
             )
@@ -81,7 +82,7 @@ def extractplotdinfo(
             returnlist += [[pmd[k] for k in pmkeys]]
         else:  # at least 1 key available so use all available and fill zero otherwise. If multiple keys match criteria, use the first one found
             getmatchklist = lambda startstr, contstr: [
-                k for k in d.keys() if k.startswith(startstr) and contstr in k
+                k for k in list(d.keys()) if k.startswith(startstr) and contstr in k
             ]
             matchkeys = [
                 None
@@ -111,11 +112,11 @@ def readandformat_anafomfiles(
         foundafomfile = False
         anad = anafiledict[anak]
         anaint = int(anak.partition("ana__")[2])
-        for anarunk, anarund in anad.iteritems():
+        for anarunk, anarund in anad.items():
             if not anarunk.startswith("files_"):
                 continue
-            for typek, typed in anarund.iteritems():
-                for filek, filed in typed.iteritems():
+            for typek, typed in anarund.items():
+                for filek, filed in typed.items():
                     if not (
                         "fom_file" in filed["file_type"] and filek.endswith(".csv")
                     ):  # TODO: is this the right way to selct what is read as foms?
@@ -127,7 +128,7 @@ def readandformat_anafomfiles(
                     if len(fomd) == 0:  # csv was only str values that were not read
                         continue
                     keys = (
-                        fomd.keys()
+                        list(fomd.keys())
                     )  # this is different from filed['keys'] if there are str vlaues in csv
                     fomdlist = [
                         dict([(k, fomd[k][count]) for k in keys] + [("anaint", anaint)])
@@ -137,7 +138,7 @@ def readandformat_anafomfiles(
                     l_fomnames += [keys + ["anaint"]]
                     csvheaderdict["anak"] = anak
                     l_csvheaderdict += [csvheaderdict]
-                    if "platemap_comp4plot_keylist" in anad.keys():
+                    if "platemap_comp4plot_keylist" in list(anad.keys()):
                         pmkeys = anad["platemap_comp4plot_keylist"].split(",")
                     else:
                         pmkeys = platemap4keys_default
@@ -148,15 +149,15 @@ def readandformat_anafomfiles(
             fomdlist = []
             foundsmps = []
             pid = anad["plate_ids"] if isinstance(anad["plate_ids"], int) else 0
-            for anarunk, anarund in anad.iteritems():
+            for anarunk, anarund in anad.items():
                 if not anarunk.startswith("files_run__"):
                     continue
                 runint = eval(anarunk.partition("files_run__")[2])
-                for typek, typed in anarund.iteritems():
+                for typek, typed in anarund.items():
                     newsmps = [
                         filed["sample_no"]
-                        for filek, filed in typed.iteritems()
-                        if "sample_no" in filed.keys()
+                        for filek, filed in typed.items()
+                        if "sample_no" in list(filed.keys())
                         and filed["sample_no"] > 0
                         and not filed["sample_no"] in foundsmps
                     ]
@@ -171,13 +172,13 @@ def readandformat_anafomfiles(
                     ]
                     foundsmps += newsmps
             if len(fomdlist) > 0:
-                keys = fomdlist[0].keys()
+                keys = list(fomdlist[0].keys())
                 l_fomdlist += [fomdlist]
                 l_fomnames += [keys]
                 csvheaderdict = {}
                 csvheaderdict["anak"] = anak
                 l_csvheaderdict += [csvheaderdict]
-                if "platemap_comp4plot_keylist" in anad.keys():
+                if "platemap_comp4plot_keylist" in list(anad.keys()):
                     pmkeys = anad["platemap_comp4plot_keylist"].split(",")
                 else:
                     pmkeys = platemap4keys_default
@@ -306,8 +307,8 @@ class treeclass_anaexpfom:
             set(
                 [
                     fk
-                    for filed in d_appended.itervalues()
-                    for fk in (filed["keys"] if "keys" in filed.keys() else [])
+                    for filed in d_appended.values()
+                    for fk in (filed["keys"] if "keys" in list(filed.keys()) else [])
                 ]
             )
         )
@@ -345,7 +346,7 @@ class treeclass_anaexpfom:
             if not anad is None:
                 self.nestedfill(
                     dict(
-                        [(k, v) for k, v in anad.iteritems() if not isinstance(v, dict)]
+                        [(k, v) for k, v in anad.items() if not isinstance(v, dict)]
                     ),
                     item,
                     laststartswith="xx",
@@ -375,14 +376,14 @@ class treeclass_anaexpfom:
         mainitem = QTreeWidgetItem([": ".join([startkey, str(d[startkey])])], 0)
         toplevelitem.addChild(mainitem)
         for k in sorted(
-            [k for k, v in d.iteritems() if k != startkey and not isinstance(v, dict)]
+            [k for k, v in d.items() if k != startkey and not isinstance(v, dict)]
         ):
             mainitem = QTreeWidgetItem([": ".join([k, str(d[k])])], 0)
             toplevelitem.addChild(mainitem)
         for k in sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not k.startswith(laststartswith) and isinstance(v, dict)
             ]
         ):
@@ -409,7 +410,7 @@ class treeclass_anaexpfom:
         nondictkeys = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not isinstance(v, dict) and not k in skipkeys
             ]
         )
@@ -419,7 +420,7 @@ class treeclass_anaexpfom:
         dictkeys1 = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not k.startswith(laststartswith)
                 and isinstance(v, dict)
                 and not k in skipkeys
@@ -434,8 +435,8 @@ class treeclass_anaexpfom:
                     set(
                         [
                             fk
-                            for filed in d[k].itervalues()
-                            for fk in (filed["keys"] if "keys" in filed.keys() else [])
+                            for filed in d[k].values()
+                            for fk in (filed["keys"] if "keys" in list(filed.keys()) else [])
                         ]
                     )
                 )
@@ -451,7 +452,7 @@ class treeclass_anaexpfom:
                 self.nestedfill(d[k], item, expparent=expparent)
             parentitem.addChild(item)
         dictkeys2 = sorted(
-            [k for k in d.keys() if k.startswith(laststartswith) and not k in skipkeys]
+            [k for k in list(d.keys()) if k.startswith(laststartswith) and not k in skipkeys]
         )
         for k in dictkeys2:
             item = QTreeWidgetItem([prependstr + k + ":"], 0)

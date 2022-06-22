@@ -68,7 +68,7 @@ for fn in batchfns:
         lines=f.readlines()
     infofiled=filedict_lines(lines)
     
-    methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in infofiled.iteritems() if k3.startswith('method')]
+    methods=[v3 for k, v in infofiled.items() if k.startswith('prints') for k2, v2 in v.items() if k2.startswith('prints') for k3, v3 in infofiled.items() if k3.startswith('method')]
     pvdbool='PVD' in methods
     
     
@@ -76,7 +76,7 @@ for fn in batchfns:
     expui.importruns_folder(folderp=pR)
     expui.batchuvissingleplate_norefdata()
     
-    if (not 'experiment_type' in expui.expfiledict.keys()) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
+    if (not 'experiment_type' in list(expui.expfiledict.keys())) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
         writelogline('ERROR: betchexp failed for %s' %pT)
         if skiponerror:
             continue

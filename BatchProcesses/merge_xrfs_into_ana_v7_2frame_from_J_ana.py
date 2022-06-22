@@ -38,16 +38,16 @@ plate_list=[s[:-1] for s in serial_list]
 #plate_list=plate_list[1:]
 
 for pid in plate_list:
-    print 'STARTING ',pid
+    print('STARTING ',pid)
     d=importinfo(pid)
     if 0:
         els='-'.join([el for el in getelements_plateidstr(pid) if not el in ['Ar']])
-        els+='/Pt' if True in ['Pt' in pd['elements'] for pd in d['prints'].values()] else ('/'+d['substrate'])
-        print d['serial_no'],'\t',els
+        els+='/Pt' if True in ['Pt' in pd['elements'] for pd in list(d['prints'].values())] else ('/'+d['substrate'])
+        print(d['serial_no'],'\t',els)
     if not 'analyses' in d:
         continue
     l=[]
-    for k,ad in d['analyses'].items():
+    for k,ad in list(d['analyses'].items()):
         if ad['type']=='xrds':
             l+=[(float(os.path.split(ad['path'])[1][:15]),ad['path'])]
     if len(l)==0: continue
@@ -57,12 +57,12 @@ for pid in plate_list:
     most_recent_xrds=sorted(l)[-1][1]#If phase mapping or othr analysis done for this plate then most recent probably isn't the desired one so TODO could be to check for the 
     
     l=[]
-    for k,ad in d['analyses'].items():
+    for k,ad in list(d['analyses'].items()):
         if ad['type']=='xrfs':
             l+=[(float(os.path.split(ad['path'])[1][:15]),ad['path'])]
     if len(l)==0: continue
     most_recent_xrfs=sorted(l)[-1][1]
-    print most_recent_xrfs
+    print(most_recent_xrfs)
     p=buildanapath(most_recent_xrds)
     
     #break#TEMP
@@ -75,7 +75,7 @@ for pid in plate_list:
     
     #if ana__2 has no fom csv, make one
     anak='ana__2'
-    if not ('files_multi_run' in calcui.anadict[anak].keys() and 'fom_files' in calcui.anadict[anak]['files_multi_run'].keys()):
+    if not ('files_multi_run' in list(calcui.anadict[anak].keys()) and 'fom_files' in list(calcui.anadict[anak]['files_multi_run'].keys())):
         calcui.create_default_fom_csv_from_runfiles(anak)
     
     #import xrfs and merge with ana__2 to create ana__5
@@ -101,7 +101,7 @@ for pid in plate_list:
     calcui.analyzedata()
     anakeys=sort_dict_keys_by_counter(calcui.anadict, keystartswith='ana__')
     if len(anakeys)==tempnum:
-        print '***; %s; %s' %(buildanapath(most_recent_xrfs), pid)
+        print('***; %s; %s' %(buildanapath(most_recent_xrfs), pid))
         continue
         #calcui.exec_()#WILL STOP HERE IF ERROR IN XRFS MERGE
     xrfsmergedanak=anakeys[-1]
@@ -216,7 +216,7 @@ for pid in plate_list:
         num_ana_blocks+=1
 
 
-    print pid,',',num_ana_blocks,',',newanapath
+    print(pid,',',num_ana_blocks,',',newanapath)
     
     
     

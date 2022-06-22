@@ -38,7 +38,7 @@ elif 1:
     xrfsnames=r'xrfs\20180524.154943.done'.split(',')
 fns=[tup for tup in zip(xrdsnames, xrfsnames)]
 for fn_or_tup in fns:
-    print 'starting ', fn_or_tup
+    print('starting ', fn_or_tup)
     if isinstance(fn_or_tup, str):
         anafolder=os.path.join(folder, fn)
     #    if True in [s.startswith('ana__6_') for s in os.listdir(anafolder)]:
@@ -69,22 +69,22 @@ for fn_or_tup in fns:
     
     anakeys_after_append=sort_dict_keys_by_counter(calcui.anadict, keystartswith='ana__')
     resamp_anakeys=anakeys_after_append[-num_ana_for_resamp:]
-    print 'after merge then reimport ', calcui.anadict['experiment_name']
+    print('after merge then reimport ', calcui.anadict['experiment_name'])
     pidstr=calcui.anadict['plate_ids']
     if ',' in pidstr:
-        print 'skipping ', fn, pidstr
+        print('skipping ', fn, pidstr)
         continue
         
     if isinstance(fn_or_tup, str):
         infod=importinfo(pidstr)
         #for ank in sort_dict_keys_by_counter(infod['analyses'], keystartswith='analyses__'):#use 
         analysesd=infod['analyses']
-        xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.iteritems() if v['type']=='xrfs'])
+        xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.items() if v['type']=='xrfs'])
         if len(xrfstups)==0:
-            print 'no xrfs data for ', fn
+            print('no xrfs data for ', fn)
             continue
         relapth_xrfsana=xrfstups[-1][1]['path']#latest created_at analyses__ dict
-        print 'using xrfs ', relapth_xrfsana
+        print('using xrfs ', relapth_xrfsana)
         xrfsp=relapth_xrfsana
     else:
         xrfsp=buildanapath(fn_or_tup[1])
@@ -109,7 +109,7 @@ for fn_or_tup in fns:
     calcui.analyzedata()
     anakeys=sort_dict_keys_by_counter(calcui.anadict, keystartswith='ana__')
     if len(anakeys)==tempnum:
-        print '***; %s; %s' %(relpath_xrfsana, fn)
+        print('***; %s; %s' %(relpath_xrfsana, fn))
         #continue
         calcui.exec_()
     xrfsmergedanak=anakeys[-1]

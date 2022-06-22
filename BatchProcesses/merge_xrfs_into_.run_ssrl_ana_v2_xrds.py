@@ -32,14 +32,14 @@ for fn in fns:
     calcui.importana(p=p)
     pidstr=calcui.anadict['plate_ids']
     if ',' in pidstr:
-        print 'skipping ', fn, pidstr
+        print('skipping ', fn, pidstr)
         continue
     infod=importinfo(pidstr)
     #for ank in sort_dict_keys_by_counter(infod['analyses'], keystartswith='analyses__'):#use 
     analysesd=infod['analyses']
-    xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.iteritems() if v['type']=='xrfs'])
+    xrfstups=sorted([(time.strptime(v['created_at'].rpartition(' ')[0],'%Y-%m-%d %H:%M:%S'), v) for k, v in analysesd.items() if v['type']=='xrfs'])
     if len(xrfstups)==0:
-        print 'no xrfs data for ', fn
+        print('no xrfs data for ', fn)
         continue
     relapth_xrfsana=xrfstups[-1][1]['path']#latest created_at analyses__ dict
     
@@ -60,8 +60,8 @@ for fn in fns:
     c.processnewparams(calcFOMDialogclass=calcui, recalc_filedlist=True)
     #calcui.exec_()
     calcui.analyzedata()
-    if not 'ana__9' in calcui.anadict.keys():
-        print '***; %s; %s' %(relapth_xrfsana, fn)
+    if not 'ana__9' in list(calcui.anadict.keys()):
+        print('***; %s; %s' %(relapth_xrfsana, fn))
         continue
         calcui.exec_()
     #continue#this skips all file writing until the xrfs ana are fixed

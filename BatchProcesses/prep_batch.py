@@ -34,7 +34,7 @@ class Prepare_Batch_UVIS():
             lines=f.readlines()
         infofiled=filedict_lines(lines)
         
-        methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in v2.iteritems() if k3.startswith('method')]
+        methods=[v3 for k, v in infofiled.items() if k.startswith('prints') for k2, v2 in v.items() if k2.startswith('prints') for k3, v3 in v2.items() if k3.startswith('method')]
         return 'PVD' in methods
             
     def Batch_TR_getapplicable_Tfolder(self,plateidstr,combine_parentfolders=False,pvdbool=False):
@@ -43,9 +43,9 @@ class Prepare_Batch_UVIS():
         if pvdbool==None:
             pvdbool=self.getpvdbool(plateidstr)           
         try:
-            T_runs=[infofiled['runs'][rk]['path'] for rk in infofiled['runs'].keys() if infofiled['runs'][rk]['type']=='uvis'\
+            T_runs=[infofiled['runs'][rk]['path'] for rk in list(infofiled['runs'].keys()) if infofiled['runs'][rk]['type']=='uvis'\
         and 'T-UVVIS' in infofiled['runs'][rk]['path']]
-            R_runs=[infofiled['runs'][rk]['path'] for rk in infofiled['runs'].keys() if infofiled['runs'][rk]['type']=='uvis'\
+            R_runs=[infofiled['runs'][rk]['path'] for rk in list(infofiled['runs'].keys()) if infofiled['runs'][rk]['type']=='uvis'\
         and 'R-UVVIS' in infofiled['runs'][rk]['path']]
         except:
             T_runs=[]
@@ -54,15 +54,15 @@ class Prepare_Batch_UVIS():
             Trunparents=[os.path.dirname(x) for x in T_runs]
             Rrunparents=[os.path.dirname(x) for x in R_runs]
             if len(list(set(Trunparents)))!=1 or len(list(set(Rrunparents)))!=1:
-                print 'Tparents: ',','.join(list(set(Trunparents)))
-                print 'Rparents: ',','.join(list(set(Rrunparents)))
-                print 'Expected 1 parent T folder, 1 parent R folder for plateid: %s but found %d,%d' %(plateidstr,len(list(set(Trunparents))),len(list(set(Rrunparents))))
+                print('Tparents: ',','.join(list(set(Trunparents))))
+                print('Rparents: ',','.join(list(set(Rrunparents))))
+                print('Expected 1 parent T folder, 1 parent R folder for plateid: %s but found %d,%d' %(plateidstr,len(list(set(Trunparents))),len(list(set(Rrunparents)))))
                 tp=None
                 return T_runs,R_runs,tp
 
         if pvdbool: 
             if len(T_runs)!=2 and len(R_runs)!=1:
-                print 'Expected %s T-folders, %s R-folders for plateid: %s, found %s T-folders, %s R-folders' %(2,1,plateidstr,len(T_runs),len(R_runs))
+                print('Expected %s T-folders, %s R-folders for plateid: %s, found %s T-folders, %s R-folders' %(2,1,plateidstr,len(T_runs),len(R_runs)))
                 tp=None
             else:
 #                print T_runs
@@ -70,7 +70,7 @@ class Prepare_Batch_UVIS():
             return T_runs,R_runs,tp
         else:
             if len(T_runs)==0 or len(R_runs)==0:
-                print 'Expected atleast %s T-folders, %s R-folders for plateid: %s, found %s T-folders, %s R-folders' %(1,1,plateidstr,len(T_runs),len(R_runs))
+                print('Expected atleast %s T-folders, %s R-folders for plateid: %s, found %s T-folders, %s R-folders' %(1,1,plateidstr,len(T_runs),len(R_runs)))
                 tp=None
             else:
 #                print T_runs

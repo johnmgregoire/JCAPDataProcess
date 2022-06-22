@@ -148,7 +148,7 @@ class filesearchDialog(QDialog, Ui_filesearchDialog):
             #            else:
             #                item.setCheckState(0, Qt.Checked)
             p = os.path.join(fold, fn)
-            print p
+            print(p)
             subaddbool = self.nestedfill(p, item, fnendswith, "sub")
             if subaddbool:
                 parentitem.addChild(item)

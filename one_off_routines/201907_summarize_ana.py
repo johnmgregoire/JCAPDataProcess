@@ -17,7 +17,7 @@ typename='eche'
 fold=os.path.join(os.path.join(os.getcwd(),'analysis'),typename)
 zipfns=[fn for fn in os.listdir(fold) if fn.endswith('.zip')]
 
-pidstr_fcn=lambda d,dflt: dflt if not 'plate_ids' in d.keys() else ('%d' %d['plate_ids'] if isinstance(d['plate_ids'],int) else d['plate_ids'])
+pidstr_fcn=lambda d,dflt: dflt if not 'plate_ids' in list(d.keys()) else ('%d' %d['plate_ids'] if isinstance(d['plate_ids'],int) else d['plate_ids'])
 
 results=[]
 for fn in zipfns:
@@ -26,9 +26,9 @@ for fn in zipfns:
     anad=readana(zipfn)
     anapid=pidstr_fcn(anad,'')
     for anak in sort_dict_keys_by_counter(anad):
-        if not 'files_multi_run' in anad[anak].keys() or not 'fom_files' in anad[anak]['files_multi_run'].keys():
+        if not 'files_multi_run' in list(anad[anak].keys()) or not 'fom_files' in list(anad[anak]['files_multi_run'].keys()):
             continue
-        for csvfn,filed in anad[anak]['files_multi_run']['fom_files'].items():
+        for csvfn,filed in list(anad[anak]['files_multi_run']['fom_files'].items()):
             results+=[[pidstr_fcn(anad[anak],anapid),fn,anak,csvfn,anad[anak]['name'],','.join(filed['keys']),'%d' %filed['num_data_rows'],'%d' %anad[anak]['analysis_fcn_version']]] 
 
 h='\t'.join('plate_ids,ana_zip_name,sub_analysis_key,fom_csv_fn,subanalysis_name,fom_names,num_rows,analysis_fcn_version'.split(','))

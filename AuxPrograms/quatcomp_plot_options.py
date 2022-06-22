@@ -165,7 +165,7 @@ class quatcompplotoptions:
         return False
 
     def quat3dplot(self, plotw3d, plotclass, **kwargs):
-        if "s" in kwargs.keys() and not isinstance(kwargs["s"], int):
+        if "s" in list(kwargs.keys()) and not isinstance(kwargs["s"], int):
             kwargs["s"] = 18
         tf = plotclass(
             plotw3d.axes, ellabels=self.ellabels
@@ -189,7 +189,7 @@ class quatcompplotoptions:
     def stackedternplot(
         self, plotw, makefcn, scatterfcn, delta, drawcolorbarhere=False, **kwargs
     ):
-        if "s" in kwargs.keys() and not isinstance(kwargs["s"], int):
+        if "s" in list(kwargs.keys()) and not isinstance(kwargs["s"], int):
             kwargs["s"] = 18
         plotw.fig.clf()
         if self.plotwcbaxrect is None:

@@ -4,7 +4,7 @@ answer:
 http://stackoverflow.com/questions/2225995/how-can-i-create-stacked-line-graph-with-matplotlib
 (http://stackoverflow.com/users/66549/doug)
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 # import six
 # from moves import xrange
@@ -90,7 +90,7 @@ def stackplot(axes, x, *args, **kwargs):
         )
     )
     # Color between array i-1 and array i
-    for i in xrange(len(y) - 1):
+    for i in range(len(y) - 1):
         r.append(
             axes.fill_between(
                 x,

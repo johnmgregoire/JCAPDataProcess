@@ -27,7 +27,7 @@ def batch_plotuvisrefs(self, tech="T_UVVIS"):
     runkl = [
         runk
         for runk in self.sorted_ana_exp_keys(ana=False)
-        if "run_use" in self.expfiledict[runk].keys()
+        if "run_use" in list(self.expfiledict[runk].keys())
         and self.expfiledict[runk]["run_use"] == "ref_light"
     ]
     for runk in runkl:
@@ -35,10 +35,10 @@ def batch_plotuvisrefs(self, tech="T_UVVIS"):
             tup
             for td in [
                 techd
-                for techk, techd in self.expfiledict[runk].iteritems()
+                for techk, techd in self.expfiledict[runk].items()
                 if tech in techk
             ]
-            for tup in td["spectrum_files"].items()
+            for tup in list(td["spectrum_files"].items())
         ]
         for fn, filed in filetupl:
             ans = buildrunpath_selectfile(
@@ -60,7 +60,7 @@ def batch_plotuvisrefs(self, tech="T_UVVIS"):
     runkl = [
         runk
         for runk in self.sorted_ana_exp_keys(ana=False)
-        if "run_use" in self.expfiledict[runk].keys()
+        if "run_use" in list(self.expfiledict[runk].keys())
         and self.expfiledict[runk]["run_use"] == "ref_dark"
     ]
     for runk in runkl:
@@ -68,10 +68,10 @@ def batch_plotuvisrefs(self, tech="T_UVVIS"):
             tup
             for td in [
                 techd
-                for techk, techd in self.expfiledict[runk].iteritems()
+                for techk, techd in self.expfiledict[runk].items()
                 if tech in techk
             ]
-            for tup in td["spectrum_files"].items()
+            for tup in list(td["spectrum_files"].items())
         ]
         for fn, filed in filetupl:
             ans = buildrunpath_selectfile(

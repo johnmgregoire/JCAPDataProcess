@@ -159,7 +159,7 @@ def selectexpanafile(
         ]
         archive.close()
         if len(fnl) == 0:
-            print "tried opening %s in a .zip file but could not find one" % ext
+            print("tried opening %s in a .zip file but could not find one" % ext)
             return ""
         p = os.path.join(p, fnl[0])  # presumable only 1 .exp or .ana in any .zip
     return p
@@ -189,7 +189,7 @@ def getsamplenum_fn(fn):
             return int(fn.partition("_")[0])
         except:
             pass
-    print "problem extracting sample number from ", fn
+    print("problem extracting sample number from ", fn)
     return 0
 
 
@@ -297,7 +297,7 @@ def readtxt_selectcolumns(
         else:
             delim = "\t"
     if selcolinds is None:
-        selcolinds = range(lines[0].count(delim) + 1)
+        selcolinds = list(range(lines[0].count(delim) + 1))
     if len(selcolinds) == 0:
         return numpy.array([[]])
     elif len(selcolinds) == 1:
@@ -305,7 +305,7 @@ def readtxt_selectcolumns(
     else:
         fcn = itemgetter(*selcolinds)
     z = [
-        map(floatintstr, fcn(l.strip().split(delim)))
+        list(map(floatintstr, fcn(l.strip().split(delim))))
         for l in lines
         if len(l.strip()) > 0
     ]
@@ -323,13 +323,13 @@ def readcsvdict(
         floatintstr=str,
         zipclass=zipclass,
     )
-    if not "keys" in fileattrd.keys():
+    if not "keys" in list(fileattrd.keys()):
         with open(p, mode="r") as f:
             lines = f.readlines()
             ks = lines[fileattrd["num_header_lines"] - 1].split(",")
             ks = [k.strip() for k in ks]
             fileattrd["keys"] = ks
-    if not "num_data_rows" in fileattrd.keys():
+    if not "num_data_rows" in list(fileattrd.keys()):
         fileattrd["num_data_rows"] = len(arr[0])
     for k, a in zip(fileattrd["keys"], arr):
         if "." in "".join(a) or "NaN" in a:
@@ -485,15 +485,15 @@ def readechemtxt(path, mtime_path_fcn=None, lines=None, interpretheaderbool=True
         return {}
     try:
         z = [
-            map(float, l.strip().replace("\\t", "\t").split("\t"))
+            list(map(float, l.strip().replace("\\t", "\t").split("\t")))
             for l in lines[count:]
             if len(l.strip()) > 0
         ]
     except:
-        print l
-        print "\t" in l
-        print l.split("\t")
-        print map(float, l.split("\t"))
+        print(l)
+        print("\t" in l)
+        print(l.split("\t"))
+        print(list(map(float, l.split("\t"))))
         raise
     if len(z) == 0:  # no data
         nrows = 0
@@ -555,22 +555,22 @@ def readxrfbatchcsv(path, mtime_path_fcn=None, lines=None):
 
     try:
         z = [
-            map(
+            list(map(
                 tryfloat,
                 (l[:-1] if l.endswith(",") else l)
                 .replace(" ", "")
                 .replace("\x00", "")
                 .strip()
                 .split(","),
-            )
+            ))
             for l in lines[count + 1 :]
             if len(l.strip()) > 0
         ]
     except:
-        print l
-        print "\t" in l
-        print l.replace(" ", "").replace("\x00", "").strip().split(",")
-        print map(float, l.replace(" ", "").replace("\x00", "").strip().split(","))
+        print(l)
+        print("\t" in l)
+        print(l.replace(" ", "").replace("\x00", "").strip().split(","))
+        print(list(map(float, l.replace(" ", "").replace("\x00", "").strip().split(","))))
         raise
     if len(z) == 0:  # no data
         nrows = 0
@@ -600,7 +600,7 @@ def convertstrvalstonum_nesteddict(
     ],
 ):
     def nestednumconvert(d):
-        for k, v in d.iteritems():
+        for k, v in d.items():
             if isinstance(v, str) and not k in skipkeys:
                 d[k] = attemptnumericconversion_tryintfloat(v)
             elif isinstance(v, dict):
@@ -645,16 +645,16 @@ def createfileattrdict(fileattrstr, fn=""):
 
 
 def convertfilekeystofiled(exporanafiledict):
-    for k, rund in exporanafiledict.iteritems():
+    for k, rund in exporanafiledict.items():
         if not (k.startswith("run__") or k.startswith("ana__")):
             continue
-        for k2, techd in rund.iteritems():
+        for k2, techd in rund.items():
             if not (k2.startswith("files_") and isinstance(techd, dict)):
                 continue
-            for k3, typed in techd.iteritems():
+            for k3, typed in techd.items():
                 if not isinstance(typed, dict):
                     continue
-                for fn, keystr in typed.iteritems():
+                for fn, keystr in typed.items():
                     if isinstance(keystr, dict):
                         continue
                     d = createfileattrdict(keystr, fn=fn)
@@ -664,11 +664,11 @@ def convertfilekeystofiled(exporanafiledict):
 def importfomintoanadict(
     anafiledict, anafolder
 ):  # assumes convertfilekeystofiled already run on anafiledict
-    for anak, anad in anafiledict.iteritems():
-        if (not anak.startswith("ana__")) or not "files_multi_run" in anad.keys():
+    for anak, anad in anafiledict.items():
+        if (not anak.startswith("ana__")) or not "files_multi_run" in list(anad.keys()):
             continue
-        for typek, typed in anad["files_multi_run"].keys():
-            for fn, fileattrd in typed.iteritems():
+        for typek, typed in list(anad["files_multi_run"].keys()):
+            for fn, fileattrd in typed.items():
                 anafiledict[anak]["files_multi_run"][typek][fn] = readcsvdict(
                     os.path.join(anafolder, fn), fileattrd
                 )
@@ -688,7 +688,7 @@ def datastruct_expfiledict(
         # savefcn=lambda d, keys:numpy.float64([d[k] for k in keys]).tofile(f)
     filedeletedbool = False
     readfcn = readdatafiledict[expfiledict["experiment_type"]]
-    for k, rund in expfiledict.iteritems():
+    for k, rund in expfiledict.items():
         if not k.startswith("run__"):
             continue
         runp = rund["run_path"]
@@ -702,7 +702,7 @@ def datastruct_expfiledict(
             zipopenfcn = lambda fn: archive.open(
                 fn, "r"
             )  # rund['rcp_file'].partition('/')[0]+'/'+
-        for k2, techd in rund.iteritems():
+        for k2, techd in rund.items():
             if not k2.startswith("files_technique__"):
                 continue
             if "XRFS" in k2:
@@ -722,7 +722,7 @@ def datastruct_expfiledict(
                     techd, openandreadlinesfcn
                 )  # if zip then another ziplcass will be opened in here
                 continue
-            for k3, typed in techd.iteritems():
+            for k3, typed in techd.items():
                 # define functions by file and exp type to avoid having to find the function using each file label like "eche_gamry_txt_file"
                 if not saverawdat:
                     if k3 == "spectrum_files":  # for eche and uvis
@@ -754,16 +754,16 @@ def datastruct_expfiledict(
                                 1000
                             )  # only need the header so read
                         else:
-                            print "NO FILE READER AVAILABLE FOR FILE TYPE ", k3
+                            print("NO FILE READER AVAILABLE FOR FILE TYPE ", k3)
                             readlinesfcn = lambda f: None
                     else:
-                        print "NO FILE READER AVAILABLE FOR FILE TYPE ", k3
+                        print("NO FILE READER AVAILABLE FOR FILE TYPE ", k3)
                         readlinesfcn = lambda f: None
                 for (
                     fn,
                     fileattrstr,
                 ) in (
-                    typed.items()
+                    list(typed.items())
                 ):  # here do not use iteritems since possible for entries to be deleted in the loop and cannot modify dictionary being iterated
                     try:
                         if zipbool:
@@ -780,13 +780,13 @@ def datastruct_expfiledict(
                                 else:
                                     lines = readlinesfcn(f)
                     except:  # this exception should only occur if the filename was in the .rcp and then put into .exp but the file doesn't actually exist. otherwise check out the if k3== cases above
-                        print "ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s" % (
+                        print("ERROR: %s does not exist in folder %s, so it is being deleted from %s/%s/%s" % (
                             fn,
                             runp,
                             k,
                             k2,
                             k3,
-                        )
+                        ))
                         del expfiledict[k][k2][k3][fn]
                         filedeletedbool = True
                         continue
@@ -815,13 +815,13 @@ def datastruct_expfiledict(
                             else:
                                 filed = numhead_numdata_fcn(lines)
                             if filed["num_data_rows"] == 0:  # no data in file
-                                print "ERROR: %s in folder %s has no data, so it is being deleted from %s/%s/%s" % (
+                                print("ERROR: %s in folder %s has no data, so it is being deleted from %s/%s/%s" % (
                                     fn,
                                     runp,
                                     k,
                                     k2,
                                     k3,
-                                )
+                                ))
                                 del expfiledict[k][k2][k3][fn]
                                 filedeletedbool = True
                                 continue
@@ -892,26 +892,26 @@ def datastruct_expfiledict(
 
 def cleanup_empty_filed_in_expfiledict(expfiledict):
     # delete 3rd level down, where there are no fielnames for a given file type
-    for k, rund in expfiledict.iteritems():
+    for k, rund in expfiledict.items():
         if not k.startswith("run__"):
             continue
-        for k2, techd in rund.iteritems():
+        for k2, techd in rund.items():
             if not k2.startswith("files_technique__"):
                 continue
-            for k3 in techd.keys():
+            for k3 in list(techd.keys()):
                 if len(techd[k3]) == 0:  # there are no more filenames of this type
                     del expfiledict[k][k2][k3]
     # delete 2nd level down, where there are no file types for a given technique
-    for k, rund in expfiledict.iteritems():
+    for k, rund in expfiledict.items():
         if not k.startswith("run__"):
             continue
-        for k2 in rund.keys():
+        for k2 in list(rund.keys()):
             if not k2.startswith("files_technique__"):
                 continue
             if len(rund[k2]) == 0:  # there are no more filenames of this type
                 del expfiledict[k][k2]
                 searchstr = k2.partition("files_technique")[2]
-                for k2other in rund.keys():
+                for k2other in list(rund.keys()):
                     if searchstr in k2other:
                         del expfiledict[k][k2other]
 
@@ -1026,11 +1026,11 @@ def buildexppath(
             p, fn
         )  # hope this works out without checking if it is actually there
     elif not os.path.isdir(p):
-        print "cannot find exp from path %s" % p
+        print("cannot find exp from path %s" % p)
         return p
     fnl = [s for s in os.listdir(p) if s.endswith(ext_str)]
     if len(fnl) == 0:
-        print "cannot find %s file in %s" % (ext_str, p)
+        print("cannot find %s file in %s" % (ext_str, p))
         return p
     return os.path.join(
         p, fnl[0]
@@ -1135,8 +1135,8 @@ def saveexp_txt_dat(
         saverawdat_expfiledict(
             saveexpfiledict, folder, saverawdat=saverawdat
         )  # the filename attributes get update here, and any filenames for which a fiel cannot be found is removed from saveexpfiledict btu not from expfiledict
-    for rund in saveexpfiledict.itervalues():
-        if isinstance(rund, dict) and "run_path" in rund.keys():
+    for rund in saveexpfiledict.values():
+        if isinstance(rund, dict) and "run_path" in list(rund.keys()):
             rp = rund["run_path"]
             rp = compareprependpath(RUNFOLDERS, rp)
             rund["run_path"] = rp
@@ -1169,7 +1169,7 @@ def dictkeysort(
         l_sort = sorted(
             [(int(k.partition(splitstr)[2]), k) for k in partkl if not k in nonintkl]
         )
-        intkl = map(operator.itemgetter(1), l_sort)
+        intkl = list(map(operator.itemgetter(1), l_sort))
         newkl += nonintkl
         newkl += intkl
     return newkl
@@ -1177,21 +1177,21 @@ def dictkeysort(
 
 def strrep_filedict(filedict):
     keys = [
-        k for k in filedict.keys() if "version" in k
+        k for k in list(filedict.keys()) if "version" in k
     ]  # assume this is not a dictionary
     keys += sorted(
         [
             k
-            for k, v in filedict.iteritems()
+            for k, v in filedict.items()
             if not isinstance(v, dict) and not "version" in k
         ]
     )
     sl = ["" if len(k) == 0 else (k + ": " + str(filedict[k])) for k in keys]
     dkeys = sorted(
-        [k for k, v in filedict.iteritems() if isinstance(v, dict) and not "__" in k]
+        [k for k, v in filedict.items() if isinstance(v, dict) and not "__" in k]
     )
     dkeys += dictkeysort(
-        [k for k, v in filedict.iteritems() if isinstance(v, dict) and "__" in k]
+        [k for k, v in filedict.items() if isinstance(v, dict) and "__" in k]
     )
     return (
         "\n".join(sl + [strrep_filed_nesting(k, filedict[k]) for k in dkeys])
@@ -1206,22 +1206,22 @@ def strrep_filed_nesting(k, v, indent="    ", indentlevel=0):
     if (
         indentlevel == 2
         and k.endswith("_files")
-        and not (False in [isinstance(v2, dict) for v2 in v.itervalues()])
+        and not (False in [isinstance(v2, dict) for v2 in v.values()])
     ):  # the present key is a _files: dict whose k,v are fn,filed so create flat filestr for each of them. If the vals are not filed but already flat strings, then the last boolean is false
         return "\n".join(
             sl
             + [
                 strrep_filed_createflatfiledesc(k2, v2, indentlevel=indentlevel + 1)
-                for k2, v2 in v.iteritems()
+                for k2, v2 in v.items()
             ]
         )
     keys = [
-        nestk for nestk in v.keys() if "version" in nestk
+        nestk for nestk in list(v.keys()) if "version" in nestk
     ]  # assume this is not a dictionary
     keys += sorted(
         [
             nestk
-            for nestk, nestv in v.iteritems()
+            for nestk, nestv in v.items()
             if not isinstance(nestv, dict) and not "version" in nestk
         ]
     )
@@ -1229,14 +1229,14 @@ def strrep_filed_nesting(k, v, indent="    ", indentlevel=0):
     dkeys = dictkeysort(
         [
             nestk
-            for nestk, nestv in v.iteritems()
+            for nestk, nestv in v.items()
             if isinstance(nestv, dict) and not "files_" in nestk
         ]
     )
     dkeys += dictkeysort(
         [
             nestk
-            for nestk, nestv in v.iteritems()
+            for nestk, nestv in v.items()
             if isinstance(nestv, dict) and "files_" in nestk
         ]
     )
@@ -1257,9 +1257,9 @@ def strrep_filed_createflatfiledesc(k, v, indent="    ", indentlevel=0):
 
 def filed_createflatfiledesc(v):  # v is the filed
     if (
-        "num_header_lines" in v.keys()
-        and "num_data_rows" in v.keys()
-        and "keys" in v.keys()
+        "num_header_lines" in list(v.keys())
+        and "num_data_rows" in list(v.keys())
+        and "keys" in list(v.keys())
     ):
         s = "%s;%s;%d;%d" % (
             v["file_type"],
@@ -1267,9 +1267,9 @@ def filed_createflatfiledesc(v):  # v is the filed
             v["num_header_lines"],
             v["num_data_rows"],
         )
-        if "sample_no" in v.keys():
+        if "sample_no" in list(v.keys()):
             s += ";%d" % v["sample_no"]
-    elif "sample_no" in v.keys():
+    elif "sample_no" in list(v.keys()):
         s = "%s;%d" % (v["file_type"], v["sample_no"])
     else:
         s = v[
@@ -1328,8 +1328,8 @@ def readsingleplatemaptxt(p, returnfiducials=False, erroruifcn=None, lines=None)
         if (
             not "," in s[s.find("(") : s.find(")")]
         ):  # needed because sometimes x,y in fiducials is comma delim and sometimes not
-            print "WARNING: commas inserted into fiducials line to adhere to format."
-            print s
+            print("WARNING: commas inserted into fiducials line to adhere to format.")
+            print(s)
             s = (
                 s.replace("(   ", "(  ",)
                 .replace("(  ", "( ",)
@@ -1343,7 +1343,7 @@ def readsingleplatemaptxt(p, returnfiducials=False, erroruifcn=None, lines=None)
                 .replace("  ", ",",)
                 .replace(" ", ",",)
             )
-            print s
+            print(s)
         fid = eval("[%s]" % s)
         fid = numpy.array(fid)
     for count, l in enumerate(ls):
@@ -1398,7 +1398,7 @@ def getplatemappath_plateid(
         pmidstr = s.partition(infokey)[2].partition("\n")[0].strip()
         if pmidstr == "" and "prints" in s:
             infod = rcp_to_dict(infop)
-            printdlist = [v for k, v in infod["prints"].items()]
+            printdlist = [v for k, v in list(infod["prints"].items())]
             printdlist.sort(key=lambda x: int(x["id"]), reverse=True)
             printd = printdlist[0]
             pmidstr = printd["map_id"]
@@ -1451,8 +1451,8 @@ def get_most_recent_created_at(d, beforetime=None):
         beforetime = time.ctime()
     tups = [
         (database_time_string_to_timestamp(v["created_at"]), k, v)
-        for k, v in d.iteritems()
-        if "created_at" in v.keys()
+        for k, v in d.items()
+        if "created_at" in list(v.keys())
         and database_time_string_to_timestamp(v["created_at"]) < beforetime
     ]
     if len(tups) == 0:
@@ -1474,27 +1474,27 @@ def getelements_plateidstr(
         if infofiled is None:
             return None
     requiredkeysthere = (
-        lambda infofiled: ("screening_print_id" in infofiled.keys())
+        lambda infofiled: ("screening_print_id" in list(infofiled.keys()))
         if print_key_or_keyword == "screening_print_id"
-        else (print_key_or_keyword in infofiled["prints"].keys())
+        else (print_key_or_keyword in list(infofiled["prints"].keys()))
     )
-    while not ("prints" in infofiled.keys() and requiredkeysthere(infofiled)):
-        if not "lineage" in infofiled.keys() or not "," in infofiled["lineage"]:
+    while not ("prints" in list(infofiled.keys()) and requiredkeysthere(infofiled)):
+        if not "lineage" in list(infofiled.keys()) or not "," in infofiled["lineage"]:
             return None
         parentplateidstr = infofiled["lineage"].split(",")[-2].strip()
         infofiled = importinfo(parentplateidstr)
     if print_key_or_keyword == "screening_print_id":
         printdlist = [
             printd
-            for printd in infofiled["prints"].values()
-            if "id" in printd.keys() and printd["id"] == infofiled["screening_print_id"]
+            for printd in list(infofiled["prints"].values())
+            if "id" in list(printd.keys()) and printd["id"] == infofiled["screening_print_id"]
         ]
         if len(printdlist) == 0:
             return None
         printd = printdlist[0]
     else:
         printd = infofiled["prints"][print_key_or_keyword]
-    if not "elements" in printd.keys():
+    if not "elements" in list(printd.keys()):
         return None
     els = [x for x in printd["elements"].split(",") if x not in exclude_elements_list]
     if multielementink_concentrationinfo_bool:
@@ -1512,7 +1512,7 @@ def get_multielementink_concentrationinfo(
 ):  # None if nothing to report, (True, str) if error, (False, (cels_set_ordered, conc_el_chan)) with the set of elements and how to caclualte their concentration from the platemap
     searchstr1 = "concentration_elements"
     searchstr2 = "concentration_values"
-    if not (searchstr1 in printd.keys() and searchstr2 in printd.keys()):
+    if not (searchstr1 in list(printd.keys()) and searchstr2 in list(printd.keys())):
         if return_defaults_if_none:
             nels_printchannels = [
                 len(regexcompile("[A-Z][a-z]*").findall(el)) for el in els
@@ -1638,8 +1638,8 @@ def generate_filtersmoothmapdict_mapids(
     kl = set(d[platemapids[0]])
     for id in platemapids[1:]:
         kl = kl.intersection(set(d[id]))
-    for dv in d.values():
-        for kv in dv.keys():
+    for dv in list(d.values()):
+        for kv in list(dv.keys()):
             if not kv in kl:
                 dv.pop(kv)
     return d
@@ -1664,7 +1664,7 @@ def readrcpfrommultipleruns(pathlist, rcpdictadditions=None):
                 lines = f.readlines()
             p, rcpfn = os.path.split(p)
         else:
-            print "check if this is a valid file: ", p
+            print("check if this is a valid file: ", p)
             continue
         if len(lines) == 0:
             continue
@@ -1702,11 +1702,11 @@ def rcpdtuple_remstr(remstr):
                     else ("%s: %s" % (k, str(v))),
                     [],
                 )
-                for k, v in remd.iteritems()
+                for k, v in remd.items()
             ],
         )
         for count, remd in enumerate(remdlist)
-        if not "(type new note here)" in remd.values()
+        if not "(type new note here)" in list(remd.values())
     ]
     return tupl
 
@@ -1791,8 +1791,8 @@ def interpretrcptuplist(rcptuplist):
         if tup[0].startswith("plate_id")
     ]
     if len(plateidstrtemp) != 1:
-        print "ERROR FINDING PLATE ID IN .rcp FILE. ", plateidstrtemp
-        raise "ERROR FINDING PLATE ID IN .rcp FILE."
+        print("ERROR FINDING PLATE ID IN .rcp FILE. ", plateidstrtemp)
+        raise ValueError("ERROR FINDING PLATE ID IN .rcp FILE.")
     plateidstr = plateidstrtemp[0]
     # sort files assumes that filenames are 2-deep nested by technieuqwe and then by filetype. technique labels must begin with files_technique__ but type keys can be anything
     techlist = [
@@ -1974,7 +1974,7 @@ def readexpasrcpdlist(
         for k in ["run_path", "rcp_file", "run_use"]:
             kl = [tup[0] for tup in expleveltuplist if tup[0].startswith(k)]
             if len(kl) != 1:
-                print "ERROR finding %s in a run in %s" % (k, p)
+                print("ERROR finding %s in a run in %s" % (k, p))
             v = kl[0].partition(":")[2].strip()
             if k == "run_use":
                 run_use = v
@@ -1989,7 +1989,7 @@ def readexpasrcpdlist(
             for d in rcpd["filenamedlist"]
         ]
         rcpdlist += [rcpd]
-        if run_use in expdlist_use.keys():
+        if run_use in list(expdlist_use.keys()):
             expdlist_use[run_use] += [rcpd]
         else:
             expdlist_use[run_use] = [rcpd]
@@ -2005,7 +2005,7 @@ def get_numhead_numdata_smpoptfiles(lines):
 
 
 def get_numhead_numdata_echetxtfiles(lines):
-    numhead = map(operator.itemgetter(0), lines).count("%")
+    numhead = list(map(operator.itemgetter(0), lines)).count("%")
     numdata = len(lines) - numhead
     return {"num_header_lines": numhead, "num_data_rows": numdata}
 
@@ -2042,10 +2042,10 @@ def read_dta_pstat_file(path, lines=None, addparams=False, searchstr="CURVE"):
         0
     ]  # this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
     z = [
-        map(
+        list(map(
             myfloatfcn,
             [x for i, x in enumerate(l.strip().split(delim)) if not i in skipinds],
-        )
+        ))
         for l in lines[filed["num_header_lines"] :]
     ]
     for k, arr in zip(keys, numpy.float32(z).T):
@@ -2163,7 +2163,7 @@ def smp_dict_generaltxt(
         0
     ]  # this turns emtpy string into NaN. given the .strip this only "works" if delimeter is not whitespace, e.g. csv
     z = [
-        map(myfloatfcn, [x for i, x in enumerate(l.split(delim)) if i not in skipinds])
+        list(map(myfloatfcn, [x for i, x in enumerate(l.split(delim)) if i not in skipinds]))
         for l in lines[firstdatalineind:]
     ]
     if len(z) == 0:  # NO DATA!
@@ -2311,7 +2311,7 @@ def getanadefaultfolder(erroruifcn=None):
             os.mkdir(folder)
         return folder
     except:
-        print folder
+        print(folder)
         if erroruifcn is None:
             return ""
         return erroruifcn("")
@@ -2397,7 +2397,7 @@ def saveana_tempfolder(
                 try:
                     os.rmdir(srcfolder)
                 except:
-                    print "The old folder still exists due to a problem deleting it: ", srcfolder
+                    print("The old folder still exists due to a problem deleting it: ", srcfolder)
     if saveanafile:
         savep = os.path.join(savefolder, "%s.ana" % timename)
         saveanafiles(savep, anafilestr=anafilestr, anadict=anadict)
@@ -2409,7 +2409,7 @@ def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
         anadict["name"] = ".".join(os.path.split(anapath)[1].split(".")[:2])
     if anafilestr is None:
         if anadict is None:
-            print "nothing saved to ", anapath
+            print("nothing saved to ", anapath)
             return
         anafilestr = strrep_filedict(anadict)
     with open(anapath, mode="w") as f:
@@ -2505,12 +2505,12 @@ def create_techd_for_xrfs_exp(
     techd, openandreadlinesfcn
 ):  # not tested. 20170112 - this deifnitely has issues like  doesn't hjave these attributes, and looks like it is meant to add sample_no to each spectrum file but in example I see the sample_no is already there
     if not (
-        "batch_summary_files" in techd.keys()
-        and "spectrum_files" in techd.keys()
+        "batch_summary_files" in list(techd.keys())
+        and "spectrum_files" in list(techd.keys())
         and len(techd["batch_summary_files"]) == 1
     ):
         return techd  # assume all fileattr lines have file_type;keys;numhead;numdata and there's no way to get sample_no so just leave the techd along
-    batchcsv_fn, batchcsv_fileattrstr = techd["batch_summary_files"].items()[0]
+    batchcsv_fn, batchcsv_fileattrstr = list(techd["batch_summary_files"].items())[0]
     if not (
         "Inte" in batchcsv_fileattrstr
         and "StgLabel" in batchcsv_fileattrstr
@@ -2531,7 +2531,7 @@ def create_techd_for_xrfs_exp(
         floatintstr=str,
     )
     typed = techd["spectrum_files"]
-    for fn, fileattrstr in typed.iteritems():
+    for fn, fileattrstr in typed.items():
         fnlab = fn.partition("_")[0]
         if not fnlab in fnlabs:
             continue
@@ -2567,7 +2567,7 @@ def get_data_rcp_dict__echerunfile(run_path, file_name):
     # d['reference_vrhe']
     datalines = zc.readlines(file_name)
     datad = readechemtxt("", lines=datalines, interpretheaderbool=True)
-    for k, v in datad.iteritems():
+    for k, v in datad.items():
         d[k] = v
     return d
 
@@ -2580,10 +2580,10 @@ def writeudifile(
     compstrlist = []
     depstrlist = []
     countstrlist = []
-    if "ellabels" in udi_dict.keys():
+    if "ellabels" in list(udi_dict.keys()):
         els = udi_dict["ellabels"]
         elstr = ",".join(els)
-        if "comps" in udi_dict.keys():
+        if "comps" in list(udi_dict.keys()):
             metastrlist += [
                 "M=%d" % (len(els)),
                 "Elements=%s" % (elstr),
@@ -2593,9 +2593,9 @@ def writeudifile(
                 compstrlist += [lab + "=" + ",".join(["%.4f" % v for v in carr])]
         else:
             metastrlist += ["M=%d" % (len(els)), "Elements=%s" % (elstr)]
-    if "xy" in udi_dict.keys():
+    if "xy" in list(udi_dict.keys()):
         metastrlist += ["Deposition=X,Y"]
-        if "plate_id" in udi_dict.keys():
+        if "plate_id" in list(udi_dict.keys()):
             if isinstance(udi_dict["plate_id"], (list, numpy.ndarray)) and isinstance(
                 udi_dict["plate_id"][0], (int, float, str)
             ):
@@ -2611,38 +2611,38 @@ def writeudifile(
             [("X=", udi_dict["xy"][:, 0], "%.2f"), ("Y=", udi_dict["xy"][:, 1], "%.2f")]
             + (
                 [("sample_no=", udi_dict["sample_no"], "%d")]
-                if "sample_no" in udi_dict.keys()
+                if "sample_no" in list(udi_dict.keys())
                 else []
             )
             + (
                 [("plate_id=", udi_dict["plate_id"], "%s")]
-                if "plate_id" in udi_dict.keys()
+                if "plate_id" in list(udi_dict.keys())
                 else []
             )
         ):
             depstrlist += [lab + ",".join([fmt % v for v in arr])]
         for k in additional_deposition_keys_with_str_vals:
             if (
-                k in udi_dict.keys()
+                k in list(udi_dict.keys())
                 and len(udi_dict[k]) > 0
                 and isinstance(udi_dict[k][0], str)
             ):
                 depstrlist += ["%s=%s" % (k, ",".join(udi_dict[k]))]
-    if "Motorpns" in udi_dict.keys() and "mxy" in udi_dict.keys():
+    if "Motorpns" in list(udi_dict.keys()) and "mxy" in list(udi_dict.keys()):
         metastrlist += ["Motorpns=%s" % (",".join(udi_dict["Motorpns"]))]
         for lab, arr, fmt in [
             ("mX=", udi_dict["mxy"][:, 0], "%.2f"),
             ("mY=", udi_dict["mxy"][:, 1], "%.2f"),
         ] + (
             [("specind=", udi_dict["specind"], "%d")]
-            if "specind" in udi_dict.keys()
+            if "specind" in list(udi_dict.keys())
             else []
         ):
             if not numpy.any(numpy.isnan(arr)):
                 mtrpnstrlist += [lab + ",".join([fmt % v for v in arr])]
-    if "Normalize" in udi_dict.keys():
+    if "Normalize" in list(udi_dict.keys()):
         metastrlist += ["Normalize=%s" % (udi_dict["Normalize"])]
-    if "CompType" in udi_dict.keys():
+    if "CompType" in list(udi_dict.keys()):
         metastrlist += ["CompType=%s" % (udi_dict["CompType"])]
     qcounts = udi_dict["Iarr"]
     metastrlist += ["N=%d" % len(qcounts)]
@@ -2683,7 +2683,7 @@ def create_udi_anas(
     anafolder_comps=None,
 ):
     # TODO open anadict and anadict_comps if they are paths
-    if "fom_file_comps" in udi_dict.keys() and not anadict_comps is None:
+    if "fom_file_comps" in list(udi_dict.keys()) and not anadict_comps is None:
         compsbool = True
         csvp = os.path.join(anafolder_comps, udi_dict["fom_file_comps"])
         csvfiled = anadict_comps[udi_dict["anak_comps"]]["files_multi_run"][
@@ -2696,7 +2696,7 @@ def create_udi_anas(
         ]
         udi_dict["compkeys"] = compkeys
     elif (
-        "plate_id" in udi_dict.keys() and not "ellabels" in udi_dict.keys()
+        "plate_id" in list(udi_dict.keys()) and not "ellabels" in list(udi_dict.keys())
     ):  # assume its a string value
         udi_dict["ellabels"] = getelements_plateidstr(str(udi_dict["plate_id"]))
         compsbool = False
@@ -2707,15 +2707,15 @@ def create_udi_anas(
             (filed["sample_no"], fn, filed)
             for anarunk in [
                 anarunk
-                for anarunk in anadict[udi_dict["anak"]].keys()
+                for anarunk in list(anadict[udi_dict["anak"]].keys())
                 if anarunk.startswith("files_")
             ]
-            for fn, filed in anadict[udi_dict["anak"]][anarunk][
+            for fn, filed in list(anadict[udi_dict["anak"]][anarunk][
                 udi_dict["ana_file_type"]
-            ].items()
-            if "sample_no" in filed.keys()
+            ].items())
+            if "sample_no" in list(filed.keys())
             and ((not compsbool) or filed["sample_no"] in compsfomd["sample_no"])
-            and "keys" in filed.keys()
+            and "keys" in list(filed.keys())
             and udi_dict["q_key"] in filed["keys"]
             and udi_dict["intensity_key"] in filed["keys"]
         ]
@@ -2735,13 +2735,13 @@ def create_udi_anas(
         p = os.path.join(anafolder, fn)
         datad = readcsvdict(p, filed, returnheaderdict=False)
         qvals = datad[udi_dict["q_key"]]
-        if "Q" in udi_dict.keys():
+        if "Q" in list(udi_dict.keys()):
             if len(qvals) != len(udi_dict["Q"]) or (
                 (udi_dict["Q"] - qvals) ** 2
             ).sum() > (
                 0.01 * (qvals ** 2).sum()
             ):  # proxy for equivlanet q arrays
-                print "incommensute q arrays - cancelling udi"
+                print("incommensute q arrays - cancelling udi")
                 return
         else:
             udi_dict["Q"] = qvals
@@ -2788,7 +2788,7 @@ def readudi(fl, fltyp="src"):
                 elif line.strip() != "":
                     try:
                         filed[key] = dict(
-                            filed[key].items()
+                            list(filed[key].items())
                             + [
                                 (
                                     line.split("=")[0],
@@ -2797,10 +2797,10 @@ def readudi(fl, fltyp="src"):
                             ]
                         )
                     except:
-                        print "Error encountered for line %s" % (line)
+                        print("Error encountered for line %s" % (line))
         #                        continue
         datad = {}
-        Ikeys = filed["Integrated counts data"].keys()
+        Ikeys = list(filed["Integrated counts data"].keys())
         Ikeys.remove("Q")
         datad["Iarr"] = numpy.array(
             [
@@ -2821,27 +2821,27 @@ def readudi(fl, fltyp="src"):
         )
         try:
             datad = dict(
-                datad.items()
-                + filed["Metadata"].items()
+                list(datad.items())
+                + list(filed["Metadata"].items())
                 + [
                     (mkey, filed["Motorpns data"][mkey])
-                    for mkey in filed["Motorpns data"].keys()
+                    for mkey in list(filed["Motorpns data"].keys())
                     if mkey not in ["mX,mY"]
                 ]
                 + [
                     (dkey, filed["Deposition data"][dkey])
-                    for dkey in filed["Deposition data"].keys()
+                    for dkey in list(filed["Deposition data"].keys())
                     if dkey not in ["X", "Y"]
                 ]
                 + [("Q", filed["Integrated counts data"]["Q"])]
             )
         except:
             datad = dict(
-                datad.items()
-                + filed["Metadata"].items()
+                list(datad.items())
+                + list(filed["Metadata"].items())
                 + [
                     (dkey, filed["Deposition data"][dkey])
-                    for dkey in filed["Deposition data"].keys()
+                    for dkey in list(filed["Deposition data"].keys())
                     if dkey not in ["X", "Y"]
                 ]
                 + [("Q", filed["Integrated counts data"]["Q"])]
@@ -2858,13 +2858,13 @@ def sort_dict_keys_by_counter(
         sorttups = sorted(
             [
                 (int(k[len(keystartswith) :]), k)
-                for k in d.keys()
+                for k in list(d.keys())
                 if k.startswith(keystartswith)
             ]
         )
-        kl = map(operator.itemgetter(1), sorttups)
+        kl = list(map(operator.itemgetter(1), sorttups))
     except:
-        kl = sorted([k for k in d.keys() if k.startswith(keystartswith)])
+        kl = sorted([k for k in list(d.keys()) if k.startswith(keystartswith)])
     return kl
 
 
@@ -2925,7 +2925,7 @@ def find_paths_in_ana_need_copy_to_anatype(
     anad, anatype
 ):  # find which ana=-containing paths are not on J or in anatype folder
     needcopy_dlist = []
-    for k, v in anad.iteritems():
+    for k, v in anad.items():
         if k == "experiment_path":
             d = gen_pathd_absorrel_expanapath(v, desttype=anatype, exp=True)
             if d is None:
@@ -2934,10 +2934,10 @@ def find_paths_in_ana_need_copy_to_anatype(
             needcopy_dlist += [d]
         elif k.startswith("ana__"):
             kl = [k]
-            if "parameters" in v.keys():
+            if "parameters" in list(v.keys()):
                 kl += ["parameters"]
                 for count, auxk in enumerate(["aux_ana_path", "aux_exp_path"]):
-                    if auxk in v["parameters"].keys():
+                    if auxk in list(v["parameters"].keys()):
                         if (
                             v["parameters"][auxk] == "custom"
                             or v["parameters"][auxk] == "self"
@@ -3031,7 +3031,7 @@ def read_xrfs_batch_summary_csv(
         for starti, section_key in zip(section_start_inds, column_headings_sub_dict):
             d[section_key] = {}
             d2 = d[section_key]
-            selcolinds = range(starti + 1, starti + 1 + num_transition_columns)
+            selcolinds = list(range(starti + 1, starti + 1 + num_transition_columns))
             arr = readtxt_selectcolumns(
                 "",
                 selcolinds=selcolinds,

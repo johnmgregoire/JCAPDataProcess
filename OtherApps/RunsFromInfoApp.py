@@ -75,7 +75,7 @@ class runsfrominfoDialog(QDialog, Ui_RunsFromInfoDialog):
         nondictkeys = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not isinstance(v, dict) and not k in skipkeys
             ]
         )
@@ -83,7 +83,7 @@ class runsfrominfoDialog(QDialog, Ui_RunsFromInfoDialog):
             item = QTreeWidgetItem([": ".join([prependstr + k, str(d[k])])], 0)
             parentitem.addChild(item)
         dictkeys2 = sorted(
-            [k for k in d.keys() if k.startswith(firststartswith) and not k in skipkeys]
+            [k for k in list(d.keys()) if k.startswith(firststartswith) and not k in skipkeys]
         )
         for k in dictkeys2:
             item = QTreeWidgetItem([prependstr + k + ":"], 0)
@@ -91,9 +91,9 @@ class runsfrominfoDialog(QDialog, Ui_RunsFromInfoDialog):
                 rd = d[k]
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                 if (
-                    "type" in rd.keys() and str(self.typeLineEdit.text()) in rd["type"]
+                    "type" in list(rd.keys()) and str(self.typeLineEdit.text()) in rd["type"]
                 ) and (
-                    (not "quality" in rd.keys())
+                    (not "quality" in list(rd.keys()))
                     or str(self.qualityLineEdit.text()) in rd["quality"]
                 ):
                     item.setCheckState(0, Qt.Checked)
@@ -108,7 +108,7 @@ class runsfrominfoDialog(QDialog, Ui_RunsFromInfoDialog):
         dictkeys1 = sorted(
             [
                 k
-                for k, v in d.iteritems()
+                for k, v in d.items()
                 if not k.startswith(firststartswith)
                 and isinstance(v, dict)
                 and not k in skipkeys

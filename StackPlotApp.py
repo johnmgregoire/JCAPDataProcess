@@ -19,7 +19,7 @@ from fcns_math import *
 from fcns_io import *
 from fcns_ui import *
 
-print time.ctime()
+print(time.ctime())
 from VisualizeAuxFcns import *
 from StackPlotForm import Ui_StackPlotDialog
 from SaveImagesApp import *
@@ -97,7 +97,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
         if self.stackplotclass is None or len(self.stackplotclass.params) == 0:
             return
         keys_paramsd = [
-            k for k, v in self.analysisclass.params.iteritems() if isinstance(v, dict)
+            k for k, v in self.analysisclass.params.items() if isinstance(v, dict)
         ]
         if len(keys_paramsd) == 0:
             self.editparams_paramsd(self.stackplotclass.params)
@@ -115,7 +115,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
     def editparams_paramsd(self, paramsd):
         inputs = [
             (k, type(v), (isinstance(v, str) and (v,) or (str(v),))[0])
-            for k, v in paramsd.iteritems()
+            for k, v in paramsd.items()
             if not isinstance(v, dict)
         ]
         if len(inputs) == 0:
@@ -230,7 +230,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
             exppath, includerawdata=False, erroruifcn=None, returnzipclass=True
         )
         if expfiledict is None:
-            print "Problem opening EXP"
+            print("Problem opening EXP")
             return
         #        self.clearexp()
         self.exppath = exppath
@@ -252,11 +252,11 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
         sorttups = sorted(
             [
                 (int(k[len(anarun) :]), k)
-                for k in anaexpfiled.keys()
+                for k in list(anaexpfiled.keys())
                 if k.startswith(anarun)
             ]
         )
-        return map(operator.itemgetter(1), sorttups)
+        return list(map(operator.itemgetter(1), sorttups))
 
     def fillxyoptions(self, clear=False):  # TODO
         cbl = [
@@ -277,13 +277,13 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
     def setupfilterchoices(self):
         self.SelectTreeWidget.clear()
         for count, fomdlist in enumerate(self.l_fomdlist):
-            if len(fomdlist) == 0 or not "anaint" in fomdlist[0].keys():
+            if len(fomdlist) == 0 or not "anaint" in list(fomdlist[0].keys()):
                 continue
             mainitem = QTreeWidgetItem(
                 ["%d:ana__%d" % (count, fomdlist[0]["anaint"])], 0
             )
             self.SelectTreeWidget.addTopLevelItem(mainitem)
-            for k in fomdlist[0].keys():
+            for k in list(fomdlist[0].keys()):
                 item = QTreeWidgetItem([k], 0)
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                 item.setCheckState(0, Qt.Unchecked)
@@ -312,7 +312,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
         if idialog.error:
             return
         self.ellabels = idialog.ellabels
-        if not "exp_version" in self.expfiledict.keys():
+        if not "exp_version" in list(self.expfiledict.keys()):
             self.expfiledict["exp_version"] = 0
         self.expfiledict[newrunk] = copy.deepcopy(idialog.rund)
         s = str(self.platemapfilenameLineEdit.text())
@@ -364,7 +364,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
             if not usebool:
                 continue
             self.fomplotd["fomdlist_index0"] += [fomdlist_index0] * len(fomdlist)
-            self.fomplotd["fomdlist_index1"] += range(len(fomdlist))
+            self.fomplotd["fomdlist_index1"] += list(range(len(fomdlist)))
         for k in ["fomdlist_index0", "fomdlist_index1"]:
             self.fomplotd[k] = numpy.array(self.fomplotd[k])
         # stack plot foms chosen from checked boxes in a single ana
@@ -382,7 +382,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
                 if len(xkeyl) == 0:
                     continue
                 elif len(xkeyl) > 1:
-                    print "WARNING: more than 1 stack x key match search"
+                    print("WARNING: more than 1 stack x key match search")
                 xkey = xkeyl[0]
                 l_ind = l_count
                 break
@@ -479,7 +479,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
                 x_inds_fom = inds_fom
             else:
                 if arrkeys[0] == "None":  # for x use indexes
-                    ytemp = map(operator.itemgetter(1), inds_fom)
+                    ytemp = list(map(operator.itemgetter(1), inds_fom))
                     ytemp = numpy.array(ytemp)
                     ytemp = ytemp[numpy.logical_not(numpy.isnan(ytemp))]
                     xtemp = numpy.arange(len(ytemp))
@@ -489,15 +489,15 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
                             self.fomplotd["fomdlist_index0"][self.selectind],
                             self.fomplotd["fomdlist_index1"][self.selectind],
                         )
-                        if (i0, i1) in map(operator.itemgetter(0), inds_fom):
-                            i = map(operator.itemgetter(0), inds_fom).index((i0, i1))
+                        if (i0, i1) in list(map(operator.itemgetter(0), inds_fom)):
+                            i = list(map(operator.itemgetter(0), inds_fom)).index((i0, i1))
                             selectpointdata[count - 1] = [[i], [inds_fom[i][1]]]
                 else:
                     # pair up fom data points between x and y
                     indsset = sorted(
                         list(
                             set(map(operator.itemgetter(0), inds_fom)).intersection(
-                                map(operator.itemgetter(0), x_inds_fom)
+                                list(map(operator.itemgetter(0), x_inds_fom))
                             )
                         )
                     )
@@ -582,7 +582,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
                 styled = dict(
                     [
                         (k, v)
-                        for k, v in self.xyplotstyled.iteritems()
+                        for k, v in self.xyplotstyled.items()
                         if not "sel" in k and not "right_" in k and v != ""
                     ]
                 )
@@ -590,7 +590,7 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
                 styled = dict(
                     [
                         (k.partition("right_")[2], v)
-                        for k, v in self.xyplotstyled.iteritems()
+                        for k, v in self.xyplotstyled.items()
                         if "right_" in k and v != ""
                     ]
                 )
@@ -650,17 +650,17 @@ class stackplotDialog(QDialog, Ui_StackPlotDialog):
     def getxystyle_user(self):
         inputs = [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if not (k.startswith("right_") or k.startswith("select_"))
         ]
         inputs += [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if k.startswith("select_")
         ]
         inputs += [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if k.startswith("right_")
         ]
         ans = userinputcaller(

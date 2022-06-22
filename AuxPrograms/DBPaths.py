@@ -1,14 +1,14 @@
 import os
 
 projectpath = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-print os.path.join(projectpath, "LocalDBPaths.py")
+print(os.path.join(projectpath, "LocalDBPaths.py"))
 if os.path.isfile(os.path.join(projectpath, "LocalDBPaths.py")):
     from sys import path as syspath
 
     syspath.append(projectpath)
     from LocalDBPaths import *
 
-    print "paths loaded from LocalDBPaths"
+    print("paths loaded from LocalDBPaths")
 else:
     PLATEFOLDERS = [
         r"\\htejcap.caltech.edu\share\data\hte_jcap_app_proto\plate",
@@ -70,4 +70,4 @@ else:
             if not os.path.isdir(l[i]):
                 l.pop(i)
         if len(l) == 0:
-            print "WARNING: some DBPaths have no remaining options"
+            print("WARNING: some DBPaths have no remaining options")

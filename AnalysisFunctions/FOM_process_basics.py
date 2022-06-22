@@ -18,7 +18,7 @@ try:
 
     TernaryPlotInstance = TernaryPlot((1, 1, 1), outline=False)
 except:
-    print "myternaryutility not found - some analysis in FOM_Porcess_basics will be unavailable."
+    print("myternaryutility not found - some analysis in FOM_Porcess_basics will be unavailable.")
 #    def stdgetapplicablefomfiles(anadict, params={}):
 #
 #    if 'select_ana_keys' in params.keys() and params['select_ana_keys'].startswith('ana__'):#filter to only use refs from user-specified list
@@ -63,19 +63,19 @@ FOMKEYSOPTIONAL_BUTNEVERUSEDINPROCESSING = set(
 
 def stdgetapplicablefomfiles(anadict, params={}):
     if (
-        (not "select_ana" in params.keys())
-        or (not params["select_ana"] in anadict.keys())
+        (not "select_ana" in list(params.keys()))
+        or (not params["select_ana"] in list(anadict.keys()))
         or (not isinstance(anadict[params["select_ana"]], dict))
     ):
-        return len([anak for anak in anadict.keys() if anak.startswith("ana__")]), []
+        return len([anak for anak in list(anadict.keys()) if anak.startswith("ana__")]), []
     anak_list = [
         anak
-        for anak, anav in anadict.iteritems()
+        for anak, anav in anadict.items()
         if (anak == params["select_ana"].strip())
-        and ("files_multi_run" in anav.keys())
-        and ("fom_files" in anav["files_multi_run"].keys())
+        and ("files_multi_run" in list(anav.keys()))
+        and ("fom_files" in list(anav["files_multi_run"].keys()))
     ]  # only 1 anak allowed but still keep as list and below list could have multiple fom_files in the same ana__x
-    if "select_fom_keys" in params.keys() and not params["select_fom_keys"].startswith(
+    if "select_fom_keys" in list(params.keys()) and not params["select_fom_keys"].startswith(
         "ALL"
     ):
         selkeyslist = params["select_fom_keys"].split(",")
@@ -121,10 +121,10 @@ def stdgetapplicablefomfiles(anadict, params={}):
             "process_keys": keysfcn(tagandkeys),
         }
         for anak in anak_list
-        for fnk, tagandkeys in anadict[anak]["files_multi_run"]["fom_files"].iteritems()
+        for fnk, tagandkeys in anadict[anak]["files_multi_run"]["fom_files"].items()
         if keystestfcn(tagandkeys)
     ]
-    return len([anak for anak in anadict.keys() if anak.startswith("ana__")]), filedlist
+    return len([anak for anak in list(anadict.keys()) if anak.startswith("ana__")]), filedlist
 
 
 class Analysis_Master_FOM_Process(Analysis_Master_nointer):
@@ -165,7 +165,7 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
     def getapplicablefomfiles(self, anadict):
         if (
             not anadict is None
-            and self.params["select_ana"] in anadict.keys()
+            and self.params["select_ana"] in list(anadict.keys())
             and "plot_parameters" in anadict[self.params["select_ana"]]
         ):
             self.plotparams = copy.deepcopy(
@@ -244,11 +244,11 @@ class Analysis_Master_FOM_Process(Analysis_Master_nointer):
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped filter/smooth of file ", fn
+                print("skipped filter/smooth of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,
@@ -299,12 +299,12 @@ class Analysis__FilterSmoothFromFile(
             [
                 (sample_no, d_smpstoave__runint[runint][sample_no])
                 for (runint, sample_no) in zip(fomd["runint"], fomd["sample_no"])
-                if sample_no in d_smpstoave__runint[runint].keys()
+                if sample_no in list(d_smpstoave__runint[runint].keys())
             ]
         )  # creates sample-index dict that combines all runs and potentially plates. THE PCK-BASED PROCESSING AS SAMPLE_NO BASED AND NEED NOT PAY ATTENTION TO PLATE_ID
         smplist = list(fomd["sample_no"])
         smpkey_reprinds = [
-            (sample_no, smplist.index(sample_no)) for sample_no in d_smpstoave.keys()
+            (sample_no, smplist.index(sample_no)) for sample_no in list(d_smpstoave.keys())
         ]
         fomdlist = []
         strk = "SmpRunPlate_Association"
@@ -380,8 +380,8 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
         calcFOMDialogclass=None,
     ):  # in addition to standard requirements, platemapdlist must be defined for all runs - for simplicity require for all runs in expfiledict even if they are not used in ana__x
         if False in [
-            "platemapdlist" in rund.keys()
-            for runk, rund in expfiledict.iteritems()
+            "platemapdlist" in list(rund.keys())
+            for runk, rund in expfiledict.items()
             if runk.startswith("run__")
         ]:
             self.num_ana_considered = 1
@@ -390,7 +390,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
         self.platemapdlist_runint = dict(
             [
                 (int(runk.partition("__")[2]), rund["platemapdlist"])
-                for runk, rund in expfiledict.iteritems()
+                for runk, rund in expfiledict.items()
                 if runk.startswith("run__")
             ]
         )
@@ -407,7 +407,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
         samples_runint = dict(
             [
                 (runint, [d["sample_no"] for d in dlist])
-                for runint, dlist in self.platemapdlist_runint.iteritems()
+                for runint, dlist in self.platemapdlist_runint.items()
             ]
         )
         platemapsampled = (
@@ -417,7 +417,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
             if sample_no in samples_runint[runint]
             else None
         )
-        indstoprocess = range(len(fomd["sample_no"]))
+        indstoprocess = list(range(len(fomd["sample_no"])))
         # get the sample-level platemap dicts for each entry in fomd
         mappedplated = [
             platemapsampled(runint, sample_no)
@@ -447,7 +447,7 @@ class Analysis__AveCompDuplicates(Analysis_Master_FOM_Process):
             comps = numpy.float32(
                 [
                     [
-                        d[el] if el in d.keys() else 0.0
+                        d[el] if el in list(d.keys()) else 0.0
                         for el in ["A", "B", "C", "D", "E", "F", "G", "H"]
                     ]
                     for d in mappedplated
@@ -571,7 +571,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             [
                 (reqparam, expfiledict[runk]["parameters"][reqparam])
                 for reqparam in self.requiredparams
-                if reqparam in expfiledict[runk]["parameters"].keys()
+                if reqparam in list(expfiledict[runk]["parameters"].keys())
             ]
             for filed in self.filedlist
             for runk in runklist
@@ -596,7 +596,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
         self.filedlist = [
             filed
             for filed in self.filedlist
-            if "technique" in anadict[filed["ana"]].keys()
+            if "technique" in list(anadict[filed["ana"]].keys())
             and anadict[filed["ana"]]["technique"] == "XRFS"
             and (
                 True in [k.endswith(self.cpsendswithstr) for k in filed["process_keys"]]
@@ -620,16 +620,16 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 areacm2 = numpy.pi * (1.0e-4 * diam_micron / 2.0) ** 2
                 self.params["measurement_area_cm2"] = "%.2e" % areacm2
             else:
-                print "spot_size not understood: ", s
+                print("spot_size not understood: ", s)
                 self.params["measurement_area_cm2"] = "NONE"
         elif self.params["measurement_area_cm2"][0].isdigit():
             try:
                 areacm2 = float(self.params["measurement_area_cm2"])
                 self.params["measurement_area_cm2"] = "%.2e" % areacm2
             except:
-                print "measurement_area_cm2 not understood: ", self.params[
+                print("measurement_area_cm2 not understood: ", self.params[
                     "measurement_area_cm2"
-                ]
+                ])
                 self.params["measurement_area_cm2"] = "NONE"
         else:
             self.params["measurement_area_cm2"] = "NONE"
@@ -739,9 +739,9 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 for i in range(len(nmolcps_list)):
                     nmcps = nmolcps_list[i]
                     tr = transition_list_for_stds[i]
-                    if nmcps > 0 or not tr in self.xrfs_stds_dict.keys():
-                        if not tr in self.xrfs_stds_dict.keys():
-                            print "missing %s in xrfs stds" % tr
+                    if nmcps > 0 or not tr in list(self.xrfs_stds_dict.keys()):
+                        if not tr in list(self.xrfs_stds_dict.keys()):
+                            print("missing %s in xrfs stds" % tr)
                         continue
                     nmolcps_list[i] = self.xrfs_stds_dict[tr]
         self.params["nmol_CPS_list"] = ",".join(
@@ -824,7 +824,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                     includestrvals=False,
                 )  # str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
                 self.fomdlist = [
-                    dict(zip(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, tup))
+                    dict(list(zip(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING, tup)))
                     for tup in zip(
                         *[xrffomd[k] for k in FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING]
                     )
@@ -839,7 +839,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                     if len(templist) == len(transition_list_csvkeys):
                         bckndcps_by_trans = templist
                     else:
-                        print "bcknd_CPS_by_trans not used since it does not match transition list:", templist, transition_list_csvkeys
+                        print("bcknd_CPS_by_trans not used since it does not match transition list:", templist, transition_list_csvkeys)
                 elif self.params["bcknd_CPS_sample_nos"] == "nonpositive":
                     bcknd_inds_boolorlist = list(
                         numpy.where(xrffomd["sample_no"] <= 0)[0]
@@ -872,25 +872,25 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 nmol_bysample_bytrans[nmol_bysample_bytrans < 0.0] = 0.0
                 [
                     fomd.update(
-                        zip(
+                        list(zip(
                             self.fomnames,
                             [nmolarr.sum()]
                             + list(nmolarr)
                             + nmolpercm2fcn(nmolarr)
                             + list(compsfcn(nmolarr))
                             + list(ratiofcn(nmolarr)),
-                        )
+                        ))
                     )
                     for fomd, nmolarr in zip(self.fomdlist, nmol_bysample_bytrans)
                 ]
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped XRF analysis of file ", fn
+                print("skipped XRF analysis of file ", fn)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,
@@ -936,7 +936,7 @@ class Analysis__Process_B_vs_A_ByRun(
     def getapplicablefomfiles(self, anadict):
         if (
             not anadict is None
-            and self.params["select_ana"] in anadict.keys()
+            and self.params["select_ana"] in list(anadict.keys())
             and "plot_parameters" in anadict[self.params["select_ana"]]
         ):
             self.plotparams = copy.deepcopy(
@@ -1036,9 +1036,9 @@ class Analysis__Process_B_vs_A_ByRun(
                 )
                 if len(sel_processkeys) == 0:
                     self.params[paramkey] = "NONE"
-                sel_processkeys = map(
+                sel_processkeys = list(map(
                     operator.itemgetter(1), sel_processkeys
-                )  # so that order of the search strings user enteres is maintained
+                ))  # so that order of the search strings user enteres is maintained
             if self.params[paramkey] == "NONE":
                 continue
             self.params[paramkey] = ",".join(sel_processkeys)
@@ -1111,10 +1111,10 @@ class Analysis__Process_B_vs_A_ByRun(
                 zipclass=None,
                 includestrvals=False,
             )  # str vals not allowed because not sure how to "filter/smooth" and also writefom, headerdictwill be re-used in processed version
-            if "plot_parameters" in self.csvheaderdict.keys():
+            if "plot_parameters" in list(self.csvheaderdict.keys()):
                 plotcount = 0
-                for k, v in self.csvheaderdict["plot_parameters"].iteritems():
-                    if isinstance(v, dict) and "fom_name" in v.keys():
+                for k, v in self.csvheaderdict["plot_parameters"].items():
+                    if isinstance(v, dict) and "fom_name" in list(v.keys()):
                         v["fom_name"] = self.fomnames[plotcount]
                         if plotcount < len(self.fomnames) - 1:
                             plotcount += 1
@@ -1140,7 +1140,7 @@ class Analysis__Process_B_vs_A_ByRun(
                     for smp in fomd["sample_no"][self.inds_b]
                 ]  # smps_a is expired after this
             if len(self.inds_a) == 0 or len(self.inds_b) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             newfomd = {}
             floatlist_or_False = self.checkforlistofnumbers(self.params["fom_keys_A"])
@@ -1199,7 +1199,7 @@ class Analysis__Process_B_vs_A_ByRun(
                             compdistfn
                         ] = "python_visualizer_png_image;"
                     except:
-                        print "Ternary composition distance image failed."
+                        print("Ternary composition distance image failed.")
                 self.fomnames += [
                     kdist
                 ]  # do this last so fomnames is 1 for each element up to here
@@ -1218,7 +1218,7 @@ class Analysis__Process_B_vs_A_ByRun(
                 list(FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING) + self.fomnames
             )  # +self.strkeys_fomdlist#str=valued keys don't go into fomnames
             self.fomdlist = [
-                dict(zip(allkeys, tup)) for tup in zip(*[newfomd[k] for k in allkeys])
+                dict(list(zip(allkeys, tup))) for tup in zip(*[newfomd[k] for k in allkeys])
             ]
             #            except:
             #                if self.debugmode:
@@ -1227,7 +1227,7 @@ class Analysis__Process_B_vs_A_ByRun(
             #                self.fomdlist=[]
             #                continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             self.writefom(
                 destfolder,

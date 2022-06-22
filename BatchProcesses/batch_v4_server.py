@@ -18,9 +18,9 @@ from DBPaths import *
 
 
 if len(sys.argv) == 1:
-    execfile("batch.py")
+    exec(compile(open("batch.py", "rb").read(), "batch.py", 'exec'))
 else:
-    execfile(sys.argv[1])
+    exec(compile(open(sys.argv[1], "rb").read(), sys.argv[1], 'exec'))
 
 loglines=[]
 batchfilepath=os.path.join(batchfolder,batchinput_fn)
@@ -101,7 +101,7 @@ def batch_pvdbool(fn):
         lines=f.readlines()
     infofiled=filedict_lines(lines)
 
-    methods=[v3 for k, v in infofiled.iteritems() if k.startswith('prints') for k2, v2 in v.iteritems() if k2.startswith('prints') for k3, v3 in v2.iteritems() if k3.startswith('method')]
+    methods=[v3 for k, v in infofiled.items() if k.startswith('prints') for k2, v2 in v.items() if k2.startswith('prints') for k3, v3 in v2.items() if k3.startswith('method')]
     return '', ('PVD' in methods, )
 
 
@@ -128,7 +128,7 @@ def batch_exp(fn, expui=expui):
             expui.importruns_folder(folderp=os.path.join(p, zfn))
     expui.batchuvissingleplate_norefdata()
 
-    if (not 'experiment_type' in expui.expfiledict.keys()) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
+    if (not 'experiment_type' in list(expui.expfiledict.keys())) or len(expui.expfilestr)==0 or not 'exp_version' in expui.expfilestr:
         if skiponerror:
             return 'ERROR - betchexp failed for %s' %pT, False
         else:
@@ -164,7 +164,7 @@ def run_batch():
                 techs=['DR_UVVIS']
             if len(batchline.strip('\n').strip('\r'))!=0:
                 try:
-                    print 'batchline:'+batchline
+                    print('batchline:'+batchline)
                     expbool=False
                     if forceexp or not 'exp_path' in batchline:
                         rawfn=getbatchlinepath(batchline, key=batchlinekey).lstrip(os.sep)
@@ -193,7 +193,7 @@ def run_batch():
                     if forceana or not 'ana_path' in batchline:
                         if expbool:
                             calcui.importexp(expfiledict=expfiledict, exppath=exppath)
-                            for runk, rund in calcui.expfiledict.iteritems():#copy over any platemap info
+                            for runk, rund in calcui.expfiledict.items():#copy over any platemap info
                                 if not runk.startswith('run__'):
                                     continue
                                 rcpfile=rund['rcp_file']
@@ -289,7 +289,7 @@ while True:
  #               todofile = os.path.join(batchfolder,todofiles[0])
             todofile = os.path.join(batchfolder,todofiles[0])
             try:
-                print ("Processing " + todofile)
+                print(("Processing " + todofile))
                 runfile = os.path.join(batchfolder,todofile[0:-5] + ".run")
                 os.rename(todofile,runfile)
                 batchfilepath = runfile
@@ -301,10 +301,10 @@ while True:
                 os.rename(runfile,donefile)
                 logfile = os.path.join(batchfolder,todofile[0:-5] + ".log")
                 if os.path.isfile(logfile): os.rename(logfilepath,logfile)
-                print ("Finished processing " + donefile)
+                print(("Finished processing " + donefile))
                 print ("Pausing for 1 minute before checking the next run")
             except:
-                print ("Failed processing " + todofile)
+                print(("Failed processing " + todofile))
                 failedfile = os.path.join(batchfolder,todofile[0:-5] + ".failed")
                 os.rename(runfile,failedfile)
                 print ("Pausing for 1 minute before checking the next run")

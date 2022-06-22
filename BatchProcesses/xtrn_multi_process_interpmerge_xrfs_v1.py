@@ -34,13 +34,13 @@ with open('D:/TRI-XAS/runs/ana_interp_list_xtrn.tsv', 'r') as f:
         p = l.strip().split()
         interpd[p[0]] = p[1]
 
-for anats, keylist in interpd.items():
+for anats, keylist in list(interpd.items()):
     # try:
     if 1:
         mainapp = QApplication(sys.argv)
         form = MainMenu(None)
         calcui = form.calcui
-        print(anats, keylist)
+        print((anats, keylist))
         merge_interp_xrfs_single_plate_id(
             calcui=calcui,
             ananame='xtrn/'+anats,

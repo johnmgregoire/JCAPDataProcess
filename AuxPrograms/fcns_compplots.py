@@ -113,7 +113,7 @@ class echem10axesWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -147,7 +147,7 @@ class echem20axesWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -181,7 +181,7 @@ class echem30axesWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -215,7 +215,7 @@ class echem100axesWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -249,7 +249,7 @@ class echem4axesWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -284,7 +284,7 @@ class echembinWidget(QDialog):
         self.setLayout(mainlayout)
 
     def plot(self, d, cb=True, ellabels=["A", "B", "C", "D"]):
-        if "fomlabel" in d.keys():
+        if "fomlabel" in list(d.keys()):
             cblabel = d["fomlabel"]
         else:
             cblabel = ""
@@ -311,7 +311,7 @@ class plotwidget(FigureCanvas):
             self.axes = self.fig.add_subplot(111, navigate=True, projection="3d")
         else:
             self.axes = self.fig.add_subplot(111, navigate=True)
-        self.axes.hold(True)
+        # self.axes.hold(True)
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
         # self.parent=parent
@@ -334,7 +334,7 @@ class plotwidget(FigureCanvas):
             self.axes = self.fig.add_subplot(111, navigate=True)
         if not self.cbax is None or len(cbaxkwargs) > 0:
             self.createcbax(**cbaxkwargs)
-        self.axes.hold(True)
+        # self.axes.hold(True)
 
     def createcbax(self, axrect=[0.88, 0.1, 0.04, 0.8], left=0, rshift=0.01):
         self.fig.subplots_adjust(left=left, right=axrect[0] - rshift)
@@ -343,7 +343,7 @@ class plotwidget(FigureCanvas):
     def myclick(self, event):
         if not (event.xdata is None or event.ydata is None):
             arrayxy = [event.xdata, event.ydata]
-            print "clicked on image: array indeces ", arrayxy, " using button", event.button
+            print("clicked on image: array indeces ", arrayxy, " using button", event.button)
             self.clicklist += [arrayxy]
             self.genericclickonplot.emit(
                 [event.xdata, event.ydata, event.button, event.inaxes]

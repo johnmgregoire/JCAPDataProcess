@@ -137,7 +137,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         self.expfiledict = {}
         self.expzipclass = None
         self.anazipclass = None
-        self.customlegendfcn = lambda sample, els, comp, code, fom, xy: ` sample `
+        self.customlegendfcn = lambda sample, els, comp, code, fom, xy: repr( sample)
         self.ellabels = ["A", "B", "C", "D"]
         self.platemap4keys_default = ["A", "B", "C", "D"]
         self.expfolder = ""
@@ -218,7 +218,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     idialog = messageDialog(self, msg)
                     idialog.exec_()
                 else:
-                    print msg
+                    print(msg)
                 return
             if p.endswith(".ana") or p.endswith(".pck"):
                 self.anafolder = os.path.split(p)[0]
@@ -240,7 +240,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 [
                     anak,
                     self.anafiledict[anak]["description"]
-                    if "description" in self.anafiledict[anak].keys()
+                    if "description" in list(self.anafiledict[anak].keys())
                     else "",
                 ]
             )
@@ -281,7 +281,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         inkjetconcentrationadjustment="ask_if_appropriate",
     ):
         if self.GUIMODE and inkjetconcentrationadjustment == "ask_if_appropriate":
-            print "code should be modified to call process_multielementink with different value for inkjetconcentrationadjustment"
+            print("code should be modified to call process_multielementink with different value for inkjetconcentrationadjustment")
         if errorbool:
             if (
                 self.GUIMODE and inkjetconcentrationadjustment == "ask_if_appropriate"
@@ -289,7 +289,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 idialog = messageDialog(self, tupormessage)
                 idialog.exec_()
             else:
-                print tupormessage
+                print(tupormessage)
             return False
         if self.GUIMODE and inkjetconcentrationadjustment == "ask_if_appropriate":
             idialog = messageDialog(
@@ -333,7 +333,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             exppath, includerawdata=False, erroruifcn=None, returnzipclass=True
         )
         if expfiledict is None:
-            print "Problem opening EXP"
+            print("Problem opening EXP")
             return
         #        self.clearexp()
         self.exppath = exppath
@@ -346,16 +346,16 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         # inkjetconcentrationadjustment=self.inkjetconcentrationadjustment
         platemap_plateid_dlist_list = []
         platemapfilenamestr = str(self.platemapfilenameLineEdit.text())
-        for runk, rund in self.expfiledict.iteritems():
+        for runk, rund in self.expfiledict.items():
             if not runk.startswith("run__"):
                 continue
             if not (
-                "parameters" in rund.keys()
+                "parameters" in list(rund.keys())
                 and isinstance(rund["parameters"], dict)
-                and "plate_id" in rund["parameters"].keys()
+                and "plate_id" in list(rund["parameters"].keys())
             ):
-                print "critical info missing for ", runk
-            if not "platemapdlist" in rund.keys():
+                print("critical info missing for ", runk)
+            if not "platemapdlist" in list(rund.keys()):
                 if True in [
                     tup[0] == rund["parameters"]["plate_id"]
                     for tup in platemap_plateid_dlist_list
@@ -387,7 +387,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                             idialog = messageDialog(self, msg)
                             idialog.exec_()
                         else:
-                            print msg
+                            print(msg)
                         rund["platemapdlist"] = []
                         return  # just try to cancel things so user can open file again
                     else:
@@ -435,7 +435,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             ):  # non standard ink where a element label for a channel (1 channel could be a multielement label)  and if labels are duplicated that will break the dictionary math below so revert to dflt
                 els = ["A", "B", "C", "D"]
             if els is None:
-                print "cannot find elements for ", str(rund["parameters"]["plate_id"])
+                print("cannot find elements for ", str(rund["parameters"]["plate_id"]))
                 masterels = ["A", "B", "C", "D"]
                 continue
             #            if len(els)>4:
@@ -504,8 +504,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         ):  # to get here evrythign has a platemap, don't relabel if multierlement processing because then relabel aleready happened
             self.ellabels = masterels
             if False in [
-                ellab in rund["platemapdlist"][0].keys()
-                for runk, rund in self.expfiledict.iteritems()
+                ellab in list(rund["platemapdlist"][0].keys())
+                for runk, rund in self.expfiledict.items()
                 for ellab in self.ellabels
                 if runk.startswith("run__")
             ]:  # compsoitions weren't caclulated to wil only be able to do 4-element projections if ana__ blocks provide keys
@@ -518,7 +518,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     len(masterels) < 4
                 ):  # can get here when multi element inks calculated to elemental compositions and there are fewer than 4 elements and don't want to mix with platemap channels so 0 pad other channels.
                     masterels += ["X"] * (4 - len(masterels))
-                    for runk, rund in self.expfiledict.iteritems():
+                    for runk, rund in self.expfiledict.items():
                         if not runk.startswith("run__"):
                             continue
                         [d.update([("X", 0.0)]) for d in rund["platemapdlist"]]
@@ -559,8 +559,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     and not (
                         True
                         in [
-                            "platemap_comp4plot_keylist" in anad.keys()
-                            for anak, anad in self.anafiledict.iteritems()
+                            "platemap_comp4plot_keylist" in list(anad.keys())
+                            for anak, anad in self.anafiledict.items()
                             if anak.startswith("ana__")
                         ]
                     )
@@ -598,7 +598,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         anad["platemap_comp4plot_keylist"].split(",")
                     )
                 )
-                if "platemap_comp4plot_keylist" in anad.keys()
+                if "platemap_comp4plot_keylist" in list(anad.keys())
                 else ""
             )
             nonabcdsummlines = [
@@ -630,7 +630,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 [
                     runk,
                     self.expfiledict[runk]["description"]
-                    if "description" in self.expfiledict[runk].keys()
+                    if "description" in list(self.expfiledict[runk].keys())
                     else "",
                 ]
             )
@@ -649,11 +649,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         sorttups = sorted(
             [
                 (int(k[len(anarun) :]), k)
-                for k in anaexpfiled.keys()
+                for k in list(anaexpfiled.keys())
                 if k.startswith(anarun)
             ]
         )
-        return map(operator.itemgetter(1), sorttups)
+        return list(map(operator.itemgetter(1), sorttups))
 
     def remap_platemaplabels(
         self, newellabels=None
@@ -665,15 +665,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 )  # allows for <4 elements
             else:
                 self.ellabels = newellabels
-        for runk, rund in self.expfiledict.iteritems():
+        for runk, rund in self.expfiledict.items():
             if not runk.startswith("run__"):
                 continue
             [
                 d.update(
-                    zip(
+                    list(zip(
                         self.ellabels,
                         [d[k] for k in ["A", "B", "C", "D", "E", "F", "G", "H"]],
-                    )
+                    ))
                 )
                 for d in rund["platemapdlist"]
             ]
@@ -784,10 +784,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 (int(runk.partition("run__")[2]), rund["parameters"]["plate_id"], techd)
                 for runk, rund in [
                     (runk, rund)
-                    for runk, rund in self.expfiledict.iteritems()
+                    for runk, rund in self.expfiledict.items()
                     if runk.startswith("run__")
                 ]
-                for techk, techd in rund.iteritems()
+                for techk, techd in rund.items()
                 if techk.startswith("files_technique__")
             ]
             runint_pl_smp = sorted(
@@ -796,9 +796,9 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         [
                             (runint, pl, filed["sample_no"])
                             for runint, pl, techd in runint_pl_techd
-                            for typed in techd.itervalues()
-                            for filed in typed.itervalues()
-                            if "sample_no" in filed.keys() and filed["sample_no"] > 0
+                            for typed in techd.values()
+                            for filed in typed.values()
+                            if "sample_no" in list(filed.keys()) and filed["sample_no"] > 0
                         ]
                     )
                 )
@@ -819,7 +819,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 self.l_csvheaderdict = []
                 self.l_platemap4keys = []
         if inds is None:
-            inds = range(len(self.l_fomdlist))
+            inds = list(range(len(self.l_fomdlist)))
         for ind in inds:
             fomdlist = self.l_fomdlist[ind]
             fomnames = self.l_fomnames[ind]
@@ -827,21 +827,21 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not k in fomnames:
                     fomnames += [k]
             for d in fomdlist:
-                if not "plate_id" in d.keys():
+                if not "plate_id" in list(d.keys()):
                     d["plate_id"] = 0
-                if not "runint" in d.keys():
+                if not "runint" in list(d.keys()):
                     d["runint"] = 0
-                if not "anaint" in d.keys():
+                if not "anaint" in list(d.keys()):
                     d["anaint"] = 0
-                if not "code" in d.keys() and (
+                if not "code" in list(d.keys()) and (
                     d["runint"] == 0
-                    or (not "sample_no" in d.keys())
+                    or (not "sample_no" in list(d.keys()))
                     or d["sample_no"] <= 0
                 ):
                     d["code"] = -1
                 if not (
                     d["runint"] == 0
-                    or (not "sample_no" in d.keys())
+                    or (not "sample_no" in list(d.keys()))
                     or d["sample_no"] <= 0
                 ):
                     rund = self.expfiledict["run__%d" % d["runint"]]
@@ -856,7 +856,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                                 : max(4, len(self.ellabels))
                             ]
                         ):  # use A B C D and more if more elements printed
-                            if not k in d.keys():
+                            if not k in list(d.keys()):
                                 # print kTODO
                                 d[k] = pmd[k]
                                 if not k in fomnames:
@@ -867,7 +867,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                             idialog = messageDialog(self, msg)
                             idialog.exec_()
                         else:
-                            print msg
+                            print(msg)
                         return
 
     def fillxyoptions(self, clear=False):
@@ -913,19 +913,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         # for exp filtering, build a new construct where plate,run,tech,type are wrapped in keys and the value is the array of codes, sorted by filename
         self.exp_keys_codearr_dict = {}
         codeset = set([])
-        for runk, rund in self.expfiledict.iteritems():
-            if not (runk.startswith("run__") and "platemapdlist" in rund.keys()):
+        for runk, rund in self.expfiledict.items():
+            if not (runk.startswith("run__") and "platemapdlist" in list(rund.keys())):
                 continue
             plateid = rund["parameters"]["plate_id"]
-            for techk, techd in rund.iteritems():
+            for techk, techd in rund.items():
                 if not techk.startswith("files_technique"):
                     continue
-                for typek, typed in techd.iteritems():
+                for typek, typed in techd.items():
                     keytup = ("%d" % plateid, (runk, techk, typek))
                     codes = []
                     for filek in sorted(typed.keys()):
                         filed = typed[filek]
-                        if not "sample_no" in filed.keys():
+                        if not "sample_no" in list(filed.keys()):
                             continue
                         smp = filed["sample_no"]
                         if numpy.isnan(smp) or not smp in rund["platemapsamples"]:
@@ -944,7 +944,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                         )
                     codeset = codeset.union(set(codes))
                     self.exp_keys_codearr_dict[keytup] = numpy.int32(codes)
-        flattups = [[pl] + list(kt) for pl, kt in self.exp_keys_codearr_dict.keys()]
+        flattups = [[pl] + list(kt) for pl, kt in list(self.exp_keys_codearr_dict.keys())]
         for mainitem in self.widgetItems_pl_ru_te_ty_co:
             items = mainitem.takeChildren()
             for item in items:
@@ -1007,7 +1007,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
     def updatefiltereddata(self):
         # filter exp data by parsing the list of exp_keys_codearr_dict keys by plate,run,tech,type filters then filtering by code
-        l_keytup = self.exp_keys_codearr_dict.keys()
+        l_keytup = list(self.exp_keys_codearr_dict.keys())
         for count, mainitem in enumerate(self.widgetItems_pl_ru_te_ty_co[:-1]):
             allowedvals = [
                 str(mainitem.child(i).text(0)).strip()
@@ -1122,19 +1122,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
     def gethighestrunk(self, getnextone=False):
         kfcn = lambda i: "run__%d" % i
         i = 1
-        while kfcn(i) in self.expfiledict.keys():
+        while kfcn(i) in list(self.expfiledict.keys()):
             i += 1
         if getnextone:
             runk = kfcn(i)
         else:
             runk = kfcn(i - 1)
-            if not runk in self.expfiledict.keys():
+            if not runk in list(self.expfiledict.keys()):
                 return None
         return runk
 
     def loadcsv(self):
         if not self.GUIMODE:
-            print "loadcsv only intended for use in GUIMODE"
+            print("loadcsv only intended for use in GUIMODE")
         newrunk = self.gethighestrunk(
             getnextone=True
         )  # create a new run, maybe wouldn't need to if somethign already loaded but usually thsi will be used to load only .csv so need to create a run for toehr mechanics to work
@@ -1155,7 +1155,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         if idialog.error:
             return
         self.ellabels = idialog.ellabels
-        if not "exp_version" in self.expfiledict.keys():
+        if not "exp_version" in list(self.expfiledict.keys()):
             self.expfiledict["exp_version"] = 0
         self.expfiledict[newrunk] = copy.deepcopy(idialog.rund)
         s = str(self.platemapfilenameLineEdit.text())
@@ -1248,7 +1248,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     calc_comps__starts_contains_tups=calc_comps__starts_contains_tups,
                 )
                 for fomdlist_index1, d in enumerate(fomdlist)
-                if fomname in d.keys()
+                if fomname in list(d.keys())
                 and d["plate_id"] in plateidallowedvals
                 and d["runint"] in runintallowedvals
                 and d["code"] in codeallowedvals
@@ -1265,7 +1265,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 "comps",
             ]
         ):
-            self.fomplotd[k] = numpy.array(map(operator.itemgetter(count), plotdinfo))
+            self.fomplotd[k] = numpy.array(list(map(operator.itemgetter(count), plotdinfo)))
         self.fomplotd["comps"] = numpy.array(
             [c / c.sum() for c in self.fomplotd["comps"]]
         )
@@ -1286,7 +1286,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             )
             if tup in self.select_idtups
         ]
-        for k in self.fomplotd.keys():
+        for k in list(self.fomplotd.keys()):
             if isinstance(self.fomplotd[k], numpy.ndarray):
                 self.fomplotd[k] = self.fomplotd[k][filterinds]
         if plotbool:
@@ -1331,8 +1331,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         tuplist = [
             (count, csvheaderdict)
             for count, csvheaderdict in enumerate(self.l_csvheaderdict)
-            if "plot_parameters" in csvheaderdict.keys()
-            and "plot__1" in csvheaderdict["plot_parameters"].keys()
+            if "plot_parameters" in list(csvheaderdict.keys())
+            and "plot__1" in list(csvheaderdict["plot_parameters"].keys())
         ]
         keys = [
             "%d; %s; %s; %s"
@@ -1345,7 +1345,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             for count, csvheaderdict in tuplist
             for k in sorted(csvheaderdict["plot_parameters"].keys())
             if k.startswith("plot__")
-            and "fom_name" in csvheaderdict["plot_parameters"][k].keys()
+            and "fom_name" in list(csvheaderdict["plot_parameters"][k].keys())
             and csvheaderdict["plot_parameters"][k]["fom_name"] in self.fomselectnames
         ]
         for count, s in enumerate(keys):
@@ -1371,8 +1371,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         ind = int(ind) - 1
         # check only the rleevant plate_id and run in top treewidget
         dlist = self.l_fomdlist[ind]
-        platelist = set(["%s" % d["plate_id"] for d in dlist if "plate_id" in d.keys()])
-        runlist = set(["run__%d" % d["runint"] for d in dlist if "runint" in d.keys()])
+        platelist = set(["%s" % d["plate_id"] for d in dlist if "plate_id" in list(d.keys())])
+        runlist = set(["run__%d" % d["runint"] for d in dlist if "runint" in list(d.keys())])
         for mainitem, vals in zip(
             self.widgetItems_pl_ru_te_ty_co[:2], [platelist, runlist]
         ):
@@ -1399,10 +1399,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 ("colormap_over_color", self.aboverangecolLineEdit),
                 ("colormap_under_color", self.belowrangecolLineEdit),
             ]:
-                if not k in d.keys():
+                if not k in list(d.keys()):
                     continue
                 le.setText(d[k])
-            if "colormap_min_value" in d.keys() and "colormap_max_value" in d.keys():
+            if "colormap_min_value" in list(d.keys()) and "colormap_max_value" in list(d.keys()):
                 self.vminmaxLineEdit.setText(
                     "%s,%s" % (d["colormap_min_value"], d["colormap_max_value"])
                 )
@@ -1439,7 +1439,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     ]
                 ]
             else:
-                strarr += [[fcn.func_name, tempfmt(fcn(fom))]]
+                strarr += [[fcn.__name__, tempfmt(fcn(fom))]]
         strarr = numpy.array(strarr)
         s = "\n".join(["\t".join([v for v in a]) for a in strarr])
         self.fomstatsTextBrowser.setText(s)
@@ -1483,7 +1483,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 x_inds_fom = inds_fom
             else:
                 if arrkeys[0] == "None":  # for x use indexes
-                    ytemp = map(operator.itemgetter(1), inds_fom)
+                    ytemp = list(map(operator.itemgetter(1), inds_fom))
                     ytemp = numpy.array(ytemp)
                     ytemp = ytemp[numpy.logical_not(numpy.isnan(ytemp))]
                     xtemp = numpy.arange(len(ytemp))
@@ -1493,15 +1493,15 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                             self.fomplotd["fomdlist_index0"][self.selectind],
                             self.fomplotd["fomdlist_index1"][self.selectind],
                         )
-                        if (i0, i1) in map(operator.itemgetter(0), inds_fom):
-                            i = map(operator.itemgetter(0), inds_fom).index((i0, i1))
+                        if (i0, i1) in list(map(operator.itemgetter(0), inds_fom)):
+                            i = list(map(operator.itemgetter(0), inds_fom)).index((i0, i1))
                             selectpointdata[count - 1] = [[i], [inds_fom[i][1]]]
                 else:
                     # pair up fom data points between x and y
                     indsset = sorted(
                         list(
                             set(map(operator.itemgetter(0), inds_fom)).intersection(
-                                map(operator.itemgetter(0), x_inds_fom)
+                                list(map(operator.itemgetter(0), x_inds_fom))
                             )
                         )
                     )
@@ -1538,17 +1538,17 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         xyy = [None, None, None]
         anak = "ana__%d" % anaint
         anarunk = "files_multi_run" if runint is None else "files_run__%d" % runint
-        if not anarunk in self.anafiledict[anak].keys():
+        if not anarunk in list(self.anafiledict[anak].keys()):
             return xyy
         anarund = self.anafiledict[anak][anarunk]
         mainitem = self.widgetItems_pl_ru_te_ty_co[2]
         # allowedvals=[str(mainitem.child(i).text(0)).strip() for i in range(mainitem.childCount()) if bool(mainitem.child(i).checkState(0))]
         fn_filed_tosearch = [
             (fn, filed)
-            for techk, techd in anarund.iteritems()
-            for fn, filed in techd.iteritems()
-            if "sample_no" in filed.keys()
-            and "keys" in filed.keys()
+            for techk, techd in anarund.items()
+            for fn, filed in techd.items()
+            if "sample_no" in list(filed.keys())
+            and "keys" in list(filed.keys())
             and filed["sample_no"] == smp
         ]  # techk in allowedvals
         # remove techk.startswith('inter_') and  ion 20161103 to allow searching of misc_files
@@ -1610,7 +1610,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         ]
         techitems = [
             (techk, techd)
-            for techk, techd in rund.iteritems()
+            for techk, techd in rund.items()
             if techk in techallowedvals and isinstance(techd, dict)
         ]
         if self.SelectTreeFileFilterTopLevelItem is None:
@@ -1624,10 +1624,10 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         fn_filed_tosearch = [
             (fn, filed)
             for techk, techd in techitems
-            for typek, typed in techd.iteritems()
-            for fn, filed in typed.iteritems()
+            for typek, typed in techd.items()
+            for fn, filed in typed.items()
             if typek in typeallowedvals
-            and "sample_no" in filed.keys()
+            and "sample_no" in list(filed.keys())
             and filed["sample_no"] == smp
             and (not (False in [s in fn for s in searchstrs]))
         ]
@@ -1637,7 +1637,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             fn_filed_keyind = [
                 (fn, filed, filed["keys"].index(k))
                 for fn, filed in fn_filed_tosearch
-                if "keys" in filed.keys() and k in filed["keys"]
+                if "keys" in list(filed.keys()) and k in filed["keys"]
             ]
             if (
                 len(fn_filed_keyind) > 0
@@ -1740,7 +1740,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 anak = "ana__%d" % anaint
                 anad = self.anafiledict[anak]
                 if (
-                    "parameters" in anad.keys()
+                    "parameters" in list(anad.keys())
                     and "select_ana" in anad["parameters"]
                     and anad["parameters"]["select_ana"].startswith("ana__")
                 ):
@@ -1779,8 +1779,8 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 (yd, xd),
             ]:  # rawselectinds applied to the array deemed to be raw by not having rawselectinds. cannot plot 2 interlen things against each other
                 if (
-                    "rawselectinds" in dint.keys()
-                    and (not "rawselectinds" in draw.keys())
+                    "rawselectinds" in list(dint.keys())
+                    and (not "rawselectinds" in list(draw.keys()))
                     and len(draw["arr"]) > (dint["rawselectinds"].max())
                 ):
                     draw["arr"] = draw["arr"][dint["rawselectinds"]]
@@ -1789,7 +1789,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 plotdata[count] = [xd["arr"], yd["arr"]]
                 continue
             if count == 0:
-                print len(xd["arr"]), len(yd["arr"])
+                print(len(xd["arr"]), len(yd["arr"]))
                 msg = (
                     "ERROR: %s and %s are length %d and %d after reading from \n%s\n%s"
                     % (
@@ -1805,7 +1805,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                     idialog = messageDialog(self, msg)
                     idialog.exec_()
                 else:
-                    print msg
+                    print(msg)
                 return None
         getval = lambda k: self.fomplotd[k][self.selectind]
         lab = self.customlegendfcn(
@@ -1939,19 +1939,19 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             highest3stdtups = sorted(
                 [(udidict["comps"][:, i].std(), i) for i in range(len(self.ellabels))]
             )[-3:]
-            print opts
-            print [(udidict["comps"][:, i].std(), i) for i in range(len(self.ellabels))]
-            print highest3stdtups
+            print(opts)
+            print([(udidict["comps"][:, i].std(), i) for i in range(len(self.ellabels))])
+            print(highest3stdtups)
             elinds = sorted(
                 [i for stddev, i in highest3stdtups]
             )  # has to eb sorted because that is how combinations does it
             selectstr = ",".join([self.ellabels[i] for i in elinds])
-            print selectstr
+            print(selectstr)
             selectind = opts.index(selectstr)
             lab = "\n".join(["%d: %s" % tup for tup in enumerate(opts)])
             ans = userinputcaller(
                 self,
-                inputs=[(lab, int, ` selectind `)],
+                inputs=[(lab, int, repr( selectind))],
                 title="Enter option for 3 elements to use",
                 cancelallowed=True,
             )
@@ -1960,23 +1960,23 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             elinds = [
                 indstup
                 for i, indstup in enumerate(
-                    itertools.combinations(range(len(self.ellabels)), 3)
+                    itertools.combinations(list(range(len(self.ellabels))), 3)
                 )
                 if i == ans[0]
             ]
             l_elinds = elinds
-            print l_elinds
+            print(l_elinds)
         elif ternary_el_inds_for_udi_export == "ALL":
             l_elinds = [
                 indstup
                 for i, indstup in enumerate(
-                    itertools.combinations(range(len(self.ellabels)), 3)
+                    itertools.combinations(list(range(len(self.ellabels))), 3)
                 )
             ]
         else:
             l_elinds = [ternary_el_inds_for_udi_export[:3]]
         for elinds in l_elinds:
-            print self.ellabels
+            print(self.ellabels)
             udidict["ellabels"] = [self.ellabels[i] for i in elinds]
             udidict["comps"] = comps[:, elinds]
             udidict["comps"] = numpy.array([c / c.sum() for c in udidict["comps"]])
@@ -2050,7 +2050,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 styled = dict(
                     [
                         (k, v)
-                        for k, v in self.xyplotstyled.iteritems()
+                        for k, v in self.xyplotstyled.items()
                         if not "sel" in k and not "right_" in k and v != ""
                     ]
                 )
@@ -2058,11 +2058,11 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 styled = dict(
                     [
                         (k.partition("right_")[2], v)
-                        for k, v in self.xyplotstyled.iteritems()
+                        for k, v in self.xyplotstyled.items()
                         if "right_" in k and v != ""
                     ]
                 )
-            if count == 0 and "xylab" in plotattrd.keys():
+            if count == 0 and "xylab" in list(plotattrd.keys()):
                 styled["label"] = plotattrd["xylab"]
             ax.plot(xarr, yarr, **styled)
             ax.set_xlabel(xl)
@@ -2072,7 +2072,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             selstyled = dict(
                 [
                     (k.partition("select_")[2], v)
-                    for k, v in self.xyplotstyled.iteritems()
+                    for k, v in self.xyplotstyled.items()
                     if "select_" in k and v != ""
                 ]
             )
@@ -2201,7 +2201,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                             fcn(c)
                             clip = False
                         except:
-                            print "color entry not understood:", vstr
+                            print("color entry not understood:", vstr)
                 except:
                     pass
             self.norm = colors.Normalize(vmin=self.vmin, vmax=self.vmax, clip=clip)
@@ -2234,7 +2234,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 self.extend = "neither"
             sm = cm.ScalarMappable(norm=self.norm, cmap=self.cmap)
             sm.set_array(fom)
-            cols = numpy.float32(map(sm.to_rgba, fom))[:, :3]
+            cols = numpy.float32(list(map(sm.to_rgba, fom)))[:, :3]
         self.comppermuteinds = list(
             [l for l in itertools.permutations([0, 1, 2, 3], 4)][
                 self.CompPlotOrderComboBox.currentIndex()
@@ -2255,7 +2255,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 if not idialog.exec_():
                     return
             els = ["X", "X", "X", "X"]
-            print "Trying to plot FOMs from ana__ with different 4-element lists"
+            print("Trying to plot FOMs from ana__ with different 4-element lists")
         else:
             els = self.getellabels_pm4keys(pmkeys)
         self.quatcompclass.ellabels = [els[i] for i in self.comppermuteinds]
@@ -2320,7 +2320,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 marker = "s"
                 s = int(userstr)
         except:
-            print "plate scatter format to default because cannot understand ", userstr
+            print("plate scatter format to default because cannot understand ", userstr)
             marker = "s"
             s = 70
         m = plotw.axes.scatter(
@@ -2663,7 +2663,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 )
             )
         )
-        keys = map(operator.itemgetter(1), sortind_k)
+        keys = list(map(operator.itemgetter(1), sortind_k))
         strfmt = (
             lambda x: (
                 "%d"
@@ -2674,7 +2674,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         )
         genstrlist_inds = lambda i0, i1: [
             strfmt(self.l_fomdlist[i0][i1][k])
-            if k in self.l_fomdlist[i0][i1].keys()
+            if k in list(self.l_fomdlist[i0][i1].keys())
             else "NaN"
             for k in keys
         ]
@@ -2691,7 +2691,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             else:
                 smplist = [int(eval(sampleNostr.strip()))]
         except:
-            print "error adding samples"
+            print("error adding samples")
             return
         self.addrem_select_fomplotdinds(smplist=smplist, remove=remove)
 
@@ -2706,7 +2706,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 raise
             abcd /= abcd.sum()
         except:
-            print "error adding composition"
+            print("error adding composition")
             return
         self.addrem_select_fomplotdinds(comp=abcd, remove=remove)
 
@@ -2718,7 +2718,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
         try:
             xy = numpy.array(eval("[" + xystr.strip() + "]"))
         except:
-            print "error adding x,y"
+            print("error adding x,y")
             return
         self.addrem_select_fomplotdinds(xy=xy, remove=remove)
 
@@ -2727,28 +2727,28 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
 
     def addallsamples(self):
         self.addrem_select_fomplotdinds(
-            select_fomplotd_inds=range(len(self.fomplotd["sample_no"]))
+            select_fomplotd_inds=list(range(len(self.fomplotd["sample_no"])))
         )
 
     def remallsamples(self):
         self.addrem_select_fomplotdinds(
-            select_fomplotd_inds=range(len(self.fomplotd["sample_no"])), remove=True
+            select_fomplotd_inds=list(range(len(self.fomplotd["sample_no"]))), remove=True
         )
 
     def getxystyle_user(self):
         inputs = [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if not (k.startswith("right_") or k.startswith("select_"))
         ]
         inputs += [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if k.startswith("select_")
         ]
         inputs += [
             (k, type(v), str(v))
-            for k, v in self.xyplotstyled.iteritems()
+            for k, v in self.xyplotstyled.items()
             if k.startswith("right_")
         ]
         ans = userinputcaller(
@@ -2793,14 +2793,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             )
             for val, plotw in zip(self.tabs__plateids, self.tabs__plotw_plate)
         ]
-        print [
+        print([
             (
                 bool(mainitem.child(i).checkState(0)),
                 str(val),
                 str(mainitem.child(i).text(0)).strip(),
             )
             for i in range(mainitem.childCount())
-        ]
+        ])
         mainitem = self.widgetItems_pl_ru_te_ty_co[-1]
         code_dict_list = [
             (
@@ -2819,14 +2819,14 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
             )
             for val, plotw in zip(self.tabs__codes, self.tabs__plotw_comp)
         ]
-        print [
+        print([
             (
                 bool(mainitem.child(i).checkState(0)),
                 str(val),
                 str(mainitem.child(i).text(0)).strip(),
             )
             for i in range(mainitem.childCount())
-        ]
+        ])
         xyplotw = None if save_all_std_bool else self.plotw_xy
         idialog = saveimagesDialog(
             self,
@@ -2871,7 +2871,7 @@ class visdataDialog(QDialog, Ui_VisDataDialog):
                 idialog = messageDialog(self, msg)
                 idialog.exec_()
             else:
-                print msg
+                print(msg)
             return
         if batchidialog is None:
             comboind_strlist = []

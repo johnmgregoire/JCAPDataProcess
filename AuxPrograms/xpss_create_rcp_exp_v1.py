@@ -64,13 +64,13 @@ class setup_rcp_and_exp_xpss:
                 return_pmidstr=True,
             )
             if ans is None:
-                print "aborting because failed retrieval of platemap id for plate :", self.plate_idstr
+                print("aborting because failed retrieval of platemap id for plate :", self.plate_idstr)
                 return True
             self.pmidstr = ans[1]
         dropfolder = getdropfolder_exptype(self.datatype)
         if dropfolder is None:
             # messageDialog(None, 'Aborting SAVE because cannot find drop folder').exec_()
-            print "Aborting SAVE because cannot find drop folder"
+            print("Aborting SAVE because cannot find drop folder")
             return True
         if not os.path.isdir(dropfolder):
             os.mkdir(dropfolder)
@@ -90,7 +90,7 @@ class setup_rcp_and_exp_xpss:
                 shutil.rmtree(self.runfolderpath)
             else:
                 # messageDialog(None, 'Aborting SAVE because %s folder exists' %rcpmainfolder).exec_()
-                print "Aborting SAVE because %s folder exists" % rcpmainfolder
+                print("Aborting SAVE because %s folder exists" % rcpmainfolder)
                 return True
         os.mkdir(self.runfolderpath)
         return False
@@ -157,7 +157,7 @@ class setup_rcp_and_exp_xpss:
             d.update({k: v}) for d in [exprund["parameters"], rcpdict["parameters"]]
         ]
         self.add_run_param("plate_id", self.plate_idstr)
-        for k, v in self.run_params_dict.iteritems():
+        for k, v in self.run_params_dict.items():
             v = (
                 strrep_generic_file_dict_value(v).strip("[").rstrip("]")
             )  # make lists comma delimited but without the brackets
@@ -204,12 +204,12 @@ class setup_rcp_and_exp_xpss:
         rcpfilestr = strrep_filedict(self.rcpdict)
         p = os.path.join(self.runfolderpath, self.rcpdict["name"] + ".rcp")
         if testmode:
-            print "THIS IS THE RCP FILE THAT WOULD BE SAVED:"
-            print rcpfilestr
+            print("THIS IS THE RCP FILE THAT WOULD BE SAVED:")
+            print(rcpfilestr)
             return
         with open(p, mode="w") as f:
             f.write(rcpfilestr)
-        print "rcp file saved to ", p
+        print("rcp file saved to ", p)
         saveexpfiledict, dsavep = saveexp_txt_dat(
             self.expdict,
             saverawdat=False,
@@ -217,7 +217,7 @@ class setup_rcp_and_exp_xpss:
             rundone=self.expext,
             file_attr_and_existence_check=False,
         )
-        print "exp file saved to ", dsavep
+        print("exp file saved to ", dsavep)
 
     def add_all_files(self):
         self.import_path  # this path should be all that's necessary to

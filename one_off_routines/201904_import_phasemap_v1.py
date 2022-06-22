@@ -16,7 +16,7 @@ import zipfile
 prevcsv=r'L:\processes\analysis\xrds\20181218.134602.copied-20181218221010726PST\ana__11_3928_3930_3932_3933.csv'
 fileattrd={'keys':'sample_no,runint,plate_id,pmx,pmy,Intensity.max,Bi,Cu,V'.split(','),'num_header_lines':9}
 d=readcsvdict(prevcsv, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False, delim=',')
-d.keys()
+list(d.keys())
 anak='ana__1'
 secondanak='ana__2'
 
@@ -35,7 +35,7 @@ q0,q1=Q[0],Q[-1]
 #error here means original csv doens't have all the samples - they can be removed but not added during external modification
 inds=[np.where((d['sample_no']==smp) & (d['plate_id']==pid))[0][0] for smp,pid in zip(smps,pids)]
 
-for k in d.keys():
+for k in list(d.keys()):
     d[k]=d[k][inds]
 
 N=len(inds)
@@ -67,7 +67,7 @@ for l in soltnlines:
         phind=int(cc)-1
         Rsum[smpind,phind]=np.array([float(s) for s in c.strip().split(',')]).sum()
         if np.array([float(s) for s in c.strip().split(',')]).max()>1.0001:
-            print 'error'
+            print('error')
             break
 S[C==0.]=0.
 
@@ -85,13 +85,13 @@ csvfn=anak+'__'+'-'.join(savekeys[3:6])+'.csv'
 fom1path=os.path.join(anafolder, csvfn)
 with open(fom1path,mode='w') as f:
     f.write(filestr)
-print '%s: %s' %(csvfn,filedesc)
+print('%s: %s' %(csvfn,filedesc))
 
 fn=anak+'__'+'phasenames.txt'
 phasenamespath=os.path.join(anafolder, fn)
 with open(phasenamespath,mode='w') as f:
     f.write('\n'.join(phase_names))
-print '%s: %s' %(fn,'xrds_misc_file;')
+print('%s: %s' %(fn,'xrds_misc_file;'))
 
 phaseinfop=r'L:\processes\analysis\xrds\20190415.134602.run\ana__2_select_phases_info.csv'
 ind__int_vs_std_by_cation=3
@@ -136,7 +136,7 @@ csvfn=secondanak+'__'+'-'.join(savekeys[3:6])+'.csv'
 fom2path=os.path.join(anafolder, csvfn)
 with open(fom2path,mode='w') as f:
     f.write(filestr)
-print '%s: %s' %(csvfn,filedesc)
+print('%s: %s' %(csvfn,filedesc))
 
 
 for i,l in enumerate(soltnlines):

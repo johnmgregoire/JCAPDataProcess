@@ -261,7 +261,7 @@ for exp, lim1, lim2 in explst:
         if len(inds)>0:
             samplestoplot=list(visdataui.fomplotd['sample_no'][inds])
             filterinds=[ind for ind, smp in enumerate(visdataui.fomplotd['sample_no']) if smp in samplestoplot]
-            for k in visdataui.fomplotd.keys():
+            for k in list(visdataui.fomplotd.keys()):
                 if isinstance(visdataui.fomplotd[k], numpy.ndarray):
                     visdataui.fomplotd[k]=visdataui.fomplotd[k][filterinds]
 

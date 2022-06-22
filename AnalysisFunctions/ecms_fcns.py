@@ -61,7 +61,7 @@ def get_colors_fom_cmap(
     norm = colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
     sm = cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array(fomarr)
-    cols = np.float32(map(sm.to_rgba, fomarr))[:, :3]
+    cols = np.float32(list(map(sm.to_rgba, fomarr)))[:, :3]
     return cols
 
 
@@ -76,7 +76,7 @@ def read_ecms_simulation_data(ms_simulation_model, species_list):
         metad = filedict_lines(f.readlines())
     d["metadata"] = metad
     d["echem_profile"] = {}
-    for k, v in d["metadata"].iteritems():
+    for k, v in d["metadata"].items():
         if not isinstance(v, str):
             continue
         d["metadata"][k] = (
@@ -84,7 +84,7 @@ def read_ecms_simulation_data(ms_simulation_model, species_list):
             if "," in v
             else attemptnumericconversion_tryintfloat(v)
         )
-    for k, v in metad["echem_profile"].iteritems():
+    for k, v in metad["echem_profile"].items():
         d["echem_profile"][k] = (
             np.array([attemptnumericconversion_tryintfloat(v2) for v2 in v.split(",")])
             if "," in v
@@ -190,7 +190,7 @@ def eche_split_current_by_sweep_and_generate_intended_voltage(
         ]  # replace first 0.75 window with raw data due to initial transient
         return sweep_currents, sim_basis_v, echem_i_smooth, np.array(segment_index_arr)
     else:
-        print "technique not supperted for ecms analysis"
+        print("technique not supperted for ecms analysis")
 
 
 ###these lines for seeding line by line execution of perform
@@ -378,7 +378,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                 - self.params["mass_spec_lag_time_s"]
             )
         self.filedlist_ms = [
-            fd for fd in self.filedlist_ms if "epoch(s)" in fd.keys()
+            fd for fd in self.filedlist_ms if "epoch(s)" in list(fd.keys())
         ]  # remove the ones not matching masses
         self.fomdlist = []
         for filed in self.filedlist:
@@ -402,7 +402,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                     datadict["Epoch"] - 2082844800.0
                 )  # 2082844800 is the s between the LV and python epochs and the labview eposh is at file save so subtract the duration of the measurement to get start time
                 filed["start_time"] = filed["end_time"] - datadict["t(s)"][-1]
-                for k in datadict.keys():
+                for k in list(datadict.keys()):
                     if not k in ["t(s)", "Ewe(V)", "I(A)"]:
                         del datadict[k]
             datadict["t(s)"] = np.float64(datadict["t(s)"])
@@ -455,7 +455,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                         "ms_torr"
                     ][msinds]
                     indsarr = np.array(inds)
-                    for k in datadict.keys():
+                    for k in list(datadict.keys()):
                         if "t(s)" in k:
                             continue
                         interlend[k + "_MS"] = datadict[k][inds]
@@ -483,7 +483,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                                 if "epoch" in k
                                 else ("%d" if k == "rawselectinds" else "%.4e"),
                             )
-                            for k in interlend.keys()
+                            for k in list(interlend.keys())
                         ]
                     )
                     kl = saveinterdata(p, interlend, savetxt=True, fmt=fmtd)
@@ -499,7 +499,7 @@ class Analysis__ECMS_Time_Join(Analysis_Master_inter):
                     )
                     fomd["fn_mass__%s" % msfiled["mass"]] = fni
             if num_ms_found == 0:
-                print "DID NOT FIND MS DATA FOR ", fn
+                print("DID NOT FIND MS DATA FOR ", fn)
             fomd[self.fomnames[0]] = num_ms_found
             self.fomdlist += [
                 dict(
@@ -729,7 +729,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
         )
 
     def getapplicablefomfiles(self, anadict):  # called by getapplicablefilenames
-        if not anadict is None and self.params["select_ana"] in anadict.keys():
+        if not anadict is None and self.params["select_ana"] in list(anadict.keys()):
             self.num_ana_considered, self.filedlist = stdgetapplicablefomfiles(
                 anadict,
                 params={
@@ -766,13 +766,13 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                 self.filedlist = []
                 return
             anadict = calcFOMDialogclass.anadict
-        if not self.params["cal_ana"] in anadict.keys():
+        if not self.params["cal_ana"] in list(anadict.keys()):
             self.filedlist = []
             return
         try:
-            fn, keystr = anadict[self.params["cal_ana"]]["files_multi_run"][
+            fn, keystr = list(anadict[self.params["cal_ana"]]["files_multi_run"][
                 "misc_files"
-            ].items()[0]
+            ].items())[0]
             self.cal_filed = createfileattrdict(keystr, fn=fn)
             self.cal_filed["fn"] = fn
         except:
@@ -781,11 +781,11 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             return
         try:
             self.data_filed_dict = {}
-            for k, v in anadict[self.params["select_ana"]].iteritems():
+            for k, v in anadict[self.params["select_ana"]].items():
                 if not k.startswith("files_"):
                     continue
-                for k2, v2 in v.iteritems():
-                    for fn, keystr in v2.iteritems():
+                for k2, v2 in v.items():
+                    for fn, keystr in v2.items():
                         self.data_filed_dict[fn] = createfileattrdict(keystr, fn=fn)
         except:
             self.data_filed_dict = None
@@ -957,7 +957,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     or (np.abs(vdiff) > self.params["voltage_error_V"]).sum()
                     > self.params["num_voltage_errors_to_abort"]
                 ):  # echem_t contains points beyond the profile time
-                    print "measured voltages do not match the echem_profile. Aborting"
+                    print("measured voltages do not match the echem_profile. Aborting")
                     continue
                 echem_fe_test_inds = (
                     (echem_t > self.params["ignore_FE_time_start_end_s"])
@@ -990,7 +990,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         fomd[k] = v
                     calind = list(calfomd["species"]).index(sp)
                     cald = {}
-                    for k, v in calfomd.iteritems():
+                    for k, v in calfomd.items():
                         cald[k] = v[calind]
                     msfn = datafomd["fn_mass__%d" % cald["mass"]][datafomind]
                     p = os.path.join(destfolder, msfn)
@@ -1167,7 +1167,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     fmtd = dict(
                         [
                             (k, "%d" if k == "rawselectinds" else "%.4e")
-                            for k in interlend.keys()
+                            for k in list(interlend.keys())
                         ]
                     )
                     kl = saveinterdata(p, interlend, savetxt=True, fmt=fmtd)
@@ -1189,7 +1189,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     ] = "ecms_fitsummary_pck_file;"
                 for s in ["Ip(A)", "FE"]:
                     rawlend["%s_Total" % s] = np.array(
-                        [rawlend[k] for k in rawlend.keys() if k.startswith(s)]
+                        [rawlend[k] for k in list(rawlend.keys()) if k.startswith(s)]
                     ).sum(axis=0)
                 fomd["max.FETotal"] = np.max(rawlend["FE_Total"])
                 totcharge_species = np.sum([fomd["%s.charge.C" % sp] for sp in species])
@@ -1242,7 +1242,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                         ]
                 for fomk in summ_plot_fom_keys:
                     tech_summary_plot_data["fomlistd"][fomk] += [
-                        fomd[fomk] if fomk in fomd.keys() else np.nan
+                        fomd[fomk] if fomk in list(fomd.keys()) else np.nan
                     ]
                     # tech_summary_plot_data=[]
                 plt.plot([], [], "b-", label="raw I(V)")
@@ -1271,7 +1271,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                     )
                 )
                 techd_fomdlist[tech] += [fomd]
-                for k in fomd.keys():
+                for k in list(fomd.keys()):
                     if not k in self.fomnames + self.strkeys_fomdlist + list(
                         FOMKEYSREQUIREDBUTNEVERUSEDINPROCESSING
                     ):
@@ -1282,7 +1282,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
             smps = [tup[1] for tup in pid_sid_datafomind__this_tech][
                 :max_samples_to_plot
             ]
-            cols = get_colors_fom_cmap(range(len(smps)), 0, len(smps) - 1, "jet")
+            cols = get_colors_fom_cmap(list(range(len(smps))), 0, len(smps) - 1, "jet")
             for spcount, sp in enumerate(species[:3]):
                 ax = plt.subplot(2, 2, spcount + 1)
                 k = "FE__%s" % sp
@@ -1295,7 +1295,7 @@ class Analysis__ECMS_Fit_MS(Analysis_Master_FOM_Process):
                 ax.set_xlabel("Ewe(compensatedVrhe)")
                 ax.set_ylabel(k)
             ax = plt.subplot(2, 2, 4)
-            smprange = range(len(smps))
+            smprange = list(range(len(smps)))
             for fomc, fomm, fomk in zip(
                 ["k", "y", "m", "c", "grey"],
                 ["o", "s", "<", ">", "x"],

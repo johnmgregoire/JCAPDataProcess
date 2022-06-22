@@ -35,7 +35,7 @@ def autotickformat(ax, x=False, y=False, ndec=3):
                     doit or numpy.min(numpy.log10(numpy.abs(numpy.array(lims)))) > ndec
                 )
             except:
-                print "error on axis formatter for lims ", lims
+                print("error on axis formatter for lims ", lims)
                 continue
             if doit:
                 xax.set_major_formatter(ExpTickLabels)
@@ -48,7 +48,7 @@ def autocolorbarformat(lims, ndec=3):
         doit = numpy.max(numpy.log10(numpy.abs(numpy.array(lims)))) < (-ndec)
         doit = doit or numpy.min(numpy.log10(numpy.abs(numpy.array(lims)))) > ndec
     except:
-        print "error on axis formatter for lims ", lims
+        print("error on axis formatter for lims ", lims)
         return
     if doit:
         return ExpTickLabels
@@ -69,7 +69,7 @@ class messageDialog(QDialog):
         if len(title) > 20:
             lab = QLabel()
             lab.setText(title)
-            print "***", title
+            print("***", title)
             mainlayout.addWidget(lab, 0, 0)
             mainlayout.addWidget(self.buttonBox, 1, 0)
         else:
@@ -181,7 +181,7 @@ class getexistingFilesFolders(QFileDialog):
                             str(self.directory().absolutePath()), str(i.data())
                         )
                     )
-        print files
+        print(files)
         self.selectedFiles = [str(fn) for fn in files]
         self.hide()
 
@@ -249,7 +249,7 @@ class userinputDialog(QDialog):
                 self.changedbool += [s != tup[2]]
             else:
                 self.changedbool += [True]
-            if tup[1] == str or tup[1] == unicode:
+            if tup[1] == str or tup[1] == str:
                 try:
                     self.ans += [s]
                 except:

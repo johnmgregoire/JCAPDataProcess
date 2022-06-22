@@ -16,7 +16,7 @@ import zipfile
 prevcsv=r'L:\processes\analysis\ssrl\20190624.140000.run\ana__6_2783.csv'
 fileattrd={'keys':'sample_no,runint,plate_id,pmx,pmy,Intensity.max,Cu.K.AtFrac,Bi.L.AtFrac,V.K.AtFrac'.split(','),'num_header_lines':9}
 d=readcsvdict(prevcsv, fileattrd, returnheaderdict=False, zipclass=None, includestrvals=False, delim=',')
-d.keys()
+list(d.keys())
 anak='ana__8'
 secondanak='ana__9'#second one is going to take the soltn and modify by intensity factors
 
@@ -41,7 +41,7 @@ q0,q1=Q[0],Q[-1]
 #error here means original csv doens't have all the samples - they can be removed but not added during external modification
 inds=[np.where((d['sample_no']==smp) & (d['plate_id']==pid))[0][0] for smp,pid in zip(smps,pids)]
 
-for k in d.keys():
+for k in list(d.keys()):
     d[k]=d[k][inds]
 
 N=len(inds)
@@ -73,7 +73,7 @@ for l in soltnlines:
         phind=int(cc)-1
         Rsum[smpind,phind]=np.array([float(s) for s in c.strip().split(',')]).sum()
         if np.array([float(s) for s in c.strip().split(',')]).max()>1.0001:
-            print 'error'
+            print('error')
             break
 S[C==0.]=0.
 
@@ -91,13 +91,13 @@ csvfn=anak+'__'+'-'.join(savekeys[3:6])+'.csv'
 fom1path=os.path.join(anafolder, csvfn)
 with open(fom1path,mode='w') as f:
     f.write(filestr)
-print '%s: %s' %(csvfn,filedesc)
+print('%s: %s' %(csvfn,filedesc))
 
 fn=anak+'__'+'phasenames.txt'
 phasenamespath=os.path.join(anafolder, fn)
 with open(phasenamespath,mode='w') as f:
     f.write('\n'.join(phase_names))
-print '%s: %s' %(fn,miscfildesc)
+print('%s: %s' %(fn,miscfildesc))
 
 
 ind__int_vs_std_by_cation=3
@@ -142,7 +142,7 @@ ana__8csvfn=secondanak+'__'+'-'.join(savekeys[3:6])+'.csv'
 fom2path=os.path.join(anafolder, csvfn)
 with open(fom2path,mode='w') as f:
     f.write(filestr)
-print '%s: %s' %(csvfn,filedesc)
+print('%s: %s' %(csvfn,filedesc))
 
 
 for i,l in enumerate(soltnlines):

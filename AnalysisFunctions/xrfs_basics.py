@@ -33,14 +33,14 @@ def getapplicablefilenames_specific_usetypetech(
     ]
     requiredparams += ["plate_id"]
     if runklist is None:
-        runklist = expfiledict.keys()
+        runklist = list(expfiledict.keys())
     runklist = [
         runk
         for runk in runklist
         if runk.startswith("run__")
         and (usek in expfiledict[runk]["run_use"])
-        and ("files_technique__" + techk) in expfiledict[runk].keys()
-        and typek in expfiledict[runk]["files_technique__" + techk].keys()
+        and ("files_technique__" + techk) in list(expfiledict[runk].keys())
+        and typek in list(expfiledict[runk]["files_technique__" + techk].keys())
     ]
     num_files_considered = numpy.int32(
         [
@@ -61,11 +61,11 @@ def getapplicablefilenames_specific_usetypetech(
             fn=fnk,
         )
         for runk in runklist
-        for fnk in expfiledict[runk]["files_technique__" + techk][typek].keys()
+        for fnk in list(expfiledict[runk]["files_technique__" + techk][typek].keys())
         if not (
             False
             in [
-                reqparam in expfiledict[runk]["parameters"].keys()
+                reqparam in list(expfiledict[runk]["parameters"].keys())
                 for reqparam in requiredparams
             ]
         )
@@ -74,7 +74,7 @@ def getapplicablefilenames_specific_usetypetech(
         dict(
             d,
             user_run_foms=expfiledict[d["run"]]["user_run_foms"]
-            if "user_run_foms" in expfiledict[d["run"]].keys()
+            if "user_run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -83,7 +83,7 @@ def getapplicablefilenames_specific_usetypetech(
         dict(
             d,
             run_foms=expfiledict[d["run"]]["run_foms"]
-            if "run_foms" in expfiledict[d["run"]].keys()
+            if "run_foms" in list(expfiledict[d["run"]].keys())
             else {},
         )
         for d in filedlist
@@ -94,7 +94,7 @@ def getapplicablefilenames_specific_usetypetech(
 def getapplicable_runs_paramsonly(expfiledict, usek, runklist=None, requiredparams=[]):
     requiredparams += ["plate_id"]
     if runklist is None:
-        runklist = expfiledict.keys()
+        runklist = list(expfiledict.keys())
     runklist = [
         runk
         for runk in runklist
@@ -117,7 +117,7 @@ def getapplicable_runs_paramsonly(expfiledict, usek, runklist=None, requiredpara
         if not (
             False
             in [
-                reqparam in expfiledict[runk]["parameters"].keys()
+                reqparam in list(expfiledict[runk]["parameters"].keys())
                 for reqparam in requiredparams
             ]
         )
@@ -217,7 +217,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
                 read_sample_no_bool=True,
             )
             if "StgLabel" in self.fomnames and not (
-                "StgLabel" in filed["batch_summary"].keys()
+                "StgLabel" in list(filed["batch_summary"].keys())
             ):
                 self.fomnames.remove("StgLabel")
         #            except:
@@ -249,7 +249,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
                     savek = keymodfcn(tk, appendstr)
                     trfomsmissing.pop(trfomsmissing.index(savek))
                     fomd[savek] = filed["batch_summary"][batchdictkey][tk]
-            for savek in filed["batch_summary"].keys():
+            for savek in list(filed["batch_summary"].keys()):
                 if savek in trfomsmissing:  # for example StagX
                     trfomsmissing.pop(trfomsmissing.index(savek))
                     fomd[savek] = filed["batch_summary"][savek]
@@ -258,7 +258,7 @@ class Analysis__XRFS_EDAX(Analysis_Master_nointer):
             self.fomdlist += [
                 dict(
                     dict(
-                        zip(self.fomnames + ["sample_no"], tup)
+                        list(zip(self.fomnames + ["sample_no"], tup))
                         + [(missk, numpy.nan) for missk in trfomsmissing]
                     ),
                     plate_id=filed["plate_id"],
@@ -312,8 +312,8 @@ class Analysis__PlatemapComps(Analysis_Master_nointer):
         calcFOMDialogclass=None,
     ):  # just a wrapper around getapplicablefomfiles to keep same argument format as other AnalysisClasses
         if True in [
-            not "platemapdlist" in rund.keys()
-            for runk, rund in calcFOMDialogclass.expfiledict.iteritems()
+            not "platemapdlist" in list(rund.keys())
+            for runk, rund in calcFOMDialogclass.expfiledict.items()
             if runk.startswith("run__")
         ]:
             # all platemaps must be available
@@ -402,11 +402,11 @@ class Analysis__PlatemapComps(Analysis_Master_nointer):
             except:
                 if self.debugmode:
                     raiseTEMP
-                print "skipped calculation of ", pid
+                print("skipped calculation of ", pid)
                 self.fomdlist = []
                 continue
             if len(self.fomdlist) == 0:
-                print "no foms calculated for ", fn
+                print("no foms calculated for ", fn)
                 continue
             plotfomname = (
                 self.params["tot_conc_label"]

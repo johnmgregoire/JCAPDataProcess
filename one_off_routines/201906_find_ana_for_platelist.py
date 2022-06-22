@@ -22,10 +22,10 @@ for pid in plate_list:
     if not 'analyses' in d:
         continue
     l=[]
-    for k,ad in d['analyses'].items():
+    for k,ad in list(d['analyses'].items()):
         if ad['type'] in typelist:
             l+=[(float(os.path.split(ad['path'])[1][:15]),ad['path'])]
     resultsd[pid]+=[t[1] for t in sorted(l)[::-1]]
 
-for k,v in resultsd.items():
-    print ','.join([k]+v)
+for k,v in list(resultsd.items()):
+    print(','.join([k]+v))

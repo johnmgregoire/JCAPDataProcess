@@ -126,6 +126,6 @@ if __name__ == "__main__":
     form.show()
     form.setFocus()
     # form.expui.exec_()
-    print form.searchui.openfolder
-    print form.searchui.openpathlist
+    print(form.searchui.openfolder)
+    print(form.searchui.openpathlist)
     mainapp.exec_()

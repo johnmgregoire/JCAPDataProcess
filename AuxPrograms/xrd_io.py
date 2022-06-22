@@ -221,7 +221,7 @@ def get_bmsl_dict(p):
                             )
                             updatefcn(paramd, keyname, strval)
     valid_chars = " ()[]-_.%s%s" % (string.ascii_letters, string.digits)
-    for k, v in paramd.items():
+    for k, v in list(paramd.items()):
         paramd[k] = "".join([c for c in v if c in valid_chars])
     # spectial matching for theta/2theta setup. there's got to be a better way of crawling through these nodes
     for gpnode in tree.iterfind(".//ScanAxisList/ScanAxis"):
@@ -270,7 +270,7 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
     gfn = lines[0].partition(".gfrm")[0].rpartition(" ")[2] + ".gfrm"
     fdlist = [fd for rcpd in rcpdlist for fd in rcpd["file_dlist"] if fd["fn"] == gfn]
     if len(fdlist) == 0:
-        print "cannot find .gfrm file for ", fn
+        print("cannot find .gfrm file for ", fn)
         return True
     elif len(fdlist) == 1:
         fd = fdlist[0]
@@ -283,11 +283,11 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         )[
             -1
         ]  # choose one with beginning path most similar
-        print "multiple gfrm matches for xy file %s  in folder %s with gfrm %s" % (
+        print("multiple gfrm matches for xy file %s  in folder %s with gfrm %s" % (
             fn,
             dp,
             gfn,
-        )
+        ))
     an_name = (
         "Analysis__XRDS_Bruker_Integrate"
         if "original" in dp
@@ -305,9 +305,9 @@ def xy_file_dict_into_rcpdlist(dp, fn, rcpdlist):
         "type": "pattern_files",
         "fval": "xrds_csv_pattern_file;%s;1;%d;" % (keysstr, len(lines) - 1),
     }
-    if not "ana_files" in fd.keys():
+    if not "ana_files" in list(fd.keys()):
         fd["ana_files"] = {}
-    if not an_name in fd["ana_files"].keys():
+    if not an_name in list(fd["ana_files"].keys()):
         fd["ana_files"][an_name] = []
     fd["ana_files"][an_name] += [afd]
     return False
@@ -341,7 +341,7 @@ def get_externalimportdatad_xrds_folder(p, parent=None):
             if os.path.split(dp)[1] == bname and fn.startswith(bname)
         ]
         if len(popinds) == 0:
-            print "cannot find .gfrm files for %s in %s" % (bfn, bfold)
+            print("cannot find .gfrm files for %s in %s" % (bfn, bfold))
             raiseerror
         createtupfcn = lambda db_fn: tuple(
             [myeval(intstr.rstrip(".gfrm")) for intstr in db_fn[1].split("-")[-2:]]
@@ -373,15 +373,15 @@ def get_externalimportdatad_xrds_folder(p, parent=None):
                 if smpind == count:
                     if gfn in [tempd["fn"] for tempd in rcpd["file_dlist"]]:
                         # if gfn in rcpd['files_technique__XRDS']['gfrm_files'].keys():
-                        print "ERROR: mutliple gfrm found associated with the same bsml"
-                        print bfold, bfn
-                        print gfold, gfn
+                        print("ERROR: mutliple gfrm found associated with the same bsml")
+                        print(bfold, bfn)
+                        print(gfold, gfn)
                         raiseerror
                     rcpd['file_dlist']+=[{'tech':'files_technique__XRDS', 'type':'gfrm_files',  'fn':gfn, 'fval':'xrds_bruker_gfrm_file;', 'xyarr':xyarr, 'folderpath':gfold}]
 
         rcpd['name']=bsmld['timestamp']
         rcpd['parameters']=copy.deepcopy(bsmld['paramd'])
-        if 'machine_name' in rcpd['parameters'].keys():
+        if 'machine_name' in list(rcpd['parameters'].keys()):
             rcpd['parameters']['machine_name'] = rcpd['parameters']['machine_name'].lower().replace("desktop-hgk6u1o", "hte-xrds-01")
         rcpdlist+=[rcpd]
 

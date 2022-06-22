@@ -36,13 +36,13 @@ with open('K:/users/guevarra/mp_followup/output/ana_interp_list_20190918.tsv', '
         p = l.strip().split('\t')
         interpd[p[0]] = p[1].split(', ')
 
-for anats, keylist in interpd.items():
+for anats, keylist in list(interpd.items()):
     try:
     # if 1:
         mainapp = QApplication(sys.argv)
         form = MainMenu(None)
         calcui = form.calcui
-        print(anats, keylist)
+        print((anats, keylist))
         merge_interp_xrfs_single_plate_id(
             calcui=calcui,
             ananame='eche/'+anats,
@@ -63,7 +63,7 @@ for anats, keylist in interpd.items():
         del calcui
         del mainapp
     except:
-        print('Error processing %s' % (anats))
+        print(('Error processing %s' % (anats)))
         calcui.close()
         sleep(0.5)
         mainapp.quit()

@@ -54,12 +54,12 @@ def BGgetapplicablefilenames(
             anak,
             [
                 ftk
-                for ftk in anav.keys()
-                if "files_run__" in ftk and "inter_files" in anav[ftk].keys()
+                for ftk in list(anav.keys())
+                if "files_run__" in ftk and "inter_files" in list(anav[ftk].keys())
             ],
         )
-        for anak, anav in anadict.iteritems()
-        if anak.startswith("ana__") and True in ["files_" in ftk for ftk in anav.keys()]
+        for anak, anav in anadict.items()
+        if anak.startswith("ana__") and True in ["files_" in ftk for ftk in list(anav.keys())]
     ]
     Afiledlist = [
         dict(
@@ -75,7 +75,7 @@ def BGgetapplicablefilenames(
         )
         for anak, ftkl in anak_ftklist
         for ftk in ftkl
-        for fnk, tagandkeys in anadict[anak][ftk]["inter_files"].iteritems()
+        for fnk, tagandkeys in anadict[anak][ftk]["inter_files"].items()
         if "abs_smth_refadj_scl" in tagandkeys
         and "uvis_inter_interlen_file" in tagandkeys
         and not "_bg" in tagandkeys
@@ -98,7 +98,7 @@ def BGgetapplicablefilenames(
         if (Asmp.count(d["sample_no"]) == 1)
     ]  # require that 1 previous Abs intermediate fiel be found for the given sample_no
     if len(filedlist2) == 0:
-        print "length of filedlist2 is zero"
+        print("length of filedlist2 is zero")
     return (
         num_files_considered,
         filedlist2,
@@ -127,7 +127,7 @@ def TRgetapplicablefilenames(
             (("ref_light", "R_UVVIS"), []),
         ]
     )
-    for k in refdict__filedlist.keys():
+    for k in list(refdict__filedlist.keys()):
         uk, tk = k
         # ?   runklist,nkeys and keyinds,ntemp,temp,typek
         ntemp, filedlist = stdgetapplicablefilenames(
@@ -148,10 +148,10 @@ def TRgetapplicablefilenames(
             filedlist = [d for d in filedlist if d["run"] in runlist]
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print "NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
+                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
                     k,
                     "TRgetapplicablefilenames",
-                )
+                ))
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, Tfiledlist = stdgetapplicablefilenames(
@@ -198,7 +198,7 @@ def DRgetapplicablefilenames(
     refdict__filedlist = dict(
         [(("ref_dark", "DR_UVVIS"), []), (("ref_light", "DR_UVVIS"), [])]
     )
-    for k in refdict__filedlist.keys():
+    for k in list(refdict__filedlist.keys()):
         uk, tk = k
         # ?   runklist,nkeys and keyinds,ntemp,temp,typek
         ntemp, filedlist = stdgetapplicablefilenames(
@@ -221,10 +221,10 @@ def DRgetapplicablefilenames(
         # print filedlist
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print "NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
+                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
                     k,
                     "DRgetapplicablefilenames",
-                )
+                ))
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, DRfiledlist = stdgetapplicablefilenames(
@@ -257,7 +257,7 @@ def Tgetapplicablefilenames(
     refdict__filedlist = dict(
         [(("ref_dark", "T_UVVIS"), []), (("ref_light", "T_UVVIS"), [])]
     )
-    for k in refdict__filedlist.keys():
+    for k in list(refdict__filedlist.keys()):
         uk, tk = k
         # ?   runklist,nkeys and keyinds,ntemp,temp,typek
         ntemp, filedlist = stdgetapplicablefilenames(
@@ -278,10 +278,10 @@ def Tgetapplicablefilenames(
             filedlist = [d for d in filedlist if d["run"] in runlist]
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print "NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
+                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
                     k,
                     "DRgetapplicablefilenames",
-                )
+                ))
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, Tfiledlist = stdgetapplicablefilenames(
@@ -363,7 +363,7 @@ def binarray(data, bin_width=1):
     reddata_idxs = [
         int(
             numpy.round(
-                numpy.median(xrange(loc, min(loc + bin_width, numpy.size(data))))
+                numpy.median(range(loc, min(loc + bin_width, numpy.size(data))))
             )
         )
         for loc in numpy.arange(0, numpy.size(data), bin_width)
@@ -384,8 +384,8 @@ def check_wl(wl_2darray, axis=0):
                 numpy.array(
                     [
                         numpy.abs(wl_2darray[i][k] - wl_2darray[j][k])
-                        for i in xrange(wl_2darray.shape[0])
-                        for j in xrange(0, i)
+                        for i in range(wl_2darray.shape[0])
+                        for j in range(0, i)
                         for k in [0, -1]
                     ]
                 )
@@ -454,7 +454,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             + str(self.params["abs_range"][idx][0])
             + "_"
             + str(self.params["abs_range"][idx][1])
-            for idx in xrange(len(self.params["abs_range"]))
+            for idx in range(len(self.params["abs_range"]))
         ] + ["max_abs"]
         self.fomnames += [
             "abs_"
@@ -473,11 +473,11 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             + str(self.params["abs_range"][idx][0])
             + "_"
             + str(self.params["abs_range"][idx][1])
-            for idx in xrange(len(self.params["abs_range"]))
+            for idx in range(len(self.params["abs_range"]))
         ]
         if self.params["window_length"] % 2 != 1:
             self.params["window_length"] += 1
-        if numpy.array([str(x).strip() == "" for x in self.params.values()]).any():
+        if numpy.array([str(x).strip() == "" for x in list(self.params.values())]).any():
             self.params = copy.copy(self.dfltparams)
             idialog = messageDialog(
                 self,
@@ -742,7 +742,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             if destfolder is None:
                 continue
             runint = int(filed["run"].partition("run__")[2])
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -759,7 +759,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -843,7 +843,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend[anal_expr+'_fullrng'])
             inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
             for key in ['T','R',anal_expr,'abs','1-T-R','wl']:            
-                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl' else zip([''],['_fullrng'])[0]
+                keystr =list(zip(['_unsmth'],['_fullrng']))[0] if key!='wl' else list(zip([''],['_fullrng']))[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
                 
             inter_selindd['hv']=1239.8/inter_selindd['wl']
@@ -857,7 +857,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
             chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
             fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
             fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in xrange(len(self.params['abs_range']))]\
+            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in range(len(self.params['abs_range']))]\
             +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
                 inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
                 nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
@@ -867,7 +867,7 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
                          
             dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
-            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in xrange(1,len(inter_selindd['rawselectinds'])-1)]
+            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in range(1,len(inter_selindd['rawselectinds'])-1)]
             dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
             dx=numpy.array(dx) 
             inter_selindd['abs_1stderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
@@ -1048,7 +1048,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             if destfolder is None:
                 continue
             runint = int(filed["run"].partition("run__")[2])
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -1065,7 +1065,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -1147,9 +1147,9 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             )[0]
             for key in ["DR", "wl", "abs"]:
                 keystr = (
-                    zip(["_unsmth"], ["_fullrng"])[0]
+                    list(zip(["_unsmth"], ["_fullrng"]))[0]
                     if key != "wl"
-                    else zip([""], ["_fullrng"])[0]
+                    else list(zip([""], ["_fullrng"]))[0]
                 )
                 bin_idxs, inter_selindd[key + keystr[0]] = binarray(
                     inter_rawlend[key + keystr[1]][inds],
@@ -1196,7 +1196,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 + str(self.params["abs_range"][idx][0])
                 + "_"
                 + str(self.params["abs_range"][idx][1])
-                for idx in xrange(len(self.params["abs_range"]))
+                for idx in range(len(self.params["abs_range"]))
             ] + [
                 "abs_"
                 + str(self.params["abs_range"][0][0])
@@ -1225,7 +1225,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
             dx = [inter_selindd["hv"][1] - inter_selindd["hv"][0]]
             dx += [
                 (inter_selindd["hv"][idx + 1] - inter_selindd["hv"][idx - 1]) / 2.0
-                for idx in xrange(1, len(inter_selindd["rawselectinds"]) - 1)
+                for idx in range(1, len(inter_selindd["rawselectinds"]) - 1)
             ]
             dx += [inter_selindd["hv"][-1] - inter_selindd["hv"][-2]]
             dx = numpy.array(dx)
@@ -1413,7 +1413,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             if destfolder is None:
                 continue
             runint = int(filed["run"].partition("run__")[2])
-            if len(rawlend.keys()) > 0:
+            if len(list(rawlend.keys())) > 0:
                 fnr = "%s__%s_rawlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -1430,7 +1430,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                         filed["sample_no"],
                     )
                 )
-            if "rawselectinds" in interlend.keys():
+            if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -1500,7 +1500,7 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
             inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend['T_fullrng'])
             inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
             for key in ['T','abs','wl']:            
-                keystr =zip(['_unsmth'],['_fullrng'])[0] if key!='wl'else zip([''],['_fullrng'])[0]
+                keystr =list(zip(['_unsmth'],['_fullrng']))[0] if key!='wl'else list(zip([''],['_fullrng']))[0]
                 bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
         
 #            print numpy.shape(inter_selindd['wl'])
@@ -1587,7 +1587,7 @@ class Analysis__BG(Analysis_Master_inter):
             except:
                 self.rtn_defaults
         if numpy.array(
-            [str(x).strip() == "" for x in self.params.values()]
+            [str(x).strip() == "" for x in list(self.params.values())]
         ).any() or set(self.params["chkoutput_types"]) > set(
             self.params["analysis_types"]
         ):
@@ -1606,7 +1606,7 @@ class Analysis__BG(Analysis_Master_inter):
                     x + "_bgcode0" + "_only",
                 ]
                 for x in self.params["analysis_types"]
-                for y in [str(idx) for idx in xrange(self.params["maxbgspersmp"])]
+                for y in [str(idx) for idx in range(self.params["maxbgspersmp"])]
             ]
             for item in sublist
         ] + [
@@ -1629,7 +1629,7 @@ class Analysis__BG(Analysis_Master_inter):
                         x + extn + "_bgcode0" + "_only",
                     ]
                     for x in self.params["analysis_types"]
-                    for y in [str(idx) for idx in xrange(self.params["maxbgspersmp"])]
+                    for y in [str(idx) for idx in range(self.params["maxbgspersmp"])]
                 ]
                 for item in sublist
             ]
@@ -1646,7 +1646,7 @@ class Analysis__BG(Analysis_Master_inter):
         self.plotparams["plot__1"]["series__1"] = self.params["analysis_types"][0]
         self.csvheaderdict = {"csv_version": "1", "plot_parameters": {}}
         np_ana = 6
-        for idx in xrange(len(self.params["analysis_types"])):
+        for idx in range(len(self.params["analysis_types"])):
             self.csvheaderdict["plot_parameters"][
                 "plot__" + str(np_ana * idx + 1)
             ] = dict(
@@ -1703,7 +1703,7 @@ class Analysis__BG(Analysis_Master_inter):
             )
         nplots = np_ana * (idx + 1)
         if self.params["calcbg_abscissa"]:
-            for idx in xrange(len(self.params["analysis_types"])):
+            for idx in range(len(self.params["analysis_types"])):
                 np_ana = 4
                 extn = "_a"
                 self.csvheaderdict["plot_parameters"][
@@ -1813,7 +1813,7 @@ class Analysis__BG(Analysis_Master_inter):
                         [
                             int(k.split("_")[-1])
                             for linfitd in self.linfitdlist
-                            for k, v in linfitd.items()
+                            for k, v in list(linfitd.items())
                             if typ + "_" + "knots" in k
                         ]
                     )
@@ -1826,28 +1826,28 @@ class Analysis__BG(Analysis_Master_inter):
                         [
                             int(k.split("_")[-1])
                             for linfitd in self.linfitdlist
-                            for k, v in linfitd.items()
+                            for k, v in list(linfitd.items())
                             if typ + "_" + "bgknots_lower" in k
                         ]
                     )
                 )
                 + 1
             )
-            reqkeys += [typ + "_" + "knots_" + str(x) for x in xrange(maxknots[typ])]
+            reqkeys += [typ + "_" + "knots_" + str(x) for x in range(maxknots[typ])]
             reqkeys += [
-                typ + "_" + "slopes_" + str(x) for x in xrange(maxknots[typ] - 1)
+                typ + "_" + "slopes_" + str(x) for x in range(maxknots[typ] - 1)
             ]
             reqkeys += [
-                typ + "_" + "bgknots_lower_" + str(x) for x in xrange(maxbgs[typ])
+                typ + "_" + "bgknots_lower_" + str(x) for x in range(maxbgs[typ])
             ]
             reqkeys += [
-                typ + "_" + "bkgrdknots_lower_" + str(x) for x in xrange(maxbgs[typ])
+                typ + "_" + "bkgrdknots_lower_" + str(x) for x in range(maxbgs[typ])
             ]
         wstr = ""
         for idx, linfitd in enumerate(self.linfitdlist):
             linfitd = dict(
-                linfitd.items()
-                + [(rk, numpy.NaN) for rk in reqkeys if rk not in linfitd.keys()]
+                list(linfitd.items())
+                + [(rk, numpy.NaN) for rk in reqkeys if rk not in list(linfitd.keys())]
             )
             if idx == 0:
                 wstr += (
@@ -1925,7 +1925,7 @@ class Analysis__BG(Analysis_Master_inter):
                 continue
             self.writefom(destfolder, anak, anauserfomd=anauserfomd)
             runint = int(filed["run"].partition("run__")[2])
-            if "rawselectinds" in selindd.keys():
+            if "rawselectinds" in list(selindd.keys()):
                 fni = "%s__%s_interlen.txt" % (
                     self.make_inter_fn_start(anak, runint),
                     os.path.splitext(fn)[0],
@@ -1967,10 +1967,10 @@ class Analysis__BG(Analysis_Master_inter):
             )
         )[0]
         #        print inter_selindd['rawselectinds']
-        for key in rawlend.keys():
+        for key in list(rawlend.keys()):
             inter_selindd[key] = rawlend[key][abs2bg_inds]
         for typ in ["DA", "IA", "DF", "IF"]:
-            if typ in inter_selindd.keys():
+            if typ in list(inter_selindd.keys()):
                 inter_selindd[typ] = inter_selindd[typ] / (
                     numpy.nanmax(inter_selindd[typ])
                 )
@@ -1980,13 +1980,13 @@ class Analysis__BG(Analysis_Master_inter):
         minslope_fcn = lambda x: numpy.nanmin(x) if x != [] else numpy.NaN
         for typ in self.params["analysis_types"]:
             #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
-            temparr = [v for k, v in inter_linfitd.items() if typ + "_slopes" in k]
+            temparr = [v for k, v in list(inter_linfitd.items()) if typ + "_slopes" in k]
             fomd[typ + "_fit_minslope"] = minslope_fcn(temparr)
         for k in self.fomnames:
-            if k not in fomd.keys():
+            if k not in list(fomd.keys()):
                 fomd[k] = numpy.NaN
-        for key in inter_selindd.keys():
-            if key in rawlend.keys() and "rawselectinds" not in key:
+        for key in list(inter_selindd.keys()):
+            if key in list(rawlend.keys()) and "rawselectinds" not in key:
                 inter_selindd[key + "_bg"] = inter_selindd.pop(key)
         fomd["abs_hasnan_bg"] = numpy.isnan(rawlend["abs_smth_refadj_scl"]).any()
         return fomd, inter_linfitd, inter_selindd

@@ -164,7 +164,7 @@ for ana, cal in zip(anaps, callst):
         del calcui
         del mainapp
     except:
-        print('Error processing %s' %(ana))
+        print(('Error processing %s' %(ana)))
         calcui.close()
         sleep(0.5)
         mainapp.quit()

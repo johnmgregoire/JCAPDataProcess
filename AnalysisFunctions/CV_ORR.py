@@ -117,12 +117,12 @@ class mars_class:
             for key in self.filekeystoget
         }
         self.cv_keys = [key for key in self.filekeystoget if "CV" in key]
-        print "CV keys {}".format(self.cv_keys)
+        print("CV keys {}".format(self.cv_keys))
         """
         this seems a bit off but I want this class to be able to tell without user input which
         CV is the fast and which is the slow one (i.e. the .rcp)
         """
-        fn = {cv_key: self.data[cv_key].keys() for cv_key in self.cv_keys}
+        fn = {cv_key: list(self.data[cv_key].keys()) for cv_key in self.cv_keys}
         print (fn)
         scanspeeds = {}
         for cv_key in self.cv_keys:
@@ -133,9 +133,9 @@ class mars_class:
                 )
             # this just needs to run once
             scanspeeds[cv_key] = np.abs(np.diff(pot) / np.diff(t)).mean()
-        self.fast_cv_key = scanspeeds.keys()[np.argmax(scanspeeds.values())]
-        self.slow_cv_key = scanspeeds.keys()[np.argmin(scanspeeds.values())]
-        print "Done importing data!"
+        self.fast_cv_key = list(scanspeeds.keys())[np.argmax(list(scanspeeds.values()))]
+        self.slow_cv_key = list(scanspeeds.keys())[np.argmin(list(scanspeeds.values()))]
+        print("Done importing data!")
 
     def marsmodelorr(
         self,
@@ -207,7 +207,7 @@ class mars_class:
         self.fom = fom
 
     def perform_mars(self):
-        fn = {cv_key: self.data[cv_key].keys() for cv_key in self.cv_keys}
+        fn = {cv_key: list(self.data[cv_key].keys()) for cv_key in self.cv_keys}
         for fs, ff in zip(fn[self.slow_cv_key], fn[self.fast_cv_key]):
             sample_no = self.data[self.slow_cv_key][fs]["sample_no"]
             self.X_, self.Y_ = (
@@ -220,7 +220,7 @@ class mars_class:
             )
             self.marsmodelorr()
             self.fom["sample_no"] = sample_no
-            print ("Finished Sample #{}".format(sample_no))
+            print(("Finished Sample #{}".format(sample_no)))
             self.fomdict[self.fom["sample_no"]] = self.fom
 
     def save_data(self):

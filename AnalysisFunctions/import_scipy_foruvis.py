@@ -7,7 +7,7 @@ try:
     import os, sys
 
     cwd = os.getcwd()
-    print cwd
+    print(cwd)
     sys.path.append(cwd)
     from scipy.signal import savgol_filter
     from uvis_basics import *
@@ -77,4 +77,4 @@ except:
         ):
             return []
 
-    print "UV-VIS analysis cannot be run because there is no scipy.signal.savgol_filter function"
+    print("UV-VIS analysis cannot be run because there is no scipy.signal.savgol_filter function")
