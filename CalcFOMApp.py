@@ -1429,7 +1429,6 @@ class calcfomDialog(QDialog, Ui_CalcFOMDialog):
             sinds = numpy.argsort(hx)
             self.plotw_h.axes.plot(hx[sinds], hy[sinds], ".-", label=runk)
         leg = self.plotw_h.axes.legend(loc=0)
-        leg.draggable()
         self.plotw_h.axes.set_xlabel(xl)
         self.plotw_h.axes.set_ylabel(self.plotd["fomname"])
         autotickformat(self.plotw_h.axes, x=daqtimebool, y=1)

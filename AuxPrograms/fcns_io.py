@@ -2,6 +2,7 @@ import numpy, pickle, shutil, string
 from matplotlib.ticker import FuncFormatter
 import matplotlib.colors as colors
 from fcns_math import *
+import io
 
 try:
     from fcns_ui import mygetopenfile
@@ -91,11 +92,12 @@ class ZipClass:  # TODO: zipclass instances are kept open in a few places and cl
     def readlines(self, fn):
         with self.zipopenfcn(fn) as f:
             ans = f.readlines()
+            ans = [l.decode('UTF-8') for l in ans]
         return ans
 
     def read(self, fn):
         with self.zipopenfcn(fn) as f:
-            ans = f.read()
+            ans = f.read().decode('UTF-8')
         return ans
 
     def loadpck(self, fn):
@@ -1731,13 +1733,14 @@ def rcplines_zip(zipp):
     rcpfn = fns[0]
     f = archive.open(rcpfn)
     lines = f.readlines()
+    lines = [l.decode('UTF-8') for l in lines]
     f.close()
     fns = [fn for fn in archive.namelist() if fn.endswith(".rem")]
     if (
         len(fns) > 0
     ):  # only use 1st file, which can take an aribtrary number of comments
         f = archive.open(fns[0])
-        remstr = f.read()
+        remstr = f.read().decode('UTF-8')
         f.close()
     else:
         remstr = ""
