@@ -59,7 +59,8 @@ def BGgetapplicablefilenames(
             ],
         )
         for anak, anav in anadict.items()
-        if anak.startswith("ana__") and True in ["files_" in ftk for ftk in list(anav.keys())]
+        if anak.startswith("ana__")
+        and True in ["files_" in ftk for ftk in list(anav.keys())]
     ]
     Afiledlist = [
         dict(
@@ -148,10 +149,13 @@ def TRgetapplicablefilenames(
             filedlist = [d for d in filedlist if d["run"] in runlist]
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
-                    k,
-                    "TRgetapplicablefilenames",
-                ))
+                print(
+                    "NO REFERENCE DATA AVAILABLE FOR %s in %s"
+                    % (
+                        k,
+                        "TRgetapplicablefilenames",
+                    )
+                )
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, Tfiledlist = stdgetapplicablefilenames(
@@ -221,10 +225,13 @@ def DRgetapplicablefilenames(
         # print filedlist
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
-                    k,
-                    "DRgetapplicablefilenames",
-                ))
+                print(
+                    "NO REFERENCE DATA AVAILABLE FOR %s in %s"
+                    % (
+                        k,
+                        "DRgetapplicablefilenames",
+                    )
+                )
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, DRfiledlist = stdgetapplicablefilenames(
@@ -278,10 +285,13 @@ def Tgetapplicablefilenames(
             filedlist = [d for d in filedlist if d["run"] in runlist]
         if len(filedlist) == 0:
             if gui_mode_bool:
-                print("NO REFERENCE DATA AVAILABLE FOR %s in %s" % (
-                    k,
-                    "DRgetapplicablefilenames",
-                ))
+                print(
+                    "NO REFERENCE DATA AVAILABLE FOR %s in %s"
+                    % (
+                        k,
+                        "DRgetapplicablefilenames",
+                    )
+                )
             return 0, [], {}
         refdict__filedlist[k] = filedlist
     num_files_considered, Tfiledlist = stdgetapplicablefilenames(
@@ -411,24 +421,47 @@ def savefomhist(p, fomdlist, histfom, nbins=50):
 
 class Analysis__TR_UVVIS(Analysis_Master_inter):
     def __init__(self):
-        self.analysis_fcn_version='1'
-      #TODO int, float, str or dict types and in dict the options are float, int, str  
-        self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','TR'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
-        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850]),('rescale_Tlight_factor',1.0)])
-        
-#         "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
-#        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
-#        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__TR_UVVIS'
-        
-        self.requiredkeys=['Wavelength (nm)','Signal_0']
-        self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
-        self.requiredparams=[]
-        self.qualityfoms=['min_rescaled','max_rescaled','T_0to1','R_0to1','TplusR_0to1']
-        self.fom_chkqualitynames=['abs_hasnan']
-        self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
+        self.analysis_fcn_version = "1"
+        # TODO int, float, str or dict types and in dict the options are float, int, str
+        self.dfltparams = dict(
+            [
+                ("lower_wl", 370),
+                ("upper_wl", 1020),
+                ("bin_width", 3),
+                ("exclinitcols", 0),
+                ("exclfincols", 0),
+                ("reffilesmode", "static"),
+                ("mthd", "TR"),
+                ("abs_range", [(1.5, 2.0), (2.0, 2.5), (2.5, 3.0)]),
+                ("max_mthd_allowed", 1.2),
+                ("min_mthd_allowed", -0.2),
+                ("window_length", 45),
+                ("polyorder", 4),
+                ("ref_run_selection", "all"),
+                ("analysis_types", ["DA", "IA", "DF", "IF"]),
+                ("chkoutput_wlrange", [410, 850]),
+                ("rescale_Tlight_factor", 1.0),
+            ]
+        )
+
+        #         "ref_run_selection" has default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
+        #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored).
+        #        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
+        self.params = copy.copy(self.dfltparams)
+        self.analysis_name = "Analysis__TR_UVVIS"
+
+        self.requiredkeys = ["Wavelength (nm)", "Signal_0"]
+        self.optionalkeys = ["Signal_" + str(x) for x in numpy.arange(1, 11)]
+        self.requiredparams = []
+        self.qualityfoms = [
+            "min_rescaled",
+            "max_rescaled",
+            "T_0to1",
+            "R_0to1",
+            "TplusR_0to1",
+        ]
+        self.fom_chkqualitynames = ["abs_hasnan"]
+        self.histfomnames = ["max_abs2ndderiv", "min_abs1stderiv"]
 
         self.processnewparams()
         # TODO: update plotting defaults on both classes
@@ -477,7 +510,9 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
         ]
         if self.params["window_length"] % 2 != 1:
             self.params["window_length"] += 1
-        if numpy.array([str(x).strip() == "" for x in list(self.params.values())]).any():
+        if numpy.array(
+            [str(x).strip() == "" for x in list(self.params.values())]
+        ).any():
             self.params = copy.copy(self.dfltparams)
             idialog = messageDialog(
                 self,
@@ -749,15 +784,14 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 )
                 p = os.path.join(destfolder, fnr)
                 kl = saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_rawlen_files"][fnr] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_rawlen_file",
-                        ",".join(kl),
-                        1,
-                        len(rawlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_rawlen_files"][
+                    fnr
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_rawlen_file",
+                    ",".join(kl),
+                    1,
+                    len(rawlend[kl[0]]),
+                    filed["sample_no"],
                 )
             if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
@@ -766,15 +800,14 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 )
                 p = os.path.join(destfolder, fni)
                 kl = saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_files"][fni] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_interlen_file",
-                        ",".join(kl),
-                        1,
-                        len(interlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_files"][
+                    fni
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_interlen_file",
+                    ",".join(kl),
+                    1,
+                    len(interlend[kl[0]]),
+                    filed["sample_no"],
                 )
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
@@ -833,58 +866,177 @@ class Analysis__TR_UVVIS(Analysis_Master_inter):
                 % (self.params["exclinitcols"], self.params["exclfincols"])
             )
         else:
-            refd['Tlight']*=self.params['rescale_Tlight_factor']
-            inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['R_av-signal']=Rdataarr[1+self.params['exclinitcols']:Rdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
-            inter_rawlend['R_fullrng']=(inter_rawlend['R_av-signal']-refd['Rdark'])/(refd['Rlight']-refd['Rdark'])
-            inter_rawlend[anal_expr+'_fullrng']=inter_rawlend['T_fullrng']/(1.-inter_rawlend['R_fullrng'])
-            inter_rawlend['1-T-R_fullrng']=1.-inter_rawlend['T'+'_fullrng']-inter_rawlend['R'+'_fullrng']
-            inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend[anal_expr+'_fullrng'])
-            inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
-            for key in ['T','R',anal_expr,'abs','1-T-R','wl']:            
-                keystr =list(zip(['_unsmth'],['_fullrng']))[0] if key!='wl' else list(zip([''],['_fullrng']))[0]
-                bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
-                
-            inter_selindd['hv']=1239.8/inter_selindd['wl']
-            inter_selindd['rawselectinds']=inds[bin_idxs]
-            for sigtype in ['T','R',anal_expr,'abs','1-T-R']:
-                inter_selindd[sigtype+'_smth']=handlenan_savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
-            fomd['min_rescaled'],fomd['max_rescaled'],inter_selindd[anal_expr+'_smth'+'_refadj']=refadjust(inter_selindd[anal_expr+'_smth'], \
-            self.params['min_mthd_allowed'],self.params['max_mthd_allowed'])
-            inter_selindd['abs_smth_refadj']=-numpy.log(inter_selindd[anal_expr+'_smth_refadj'])
-            inter_selindd['abs_smth_refadj_scl']=inter_selindd['abs_smth_refadj']/numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            chkoutput_inds=numpy.where(numpy.logical_and(inter_selindd['wl']>self.params['chkoutput_wlrange'][0],inter_selindd['wl']<self.params['chkoutput_wlrange'][1]))[0]
-            fomd['abs_hasnan']=numpy.isnan(inter_selindd['abs_smth_refadj'][chkoutput_inds]).any()
-            fomd['max_abs']=numpy.nanmax(inter_selindd['abs_smth_refadj'])
-            for key in ['abs_'+str(self.params['abs_range'][idx][0])+'_'+str(self.params['abs_range'][idx][1]) for idx in range(len(self.params['abs_range']))]\
-            +['abs_'+str(self.params['abs_range'][0][0])+'_'+str(self.params['abs_range'][-1][1])]:
-                inds=numpy.where(numpy.logical_and(inter_selindd['wl']<1239.8/float(key.split('_')[-2]),inter_selindd['wl']>1239.8/float(key.split('_')[-1])))[0]
-                nonaninds=inds[numpy.where(~numpy.isnan(inter_selindd['abs_smth_refadj'][inds]))[0]]
-                fomd[key]=numpy.trapz(inter_selindd['abs_smth_refadj'][nonaninds],x=inter_selindd['hv'][nonaninds])/(inter_selindd['hv'][nonaninds][-1]-inter_selindd['hv'][nonaninds][0])
-                fomd[key.replace('abs','1-T-R_av')]=numpy.mean(inter_selindd['1-T-R_smth'][nonaninds])
-            for sig_str,sigkey in zip(['T','R','TplusR'],['T_smth','R_smth','1-T-R_smth']):
-                fomd[sig_str+'_0to1']=check_inrange(inter_selindd[sigkey])
-                         
-            dx=[inter_selindd['hv'][1]-inter_selindd['hv'][0]]
-            dx+=[(inter_selindd['hv'][idx+1]-inter_selindd['hv'][idx-1])/2. for idx in range(1,len(inter_selindd['rawselectinds'])-1)]
-            dx+=[inter_selindd['hv'][-1]-inter_selindd['hv'][-2]]
-            dx=numpy.array(dx) 
-            inter_selindd['abs_1stderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx)
-            inter_selindd['abs_2ndderiv']=handlenan_savgol_filter(inter_selindd['abs_smth_refadj_scl'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=2)/(dx**2)
-            fomd['max_abs2ndderiv']=numpy.nanmax(inter_selindd['abs_2ndderiv'])
-            fomd['min_abs1stderiv']=numpy.nanmin(inter_selindd['abs_1stderiv'])
-            
-            for typ in self.params['analysis_types']:
-                inter_selindd[typ+'_unscl']=(inter_selindd['abs_smth_refadj']*inter_selindd['hv'])**self.tauc_pow[typ]
-                inter_selindd[typ]=inter_selindd[typ+'_unscl']/numpy.max(inter_selindd[typ+'_unscl'])
-                fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))
-                if len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0 or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])>0:
-                    fomd[typ+'_minslope']=numpy.min(handlenan_savgol_filter(inter_selindd[typ], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=1)/(dx))        
-        return fomd,inter_rawlend,inter_selindd
-        
+            refd["Tlight"] *= self.params["rescale_Tlight_factor"]
+            inter_rawlend["T_av-signal"] = Tdataarr[
+                1
+                + self.params["exclinitcols"] : Tdataarr.shape[0]
+                - self.params["exclfincols"]
+            ].mean(axis=0)
+            inter_rawlend["R_av-signal"] = Rdataarr[
+                1
+                + self.params["exclinitcols"] : Rdataarr.shape[0]
+                - self.params["exclfincols"]
+            ].mean(axis=0)
+            inter_rawlend["T_fullrng"] = (
+                inter_rawlend["T_av-signal"] - refd["Tdark"]
+            ) / (refd["Tlight"] - refd["Tdark"])
+            inter_rawlend["R_fullrng"] = (
+                inter_rawlend["R_av-signal"] - refd["Rdark"]
+            ) / (refd["Rlight"] - refd["Rdark"])
+            inter_rawlend[anal_expr + "_fullrng"] = inter_rawlend["T_fullrng"] / (
+                1.0 - inter_rawlend["R_fullrng"]
+            )
+            inter_rawlend["1-T-R_fullrng"] = (
+                1.0 - inter_rawlend["T" + "_fullrng"] - inter_rawlend["R" + "_fullrng"]
+            )
+            inter_rawlend["abs" + "_fullrng"] = -numpy.log(
+                inter_rawlend[anal_expr + "_fullrng"]
+            )
+            inds = numpy.where(
+                numpy.logical_and(
+                    inter_rawlend["wl_fullrng"] > self.params["lower_wl"],
+                    inter_rawlend["wl_fullrng"] < self.params["upper_wl"],
+                )
+            )[0]
+            for key in ["T", "R", anal_expr, "abs", "1-T-R", "wl"]:
+                keystr = (
+                    list(zip(["_unsmth"], ["_fullrng"]))[0]
+                    if key != "wl"
+                    else list(zip([""], ["_fullrng"]))[0]
+                )
+                bin_idxs, inter_selindd[key + keystr[0]] = binarray(
+                    inter_rawlend[key + keystr[1]][inds],
+                    bin_width=self.params["bin_width"],
+                )
 
+            inter_selindd["hv"] = 1239.8 / inter_selindd["wl"]
+            inter_selindd["rawselectinds"] = inds[bin_idxs]
+            for sigtype in ["T", "R", anal_expr, "abs", "1-T-R"]:
+                inter_selindd[sigtype + "_smth"] = handlenan_savgol_filter(
+                    inter_selindd[sigtype + "_unsmth"],
+                    self.params["window_length"],
+                    self.params["polyorder"],
+                    delta=1.0,
+                    deriv=0,
+                )
+            (
+                fomd["min_rescaled"],
+                fomd["max_rescaled"],
+                inter_selindd[anal_expr + "_smth" + "_refadj"],
+            ) = refadjust(
+                inter_selindd[anal_expr + "_smth"],
+                self.params["min_mthd_allowed"],
+                self.params["max_mthd_allowed"],
+            )
+            inter_selindd["abs_smth_refadj"] = -numpy.log(
+                inter_selindd[anal_expr + "_smth_refadj"]
+            )
+            inter_selindd["abs_smth_refadj_scl"] = inter_selindd[
+                "abs_smth_refadj"
+            ] / numpy.nanmax(inter_selindd["abs_smth_refadj"])
+            chkoutput_inds = numpy.where(
+                numpy.logical_and(
+                    inter_selindd["wl"] > self.params["chkoutput_wlrange"][0],
+                    inter_selindd["wl"] < self.params["chkoutput_wlrange"][1],
+                )
+            )[0]
+            fomd["abs_hasnan"] = numpy.isnan(
+                inter_selindd["abs_smth_refadj"][chkoutput_inds]
+            ).any()
+            fomd["max_abs"] = numpy.nanmax(inter_selindd["abs_smth_refadj"])
+            for key in [
+                "abs_"
+                + str(self.params["abs_range"][idx][0])
+                + "_"
+                + str(self.params["abs_range"][idx][1])
+                for idx in range(len(self.params["abs_range"]))
+            ] + [
+                "abs_"
+                + str(self.params["abs_range"][0][0])
+                + "_"
+                + str(self.params["abs_range"][-1][1])
+            ]:
+                inds = numpy.where(
+                    numpy.logical_and(
+                        inter_selindd["wl"] < 1239.8 / float(key.split("_")[-2]),
+                        inter_selindd["wl"] > 1239.8 / float(key.split("_")[-1]),
+                    )
+                )[0]
+                nonaninds = inds[
+                    numpy.where(~numpy.isnan(inter_selindd["abs_smth_refadj"][inds]))[0]
+                ]
+                fomd[key] = numpy.trapz(
+                    inter_selindd["abs_smth_refadj"][nonaninds],
+                    x=inter_selindd["hv"][nonaninds],
+                ) / (
+                    inter_selindd["hv"][nonaninds][-1]
+                    - inter_selindd["hv"][nonaninds][0]
+                )
+                fomd[key.replace("abs", "1-T-R_av")] = numpy.mean(
+                    inter_selindd["1-T-R_smth"][nonaninds]
+                )
+            for sig_str, sigkey in zip(
+                ["T", "R", "TplusR"], ["T_smth", "R_smth", "1-T-R_smth"]
+            ):
+                fomd[sig_str + "_0to1"] = check_inrange(inter_selindd[sigkey])
 
+            dx = [inter_selindd["hv"][1] - inter_selindd["hv"][0]]
+            dx += [
+                (inter_selindd["hv"][idx + 1] - inter_selindd["hv"][idx - 1]) / 2.0
+                for idx in range(1, len(inter_selindd["rawselectinds"]) - 1)
+            ]
+            dx += [inter_selindd["hv"][-1] - inter_selindd["hv"][-2]]
+            dx = numpy.array(dx)
+            inter_selindd["abs_1stderiv"] = handlenan_savgol_filter(
+                inter_selindd["abs_smth_refadj_scl"],
+                self.params["window_length"],
+                self.params["polyorder"],
+                delta=1.0,
+                deriv=1,
+            ) / (dx)
+            inter_selindd["abs_2ndderiv"] = handlenan_savgol_filter(
+                inter_selindd["abs_smth_refadj_scl"],
+                self.params["window_length"],
+                self.params["polyorder"],
+                delta=1.0,
+                deriv=2,
+            ) / (dx**2)
+            fomd["max_abs2ndderiv"] = numpy.nanmax(inter_selindd["abs_2ndderiv"])
+            fomd["min_abs1stderiv"] = numpy.nanmin(inter_selindd["abs_1stderiv"])
+
+            for typ in self.params["analysis_types"]:
+                inter_selindd[typ + "_unscl"] = (
+                    inter_selindd["abs_smth_refadj"] * inter_selindd["hv"]
+                ) ** self.tauc_pow[typ]
+                inter_selindd[typ] = inter_selindd[typ + "_unscl"] / numpy.max(
+                    inter_selindd[typ + "_unscl"]
+                )
+                fomd[typ + "_minslope"] = numpy.min(
+                    handlenan_savgol_filter(
+                        inter_selindd[typ],
+                        self.params["window_length"],
+                        self.params["polyorder"],
+                        delta=1.0,
+                        deriv=1,
+                    )
+                    / (dx)
+                )
+                if (
+                    len(numpy.where(numpy.isnan(inter_selindd[typ]))[0]) > 0
+                    or len(numpy.where(numpy.isinf(numpy.abs(inter_selindd[typ])))[0])
+                    > 0
+                ):
+                    fomd[typ + "_minslope"] = numpy.min(
+                        handlenan_savgol_filter(
+                            inter_selindd[typ],
+                            self.params["window_length"],
+                            self.params["polyorder"],
+                            delta=1.0,
+                            deriv=1,
+                        )
+                        / (dx)
+                    )
+        return fomd, inter_rawlend, inter_selindd
 
 
 class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
@@ -1055,15 +1207,14 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 )
                 p = os.path.join(destfolder, fnr)
                 kl = saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_rawlen_files"][fnr] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_rawlen_file",
-                        ",".join(kl),
-                        1,
-                        len(rawlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_rawlen_files"][
+                    fnr
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_rawlen_file",
+                    ",".join(kl),
+                    1,
+                    len(rawlend[kl[0]]),
+                    filed["sample_no"],
                 )
             if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
@@ -1072,15 +1223,14 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 )
                 p = os.path.join(destfolder, fni)
                 kl = saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_files"][fni] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_interlen_file",
-                        ",".join(kl),
-                        1,
-                        len(interlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_files"][
+                    fni
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_interlen_file",
+                    ",".join(kl),
+                    1,
+                    len(interlend[kl[0]]),
+                    filed["sample_no"],
                 )
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
@@ -1242,7 +1392,7 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
                 self.params["polyorder"],
                 delta=1.0,
                 deriv=2,
-            ) / (dx ** 2)
+            ) / (dx**2)
             fomd["max_abs2ndderiv"] = numpy.nanmax(inter_selindd["abs_2ndderiv"])
             fomd["min_abs1stderiv"] = numpy.nanmin(inter_selindd["abs_1stderiv"])
             for typ in self.params["analysis_types"]:
@@ -1267,24 +1417,41 @@ class Analysis__DR_UVVIS(Analysis__TR_UVVIS):
 
 class Analysis__T_UVVIS(Analysis__TR_UVVIS):
     def __init__(self):
-        self.analysis_fcn_version='1'
-      #TODO int, float, str or dict types and in dict the options are float, int, str  
-        self.dfltparams=dict([('lower_wl',370),('upper_wl',1020),('bin_width',3),('exclinitcols',0),('exclfincols',0),('reffilesmode', 'static'),\
-        ('mthd','T'),('abs_range',[(1.5,2.0),(2.0,2.5),(2.5,3.0)]),('max_mthd_allowed', 1.2),('min_mthd_allowed', -0.2),('window_length',45),('polyorder',4), \
-        ('ref_run_selection', 'all'),('analysis_types',['DA','IA','DF','IF']),('chkoutput_wlrange',[410,850]),('rescale_Tlight_factor',1.0)])
-        
-        #TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
-#        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored). 
-#        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
-        self.params=copy.copy(self.dfltparams)
-        self.analysis_name='Analysis__T_UVVIS'
-        #TODO: make intermediate column headings unique from raw
-        self.requiredkeys=['Wavelength (nm)','Signal_0']
-        self.optionalkeys=['Signal_'+str(x) for x in numpy.arange(1,11)]
-        self.requiredparams=[]
-        self.fom_chkqualitynames=['abs_hasnan']
-        self.qualityfoms=['min_rescaled','max_rescaled','0<T<=1']
-        self.histfomnames=['max_abs2ndderiv','min_abs1stderiv']
+        self.analysis_fcn_version = "1"
+        # TODO int, float, str or dict types and in dict the options are float, int, str
+        self.dfltparams = dict(
+            [
+                ("lower_wl", 370),
+                ("upper_wl", 1020),
+                ("bin_width", 3),
+                ("exclinitcols", 0),
+                ("exclfincols", 0),
+                ("reffilesmode", "static"),
+                ("mthd", "T"),
+                ("abs_range", [(1.5, 2.0), (2.0, 2.5), (2.5, 3.0)]),
+                ("max_mthd_allowed", 1.2),
+                ("min_mthd_allowed", -0.2),
+                ("window_length", 45),
+                ("polyorder", 4),
+                ("ref_run_selection", "all"),
+                ("analysis_types", ["DA", "IA", "DF", "IF"]),
+                ("chkoutput_wlrange", [410, 850]),
+                ("rescale_Tlight_factor", 1.0),
+            ]
+        )
+
+        # TODO: can create a parameter called "ref_run_selection" with default value "all" but could be ,e.g. "run__3,run__6,run__7,run__8,run__9"  \
+        #        and then if T dark, T light, R dark are runs 3,6,7 respectively then only these runs will be used (if run__2 is also T dark, it will be ignored).
+        #        if run__8 and 9 are both R light, the min/max/etc function will be applied to the ensemble of refs in these runs
+        self.params = copy.copy(self.dfltparams)
+        self.analysis_name = "Analysis__T_UVVIS"
+        # TODO: make intermediate column headings unique from raw
+        self.requiredkeys = ["Wavelength (nm)", "Signal_0"]
+        self.optionalkeys = ["Signal_" + str(x) for x in numpy.arange(1, 11)]
+        self.requiredparams = []
+        self.fom_chkqualitynames = ["abs_hasnan"]
+        self.qualityfoms = ["min_rescaled", "max_rescaled", "0<T<=1"]
+        self.histfomnames = ["max_abs2ndderiv", "min_abs1stderiv"]
         self.processnewparams()
         # TODO: update plotting defaults on both classes
         self.plotparams = dict({}, plot__1={"x_axis": "hv"})
@@ -1420,15 +1587,14 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 )
                 p = os.path.join(destfolder, fnr)
                 kl = saveinterdata(p, rawlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_rawlen_files"][fnr] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_rawlen_file",
-                        ",".join(kl),
-                        1,
-                        len(rawlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_rawlen_files"][
+                    fnr
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_rawlen_file",
+                    ",".join(kl),
+                    1,
+                    len(rawlend[kl[0]]),
+                    filed["sample_no"],
                 )
             if "rawselectinds" in list(interlend.keys()):
                 fni = "%s__%s_interlen.txt" % (
@@ -1437,15 +1603,14 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 )
                 p = os.path.join(destfolder, fni)
                 kl = saveinterdata(p, interlend, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_files"][fni] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_interlen_file",
-                        ",".join(kl),
-                        1,
-                        len(interlend[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_files"][
+                    fni
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_interlen_file",
+                    ",".join(kl),
+                    1,
+                    len(interlend[kl[0]]),
+                    filed["sample_no"],
                 )
         self.writefom(destfolder, anak, anauserfomd=anauserfomd)
         for zc in closeziplist:
@@ -1494,20 +1659,141 @@ class Analysis__T_UVVIS(Analysis__TR_UVVIS):
                 % (self.params["exclinitcols"], self.params["exclfincols"])
             )
         else:
-            refd['Tlight']*=self.params['rescale_Tlight_factor']
-            inter_rawlend['T_av-signal']=Tdataarr[1+self.params['exclinitcols']:Tdataarr.shape[0]-self.params['exclfincols']].mean(axis=0)
-            inter_rawlend['T_fullrng']=(inter_rawlend['T_av-signal']-refd['Tdark'])/(refd['Tlight']-refd['Tdark'])
-            inter_rawlend['abs'+'_fullrng']=-numpy.log(inter_rawlend['T_fullrng'])
-            inds=numpy.where(numpy.logical_and(inter_rawlend['wl_fullrng']>self.params['lower_wl'],inter_rawlend['wl_fullrng']<self.params['upper_wl']))[0]
-            for key in ['T','abs','wl']:            
-                keystr =list(zip(['_unsmth'],['_fullrng']))[0] if key!='wl'else list(zip([''],['_fullrng']))[0]
-                bin_idxs,inter_selindd[key+keystr[0]]=binarray(inter_rawlend[key+keystr[1]][inds],bin_width=self.params['bin_width'])
-        
-#            print numpy.shape(inter_selindd['wl'])
-            inter_selindd['hv']=1239.8/inter_selindd['wl']
-            inter_selindd['rawselectinds']=inds[bin_idxs]
-            for sigtype in ['T','abs']:
-                inter_selindd[sigtype+'_smth']=handlenan_savgol_filter(inter_selindd[sigtype+'_unsmth'], self.params['window_length'], self.params['polyorder'], delta=1.0, deriv=0)
+            refd["Tlight"] *= self.params["rescale_Tlight_factor"]
+            inter_rawlend["T_av-signal"] = Tdataarr[
+                1
+                + self.params["exclinitcols"] : Tdataarr.shape[0]
+                - self.params["exclfincols"]
+            ].mean(axis=0)
+            inter_rawlend["T_fullrng"] = (
+                inter_rawlend["T_av-signal"] - refd["Tdark"]
+            ) / (refd["Tlight"] - refd["Tdark"])
+            inter_rawlend["abs" + "_fullrng"] = -numpy.log(inter_rawlend["T_fullrng"])
+            inds = numpy.where(
+                numpy.logical_and(
+                    inter_rawlend["wl_fullrng"] > self.params["lower_wl"],
+                    inter_rawlend["wl_fullrng"] < self.params["upper_wl"],
+                )
+            )[0]
+            for key in ["T", "abs", "wl"]:
+                keystr = (
+                    list(zip(["_unsmth"], ["_fullrng"]))[0]
+                    if key != "wl"
+                    else list(zip([""], ["_fullrng"]))[0]
+                )
+                bin_idxs, inter_selindd[key + keystr[0]] = binarray(
+                    inter_rawlend[key + keystr[1]][inds],
+                    bin_width=self.params["bin_width"],
+                )
+
+            #            print numpy.shape(inter_selindd['wl'])
+            inter_selindd["hv"] = 1239.8 / inter_selindd["wl"]
+            inter_selindd["rawselectinds"] = inds[bin_idxs]
+            for sigtype in ["T", "abs"]:
+                inter_selindd[sigtype + "_smth"] = handlenan_savgol_filter(
+                    inter_selindd[sigtype + "_unsmth"],
+                    self.params["window_length"],
+                    self.params["polyorder"],
+                    delta=1.0,
+                    deriv=0,
+                )
+
+            (
+                fomd["min_rescaled"],
+                fomd["max_rescaled"],
+                inter_selindd["abs" + "_smth" + "_refadj"],
+            ) = refadjust(
+                inter_selindd["abs" + "_smth"],
+                self.params["min_mthd_allowed"],
+                self.params["max_mthd_allowed"],
+            )
+            inter_selindd["abs_smth_refadj_scl"] = inter_selindd[
+                "abs_smth_refadj"
+            ] / numpy.nanmax(inter_selindd["abs_smth_refadj"])
+            chkoutput_inds = numpy.where(
+                numpy.logical_and(
+                    inter_selindd["wl"] > self.params["chkoutput_wlrange"][0],
+                    inter_selindd["wl"] < self.params["chkoutput_wlrange"][1],
+                )
+            )[0]
+            fomd["abs_hasnan"] = numpy.isnan(
+                inter_selindd["abs_smth_refadj"][chkoutput_inds]
+            ).any()
+            #  ADD ANOTHER PARAMETER FOR CHECK WAVELENGTH WHICH IS MORE CONSERVATIVE THAN THE WAVELENGTH USED FOR CALCULATIONS HERE
+            fomd["max_abs"] = numpy.nanmax(inter_selindd["abs_smth_refadj"])
+            for key in [
+                "abs_"
+                + str(self.params["abs_range"][idx][0])
+                + "_"
+                + str(self.params["abs_range"][idx][1])
+                for idx in xrange(len(self.params["abs_range"]))
+            ] + [
+                "abs_"
+                + str(self.params["abs_range"][0][0])
+                + "_"
+                + str(self.params["abs_range"][-1][1])
+            ]:
+                inds = numpy.where(
+                    numpy.logical_and(
+                        inter_selindd["wl"] < 1239.8 / float(key.split("_")[-2]),
+                        inter_selindd["wl"] > 1239.8 / float(key.split("_")[-1]),
+                    )
+                )[0]
+                nonaninds = inds[
+                    numpy.where(~numpy.isnan(inter_selindd["abs_smth_refadj"][inds]))[0]
+                ]
+                fomd[key] = numpy.trapz(
+                    inter_selindd["abs_smth_refadj"][nonaninds],
+                    x=inter_selindd["hv"][nonaninds],
+                ) / (
+                    inter_selindd["hv"][nonaninds][-1]
+                    - inter_selindd["hv"][nonaninds][0]
+                )
+            for sig_str, sigkey in zip(["T"], ["T_smth"]):
+                fomd[sig_str + "_0to1"] = check_inrange(inter_selindd[sigkey])
+
+            dx = [inter_selindd["hv"][1] - inter_selindd["hv"][0]]
+            dx += [
+                (inter_selindd["hv"][idx + 1] - inter_selindd["hv"][idx - 1]) / 2.0
+                for idx in xrange(1, len(inter_selindd["rawselectinds"]) - 1)
+            ]
+            dx += [inter_selindd["hv"][-1] - inter_selindd["hv"][-2]]
+            dx = numpy.array(dx)
+            inter_selindd["abs_1stderiv"] = handlenan_savgol_filter(
+                inter_selindd["abs_smth_refadj_scl"],
+                self.params["window_length"],
+                self.params["polyorder"],
+                delta=1.0,
+                deriv=1,
+            ) / (dx)
+            inter_selindd["abs_2ndderiv"] = handlenan_savgol_filter(
+                inter_selindd["abs_smth_refadj_scl"],
+                self.params["window_length"],
+                self.params["polyorder"],
+                delta=1.0,
+                deriv=2,
+            ) / (dx**2)
+            fomd["max_abs2ndderiv"] = numpy.nanmax(inter_selindd["abs_2ndderiv"])
+            fomd["min_abs1stderiv"] = numpy.nanmin(inter_selindd["abs_1stderiv"])
+            for typ in self.params["analysis_types"]:
+                inter_selindd[typ + "_unscl"] = (
+                    inter_selindd["abs_smth_refadj"] * inter_selindd["hv"]
+                ) ** self.tauc_pow[typ]
+                inter_selindd[typ] = inter_selindd[typ + "_unscl"] / numpy.max(
+                    inter_selindd[typ + "_unscl"]
+                )
+                fomd[typ + "_minslope"] = numpy.min(
+                    handlenan_savgol_filter(
+                        inter_selindd[typ],
+                        self.params["window_length"],
+                        self.params["polyorder"],
+                        delta=1.0,
+                        deriv=1,
+                    )
+                    / (dx)
+                )
+
+        return fomd, inter_rawlend, inter_selindd
 
 
 #
@@ -1932,15 +2218,14 @@ class Analysis__BG(Analysis_Master_inter):
                 )
                 p = os.path.join(destfolder, fni)
                 kl = saveinterdata(p, selindd, savetxt=True)
-                self.runfiledict[filed["run"]]["inter_files"][fni] = (
-                    "%s;%s;%d;%d;%d"
-                    % (
-                        "uvis_inter_interlen_file",
-                        ",".join(kl),
-                        1,
-                        len(selindd[kl[0]]),
-                        filed["sample_no"],
-                    )
+                self.runfiledict[filed["run"]]["inter_files"][
+                    fni
+                ] = "%s;%s;%d;%d;%d" % (
+                    "uvis_inter_interlen_file",
+                    ",".join(kl),
+                    1,
+                    len(selindd[kl[0]]),
+                    filed["sample_no"],
                 )
         if destfolder is None:
             return
@@ -1980,7 +2265,9 @@ class Analysis__BG(Analysis_Master_inter):
         minslope_fcn = lambda x: numpy.nanmin(x) if x != [] else numpy.NaN
         for typ in self.params["analysis_types"]:
             #            fomd[typ+'_bg_exists']=bgexists_fcn(typ)
-            temparr = [v for k, v in list(inter_linfitd.items()) if typ + "_slopes" in k]
+            temparr = [
+                v for k, v in list(inter_linfitd.items()) if typ + "_slopes" in k
+            ]
             fomd[typ + "_fit_minslope"] = minslope_fcn(temparr)
         for k in self.fomnames:
             if k not in list(fomd.keys()):
