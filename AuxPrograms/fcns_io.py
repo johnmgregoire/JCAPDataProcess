@@ -1908,7 +1908,7 @@ def readexpasdict(
         if zipclass:
             expfiledict = zipclass.loadpck(p)
         else:
-            with open(p, mode="r") as f:
+            with open(p, mode="rb") as f:
                 expfiledict = pickle.load(f)
     elif p.endswith(".exp"):
         if zipclass:
@@ -2422,7 +2422,7 @@ def saveanafiles(anapath, anafilestr=None, anadict=None, changeananame=False):
     saveanadict = copy.deepcopy(anadict)
     convertstrvalstonum_nesteddict(saveanadict)
     convertfilekeystofiled(saveanadict)
-    with open(anapath.replace(".ana", ".pck"), mode="w") as f:
+    with open(anapath.replace(".ana", ".pck"), mode="wb") as f:
         pickle.dump(saveanadict, f)
 
 
@@ -2480,7 +2480,7 @@ def readana(p, erroruifcn=None, stringvalues=False, returnzipclass=False):
         if zipclass:
             anadict = zipclass.loadpck(p)
         else:
-            with open(p, mode="r") as f:
+            with open(p, mode="rb") as f:
                 anadict = pickle.load(f)
     else:
         if zipclass:
