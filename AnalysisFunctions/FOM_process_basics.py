@@ -775,6 +775,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
             transition_list_csvkeys = [
                 filed["trans_keys"][filed["trans_list"].index(tr)]
                 for tr in transition_list_for_stds
+                if tr in transition_list_for_stds
             ]
             if self.params["transition_list_for_comps"] == "NONE":
                 trans_inds_comps = []
@@ -782,6 +783,7 @@ class Analysis__Process_XRFS_Stds(Analysis_Master_FOM_Process):
                 trans_inds_comps = [
                     transition_list_for_stds.index(tr)
                     for tr in self.params["transition_list_for_comps"].split(",")
+                    if tr in transition_list_for_stds
                 ]
             if self.params["transition_ratio_list"] == "NONE":
                 trans_ind_numer_ratios = []
